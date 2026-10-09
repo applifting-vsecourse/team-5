@@ -21,8 +21,6 @@
   * Když se cesta rozdělí (např. u pozornosti pes nezvládá rušivky, tak se přidá větev na práci s klidem), mají tyto cesty běžet paralelně vedle sebe, nebo se po zvládnutí mezikroku zase spojí zpět do hlavní linie?  
   * Kdo a jak rozhoduje o posunu na další krok – posouvá se čistě ručně (kliknutím), nebo se má vyhodnocovat automaticky z % úspěšnosti?  
   * Wireframe kreslí větvení na obrazovce „Tvorba tréninku“. Jde o plán na několik týdnů, nebo o jeden trénink, ve kterém si psovod vybere jednu z větví?
-* **Návrh / Předpoklad týmu:**  
-  Pro MVP doporučujeme **lineární posloupnost úkolů s možností vkládat pod-úkoly (mezikroky) a volně se vracet/přeskakovat**. Plnohodnotný stromový graf s větvením a spojováním navrhujeme odsunout do *Nice to have*, protože by zásadně zkomplikoval UX pro mobil i datový model pro Sprint 1.
 
 ---
 
@@ -34,7 +32,7 @@
   * Může trenér přímo přepsat/smazat úkol, který si psovod sám vytvořil, nebo trenér své úkoly přidává odděleně? Co se stane, když trenér změní plán, o kterém psovod ještě neví?  
   * Ve wireframu sestavuje plán jen trenér (přes Klienti → pes klienta). Má plán upravovat i psovod? Může psovod aplikaci používat i bez trenéra?
 * **Návrh / Předpoklad týmu:**  
-  Pro MVP umožnit nasdílet psa více trenérům, přičemž trenér vidí všechny disciplíny, ale editovat plán může na úrovni jednotlivých cílů. Trenérovy úpravy by měly být v plánu vizuálně odlišeny (např. štítek „Od trenéra“).
+  Pro MVP umožnit nasdílet psa více trenérům, přičemž trenér vidí všechny disciplíny. Předpokládáme, že plán může upravovat **psovod i trenér**. Toto je třeba s PO potvrdit. Trenérovy úpravy by měly být v plánu vizuálně odlišeny (např. štítek „Od trenéra“).
 
 ---
 
@@ -92,7 +90,7 @@
   * Psovod zapisuje trénink typicky venku na cvičáku nebo doma?  
   * Je kritické, aby aplikace fungovala offline (bez signálu), nebo zápis probíhá až po příchodu domů / v autě, kde je internet dostupný?
 * **Návrh / Předpoklad týmu:**  
-  Pro MVP Sprintu 1 vytvořit moderní **responzivní webovou aplikaci (PWA)**, kterou si uživatel může přidat na plochu telefonu. Ušetří to týdny vývoje na schvalování v Apple/Google obchodech a umožní rychlé úpravy na základě zpětné vazby.
+  **Rozhodnuto:** Pro pilotní provoz i MVP vyvíjíme **responzivní webovou aplikaci (optimalizovanou pro mobilní telefony / PWA)**, kterou si uživatel může přidat na plochu telefonu. Tím odpadají počáteční poplatky za vývojářské účty Apple a Google i prodlevy se schvalovacím procesem v obchodech. Mobilní použitelnost zajistí responzivní rozhraní přizpůsobené displejům telefonů.
 
 ---
 
@@ -140,4 +138,4 @@
   * Má většina vašich kolegů psovodů v aktivním tréninku jednoho psa, nebo běžně trénují 2–3 psy současně?  
   * Jaké údaje o psovi trenérka skutečně potřebuje kromě jména a plemene (např. datum narození, váha, zdravotní omezení)?
 * **Návrh / Předpoklad týmu:**  
-  Datový model navrhnout od začátku tak, aby podporoval 1:N (uživatel $\rightarrow$ psi), ale v UI pro MVP se soustředit na primárního psa a jednoduché přepínání. V profilu psa stačí pro MVP: jméno, plemeno a volitelná poznámka / zdravotní omezení.
+  **Rozhodnuto (dle sitemapy a F-06):** MVP plně podporuje **více psů na jednom účtu psovoda**, přesně jak ukazuje wireframe a sitemapa (přepínání psů a barevné proužky v týdenním kalendáři). V profilu psa stačí pro MVP: jméno, plemeno, fotka a volitelná poznámka / zdravotní omezení. Bezplatný tarif pro psovoda v rámci vedení trenérem umožňuje evidovat více psů bez omezení na 1 psa (celkový limit se odvíjí od trenérova předplatného).
