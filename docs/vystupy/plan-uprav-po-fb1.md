@@ -26,7 +26,7 @@
 | Z10 | Trénink jednoho psa = **2–3 bloky po 20 minutách**, které se střídají. | Přepis, blok 2 | Trénink v kalendáři se skládá z více bloků, což odpovídá sekvencím cviků. |
 | Z11 | I jako klientka jiných trenérů zažívá, že po semináři „co sis zaznamenala, to máš“. | Přepis | Problém Z1 platí i z druhé strany. |
 
-**Mezery:** mluvili jsme s jedinou respondentkou a pohled klientů máme jen zprostředkovaně. Disciplíny z briefu (canicross, nosework) v rozhovoru nezazněly. Ve [vysledky.md](rozhovor/vysledky.md) chybí vyhodnocení H7 (odstup zpětné vazby: spíše podpořena, WhatsApp funguje) a H8 (náklady na správu klientů: nezaznělo).
+**Mezery:** pohled klientů máme zprostředkovaně přes trenérku. Disciplíny z briefu (canicross, nosework) v rozhovoru nezazněly. Ve [vysledky.md](rozhovor/vysledky.md) chybí vyhodnocení H7 (odstup zpětné vazby: spíše podpořena, WhatsApp funguje) a H8 (náklady na správu klientů: nezaznělo).
 
 ### Z feedbacku PO (FB1)
 
@@ -170,7 +170,6 @@ Podrobně, s návrhem týmu u každé otázky, v [otazky-fb2.md](otazky-fb2.md).
 | 9 | **Rozpočet:** sazba a hodiny týmu podle Honzy. Počítá se cíl návratnosti 6 měsíců včetně práce týmu? | P2 | Náklady |
 | 10 | **Podle čeho trenér pozná, že mu TrainLoop pomáhá?** (méně opakovaného vysvětlování, méně zpráv na WhatsAppu…) | Trenérka od klientů nic nevyžaduje (Z7), dnešní metrika retence na to nesedí. | Lean Canvas: Key Metrics, UVP |
 | 11 | Jak **klientům usnadnit vložení odkazu na video** (návod, doporučená služba)? | Dnes posílají video přímo do WhatsAppu. | F-25 |
-| 12 | Můžete nám domluvit **rozhovor s psovodem (klientem)**? | Problém Z1 máme jen z pohledu trenérky. | Celá validace |
 
 ---
 

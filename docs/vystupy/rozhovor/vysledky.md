@@ -20,8 +20,7 @@ Rozhovor proběhl v souladu se scénářem projektu TrainLoop a přinesl konkré
 - **H7 (Zpětná vazba s odstupem stačí): Spíše podpořena.** Klienti mezi lekcemi aktivně posílají videa a dotazy přes WhatsApp a trenérka odpovídá podle potřeby, od krátkého „děláš to super, pokračuj“ po delší dialog s doptáváním. Hranice tohoto způsobu vedení v rozhovoru nezazněly.
 - **H8 (Správa klientů má doložitelnou časovou či finanční náročnost): Nezaznělo.** Čas na administrativu ani placené nástroje respondentka nezmínila. Od klientů nic nevyžaduje a pokrok pozná na další lekci.
 
-## 3. Mezery a další ověření
+## 3. Mezery
 
-- Mluvili jsme s jedinou respondentkou. Pohled klientů (psovodů) máme jen zprostředkovaně přes její pozorování.
+- Pohled klientů (psovodů) známe zprostředkovaně přes pozorování respondentky.
 - Disciplíny z briefu (canicross, nosework, poslušnost) v rozhovoru nezazněly, respondentka se věnuje pasení a dogfrisbee.
-- Další krok: rozhovor s psovodem, který chodí k trenérovi (otázka na PO ve FB2).

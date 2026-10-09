@@ -9,7 +9,7 @@ Ptáme se jen na věci, které nerozhoduje [upravený plán](upravenyPlan.md). U
 
 ## Co ještě nevíme
 
-- **Pohled klientů máme jen zprostředkovaně.** Mluvili jsme s jedinou trenérkou. Hlavní problém (klienti si nezapamatují zadání) je její pozorování, psovoda jsme se zatím nezeptali.
+- **Pohled klientů známe zprostředkovaně.** Hlavní problém (klienti si nezapamatují zadání) vychází z pozorování trenérky.
 - **Disciplíny z briefu jsme neověřili.** Respondentka se věnuje pasení a dogfrisbee, canicross ani nosework v rozhovoru nezazněly.
 - **Nevíme, jak zachytit úspěch tréninku.** Trenérka hodnotí kvalitativně (soustředění, opakované chyby), ne číslem. Upravený plán chce %, ale nevíme, jak ho psovod má určit.
 - **Nevíme, kdo skládá týden.** Klienti chodí cca 1× měsíčně a dostanou „hromadu úkolů“. Není jasné, jestli tréninky do dnů zařadí trenér, nebo si je rozvrhne psovod.
@@ -94,8 +94,3 @@ Ptáme se jen na věci, které nerozhoduje [upravený plán](upravenyPlan.md). U
 - **Proč se ptáme:** Dnes klienti posílají video přímo do WhatsAppu.
 - **Návrh týmu:** Krátký návod u pole (YouTube neveřejné video, Google Disk) a náhled videa po vložení odkazu.
 
-### 12. Rozhovor s psovodem
-
-- **Otázka na PO:** Můžete nám domluvit rozhovor s klientem některého trenéra?
-- **Proč se ptáme:** Hlavní problém máme zatím jen z pohledu trenérky.
-- **Návrh týmu:** 30minutový rozhovor podle upraveného scénáře, zaměřený na to, jak klient pracuje se zadáním doma.
