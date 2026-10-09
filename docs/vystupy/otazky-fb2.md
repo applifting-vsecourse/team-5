@@ -3,7 +3,7 @@
 **Projekt:** TrainLoop · **Tým 5** · připraveno 9. 10. 2026 po rozhovoru s trenérkou a FB1
 **Podklady:** [plán úprav](plan-uprav-po-fb1.md) · [výsledky rozhovoru](rozhovor/vysledky.md) · [feedback PO z FB1](po-feedback-fb1.md) · [feature-breakdown.xlsx](feature-breakdown.xlsx)
 
-U každé otázky máme připravený návrh týmu. Otázka 0 a **alternativní návrhy** u otázek 1, 3, 5 a 7 se týkají věcí, které už rozhodl [upravený plán](upravenyPlan.md) nebo PO ve FB1. V breakdownu je proto neměníme a necháváme je na rozhodnutí PO.
+U každé otázky máme připravený návrh týmu. Otázka 0 je na FB2 zodpovězená. **Alternativní návrhy** u otázek 1, 3, 5 a 7 se týkají věcí, které už rozhodl [upravený plán](upravenyPlan.md) nebo PO ve FB1. V breakdownu je proto neměníme a necháváme je na rozhodnutí PO.
 
 ---
 
@@ -20,12 +20,11 @@ U každé otázky máme připravený návrh týmu. Otázka 0 a **alternativní n
 
 ## 🔴 Priorita 1: ovlivňují datový model a hlavní obrazovky
 
-### 0. Kdo aplikaci používá první a za co trenér platí ([Lean Canvas 1.3](lean-canvas.md) vs. [varianta B](lean-canvas-varianta-b.md))
+### 0. Kdo aplikaci používá první a za co trenér platí ✅ zodpovězeno na FB2
 
-- **Otázka na PO:** Má aplikace začínat u trenéra, který pozve klienty (dnešní model), nebo u psovoda jako jeho deník, do kterého pak přivede trenéra?
+- **Otázka na PO:** Má aplikace začínat u trenéra, který pozve klienty (dnešní model), nebo i u psovoda jako jeho deník, ke kterému ho trenér později pozve?
 - **Z rozhovoru:** Trenérka problém necítí (WhatsApp jí stačí, od klientů nic nevyžaduje), psaní zadání by pro ni byla práce navíc. Bolest nese klient. Respondentka sama vede papírový deník pro každého psa a sport.
-- **Ve FB1 rozhodnuto:** Platí výhradně trenér, psovod je zdarma na pozvánku od trenéra ([po-feedback-fb1.md](po-feedback-fb1.md)). Varianta B ponechává platícího trenéra, ale psovod by začal i bez pozvánky. Ptáme se, jestli to rozhodnutí po rozhovoru platí dál.
-- **Návrh týmu:** Probrat obě varianty. Ve variantě B by do MVP přibyly vlastní poznámky psovoda a pozvánka od trenéra by přestala být podmínkou. Otázka jde první, protože na ní závisí otázky 2, 5 a 8.
+- **Rozhodnuto na FB2:** Psovod může aplikaci používat i sám a zdarma jako deník psa, nebo ho pozve trenér. Zve vždycky trenér, i psovoda, který už aplikaci používá sám. Platí jen trenér, a to za aktivní klienty, kterým prodává podporu mezi lekcemi. Platí [Lean Canvas 1.4](lean-canvas.md), breakdown a backlog s ním počítají (F-01 a nová F-47 odsouhlaseny).
 
 ### 1. Podoba větvení plánu (F-15)
 
@@ -36,7 +35,7 @@ U každé otázky máme připravený návrh týmu. Otázka 0 a **alternativní n
 
 ### 2. Kdo zařazuje tréninky do dnů (F-20)
 
-- **Otázka na PO:** Rozvrhne tréninky do dnů trenér při plánování, nebo si je psovod zařadí sám podle svého týdne?
+- **Otázka na PO:** Rozvrhne tréninky z cíle od trenéra do dnů trenér při plánování, nebo si je psovod zařadí sám podle svého týdne? Vlastní cíl si psovod naplánuje sám.
 - **Proč se ptáme:** Klienti chodí na lekci cca 1× měsíčně a dostanou víc úkolů najednou.
 - **Návrh týmu:** Trenér zadá, kolikrát týdně a v jakém období se má cvičit, a navrhne dny. Psovod si je pak v Týdnu přesune podle sebe (F-21).
 
@@ -81,11 +80,11 @@ U každé otázky máme připravený návrh týmu. Otázka 0 a **alternativní n
 
 ## 🟢 Priorita 3: byznys, validace a doplňky
 
-### 8. Podíl tarifů Solo a Pro
+### 8. Ceník pro trenéry
 
-- **Otázka na PO:** Trenérka s ~40 klienty měsíčně by měla tarif Pro. Jaký podíl Solo/Pro máme počítat?
-- **Proč se ptáme:** Mění to průměrný příjem na trenéra a bod zvratu (dnes 70 % Solo / 30 % Pro).
-- **Návrh týmu:** Přepočítat i variantu 50/50 a ukázat obě.
+- **Otázka na PO:** Sedí ceník za aktivního klienta: 3 klienti zdarma, pak 49 Kč měsíčně za každého dalšího, strop 1 490 Kč?
+- **Proč se ptáme:** Po FB2 platí trenér za aktivní klienty, tarify Solo a Pro podle počtu psů odpadly. Respondentka má ~40 klientů, tarif do 15 psů jí neseděl.
+- **Návrh týmu:** Ceník je v [Lean Canvasu](lean-canvas.md#ceník) a [nákladové struktuře](nakladova-struktura.xlsx). Trenér s 15 klienty platí 588 Kč měsíčně, cashflow bez práce týmu je v plusu od 4. měsíce.
 
 ### 9. Rozpočet a návratnost
 
