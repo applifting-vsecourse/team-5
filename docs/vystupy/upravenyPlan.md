@@ -42,7 +42,7 @@ TrainLoop opouští myšlenku anonymního tržiště se statickými plány. Mís
 #### A. Správa profilu a disciplín
 
 - Založení profilu psa (jméno, plemeno, fotka; podpora více psů na účtu psovoda) a přiřazení tréninkových oblastí (canicross, nosework, poslušnost...).
-- Propojení trenéra a klienta: trenér pozve klienta (e-mail / kód), klient přes pozvánku zaregistruje sebe a svého psa.
+- Propojení trenéra a klienta: trenér pozve klienta (e-mail / kód), klient přes pozvánku zaregistruje sebe a svého psa. Psovod může aplikaci používat i sám bez pozvánky (deník psa), propojí se, až ho trenér pozve (FB2).
 
 #### B. Nelineární plánování (Jádro systému)
 
@@ -73,5 +73,5 @@ TrainLoop opouští myšlenku anonymního tržiště se statickými plány. Mís
 
 ## 6. Byznys a udržitelný model do budoucna
 
-- **Směřování:** SaaS nástroj pro trenéry psů (předplatné Solo trenér 490 Kč / měsíc do 15 psů, Psí škola / Pro 990 Kč / měsíc neomezeně psů).
-- Psovodi mají v základní verzi aplikaci v rámci spolupráce se svým trenérem zdarma (včetně možnosti vedení více psů pod trenérem).
+- **Směřování:** SaaS nástroj pro trenéry psů. Trenér platí za aktivního klienta: 3 zdarma, pak 49 Kč / měsíc za každého dalšího, strop 1 490 Kč / měsíc (po FB2, [Lean Canvas 1.4](lean-canvas.md)).
+- Psovodi mají aplikaci zdarma, s trenérem i bez něj (včetně více psů).

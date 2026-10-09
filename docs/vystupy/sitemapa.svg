@@ -23,7 +23,7 @@
   <rect width="1040" height="740" fill="#ffffff"/>
 
   <text x="40" y="34" font-size="20" font-weight="700" fill="#0f172a">TrainLoop — sitemapa</text>
-  <text x="40" y="54" class="s">Stav wireframu ve Figmě k 9. 10. a úpravy podle rozhovoru a FB1 · popis v sitemapa.md</text>
+  <text x="40" y="54" class="s">Stav wireframu ve Figmě k 9. 10. a úpravy podle rozhovoru, FB1 a varianty B · popis v sitemapa.md</text>
 
   <!-- Veřejná část -->
   <text x="40" y="84" class="lbl">VEŘEJNÁ ČÁST</text>
@@ -33,7 +33,8 @@
   <text x="256" y="115" class="t">Mám pozvánku</text>
   <text x="256" y="132" class="s">kód od trenéra</text>
   <rect x="440" y="94" width="160" height="48" rx="8" class="pub"/>
-  <text x="456" y="123" class="t">Registrace</text>
+  <text x="456" y="115" class="t">Registrace</text>
+  <text x="456" y="132" class="s">psovod i trenér</text>
   <rect x="660" y="94" width="160" height="48" rx="8" class="pub"/>
   <text x="676" y="123" class="t">Přihlášení</text>
   <rect x="860" y="94" width="140" height="48" rx="8" class="pub"/>
@@ -59,7 +60,7 @@
   <text x="556" y="231" class="hs">jen trenér</text>
   <rect x="790" y="190" width="210" height="52" rx="8" class="head"/>
   <text x="806" y="213" class="ht">Profil</text>
-  <text x="806" y="231" class="hs">heslo, odhlásit, smazat účet</text>
+  <text x="806" y="231" class="hs">kód od trenéra, heslo, účet</text>
 
   <!-- Psi -->
   <path d="M50,292 H60" class="ln"/>
@@ -101,6 +102,10 @@
   <text x="326" y="548" class="s">aktivity · + nový trénink</text>
 
   <line x1="410" y1="560" x2="410" y2="598" class="arr" marker-end="url(#arrow)"/>
+  <path d="M310,552 H285 V625 H262" class="arr" marker-end="url(#arrow)"/>
+  <rect x="60" y="600" width="200" height="50" rx="8" class="miss"/>
+  <text x="76" y="621" class="t">Poznámky</text>
+  <text x="76" y="638" class="s">z lekcí a seminářů · jen psovod</text>
   <rect x="310" y="600" width="200" height="50" rx="8" class="upd"/>
   <text x="326" y="621" class="t">Tvorba tréninku</text>
   <text x="326" y="638" class="s">cíl · cviky · větvení</text>
