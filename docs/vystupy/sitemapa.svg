@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 670" width="1040" height="670" font-family="'Segoe UI', system-ui, -apple-system, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+    <style>
+      .t { font-size: 14px; font-weight: 600; fill: #0f172a; }
+      .s { font-size: 12px; fill: #64748b; }
+      .ht { font-size: 15px; font-weight: 700; fill: #ffffff; }
+      .hs { font-size: 12px; fill: #cbd5e1; }
+      .lbl { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; fill: #64748b; }
+      .page { fill: #ffffff; stroke: #94a3b8; stroke-width: 1.2; }
+      .pub { fill: #f1f5f9; stroke: #94a3b8; stroke-width: 1.2; }
+      .miss { fill: #ffffff; stroke: #ef4444; stroke-width: 1.2; stroke-dasharray: 6 4; }
+      .key { fill: #fff7ed; stroke: #f59e0b; stroke-width: 1.6; }
+      .head { fill: #1e293b; }
+      .ln { stroke: #94a3b8; stroke-width: 1.2; fill: none; }
+      .arr { stroke: #64748b; stroke-width: 1.4; fill: none; }
+    </style>
+  </defs>
+
+  <rect width="1040" height="670" fill="#ffffff"/>
+
+  <text x="40" y="34" font-size="20" font-weight="700" fill="#0f172a">TrainLoop — sitemapa</text>
+  <text x="40" y="54" class="s">Sladěno s wireframem ve Figmě · popis a otázky pro PO v sitemapa.md</text>
+
+  <!-- Veřejná část -->
+  <text x="40" y="84" class="lbl">VEŘEJNÁ ČÁST</text>
+  <rect x="40" y="94" width="160" height="48" rx="8" class="pub"/>
+  <text x="56" y="123" class="t">Úvodní stránka</text>
+  <rect x="240" y="94" width="160" height="48" rx="8" class="miss"/>
+  <text x="256" y="115" class="t">Mám pozvánku</text>
+  <text x="256" y="132" class="s">kód od trenéra</text>
+  <rect x="440" y="94" width="160" height="48" rx="8" class="miss"/>
+  <text x="456" y="123" class="t">Registrace</text>
+  <rect x="660" y="94" width="160" height="48" rx="8" class="miss"/>
+  <text x="676" y="123" class="t">Přihlášení</text>
+  <rect x="860" y="94" width="140" height="48" rx="8" class="miss"/>
+  <text x="876" y="123" class="t">Obnova hesla</text>
+
+  <line x1="200" y1="118" x2="238" y2="118" class="arr" marker-end="url(#arrow)"/>
+  <line x1="400" y1="118" x2="438" y2="118" class="arr" marker-end="url(#arrow)"/>
+  <line x1="820" y1="118" x2="858" y2="118" class="arr" marker-end="url(#arrow)"/>
+
+  <path d="M740,142 V166 H150 V188" class="arr" marker-end="url(#arrow)"/>
+  <text x="748" y="162" class="s">po přihlášení</text>
+
+  <!-- Hlavní navigace -->
+  <text x="290" y="184" class="lbl">HLAVNÍ NAVIGACE</text>
+  <rect x="40" y="190" width="220" height="52" rx="8" class="head"/>
+  <text x="56" y="213" class="ht">Psi</text>
+  <text x="56" y="231" class="hs">seznam psů, barva psa</text>
+  <rect x="290" y="190" width="220" height="52" rx="8" class="head"/>
+  <text x="306" y="213" class="ht">Týden</text>
+  <text x="306" y="231" class="hs">kalendář tréninků</text>
+  <rect x="540" y="190" width="220" height="52" rx="8" class="head"/>
+  <text x="556" y="213" class="ht">Klienti</text>
+  <text x="556" y="231" class="hs">jen trenér</text>
+  <rect x="790" y="190" width="210" height="52" rx="8" class="head"/>
+  <text x="806" y="213" class="ht">Profil</text>
+  <text x="806" y="231" class="hs">heslo, odhlásit, smazat účet</text>
+
+  <!-- Psi -->
+  <path d="M50,292 H60" class="ln"/>
+  <path d="M50,242 V465 H308" class="arr" marker-end="url(#arrow)"/>
+  <rect x="60" y="270" width="200" height="44" rx="8" class="miss"/>
+  <text x="76" y="297" class="t">Nový pes</text>
+
+  <!-- Týden -->
+  <path d="M300,242 V292 H310" class="ln"/>
+  <rect x="310" y="270" width="200" height="44" rx="8" class="page"/>
+  <text x="326" y="290" class="t">Trénink</text>
+  <text x="326" y="306" class="s">cvik po cviku · 3/20</text>
+  <rect x="310" y="340" width="200" height="44" rx="8" class="page"/>
+  <text x="326" y="360" class="t">Konec tréninku</text>
+  <text x="326" y="376" class="s">video · komentář · odeslat</text>
+  <line x1="410" y1="314" x2="410" y2="338" class="arr" marker-end="url(#arrow)"/>
+
+  <!-- Klienti -->
+  <path d="M550,242 V362 M550,292 H560 M550,362 H560" class="ln"/>
+  <rect x="560" y="270" width="200" height="44" rx="8" class="miss"/>
+  <text x="576" y="297" class="t">Pozvat klienta</text>
+  <rect x="560" y="340" width="200" height="44" rx="8" class="miss"/>
+  <text x="576" y="360" class="t">Detail klienta</text>
+  <text x="576" y="376" class="s">psi klienta · čeká na reakci</text>
+
+  <rect x="800" y="340" width="200" height="44" rx="8" class="miss"/>
+  <text x="816" y="360" class="t">Reakce trenéra</text>
+  <text x="816" y="376" class="s">záznam a odpověď</text>
+  <line x1="760" y1="362" x2="798" y2="362" class="arr" marker-end="url(#arrow)"/>
+
+  <!-- Pes a zadání tréninku -->
+  <path d="M600,384 V465 H512" class="arr" marker-end="url(#arrow)"/>
+  <text x="520" y="458" class="s">pes klienta</text>
+  <rect x="310" y="440" width="200" height="50" rx="8" class="key"/>
+  <text x="326" y="461" class="t">Pes (detail)</text>
+  <text x="326" y="478" class="s">aktivity · + nový trénink</text>
+
+  <line x1="410" y1="490" x2="410" y2="528" class="arr" marker-end="url(#arrow)"/>
+  <rect x="310" y="530" width="200" height="50" rx="8" class="page"/>
+  <text x="326" y="551" class="t">Tvorba tréninku</text>
+  <text x="326" y="568" class="s">cviky · sekvence · větvení</text>
+
+  <line x1="510" y1="555" x2="558" y2="555" class="arr" marker-end="url(#arrow)"/>
+  <rect x="560" y="530" width="240" height="50" rx="8" class="miss"/>
+  <text x="576" y="551" class="t">Naplánovat trénink</text>
+  <text x="576" y="568" class="s">dny v týdnu → Týden klienta</text>
+
+  <!-- Legenda -->
+  <rect x="40" y="634" width="22" height="14" rx="3" class="pub"/>
+  <text x="70" y="646" class="s">veřejná stránka</text>
+  <rect x="180" y="634" width="22" height="14" rx="3" class="head"/>
+  <text x="210" y="646" class="s">hlavní navigace</text>
+  <rect x="320" y="634" width="22" height="14" rx="3" class="page"/>
+  <text x="350" y="646" class="s">ve wireframu</text>
+  <rect x="450" y="634" width="22" height="14" rx="3" class="miss"/>
+  <text x="480" y="646" class="s">ve wireframu chybí</text>
+  <rect x="610" y="634" width="22" height="14" rx="3" class="key"/>
+  <text x="640" y="646" class="s">ve wireframu, vede na ni víc cest</text>
+</svg>
