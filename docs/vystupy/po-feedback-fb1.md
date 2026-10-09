@@ -1,0 +1,39 @@
+# Product Owner Briefing & Feedback (FB1)
+
+**Projekt:** Tréninková aplikace pro psy a psovody
+**Role:** Product Owner (PO)
+**Kontext:** Reakce na Feature Breakdown, Lean Canvas a Wireframy před zahájením uživatelského výzkumu
+
+## 1. Byznys model & Rozsah MVP
+
+- **Monetizace a role:** Vyřazení tržiště (Marketplace) z MVP dává smysl, ale je nutné držet čistý byznys model.
+- Platícím zákazníkem je výhradně trenér, který si kupuje přístup/licenci pro vedení svých klientů.
+- Pro psovody (majitele psů) musí být aplikace zdarma (na pozvánku od trenéra), což je zásadní motivace pro adopci platformy.
+- **Finanční výhled:** V tabulkách nákladů a příjmů je nutné ověřit horizont návratnosti (kdy začne produkt reálně vydělávat – cíl je cca do 6 měsíců) a ujasnit si s Honzou, jak do rozpočtu započítat hodinovou sazbu vývojového týmu.
+
+## 2. Tréninkové plány & Uživatelská logika (Inspirace aplikací Runna)
+
+- **Škála cílů:** Plánovací modul musí zvládat jak komplexní dlouhodobé cíle (např. spolehlivá chůze u nohy), tak drobné triky (např. pac / dát ťapku).
+- **Logika kalendáře a vynechání tréninku:**
+  - Osvědčený vzor z běžecké aplikace Runna: uživatel vidí rozvrh v týdnech/dnech.
+  - Pokud trénink neproběhne, systém musí nabízet dvě jasné cesty: buď přesun tréninku na jiný den/týden, nebo možnost trénink zcela přeskočit (skipnout).
+- **Větvení plánů:** Zbytečně nepřekombinovávat datový model pro MVP; soustředit se na to, co trenér i psovod potřebují v základní fázi.
+
+## 3. Zadání pro uživatelské rozhovory (Product Discovery)
+
+- **Časový rámec:** Rozhovory jsou nastavené na 30 minut – je nutné mít scénář předem detailně nastudovaný, aby vedení rozhovoru nebylo ve stresu.
+- **Cíl zjišťování (chybějící doménová znalost):**
+  - Pokud týmu chybí doménová znalost (obdoba vývoje investičních aplikací bez znalosti investic), je nutné jít do hloubky a zjistit skutečné potřeby koncového uživatele.
+  - Cílem hovoru je přesně pochopit: Jak trenér a psovod reálně přemýšlí, když trénink plánují a vyhodnocují?
+  - Výstupy z rozhovorů následně promítneme přímo do digitálního rozhraní a upravíme podle nich Feature Breakdown.
+
+## 4. Hodnocení wireframů & Zpětná vazba
+
+- **Vizuální koncept:** Předvedené wireframy (splash screen, týdenní rozvrh, profil psa, detail cvičení s nahráním videa) jsou pro základní představu a MVP zcela dostačující a přehledné – není potřeba je dál komplikovat.
+- **UX detail:** Potvrzeno, že horní přehled uživatelů/svěřenců správně odpovídá pohledu přihlášeného trenéra.
+
+## 5. Akční kroky a úkoly
+
+1. **Uživatelský výzkum:** Určit konkrétního člena týmu, který hned převezme roli tazatele a povede nadcházející rozhovor.
+2. **Aktualizace Feature Breakdownu:** Po skončení rozhovorů znovu projít rozpad funkcí a zapracovat nová zjištění ohledně stavby plánů.
+3. **Konzultace rozpočtu:** Dořešit s Honzou započtení práce týmu do celkové cost structure.

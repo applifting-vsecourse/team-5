@@ -50,8 +50,6 @@ Hypotézy jsou pro tým, ne pro respondentku. U každé rozlišujeme projev chov
 |**H3. Předávání zadání, výsledku a kontextu psa komplikuje zpětnou vazbu.** Klíčová.|Musela dohledávat původní zadání, doptávat se na okolnosti nebo párovat video s cvikem; popíše důsledek pro čas či rozhodnutí.|Potřebné informace má včas, snadno je najde a bez potíží na ně naváže.|5–6|
 |**H4. Změny zadání mezi trenérkou a psovodem mohou způsobovat nejasnosti v tom, co právě platí a kdo o tom rozhoduje.** Důležitá.|Konkrétní případ, kdy se plán změnil a některá strana pracovala se starým zadáním nebo musela změnu dodatečně vysvětlovat.|Rozhodovací odpovědnost je jasná a změny se bez potíží předávají, třeba i když plán upravuje pouze trenérka.|5|
 
-
-
 ## H5–H9: Záznamy, video, komunikace a používání
 
 |Hypotéza / priorita|Co by ji podpořilo|Co by ji oslabilo|Bloky|
@@ -61,8 +59,6 @@ Hypotézy jsou pro tým, ne pro respondentku. U každé rozlišujeme projev chov
 |**H7. Zpětná vazba s odstupem je v některých situacích dostatečná pro další výcvik, v jiných je potřeba rychlejší nebo přímý kontakt.** Důležitá.|Příklady, kdy reakce mezi lekcemi včas změnila další postup, i příklady hranic tohoto způsobu vedení.|V popsané spolupráci nemá kontakt mezi lekcemi praktický přínos, nebo vyžaduje vždy osobní či synchronní vedení.|5, 6|
 |**H8. Současná správa klientů má pro trenérku doložitelnou časovou nebo finanční náročnost.** Doplňková.|Uvede skutečný čas strávený administrativou, využívané placené nástroje nebo dřívější rozhodnutí za něco platit.|Současný způsob při jejím objemu vyžaduje minimální administrativu a nestojí podstatné peníze.|6|
 |**H9. U části klientů mezi lekcemi chybějí záznamy, které trenérka potřebuje k navázání.** Důležitá k dalšímu ověření.|Konkrétní případ, kdy klient nic nezaznamenal či neposlal a trenérka musela informace získat jinak, s doloženým důsledkem.|V popsaných případech klienti běžně předávají vše potřebné a trenérka to dokáže využít.|5|
-
-
 
 <!-- pagebreak -->
 
@@ -117,8 +113,6 @@ Možná doptání:
 * **Pokud došlo k rozdělení / odbočce (např. hlavní cvik + práce na klidu):** Trénovaly se tyto dvě věci souběžně vedle sebe, nebo se původní nácvik pozastavil? Podle čeho jste poznala, že mezikrok pes zvládl a je čas se vrátit zpět do hlavní linie?
 * Jak jste si to poznamenala a jak jste věděla, na co navázat a k čemu se případně vrátit?
 * Přinesla tato změna nějakou potíž, práci navíc či opomenutí? Pokud ano, kdy a jakou? Pokud ne, co Vám umožnilo mít přehled?
-
-
 
 ## Blok 5 · Jeden konkrétní klient mezi lekcemi (13–25 min)
 
@@ -175,4 +169,3 @@ Volitelně: „V čem přesně spočíval? Co se muselo změnit nebo udělat nav
 **7.2 Je něco důležitého ohledně tréninku nebo spolupráce s klienty, na co jsem se nezeptal(a)?**
 
 > „Děkujeme Vám za čas a sdílené zkušenosti. Pomohou nám lépe rozlišit, co při výcviku skutečně funguje a kde má smysl něco zlepšovat.“
-
