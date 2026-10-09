@@ -113,8 +113,9 @@ Možná doptání:
 Možná doptání:
 
 * Co jste chtěla udělat původně a co jste udělala jinak?
-* Šlo o přesunutí termínu, opakování kroku, návrat, přeskočení, nebo něco jiného?
-* Jak jste pak věděla, na co navázat a k čemu se případně vrátit?
+* Šlo o přesunutí termínu, opakování kroku, návrat, přeskočení, vložení mezikroku, nebo rozdělení cesty do dvou větví?
+* **Pokud došlo k rozdělení / odbočce (např. hlavní cvik + práce na klidu):** Trénovaly se tyto dvě věci souběžně vedle sebe, nebo se původní nácvik pozastavil? Podle čeho jste poznala, že mezikrok pes zvládl a je čas se vrátit zpět do hlavní linie?
+* Jak jste si to poznamenala a jak jste věděla, na co navázat a k čemu se případně vrátit?
 * Přinesla tato změna nějakou potíž, práci navíc či opomenutí? Pokud ano, kdy a jakou? Pokud ne, co Vám umožnilo mít přehled?
 
 

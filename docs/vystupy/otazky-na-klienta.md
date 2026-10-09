@@ -21,6 +21,7 @@
   * Když se cesta rozdělí (např. u pozornosti pes nezvládá rušivky, tak se přidá větev na práci s klidem), mají tyto cesty běžet paralelně vedle sebe, nebo se po zvládnutí mezikroku zase spojí zpět do hlavní linie?  
   * Kdo a jak rozhoduje o posunu na další krok – posouvá se čistě ručně (kliknutím), nebo se má vyhodnocovat automaticky z % úspěšnosti?  
   * Wireframe kreslí větvení na obrazovce „Tvorba tréninku“. Jde o plán na několik týdnů, nebo o jeden trénink, ve kterém si psovod vybere jednu z větví?
+* **Zpětná vazba PO:** Zbytečně nepřekombinovávat datový model pro MVP; soustředit se na to, co trenér i psovod potřebují v základní fázi.
 
 ---
 
@@ -53,8 +54,8 @@
 * **Kontext & Doptání:**  
   * Ve wireframu trenér skládá rovnou trénink pro psa („Trénink pro Rexe“), cíl jako „5 km pod 5 min/km“ tam není.  
   * Pracují trenérky v praxi s cíli? Má cíl termín nebo měřitelné kritérium splnění?
-* **Návrh / Předpoklad týmu:**  
-  Pro MVP stačí plán s názvem a disciplínou. Cíl s termínem a kritériem splnění doplnit později, pokud se ukáže jako potřebný.
+* **Návrh / Předpoklad týmu & Vyjádření PO:**  
+  **Rozhodnuto PO:** Plánovací modul musí zvládat jak komplexní dlouhodobé cíle (např. spolehlivá chůze u nohy), tak drobné triky (např. pac / dát ťapku). Cíl s názvem a disciplínou tedy v systému plní roli zastřešujícího rámce.
 
 ---
 
@@ -67,8 +68,10 @@
   * Má úkol automaticky „přepadnout“ do dalšího dne, zůstat v minulém dni označený jako „neodcvičeno“, nebo se vrátit do zásobníku úkolů daného cíle?  
   * Může být stejný úkol naplánovaný v jednom týdnu vícekrát (např. 3× v týdnu krátký trénink očního kontaktu)?  
   * Kdo trénink do kalendáře zařadí – trenér hned po jeho složení, nebo psovod? Smí psovod trénink přesunout na jiný den?
-* **Návrh / Předpoklad týmu:**  
-  Neodcvičený trénink nechat v minulém dni s vizuálním stavem „neodcvičeno“ a tlačítkem „Přesunout na dnes/zítra“. Automatické přepadávání úkolů může vytvořit lavinu restů a demotivovat uživatele. Jeden úkol z plánu by mělo jít naplánovat do týdne opakovaně. Na dny trénink zařadí trenér po jeho složení (obrazovka „Naplánovat trénink“), psovod ho může přesunout.
+* **Návrh / Předpoklad týmu & Vyjádření PO:**  
+  **Rozhodnuto PO (inspirace aplikací *Runna*):** Uživatel vidí rozvrh v týdnech/dnech. Pokud trénink v daný den neproběhne, systém nabídne dvě jasné cesty:
+  1. **Přesun tréninku** na jiný den nebo týden.
+  2. **Přeskočení tréninku (Skip)** – trénink lze zcela přeskočit, aniž by vytvářel demotivující lavinu nedodělků.
 
 ---
 
