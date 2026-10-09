@@ -124,6 +124,9 @@ Možná doptání:
 
 **Hlavní část rozhovoru.** Zvolit jednoho nedávného klienta; nevyžadovat jméno ani identifikující údaje. Pokud nedošlo ke kontaktu mezi lekcemi, je to samo o sobě relevantní: sledovat, jak se navázalo na příští lekci.
 
+> **Přechodová věta pro moderátora (změna role: psovodka → trenérka):**  
+> *„Děkuji, teď jsme se dívali na Vašeho vlastního psa z Vašeho pohledu psovodky. Pojďme teď otočit roli a podívat se na Vás jako na trenérku a na Vaši spolupráci s klienty.“*
+
 **5.1 Vyberme jednoho klienta, se kterým jste nedávno měla lekci. Co se dělo od konce této lekce až do dalšího kontaktu nebo další lekce?**
 
 * Co měl po lekci dělat? Jak se o zadání dozvěděl?
