@@ -24,7 +24,7 @@ Ptáme se jen na věci, které nerozhoduje [upravený plán](upravenyPlan.md). U
 
 - **Otázka na PO:** Ukážeme návrh větvení jako rozdělení kroku, který pes nechápe, na dílčí kroky s návratem do hlavní cesty. Pokrývá to, co potřebujete?
 - **Proč se ptáme:** Takhle to popsala trenérka („nejdřív kousky, pak celek“) a sedí to na pokyn z FB1 nepřekombinovat datový model.
-- **Návrh týmu:** V *Tvorbě tréninku* jde u bloku zvolit „Rozdělit na dílčí kroky“. Dílčí kroky se odsadí pod původní blok a po jejich zvládnutí plán pokračuje dalším blokem hlavní cesty.
+- **Návrh týmu:** V _Tvorbě tréninku_ jde u bloku zvolit „Rozdělit na dílčí kroky“. Dílčí kroky se odsadí pod původní blok a po jejich zvládnutí plán pokračuje dalším blokem hlavní cesty.
 
 ### 2. Kdo zařazuje tréninky do dnů (F-20)
 
@@ -36,7 +36,7 @@ Ptáme se jen na věci, které nerozhoduje [upravený plán](upravenyPlan.md). U
 
 - **Otázka na PO:** Zadává psovod % za každý cvik, nebo za celý trénink? Podle čeho ho má určit?
 - **Proč se ptáme:** Trenérka úspěch měří kvalitativně: soustředění, opakované chyby, zbrklost (H5 podpořena).
-- **Návrh týmu:** % za celý trénink (posuvník po 10 %) a k němu dvě rychlá hodnocení *soustředění* a *opakované chyby* (ano / částečně / ne) a poznámka.
+- **Návrh týmu:** % za celý trénink (posuvník po 10 %) a k němu dvě rychlá hodnocení _soustředění_ a _opakované chyby_ (ano / částečně / ne) a poznámka.
 
 ### 4. Co se stane s přeskočeným tréninkem (F-21, F-14)
 
@@ -93,4 +93,3 @@ Ptáme se jen na věci, které nerozhoduje [upravený plán](upravenyPlan.md). U
 - **Otázka na PO:** Jak klientům co nejvíc usnadnit vložení odkazu na video?
 - **Proč se ptáme:** Dnes klienti posílají video přímo do WhatsAppu.
 - **Návrh týmu:** Krátký návod u pole (YouTube neveřejné video, Google Disk) a náhled videa po vložení odkazu.
-

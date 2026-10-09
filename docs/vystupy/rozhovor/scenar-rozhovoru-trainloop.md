@@ -23,13 +23,13 @@ Určit, **které konkrétní obtíže mají v praxi důsledky** (ztrátu času, 
 
 Tyto otázky respondentce nečteme. Slouží pro vyhodnocení.
 
-|Cíl|Výzkumná otázka|Bloky|
-|-|-|-|
-|**C1 – Plánování**|Jak respondentka stanovuje cíle, plánuje více disciplín a řeší neuskutečněné tréninky? Vzniká tím reálná práce navíc?|1–2|
-|**C2 – Změna postupu**|Kdy dochází k opakování, posunu, přeskočení nebo rozvětvení kroků? Způsobuje sledování těchto změn problémy, nebo současný způsob stačí?|4, 5|
-|**C3 – Záznam a posouzení výsledku**|Podle čeho poznává pokrok a které informace potřebuje pro další rozhodnutí? Jaký význam mají poznámky, měření a video?|3, 5|
-|**C4 – Spolupráce mezi lekcemi**|Jak vzniká zadání, jak se zjišťuje jeho plnění, kdo mění další postup a jaký dopad mají prodlevy či chybějící informace?|5–6|
-|**C5 – Dopad a priority**|Které doložené potíže mají největší praktické důsledky? Co již dnes funguje a není třeba nahrazovat?|5–7|
+| Cíl                                  | Výzkumná otázka                                                                                                                          | Bloky |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| **C1 – Plánování**                   | Jak respondentka stanovuje cíle, plánuje více disciplín a řeší neuskutečněné tréninky? Vzniká tím reálná práce navíc?                    | 1–2   |
+| **C2 – Změna postupu**               | Kdy dochází k opakování, posunu, přeskočení nebo rozvětvení kroků? Způsobuje sledování těchto změn problémy, nebo současný způsob stačí? | 4, 5  |
+| **C3 – Záznam a posouzení výsledku** | Podle čeho poznává pokrok a které informace potřebuje pro další rozhodnutí? Jaký význam mají poznámky, měření a video?                   | 3, 5  |
+| **C4 – Spolupráce mezi lekcemi**     | Jak vzniká zadání, jak se zjišťuje jeho plnění, kdo mění další postup a jaký dopad mají prodlevy či chybějící informace?                 | 5–6   |
+| **C5 – Dopad a priority**            | Které doložené potíže mají největší praktické důsledky? Co již dnes funguje a není třeba nahrazovat?                                     | 5–7   |
 
 ### Rozsah a organizace
 
@@ -43,22 +43,22 @@ Hypotézy jsou pro tým, ne pro respondentku. U každé rozlišujeme projev chov
 
 ## H1–H4: Plánování a spolupráce
 
-|Hypotéza / priorita|Co by ji podpořilo|Co by ji oslabilo|Bloky|
-|-|-|-|-|
-|**H1. Koordinace více disciplín vytváří významnou práci navíc nebo chyby při plánování.** Důležitá.|Konkrétní týden, v němž opakované skládání či přesouvání tréninků vedlo ke ztrátě času, opomenutí nebo nutnosti něco dohledávat.|Současné plánování funguje při jejím objemu bez podstatné námahy a bez negativních důsledků.|2|
-|**H2. Změny výcvikového postupu ztěžují udržení přehledu o návaznosti kroků.** Klíčová.|V konkrétním případě změna pořadí, návrat či souběh kroků vedly k nejasnostem, opakované práci nebo obtížnému navázání.|Výcvik se sice mění, ale respondentka s pomocí jednoduchého postupu či vlastní paměti snadno navazuje.|4, 5|
-|**H3. Předávání zadání, výsledku a kontextu psa komplikuje zpětnou vazbu.** Klíčová.|Musela dohledávat původní zadání, doptávat se na okolnosti nebo párovat video s cvikem; popíše důsledek pro čas či rozhodnutí.|Potřebné informace má včas, snadno je najde a bez potíží na ně naváže.|5–6|
-|**H4. Změny zadání mezi trenérkou a psovodem mohou způsobovat nejasnosti v tom, co právě platí a kdo o tom rozhoduje.** Důležitá.|Konkrétní případ, kdy se plán změnil a některá strana pracovala se starým zadáním nebo musela změnu dodatečně vysvětlovat.|Rozhodovací odpovědnost je jasná a změny se bez potíží předávají, třeba i když plán upravuje pouze trenérka.|5|
+| Hypotéza / priorita                                                                                                               | Co by ji podpořilo                                                                                                               | Co by ji oslabilo                                                                                            | Bloky |
+| --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----- |
+| **H1. Koordinace více disciplín vytváří významnou práci navíc nebo chyby při plánování.** Důležitá.                               | Konkrétní týden, v němž opakované skládání či přesouvání tréninků vedlo ke ztrátě času, opomenutí nebo nutnosti něco dohledávat. | Současné plánování funguje při jejím objemu bez podstatné námahy a bez negativních důsledků.                 | 2     |
+| **H2. Změny výcvikového postupu ztěžují udržení přehledu o návaznosti kroků.** Klíčová.                                           | V konkrétním případě změna pořadí, návrat či souběh kroků vedly k nejasnostem, opakované práci nebo obtížnému navázání.          | Výcvik se sice mění, ale respondentka s pomocí jednoduchého postupu či vlastní paměti snadno navazuje.       | 4, 5  |
+| **H3. Předávání zadání, výsledku a kontextu psa komplikuje zpětnou vazbu.** Klíčová.                                              | Musela dohledávat původní zadání, doptávat se na okolnosti nebo párovat video s cvikem; popíše důsledek pro čas či rozhodnutí.   | Potřebné informace má včas, snadno je najde a bez potíží na ně naváže.                                       | 5–6   |
+| **H4. Změny zadání mezi trenérkou a psovodem mohou způsobovat nejasnosti v tom, co právě platí a kdo o tom rozhoduje.** Důležitá. | Konkrétní případ, kdy se plán změnil a některá strana pracovala se starým zadáním nebo musela změnu dodatečně vysvětlovat.       | Rozhodovací odpovědnost je jasná a změny se bez potíží předávají, třeba i když plán upravuje pouze trenérka. | 5     |
 
 ## H5–H9: Záznamy, video, komunikace a používání
 
-|Hypotéza / priorita|Co by ji podpořilo|Co by ji oslabilo|Bloky|
-|-|-|-|-|
-|**H5. Jednotný údaj „% úspěšnosti“ nemusí vystihnout pokrok napříč různými cviky a disciplínami.** Důležitá.|U konkrétních cviků rozhodují jiné ukazatele (např. výdrž, podmínky, chování) nebo má stejné procento jiný význam.|Ve všech popsaných relevantních případech má procento jasnou definici a pro navázání postačuje.|3|
-|**H6. Předávání a opětovné dohledávání videí může přidávat práci nebo ztrátu kontextu.** Důležitá.|Reálné příklady obtížného poslání, otevření, zpřístupnění nebo dohledání videa a jejich dopad.|Současné zasílání a dohledávání videí funguje bez významných překážek.|5|
-|**H7. Zpětná vazba s odstupem je v některých situacích dostatečná pro další výcvik, v jiných je potřeba rychlejší nebo přímý kontakt.** Důležitá.|Příklady, kdy reakce mezi lekcemi včas změnila další postup, i příklady hranic tohoto způsobu vedení.|V popsané spolupráci nemá kontakt mezi lekcemi praktický přínos, nebo vyžaduje vždy osobní či synchronní vedení.|5, 6|
-|**H8. Současná správa klientů má pro trenérku doložitelnou časovou nebo finanční náročnost.** Doplňková.|Uvede skutečný čas strávený administrativou, využívané placené nástroje nebo dřívější rozhodnutí za něco platit.|Současný způsob při jejím objemu vyžaduje minimální administrativu a nestojí podstatné peníze.|6|
-|**H9. U části klientů mezi lekcemi chybějí záznamy, které trenérka potřebuje k navázání.** Důležitá k dalšímu ověření.|Konkrétní případ, kdy klient nic nezaznamenal či neposlal a trenérka musela informace získat jinak, s doloženým důsledkem.|V popsaných případech klienti běžně předávají vše potřebné a trenérka to dokáže využít.|5|
+| Hypotéza / priorita                                                                                                                               | Co by ji podpořilo                                                                                                         | Co by ji oslabilo                                                                                                | Bloky |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----- |
+| **H5. Jednotný údaj „% úspěšnosti“ nemusí vystihnout pokrok napříč různými cviky a disciplínami.** Důležitá.                                      | U konkrétních cviků rozhodují jiné ukazatele (např. výdrž, podmínky, chování) nebo má stejné procento jiný význam.         | Ve všech popsaných relevantních případech má procento jasnou definici a pro navázání postačuje.                  | 3     |
+| **H6. Předávání a opětovné dohledávání videí může přidávat práci nebo ztrátu kontextu.** Důležitá.                                                | Reálné příklady obtížného poslání, otevření, zpřístupnění nebo dohledání videa a jejich dopad.                             | Současné zasílání a dohledávání videí funguje bez významných překážek.                                           | 5     |
+| **H7. Zpětná vazba s odstupem je v některých situacích dostatečná pro další výcvik, v jiných je potřeba rychlejší nebo přímý kontakt.** Důležitá. | Příklady, kdy reakce mezi lekcemi včas změnila další postup, i příklady hranic tohoto způsobu vedení.                      | V popsané spolupráci nemá kontakt mezi lekcemi praktický přínos, nebo vyžaduje vždy osobní či synchronní vedení. | 5, 6  |
+| **H8. Současná správa klientů má pro trenérku doložitelnou časovou nebo finanční náročnost.** Doplňková.                                          | Uvede skutečný čas strávený administrativou, využívané placené nástroje nebo dřívější rozhodnutí za něco platit.           | Současný způsob při jejím objemu vyžaduje minimální administrativu a nestojí podstatné peníze.                   | 6     |
+| **H9. U části klientů mezi lekcemi chybějí záznamy, které trenérka potřebuje k navázání.** Důležitá k dalšímu ověření.                            | Konkrétní případ, kdy klient nic nezaznamenal či neposlal a trenérka musela informace získat jinak, s doloženým důsledkem. | V popsaných případech klienti běžně předávají vše potřebné a trenérka to dokáže využít.                          | 5     |
 
 <!-- pagebreak -->
 
@@ -84,10 +84,10 @@ Volitelně: Jakým disciplínám se věnujete? Kolik vlastních psů trénujete?
 
 Možná doptání:
 
-* Rozhodovala jste se předem, nebo až před jednotlivými tréninky?
-* Co jste skutečně odcvičila a co se případně změnilo?
-* Pokud šlo o více disciplín, jak jste je sladila?
-* Pokud došlo k přesouvání nebo přípravě, kolik času to přibližně zabralo?
+- Rozhodovala jste se předem, nebo až před jednotlivými tréninky?
+- Co jste skutečně odcvičila a co se případně změnilo?
+- Pokud šlo o více disciplín, jak jste je sladila?
+- Pokud došlo k přesouvání nebo přípravě, kolik času to přibližně zabralo?
 
 ## Blok 3 · Výsledek konkrétního tréninku (7–10 min)
 
@@ -95,10 +95,10 @@ Možná doptání:
 
 Možná doptání:
 
-* Co jste si zaznamenala, pokud vůbec něco? Podle čeho jste navázala, pokud žádný záznam nevznikl?
-* Když porovnáváte dva tréninky stejného cviku, podle čeho poznáte zlepšení?
-* Jaké podmínky nebo okolnosti byly pro rozhodnutí o dalším tréninku důležité?
-* Pokud používáte procenta: co konkrétně poslední procentní údaj znamenal?
+- Co jste si zaznamenala, pokud vůbec něco? Podle čeho jste navázala, pokud žádný záznam nevznikl?
+- Když porovnáváte dva tréninky stejného cviku, podle čeho poznáte zlepšení?
+- Jaké podmínky nebo okolnosti byly pro rozhodnutí o dalším tréninku důležité?
+- Pokud používáte procenta: co konkrétně poslední procentní údaj znamenal?
 
 **Ukázka:** „Můžete mi případně ukázat anonymizovaný příklad?“ Jen je-li přirozeně dostupný; nezdržovat se hledáním.
 
@@ -108,11 +108,11 @@ Možná doptání:
 
 Možná doptání:
 
-* Co jste chtěla udělat původně a co jste udělala jinak?
-* Šlo o přesunutí termínu, opakování kroku, návrat, přeskočení, vložení mezikroku, nebo rozdělení cesty do dvou větví?
-* **Pokud došlo k rozdělení / odbočce (např. hlavní cvik + práce na klidu):** Trénovaly se tyto dvě věci souběžně vedle sebe, nebo se původní nácvik pozastavil? Podle čeho jste poznala, že mezikrok pes zvládl a je čas se vrátit zpět do hlavní linie?
-* Jak jste si to poznamenala a jak jste věděla, na co navázat a k čemu se případně vrátit?
-* Přinesla tato změna nějakou potíž, práci navíc či opomenutí? Pokud ano, kdy a jakou? Pokud ne, co Vám umožnilo mít přehled?
+- Co jste chtěla udělat původně a co jste udělala jinak?
+- Šlo o přesunutí termínu, opakování kroku, návrat, přeskočení, vložení mezikroku, nebo rozdělení cesty do dvou větví?
+- **Pokud došlo k rozdělení / odbočce (např. hlavní cvik + práce na klidu):** Trénovaly se tyto dvě věci souběžně vedle sebe, nebo se původní nácvik pozastavil? Podle čeho jste poznala, že mezikrok pes zvládl a je čas se vrátit zpět do hlavní linie?
+- Jak jste si to poznamenala a jak jste věděla, na co navázat a k čemu se případně vrátit?
+- Přinesla tato změna nějakou potíž, práci navíc či opomenutí? Pokud ano, kdy a jakou? Pokud ne, co Vám umožnilo mít přehled?
 
 ## Blok 5 · Jeden konkrétní klient mezi lekcemi (13–25 min)
 
@@ -120,20 +120,20 @@ Možná doptání:
 
 **5.1 Vyberme jednoho klienta, se kterým jste nedávno měla lekci. Co se dělo od konce této lekce až do dalšího kontaktu nebo další lekce?**
 
-* Co měl po lekci dělat? Jak se o zadání dozvěděl?
-* Co jste se dozvěděla o tom, co skutečně trénoval? Jakým způsobem?
-* Co jste potřebovala vědět, abyste určila další postup?
-* Jak proběhla Vaše reakce nebo další lekce?
-* Co v tomto případě fungovalo dobře?
+- Co měl po lekci dělat? Jak se o zadání dozvěděl?
+- Co jste se dozvěděla o tom, co skutečně trénoval? Jakým způsobem?
+- Co jste potřebovala vědět, abyste určila další postup?
+- Jak proběhla Vaše reakce nebo další lekce?
+- Co v tomto případě fungovalo dobře?
 
 **5.2 Vybavíte si v této nebo jiné nedávné spolupráci případ, kdy něco neproběhlo podle očekávání? Co se přesně stalo?**
 
 Pokud takový případ nevybaví, nenutit hledání problému: popsat, díky čemu konkrétní spolupráce fungovala. Pokud problém zazní, upřednostnit tato doptání:
 
-* Co jste potřebovala a co Vám chybělo?
-* Jak jste situaci nakonec vyřešila?
-* Co to způsobilo? Zdrželo Vás to, musela jste něco zopakovat, změnit zadání nebo klient čekal?
-* Kdy se něco podobného stalo naposledy předtím? (Jen pokud je čas a respondentka si vybaví.)
+- Co jste potřebovala a co Vám chybělo?
+- Jak jste situaci nakonec vyřešila?
+- Co to způsobilo? Zdrželo Vás to, musela jste něco zopakovat, změnit zadání nebo klient čekal?
+- Kdy se něco podobného stalo naposledy předtím? (Jen pokud je čas a respondentka si vybaví.)
 
 ### Volitelné větve v rámci bloku 5
 
@@ -155,10 +155,10 @@ Jen když souvisejí s právě popsanou událostí:
 
 Možná doptání:
 
-* Jak poznáte, že je potřeba na něco reagovat? Pokud přichází více věcí naráz, podle čeho vybíráte pořadí?
-* Co Vám na současném způsobu vyhovuje?
-* Kdy naposledy se něco přehlédlo nebo dohledávalo? Co z toho vyplynulo?
-* Kolik času přibližně zabrala tato konkrétní situace?
+- Jak poznáte, že je potřeba na něco reagovat? Pokud přichází více věcí naráz, podle čeho vybíráte pořadí?
+- Co Vám na současném způsobu vyhovuje?
+- Kdy naposledy se něco přehlédlo nebo dohledávalo? Co z toho vyplynulo?
+- Kolik času přibližně zabrala tato konkrétní situace?
 
 ## Blok 7 · Dopad a závěr (28–30 min)
 
