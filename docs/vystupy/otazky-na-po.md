@@ -1,9 +1,9 @@
-# Otázky na FB2 a co ještě nevíme
+# Otevřené otázky na PO a co ještě nevíme
 
-**Projekt:** TrainLoop · **Tým 5** · připraveno 9. 10. 2026 po rozhovoru s trenérkou a FB1
-**Podklady:** [plán úprav](plan-uprav-po-fb1.md) · [výsledky rozhovoru](rozhovor/vysledky.md) · [feedback PO z FB1](po-feedback-fb1.md) · [feature-breakdown.xlsx](feature-breakdown.xlsx)
+**Projekt:** TrainLoop · **Tým 5** · stav po FB2 (9. 10. 2026)
+**Podklady:** [výsledky rozhovoru](rozhovor/vysledky.md) · [feedback PO](po-feedback.md) · [feature-breakdown.xlsx](feature-breakdown.xlsx)
 
-U každé otázky máme připravený návrh týmu. Otázka 0 je na FB2 zodpovězená. **Alternativní návrhy** u otázek 1, 3, 5 a 7 se týkají věcí, které už rozhodl [upravený plán](upravenyPlan.md) nebo PO ve FB1. V breakdownu je proto neměníme a necháváme je na rozhodnutí PO.
+Otázky připravené na FB2, které na schůzce nepadly, a otázky, které vznikly potom. Co PO už rozhodla, je v [po-feedback.md](po-feedback.md). Čísla otázek používají breakdown i user stories („FB2, otázka N“). U každé otázky máme připravený návrh týmu. **Alternativní návrhy** u otázek 1, 3, 5 a 7 se týkají věcí, které už rozhodl [upravený plán](upravenyPlan.md) nebo PO ve FB1. V breakdownu je proto neměníme a necháváme je na rozhodnutí PO.
 
 ---
 
@@ -19,12 +19,6 @@ U každé otázky máme připravený návrh týmu. Otázka 0 je na FB2 zodpověz
 ---
 
 ## 🔴 Priorita 1: ovlivňují datový model a hlavní obrazovky
-
-### 0. Kdo aplikaci používá první a za co trenér platí ✅ zodpovězeno na FB2
-
-- **Otázka na PO:** Má aplikace začínat u trenéra, který pozve klienty (dnešní model), nebo i u psovoda jako jeho deník, ke kterému ho trenér později pozve?
-- **Z rozhovoru:** Trenérka problém necítí (WhatsApp jí stačí, od klientů nic nevyžaduje), psaní zadání by pro ni byla práce navíc. Bolest nese klient. Respondentka sama vede papírový deník pro každého psa a sport.
-- **Rozhodnuto na FB2:** Psovod může aplikaci používat i sám a zdarma jako deník psa, nebo ho pozve trenér. Zve vždycky trenér, i psovoda, který už aplikaci používá sám. Platí jen trenér, a to za aktivní klienty, kterým prodává podporu mezi lekcemi. Platí [Lean Canvas 1.4](lean-canvas.md), breakdown a backlog s ním počítají (F-01 a nová F-47 odsouhlaseny).
 
 ### 1. Podoba větvení plánu (F-15)
 
@@ -60,7 +54,7 @@ U každé otázky máme připravený návrh týmu. Otázka 0 je na FB2 zodpověz
 
 - **Otázka na PO:** Stačí, když psovod uvidí odpověď trenéra v aplikaci, nebo potřebuje upozornění i mimo ni (e-mail, push), aby TrainLoop nahradil WhatsApp?
 - **Proč se ptáme:** WhatsApp psovoda na odpověď upozorní sám. Když se do aplikace nevrátí, odpověď nenajde.
-- **Návrh týmu:** V MVP štítek „nová odpověď“ v aplikaci, e-mail jako nice to have.
+- **Návrh týmu:** V MVP štítek „nová odpověď“ v aplikaci, e-mail jako nice to have. Odesílání e-mailů aplikace stejně umí kvůli pozvánkám a obnově hesla (F-48), takže e-mailové upozornění jde přidat levně.
 - **Alternativní návrh:** E-mail trenérovi o novém dotazu (F-46) do MVP. Trenér, který aplikaci zrovna nemá otevřenou, by jinak dotaz neviděl a klienti by zůstali u WhatsAppu.
 
 ### 6. Vlastní psi trenéra (F-45)
@@ -103,3 +97,9 @@ U každé otázky máme připravený návrh týmu. Otázka 0 je na FB2 zodpověz
 - **Otázka na PO:** Jak klientům co nejvíc usnadnit vložení odkazu na video?
 - **Proč se ptáme:** Dnes klienti posílají video přímo do WhatsAppu.
 - **Návrh týmu:** Krátký návod u pole (YouTube neveřejné video, Google Disk) a náhled videa po vložení odkazu.
+
+### 12. Vidí trenér poznámky psovoda? (F-47)
+
+- **Otázka na PO:** Má trenér vidět poznámky, které si psovod k psovi zapisuje z lekcí a seminářů?
+- **Proč se ptáme:** Deník psa (F-47) je po FB2 součást MVP. Poznámky ze seminářů u jiných trenérů ale psovod nemusí chtít sdílet.
+- **Návrh týmu:** Ne, poznámky vidí jen psovod. Sdílení poznámek s trenérem případně později.

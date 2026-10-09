@@ -52,7 +52,7 @@ Po FB 2 platí jeden model. Varianta B z verze 1.3-B je potvrzená PO a sloučen
 
 ## Změny ve verzi 1.3
 
-Podle [rozhovoru s trenérkou](rozhovor/vysledky.md) a [feedbacku PO z FB1](po-feedback-fb1.md):
+Podle [rozhovoru s trenérkou](rozhovor/vysledky.md) a [feedbacku PO z FB1](po-feedback.md#fb1-před-rozhovorem):
 
 - **Problem:** hlavním problémem je zadání, které si klient z lekce nezapamatuje (H4 a H9 podpořeny). Organizace více disciplín a srovnávání efektivity vypadly, protože H1 se nepotvrdila a trenérka historii tréninků nevede.
 - **Existing Alternatives:** doplněno ústní zadání, poznámky klienta, WhatsApp a papírové deníky. Strava a habit trackery vypadly, v rozhovoru se nepoužívají.
