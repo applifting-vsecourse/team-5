@@ -14,6 +14,8 @@
 | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | • Běžná cloudová infrastruktura (databáze, hosting)<br>• Vývoj a údržba webové aplikace<br>• Práce vývojového týmu (hodinová sazba × hodiny, výpočet po konzultaci s Honzou)<br>• Doména a DNS<br>• Cíl: návratnost do cca 6 měsíců (viz [nákladová struktura](nakladova-struktura.xlsx)) | **B2B SaaS předplatné pro trenéry:**<br>• Solo trenér: 490 Kč / měsíc (do 15 aktivních psů)<br>• Psí škola / Pro: 990 Kč / měsíc (neomezeně psů)<br>• Pro psovody: 0 Kč (včetně více psů v rámci výcviku pod trenérem) |
 
+Alternativní model, kde aplikaci začíná používat psovod: [varianta B](lean-canvas-varianta-b.md) (k diskusi na FB 2).
+
 ## Změny ve verzi 1.3
 
 Podle [rozhovoru s trenérkou](rozhovor/vysledky.md) a [feedbacku PO z FB1](po-feedback-fb1.md):
