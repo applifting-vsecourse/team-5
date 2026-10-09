@@ -17,3 +17,10 @@ Rozhovor proběhl v souladu se scénářem projektu TrainLoop a přinesl konkré
 - **H3 & H6 (Složitost předávání/dohledávání videí a zadání): Spíše oslabena u trenérky, částečně podpořena u klientů.** WhatsApp trenérce pro asynchronní kontrolu plně stačí a videa zpětně nedohledává. Jako klientka se však k videím vrací.
 - **H4 & H9 (Chybějící zadání / nejasnosti mezi lekcemi): Podpořena.** Klienti ztrácejí kontext, nezapíšou si dostatek informací z ústního zadání a doma nevědí, co přesně cvičit.
 - **H5 (Nestačí procentuální úspěšnost): Podpořena.** Úspěšnost měří přesným chováním, soustředěním a zvládnutím dílčích mikrokroků, nikoli jedním číslem.
+- **H7 (Zpětná vazba s odstupem stačí): Spíše podpořena.** Klienti mezi lekcemi aktivně posílají videa a dotazy přes WhatsApp a trenérka odpovídá podle potřeby, od krátkého „děláš to super, pokračuj“ po delší dialog s doptáváním. Hranice tohoto způsobu vedení v rozhovoru nezazněly.
+- **H8 (Správa klientů má doložitelnou časovou či finanční náročnost): Nezaznělo.** Čas na administrativu ani placené nástroje respondentka nezmínila. Od klientů nic nevyžaduje a pokrok pozná na další lekci.
+
+## 3. Mezery
+
+- Pohled klientů (psovodů) známe zprostředkovaně přes pozorování respondentky.
+- Disciplíny z briefu (canicross, nosework, poslušnost) v rozhovoru nezazněly, respondentka se věnuje pasení a dogfrisbee.

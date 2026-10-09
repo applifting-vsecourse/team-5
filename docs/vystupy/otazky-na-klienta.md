@@ -2,6 +2,7 @@
 
 **Projekt:** TrainLoop  
 **Kontext:** Příprava na schůzku s PO k odsouhlasení Feature Breakdownu (Sprint 1)  
+**Stav po FB1 a rozhovoru (9. 10.):** u každé otázky je vyznačeno, co je zodpovězené. Otevřené body přešly do [otazky-fb2.md](otazky-fb2.md).  
 **Cíl schůzky:** Vyjasnit otevřené otázky z Feature Breakdownu, ověřit předpoklady týmu a dohodnout přesný rozsah MVP.
 
 > **Doporučení pro vedení schůzky (podle metodiky kurzu):**
@@ -18,6 +19,8 @@ _Otázky, bez jejichž vyřešení nelze správně navrhnout datový model, wire
 
 ### 1. Nelineární plán a rozvětvení cesty (Vazba na F-14, F-15)
 
+> ✅ **Částečně zodpovězeno.** PO (FB1): větvení nepřekombinovat. Rozhovor: trenérka krok, který pes nechápe, rozdělí na dílčí kroky a o posunu rozhoduje podle chování psa (ručně). Podobu větvení ukážeme na FB2 ([otazky-fb2.md](otazky-fb2.md), otázka 1).
+
 - **Otázka na PO:** Jak přesně v praxi vypadá větvení plánu na konkrétním příkladu se Zoe?
 - **Kontext & Doptání:**
   - V briefu je uvedeno: _„podle toho, jak to psovi jde, se vracím o úkol zpátky, přeskakuju dopředu, nebo cíl rozdělím na dvě samostatné cesty.“_
@@ -30,6 +33,8 @@ _Otázky, bez jejichž vyřešení nelze správně navrhnout datový model, wire
 
 ### 2. Oprávnění a správa plánu trenér vs. psovod (Vazba na F-01, F-16, F-38)
 
+> ✅ **Zodpovězeno (upravený plán).** Plán upravují psovod i trenér, pes může mít více trenérů.
+
 - **Otázka na PO:** Může mít pes v aplikaci více trenérů současně a jaká je hierarchie jejich pravomocí?
 - **Kontext & Doptání:**
   - Věnujete se canicrossu, noseworku a poslušnosti – vede Zoe jedna trenérka na vše, nebo má na každou disciplínu jiného trenéra?
@@ -37,11 +42,13 @@ _Otázky, bez jejichž vyřešení nelze správně navrhnout datový model, wire
   - Může trenér přímo přepsat/smazat úkol, který si psovod sám vytvořil, nebo trenér své úkoly přidává odděleně? Co se stane, když trenér změní plán, o kterém psovod ještě neví?
   - Ve wireframu sestavuje plán jen trenér (přes Klienti → pes klienta). Má plán upravovat i psovod? Může psovod aplikaci používat i bez trenéra?
 - **Návrh / Předpoklad týmu:**  
-  Pro MVP umožnit nasdílet psa více trenérům, přičemž trenér vidí všechny disciplíny. Předpokládáme, že plán může upravovat **psovod i trenér**. Toto je třeba s PO potvrdit. Trenérovy úpravy by měly být v plánu vizuálně odlišeny (např. štítek „Od trenéra“).
+  Pes může mít více trenérů a trenér vidí všechny disciplíny. Plán upravují **psovod i trenér** (upravený plán). Trenérovy úpravy by měly být v plánu vizuálně odlišeny (např. štítek „Od trenéra“).
 
 ---
 
 ### 3. Metrika tréninku a význam „% úspěšnosti“ (Vazba na F-24)
+
+> ⏳ **Otevřené.** Záznam obsahuje % úspěšnosti, poznámku a odkaz na video (upravený plán). Jak % určit a zda za cvik, nebo za trénink → [otazky-fb2.md](otazky-fb2.md), otázka 3.
 
 - **Otázka na PO:** Co přesně v praxi vyjadřuje „% úspěšnosti“ u různých disciplín a musí být povinné?
 - **Kontext & Doptání:**
@@ -55,6 +62,8 @@ _Otázky, bez jejichž vyřešení nelze správně navrhnout datový model, wire
 ---
 
 ### 4. Cíl u tréninkového plánu (Vazba na F-12)
+
+> ✅ **Zodpovězeno (PO, FB1).** Plán zvládá dlouhodobé cíle i drobné triky.
 
 - **Otázka na PO:** Potřebuje trenér u plánu zadat i cíl, ke kterému plán vede?
 - **Kontext & Doptání:**
@@ -71,6 +80,8 @@ _Otázky ovlivňující hlavní obrazovku (dashboard) a každodenní používán
 
 ### 5. Životní cyklus tréninku a neodcvičené úkoly (Vazba na F-20, F-21, F-23)
 
+> ✅ **Částečně zodpovězeno (PO, FB1).** Vzor Runna: přesunout, nebo přeskočit. Kdo zařazuje tréninky do dnů a co se stane s přeskočeným cvikem → [otazky-fb2.md](otazky-fb2.md), otázky 2 a 4.
+
 - **Otázka na PO:** Co se má v týdenním kalendáři stát s tréninkem, který psovod v daný den neodcvičil?
 - **Kontext & Doptání:**
   - Má úkol automaticky „přepadnout“ do dalšího dne, zůstat v minulém dni označený jako „neodcvičeno“, nebo se vrátit do zásobníku úkolů daného cíle?
@@ -85,6 +96,8 @@ _Otázky ovlivňující hlavní obrazovku (dashboard) a každodenní používán
 
 ### 6. Formát a workflow předávání videí (Vazba na F-25, F-28, F-30)
 
+> ✅ **Zodpovězeno (upravený plán).** Externí odkaz na video, žádný upload. Jak klientům vložení odkazu usnadnit → [otazky-fb2.md](otazky-fb2.md), otázka 11.
+
 - **Otázka na PO:** Odkud dnes trenérky a psovodi berou odkazy na videa a co pro ně představuje nejmenší tření?
 - **Kontext & Doptání:**
   - Shodli jsme se, že do MVP nebudeme nahrávat těžké video soubory na náš server (F-28 je Mimo rozsah).
@@ -97,6 +110,8 @@ _Otázky ovlivňující hlavní obrazovku (dashboard) a každodenní používán
 ---
 
 ### 7. Forma aplikace pro pilotní provoz: Web vs. Nativní mobil (Vazba na F-40)
+
+> ✅ **Zodpovězeno (upravený plán).** Responzivní webová aplikace / PWA.
 
 - **Otázka na PO:** Stačí pro studentský pilot responzivní webová aplikace optimalizovaná pro mobil (PWA), nebo je nezbytná nativní aplikace z App Store / Google Play?
 - **Kontext & Doptání:**
@@ -113,6 +128,8 @@ _Otázky zpřesňující interakci a notifikace mezi oběma stranami._
 
 ### 8. Onboarding a první propojení na cvičáku (Vazba na F-08, F-09)
 
+> ✅ **Zodpovězeno (upravený plán).** Zve trenér, klient se registruje přes pozvánku.
+
 - **Otázka na PO:** Jak přesně probíhá moment, kdy trenérka začne vést psa v TrainLoop? Kdo koho zve?
 - **Kontext & Doptání:**
   - Založí psa psovod a dá trenérce kód na hodině, nebo naopak trenérka pošle svým klientům pozvánku, aby si psa zaregistrovali pod její účet?
@@ -125,6 +142,8 @@ _Otázky zpřesňující interakci a notifikace mezi oběma stranami._
 
 ### 9. Rychlost reakce trenéra a notifikace (Vazba na F-30, F-32, F-33)
 
+> ⏳ **Otevřené.** Návrh: v MVP štítek „nová odpověď“ v aplikaci (F-33), e-mail jako nice to have (F-46) → [otazky-fb2.md](otazky-fb2.md), otázka 5.
+
 - **Otázka na PO:** Jak trenérky v praxi pracují se zpětnou vazbou – vyžadují okamžitá upozornění?
 - **Kontext & Doptání:**
   - Prochází trenérka záznamy klientů nárazově (např. jednou týdně večer v bloku), nebo potřebuje vědět o každém záznamu ihned?
@@ -136,6 +155,8 @@ _Otázky zpřesňující interakci a notifikace mezi oběma stranami._
 ---
 
 ### 10. Navigace a výchozí obrazovka podle role (Vazba na F-01)
+
+> ✅ **Návrh týmu zapracován do sitemapy.** PO ve FB1 potvrdil, že horní přehled svěřenců odpovídá pohledu trenéra.
 
 - **Otázka na PO:** Co má v aplikaci vidět psovod a co trenér?
 - **Kontext & Doptání:**
@@ -151,6 +172,8 @@ _Otázky zpřesňující interakci a notifikace mezi oběma stranami._
 _Otázky pro upřesnění detailů a rozsahu dat._
 
 ### 11. Více psů na účtu a detail profilu psa (Vazba na F-04, F-06)
+
+> ✅ **Zodpovězeno (upravený plán).** Více psů na účtu psovoda, i pod trenérem zdarma.
 
 - **Otázka na PO:** Je pro pilotní MVP nezbytné podporovat více psů na jednom účtu psovoda?
 - **Kontext & Doptání:**
