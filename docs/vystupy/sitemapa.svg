@@ -23,7 +23,7 @@
   <rect width="1040" height="740" fill="#ffffff"/>
 
   <text x="40" y="34" font-size="20" font-weight="700" fill="#0f172a">TrainLoop — sitemapa</text>
-  <text x="40" y="54" class="s">Stav wireframu ve Figmě k 9. 10. a úpravy podle rozhovoru, FB1 a FB2 · popis v sitemapa.md</text>
+  <text x="40" y="54" class="s">Stav wireframu ve Figmě k 11. 10. a úpravy podle rozhovoru, FB1 a FB2 · popis v sitemapa.md</text>
 
   <!-- Veřejná část -->
   <text x="40" y="84" class="lbl">VEŘEJNÁ ČÁST</text>
@@ -77,7 +77,7 @@
   <rect x="310" y="340" width="200" height="44" rx="8" class="upd"/>
   <text x="326" y="360" class="t">Konec tréninku</text>
   <text x="326" y="376" class="s">% · hodnocení · odkaz na video</text>
-  <rect x="310" y="410" width="200" height="44" rx="8" class="miss"/>
+  <rect x="310" y="410" width="200" height="44" rx="8" class="page"/>
   <text x="326" y="430" class="t">Přesunout / Přeskočit</text>
   <text x="326" y="446" class="s">dialog u tréninku (Runna)</text>
   <line x1="410" y1="314" x2="410" y2="338" class="arr" marker-end="url(#arrow)"/>
@@ -90,7 +90,7 @@
   <text x="576" y="360" class="t">Detail klienta</text>
   <text x="576" y="376" class="s">psi · záznamy k reakci</text>
 
-  <rect x="800" y="340" width="200" height="44" rx="8" class="miss"/>
+  <rect x="800" y="340" width="200" height="44" rx="8" class="page"/>
   <text x="816" y="360" class="t">Záznam tréninku</text>
   <text x="816" y="376" class="s">video · % · vlákno</text>
   <line x1="760" y1="362" x2="798" y2="362" class="arr" marker-end="url(#arrow)"/>
@@ -104,7 +104,7 @@
 
   <line x1="410" y1="560" x2="410" y2="598" class="arr" marker-end="url(#arrow)"/>
   <path d="M310,552 H285 V625 H262" class="arr" marker-end="url(#arrow)"/>
-  <rect x="60" y="600" width="200" height="50" rx="8" class="miss"/>
+  <rect x="60" y="600" width="200" height="50" rx="8" class="page"/>
   <text x="76" y="621" class="t">Poznámky</text>
   <text x="76" y="638" class="s">z lekcí a seminářů · jen psovod</text>
   <rect x="310" y="600" width="200" height="50" rx="8" class="upd"/>
@@ -112,7 +112,7 @@
   <text x="326" y="638" class="s">cíl · cviky · větvení</text>
 
   <line x1="510" y1="625" x2="558" y2="625" class="arr" marker-end="url(#arrow)"/>
-  <rect x="560" y="600" width="240" height="50" rx="8" class="miss"/>
+  <rect x="560" y="600" width="240" height="50" rx="8" class="page"/>
   <text x="576" y="621" class="t">Naplánovat trénink</text>
   <text x="576" y="638" class="s">dny v týdnu → Týden psovoda</text>
 
@@ -125,8 +125,6 @@
   <text x="340" y="716" class="s">ve wireframu</text>
   <rect x="435" y="704" width="22" height="14" rx="3" class="upd"/>
   <text x="465" y="716" class="s">ve wireframu, upravit</text>
-  <rect x="610" y="704" width="22" height="14" rx="3" class="miss"/>
-  <text x="640" y="716" class="s">ve wireframu chybí</text>
   <rect x="775" y="704" width="22" height="14" rx="3" class="key"/>
   <text x="805" y="716" class="s">vede na ni víc cest</text>
 </svg>
