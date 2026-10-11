@@ -59,7 +59,7 @@
   <text x="556" y="213" class="ht">Klienti</text>
   <text x="556" y="231" class="hs">jen trenér</text>
   <rect x="790" y="190" width="210" height="52" rx="8" class="head"/>
-  <text x="806" y="213" class="ht">Profil</text>
+  <text x="806" y="213" class="ht">Účet</text>
   <text x="806" y="231" class="hs">kód od trenéra, heslo, účet</text>
 
   <!-- Psi -->

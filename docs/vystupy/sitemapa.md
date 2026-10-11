@@ -19,7 +19,7 @@
 
 ## Jak vzniká a probíhá trénink
 
-1. **Trenér pozve klienta** (Klienti → Pozvat klienta). Nový klient na úvodní obrazovce zvolí _Mám pozvánku_, zaregistruje se a založí psa. Psovod, který aplikaci už používá sám, zadá kód v _Profilu_ a vybere psy, které s trenérem sdílí. Pes se trenérovi objeví v _Klientech_.
+1. **Trenér pozve klienta** (Klienti → Pozvat klienta). Nový klient na úvodní obrazovce zvolí _Mám pozvánku_, zaregistruje se a založí psa. Psovod, který aplikaci už používá sám, zadá kód v _Účtu_ a vybere psy, které s trenérem sdílí. Pes se trenérovi objeví v _Klientech_.
 2. **Trenér otevře psa klienta:** _Klienti_ → _Detail klienta_ → jeho pes → _Pes_. Je to stejná obrazovka, jakou vidí psovod u svého psa.
 3. **Trenér (nebo psovod sám) složí plán:** na obrazovce _Pes_ tlačítkem + otevře _Tvorbu tréninku_. Zadá cíl a princip, pak přidává bloky _Jednotlivý cvik_ a _Sekvence cviků_, každý cvik s instrukcí a kritériem. Krok, který pes nechápe, rozdělí na dílčí kroky.
 4. **Plán se naplánuje:** vybere dny v týdnu a období (od–do). Tréninky se psovodovi objeví v _Týdnu_ a v _Aktivitách_ psa, rozvrh po týdnech a dnech jako v aplikaci Runna.
@@ -52,16 +52,16 @@ Sloupec _Wireframe_: název rámce ve Figmě. Co se ve wireframech změnilo podl
 | ↳ Pozvat klienta                       | Pozvat klienta (modál)                                           | E-mail klienta nebo kód / odkaz k předání na lekci                                                                                                                  | F-08, F-09       |
 | ↳ Detail klienta                       | detail klienta                                                   | Psi klienta (klik vede na _Pes_) a seznam záznamů čekajících na reakci. Dnes je tu jeden chat s celým klientem, vlákno ale patří pod konkrétní trénink              | F-31, F-32       |
 | ↳ ↳ Záznam tréninku                    | Záznam tréninku                                                  | Odeslaný záznam (video, %, hodnocení, poznámka) a vlákno s trenérem. Psovod se sem dostane z Týdne nebo z Aktivit psa                                               | F-30, F-33       |
-| **Profil**                             | Účet                                                             | Jméno, e-mail, změna hesla, _Mám kód od trenéra_, odhlásit se, smazat účet                                                                                          | F-01, F-09, F-39 |
+| **Účet**                               | Účet                                                             | Jméno, e-mail, změna hesla, _Mám kód od trenéra_, odhlásit se, smazat účet                                                                                          | F-01, F-09, F-39 |
 
-**Navigace** (spodní lišta): psovod _Psi · Týden · Profil_, trenér navíc _Klienti_. Ve wireframu jsou zatím popisky „TAB 2 / TAB 4 / TAB 5“.
+**Navigace** (spodní lišta): psovod _Psi · Týden · Účet_, trenér navíc _Klienti_.
 
 ## Hlavní cesty
 
 1. **Trenér začíná:** Registrace → Klienti → Pozvat klienta.
 2. **Klient se připojí:** Úvodní stránka → Mám pozvánku → Registrace → Nový pes → pes se trenérovi objeví v Klientech.
 3. **Psovod začíná sám:** Úvodní stránka → Registrace → Nový pes → Pes → + → Tvorba tréninku → Naplánovat trénink. Poznámky z lekcí: Pes → Poznámky.
-4. **Psovod, který aplikaci už používá, dostane pozvánku:** Profil → Mám kód od trenéra → výběr psů → pes se trenérovi objeví v Klientech.
+4. **Psovod, který aplikaci už používá, dostane pozvánku:** Účet → Mám kód od trenéra → výběr psů → pes se trenérovi objeví v Klientech.
 5. **Trenér zadá trénink:** Klienti → Detail klienta → Pes → + → Tvorba tréninku (cíl, princip, cviky) → Naplánovat trénink → trénink je v Týdnu klienta.
 6. **Psovod trénuje:** Týden → den → Trénink (cvik po cviku) → Konec → %, hodnocení, poznámka, odkaz na video → Odeslat.
 7. **Psovod nestihne trénink:** Týden → trénink → Přesunout (jiný den či týden), nebo Přeskočit.
@@ -93,7 +93,5 @@ Stav Figmy k 11. 10.: každá obrazovka ze sitemapy má wireframe a zjištění 
 | Pes, Poznámky    | Aktivity s výsledkem a odpovědí trenéra, deník psa                   | Z6, Z11, FB2 |
 | Nový pes         | Jméno, plemeno, barva, disciplíny, fotka                             | UP           |
 | Registrace, Účet | Volba psovod / trenér, Mám kód od trenéra                            | FB2          |
-
-Zbývá sjednotit popisky spodní lišty (_Profil_ v sitemapě, _Účet_ v designu).
 
 Otevřené otázky jsou v [otazky-na-po.md](otazky-na-po.md), rozhodnutí PO v [po-feedback.md](po-feedback.md).
