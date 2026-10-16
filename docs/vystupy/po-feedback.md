@@ -36,14 +36,14 @@ PO poslala před planningem, co chce vidět na konci sprintu. Stories jsou na bo
 
 Dobře: backlog v GitHubu (stories, akceptační kritéria, Definition of Ready, mimo rozsah), přehledná sitemapa s popsanými cestami, rozhovor s hypotézami a závěry propsanými do breakdownu.
 
-| Výtka                                                                  | Co jsme změnili                                                                                                                        |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Lean Canvas: nereálné náklady bez vývoje, metriky bez dopadu na byznys | [Lean Canvas 1.5](lean-canvas.md): vývoj 192 000 Kč, cashflow na 36 měsíců, bod zvratu v 15. měsíci, metriky příjmu a konverze trenérů |
-| Wireframy málo rozpracované                                            | Obrazovky sprintu 2 dopracované ve Figmě včetně prázdných a chybových stavů                                                            |
-| Design téměř chyběl                                                    | Design systém a obrazovky sprintu 2 ve Figmě, tokeny shodné s aplikací                                                                 |
-| Breakdown: nekonzistentní granularita                                  | [Breakdown](feature-breakdown.xlsx) má 32 features stejné velikosti, drobné části jsou stories                                         |
-| Komunikace s PO téměř neprobíhala                                      | Pravidlo výše, tento záznam a dotazy průběžně během sprintu                                                                            |
-| Discovery bez doporučení, kudy dál                                     | [Doporučení v Lean Canvasu](lean-canvas.md#doporučení-kudy-dál)                                                                        |
+| Výtka                                                                  | Co jsme změnili                                                                                                                                              |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Lean Canvas: nereálné náklady bez vývoje, metriky bez dopadu na byznys | [Lean Canvas 1.5](lean-canvas.md): vývoj 192 000 Kč, cashflow na 36 měsíců, bod zvratu v 15. měsíci, metriky příjmu a konverze trenérů                       |
+| Wireframy málo rozpracované                                            | [Nová podrobná sada](https://www.figma.com/design/IjEnmXXeJB8YBOWPjWiFu3/Trainloop-wireframe?node-id=0-1) všech 21 wireframů a desktop pro trenéra           |
+| Design téměř chyběl                                                    | [Design systém](https://www.figma.com/design/LBlhF1wiyl639ENDDG2RWE/Trainloop) (tokeny, 11 komponent) a 10 obrazovek sprintu 2, tokeny shodné s `global.css` |
+| Breakdown: nekonzistentní granularita                                  | [Breakdown](feature-breakdown.xlsx) má 32 features stejné velikosti, drobné části jsou stories                                                               |
+| Komunikace s PO téměř neprobíhala                                      | Pravidlo výše, tento záznam a dotazy průběžně během sprintu                                                                                                  |
+| Discovery bez doporučení, kudy dál                                     | [Doporučení v Lean Canvasu](lean-canvas.md#doporučení-kudy-dál)                                                                                              |
 
 ## FB2 (po rozhovoru)
 

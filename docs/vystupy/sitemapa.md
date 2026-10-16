@@ -1,6 +1,6 @@
 # TrainLoop — Sitemapa
 
-**Stav:** aktualizace 9. 10. 2026 po rozhovoru s trenérkou, FB1 a FB2 ([feedback PO](po-feedback.md), [Lean Canvas 1.4](lean-canvas.md)): psovod může aplikaci používat i sám, zve vždycky trenér. Sloupec _Wireframe_ odpovídá stavu [wireframu ve Figmě](https://www.figma.com/design/IjEnmXXeJB8YBOWPjWiFu3/Trainloop-wireframe?node-id=0-1) k 9. 10. Čísla `F-xx` odkazují na [feature-breakdown.xlsx](feature-breakdown.xlsx).
+**Stav:** aktualizace 16. 10. 2026 po standupu sprintu 2 ([komunikace s PO](po-feedback.md), [Lean Canvas 1.5](lean-canvas.md)): psovod může aplikaci používat i sám, zve vždycky trenér. Sloupec _Wireframe_ odpovídá [wireframům ve Figmě](https://www.figma.com/design/IjEnmXXeJB8YBOWPjWiFu3/Trainloop-wireframe?node-id=0-1). Design obrazovek sprintu 2 je ve [Figmě Trainloop](https://www.figma.com/design/LBlhF1wiyl639ENDDG2RWE/Trainloop), stránka _Obrazovky sprintu 2_. Čísla `F-xx` odkazují na [feature-breakdown.xlsx](feature-breakdown.xlsx).
 
 ![Sitemapa TrainLoop](sitemapa.svg)
 
@@ -22,7 +22,7 @@
 1. **Trenér pozve klienta** (Klienti → Pozvat klienta). Nový klient na úvodní obrazovce zvolí _Mám pozvánku_, zaregistruje se a založí psa. Psovod, který aplikaci už používá sám, zadá kód v _Účtu_ a vybere psy, které s trenérem sdílí. Pes se trenérovi objeví v _Klientech_.
 2. **Trenér otevře psa klienta:** _Klienti_ → _Detail klienta_ → jeho pes → _Pes_. Je to stejná obrazovka, jakou vidí psovod u svého psa.
 3. **Trenér (nebo psovod sám) složí plán:** na obrazovce _Pes_ tlačítkem + otevře _Tvorbu tréninku_. Zadá cíl a princip, pak přidává bloky _Jednotlivý cvik_ a _Sekvence cviků_, každý cvik s instrukcí a kritériem. Krok, který pes nechápe, rozdělí na dílčí kroky.
-4. **Plán se naplánuje:** vybere dny v týdnu a období (od–do). Tréninky se psovodovi objeví v _Týdnu_ a v _Aktivitách_ psa, rozvrh po týdnech a dnech jako v aplikaci Runna.
+4. **Trénink se naplánuje:** trenér vybere jeden konkrétní den (standup 15. 10.). Trénink se psovodovi objeví v _Týdnu_ v ten den a v _Aktivitách_ psa, rozvrh po týdnech a dnech jako v aplikaci Runna. Stejný trénink víckrát v týdnu později vyřeší duplikace (F-15).
 5. **Psovod trénuje.** Otevře trénink a prochází cviky jeden po druhém („Aktuální cvik 3/20“) s instrukcí a kritériem u každého. Když trénink nestihne, **přesune** ho na jiný den nebo ho **přeskočí**.
 6. **Psovod odešle záznam.** Na obrazovce _Konec_ zadá % úspěšnosti, rychlé hodnocení a poznámku, vloží odkaz na video a odešle.
 7. **Trenér reaguje.** V _Detailu klienta_ vidí záznamy čekající na reakci. Otevře _Záznam tréninku_, odpoví ve vlákně a podle potřeby upraví plán v _Tvorbě tréninku_. Psovod u tréninku uvidí štítek „nová odpověď“.
@@ -37,13 +37,13 @@ Sloupec _Wireframe_: název rámce ve Figmě. Co se ve wireframech změnilo podl
 | -------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
 | **Úvodní stránka**                     | Úvodní stránka                                                   | Co je TrainLoop, tlačítka _Mám pozvánku_, _Přihlásit se_, _Registrace_                                                                                              | —                |
 | ↳ Mám pozvánku                         | Pozvánka (modál)                                                 | Zadání kódu od trenéra (nebo otevření odkazu z e-mailu), pak registrace a propojení s trenérem                                                                      | F-07             |
-| ↳ Registrace, Přihlášení, Obnova hesla | Registrace psovoda, Přihlášení (modál), Zapomenuté heslo (modál) | Standardní formuláře. Psovod se registruje i bez pozvánky, trenér si zvolí trenérský účet (volba role ve wireframu chybí)                                           | F-01             |
+| ↳ Registrace, Přihlášení, Obnova hesla | Registrace psovoda, Přihlášení (modál), Zapomenuté heslo (modál) | Standardní formuláře. Psovod se registruje i bez pozvánky, trenér zvolí „Jsem trenér“                                                                               | F-01             |
 | **Psi**                                | Psi                                                              | Seznam psů s fotkou, jménem a plemenem. Barevný proužek = barva psa v kalendáři, psovod ji volí při založení psa. Tlačítko + přidá psa                              | F-04             |
-| ↳ Nový pes                             | Nový pes (modál)                                                 | Jméno, plemeno s našeptáváním, barva psa pro kalendář. Doplnit fotku a disciplíny                                                                                   | F-04             |
+| ↳ Nový pes                             | Nový pes (modál)                                                 | Jméno, plemeno s našeptáváním, barva psa pro kalendář, fotka a disciplíny                                                                                           | F-04             |
 | ↳ **Pes** (detail)                     | Pes                                                              | Fotka, jméno, plemeno a _Aktivity_: tréninky po dnech se záznamy, videi a odpověďmi trenéra. Tlačítko + vede na _Tvorbu tréninku_                                   | F-04, F-18       |
 | ↳ ↳ Poznámky                           | Poznámky                                                         | Poznámky psovoda z lekcí a seminářů k tomuto psovi: datum, název, text. Vidí je jen psovod                                                                          | F-05             |
 | ↳ ↳ **Tvorba tréninku**                | Tvorba tréninku                                                  | Cíl a princip, bloky _Jednotlivý cvik_ a _Sekvence cviků_ s instrukcí a kritériem, rozdělení kroku na dílčí kroky, + přidat blok, koš smazat                        | F-09 – F-11      |
-| ↳ ↳ ↳ Naplánovat trénink               | Naplánovat trénink (modál)                                       | Dny v týdnu a období (od–do). Tréninky se pak objeví v Týdnu klienta                                                                                                | F-13             |
+| ↳ ↳ ↳ Naplánovat trénink               | Naplánovat trénink (modál)                                       | Výběr jednoho dne. Trénink se pak objeví v Týdnu klienta                                                                                                            | F-13             |
 | **Týden**                              | Týden                                                            | Výběr týdne, dny Po–Ne s barevnými proužky podle psů. Po kliknutí na den karta tréninku se seznamem cviků, stavem (odcvičeno / přeskočeno) a štítkem „nová odpověď“ | F-13, F-23       |
 | ↳ Přesunout / Přeskočit                | Přesunout / Přeskočit (modál)                                    | Dialog u tréninku: přesunout na jiný den či týden, nebo přeskočit                                                                                                   | F-14             |
 | ↳ Trénink (průchod)                    | Trénink                                                          | „Aktuální cvik 3/20“, název cviku, instrukce a kritérium, šipkami na předchozí a další cvik                                                                         | F-17, F-09       |
@@ -82,16 +82,18 @@ Sloupec _Wireframe_: název rámce ve Figmě. Co se ve wireframech změnilo podl
 
 Stav Figmy k 11. 10.: každá obrazovka ze sitemapy má wireframe a zjištění z rozhovoru a feedbacku PO jsou v nich promítnutá.
 
-| Obrazovka        | Co ukazuje                                                           | Podle        |
-| ---------------- | -------------------------------------------------------------------- | ------------ |
-| Tvorba tréninku  | Hlavička cíle s principem, rozdělený krok                            | Z2, Z3, FB1  |
-| Trénink          | U cviku instrukce a kritérium zvládnutí                              | Z1, Z2       |
-| Konec tréninku   | % úspěšnosti, soustředění, opakované chyby, poznámka, odkaz na video | UP, Z4       |
-| Týden            | Karta tréninku se stavem „nová odpověď“, Přesunout, Přeskočit        | FB1 (Runna)  |
-| Detail klienta   | Seznam záznamů čekajících na reakci místo chatu                      | UP, Z7       |
-| Záznam tréninku  | Výsledek, video a vlákno s trenérem pod konkrétním tréninkem         | UP, Z5       |
-| Pes, Poznámky    | Aktivity s výsledkem a odpovědí trenéra, deník psa                   | Z6, Z11, FB2 |
-| Nový pes         | Jméno, plemeno, barva, disciplíny, fotka                             | UP           |
-| Registrace, Účet | Volba psovod / trenér, Mám kód od trenéra                            | FB2          |
+| Obrazovka          | Co ukazuje                                                           | Podle           |
+| ------------------ | -------------------------------------------------------------------- | --------------- |
+| Tvorba tréninku    | Hlavička cíle s principem, rozdělený krok                            | Z2, Z3, FB1     |
+| Trénink            | U cviku instrukce a kritérium zvládnutí                              | Z1, Z2          |
+| Konec tréninku     | % úspěšnosti, soustředění, opakované chyby, poznámka, odkaz na video | UP, Z4          |
+| Týden              | Karta tréninku se stavem „nová odpověď“, Přesunout, Přeskočit        | FB1 (Runna)     |
+| Detail klienta     | Seznam záznamů čekajících na reakci místo chatu                      | UP, Z7          |
+| Záznam tréninku    | Výsledek, video a vlákno s trenérem pod konkrétním tréninkem         | UP, Z5          |
+| Pes, Poznámky      | Aktivity s výsledkem a odpovědí trenéra, deník psa                   | Z6, Z11, FB2    |
+| Nový pes           | Jméno, plemeno, barva, disciplíny, fotka                             | UP              |
+| Registrace, Účet   | Volba psovod / trenér, Mám kód od trenéra                            | FB2             |
+| Naplánovat trénink | Výběr jednoho dne místo dnů v týdnu a období                         | Standup 15. 10. |
+| Pozvat klienta     | Kód pro klienta k předání na lekci, e-mail jako druhá možnost        | PO 14. 10.      |
 
 Otevřené otázky jsou v [otazky-na-po.md](otazky-na-po.md), rozhodnutí PO v [po-feedback.md](po-feedback.md).
