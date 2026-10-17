@@ -48,5 +48,8 @@ jobs:
       - name: Build backend
         run: pnpm backend build
 
+      - name: Test registration API
+        run: pnpm backend test:auth
+
       - name: Build frontend
         run: pnpm frontend build

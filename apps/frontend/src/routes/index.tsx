@@ -66,7 +66,7 @@ function LandingPage() {
                   asChild
                   size="lg"
                 >
-                  <Link to={ROUTES.signup}>Create an account</Link>
+                  <Link to={ROUTES.signup}>Registrace</Link>
                 </Button>
                 <Button
                   asChild
