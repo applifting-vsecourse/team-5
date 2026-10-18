@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router"
-import { Dog, Users } from "lucide-react"
+import { CalendarDays, Dog, UserRound, Users } from "lucide-react"
 
 import { ROUTES } from "@/app/routes"
 
@@ -28,6 +28,16 @@ export function BottomNav() {
           />
           Psi
         </Link>
+        <Link
+          to={ROUTES.week}
+          className={linkClassName}
+        >
+          <CalendarDays
+            aria-hidden="true"
+            className="size-6"
+          />
+          Týden
+        </Link>
         {user.role === "trainer" ? (
           <Link
             to={ROUTES.clients}
@@ -40,6 +50,16 @@ export function BottomNav() {
             Klienti
           </Link>
         ) : null}
+        <Link
+          to={ROUTES.account}
+          className={linkClassName}
+        >
+          <UserRound
+            aria-hidden="true"
+            className="size-6"
+          />
+          Účet
+        </Link>
       </div>
     </nav>
   )

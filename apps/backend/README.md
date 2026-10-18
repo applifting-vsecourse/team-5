@@ -152,6 +152,10 @@ roles with the Prisma adapter, apply migrations to an isolated PostgreSQL test
 database, set `AUTH_TEST_DATABASE_URL` to its connection URL and run
 `pnpm backend test:auth:postgres`. The test removes only the accounts it creates.
 
+`test:auth` also checks login error privacy, persistent session cookies and logout
+revocation. The frontend always requests `rememberMe: true`; BetterAuth manages
+the cookie lifetime and invalidation. No auth tokens are stored in local storage.
+
 In this application, [**better-auth**](https://www.npmjs.com/package/better-auth) is utilized as the authentication module. It is designed to be easily extended with additional features or plugins, such as social login providers, multi-factor authentication, and more. Whenever database changes related to authentication are required, the following command should be run:
 
 ```bash

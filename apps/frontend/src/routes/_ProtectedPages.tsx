@@ -10,10 +10,12 @@ import { HeaderMenu } from "@/features/auth/components/HeaderMenu"
 import { encodeRedirectUri } from "@/features/auth/lib/redirect"
 
 export const Route = createFileRoute("/_ProtectedPages")({
-  loader: async ({ context, location }) => {
-    const session = await context.queryClient.ensureQueryData(authSessionQueryOptions())
-    if (session) return
-    context.queryClient.clear()
+  beforeLoad: async ({ context, location }) => {
+    const session = await context.queryClient.fetchQuery({
+      ...authSessionQueryOptions(),
+      staleTime: 0,
+    })
+    if (session) return { user: session.user }
     throw redirect({
       to: ROUTES.login,
       search: { from: encodeRedirectUri(location) },

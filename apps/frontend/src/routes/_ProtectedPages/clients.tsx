@@ -3,13 +3,9 @@ import { createFileRoute, redirect } from "@tanstack/react-router"
 import { ROUTES } from "@/app/routes"
 import { Seo } from "@/components/Seo"
 
-import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
-
 export const Route = createFileRoute("/_ProtectedPages/clients")({
-  beforeLoad: async ({ context }) => {
-    const session = await context.queryClient.ensureQueryData(authSessionQueryOptions())
-    if (!session) throw redirect({ to: ROUTES.login })
-    if (session.user.role !== "trainer") throw redirect({ to: ROUTES.dogs })
+  beforeLoad: ({ context }) => {
+    if (context.user.role !== "trainer") throw redirect({ to: ROUTES.dogs })
   },
   component: ClientsPage,
 })
