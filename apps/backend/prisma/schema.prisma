@@ -18,6 +18,7 @@ datasource db {
 enum UserRole {
   user
   admin
+  trainer
 
   @@map("user_role")
 }

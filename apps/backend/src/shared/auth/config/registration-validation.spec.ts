@@ -35,4 +35,13 @@ describe('registration validation', () => {
   it('reports a typed validation failure', () => {
     expect(() => validateRegistration({})).toThrow(RegistrationValidationError);
   });
+
+  it.each([null, 'true', 'false', 1, {}, []])(
+    'rejects a non-boolean trainer choice: %p',
+    (isTrainer) => {
+      expect(() =>
+        validateRegistration({ name: 'Jana', privacyConsent: true, isTrainer }),
+      ).toThrow(expect.objectContaining({ code: 'INVALID_TRAINER_SELECTION' }));
+    },
+  );
 });

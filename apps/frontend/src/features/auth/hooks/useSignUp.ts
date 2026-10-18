@@ -9,6 +9,7 @@ export type SignUpInput = {
   email: string
   password: string
   privacyConsent: boolean
+  isTrainer: boolean
 }
 
 export function useSignUp() {
@@ -22,7 +23,9 @@ export function useSignUp() {
         email: input.email,
         password: input.password,
         // Request-only value, validated by the BetterAuth registration hook.
-        fetchOptions: { body: { privacyConsent: input.privacyConsent } },
+        fetchOptions: {
+          body: { privacyConsent: input.privacyConsent, isTrainer: input.isTrainer },
+        },
       })
       if (error) throw registrationError(error.code)
     },

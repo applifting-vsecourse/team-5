@@ -5,6 +5,7 @@ import { Header } from "@/components/Header/Header"
 import { Seo } from "@/components/Seo"
 
 import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
+import { BottomNav } from "@/features/auth/components/BottomNav"
 import { HeaderMenu } from "@/features/auth/components/HeaderMenu"
 import { encodeRedirectUri } from "@/features/auth/lib/redirect"
 
@@ -26,9 +27,10 @@ function Layout() {
     <>
       <Seo />
       <Header userMenu={<HeaderMenu />} />
-      <main className="min-h-svh">
+      <main className="min-h-svh pb-16">
         <Outlet />
       </main>
+      <BottomNav />
     </>
   )
 }

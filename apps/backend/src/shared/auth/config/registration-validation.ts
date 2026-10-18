@@ -1,6 +1,9 @@
 export class RegistrationValidationError extends Error {
   constructor(
-    public readonly code: 'NAME_REQUIRED' | 'PRIVACY_CONSENT_REQUIRED',
+    public readonly code:
+      | 'NAME_REQUIRED'
+      | 'PRIVACY_CONSENT_REQUIRED'
+      | 'INVALID_TRAINER_SELECTION',
     message: string,
   ) {
     super(message);
@@ -16,6 +19,12 @@ export function validateRegistration(body: Record<string, unknown>): string {
     throw new RegistrationValidationError(
       'PRIVACY_CONSENT_REQUIRED',
       'Pro registraci je nutný souhlas se zpracováním osobních údajů.',
+    );
+  }
+  if (body.isTrainer !== undefined && typeof body.isTrainer !== 'boolean') {
+    throw new RegistrationValidationError(
+      'INVALID_TRAINER_SELECTION',
+      'Vyberte, zda se registrujete jako trenér.',
     );
   }
   return body.name.trim();

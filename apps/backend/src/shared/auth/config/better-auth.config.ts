@@ -31,6 +31,23 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
       }
     }),
   },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user, ctx) => {
+          if (ctx?.path !== '/sign-up/email') return;
+          // Only registration can select a trainer account. The role field
+          // remains server-owned, including on BetterAuth's update-user API.
+          return {
+            data: {
+              ...user,
+              role: ctx.body?.isTrainer === true ? 'trainer' : 'user',
+            },
+          };
+        },
+      },
+    },
+  },
   user: {
     additionalFields: {
       role: {

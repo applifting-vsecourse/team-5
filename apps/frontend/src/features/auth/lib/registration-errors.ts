@@ -1,4 +1,4 @@
-export type RegistrationField = "name" | "email" | "password" | "privacyConsent"
+export type RegistrationField = "name" | "email" | "password" | "privacyConsent" | "isTrainer"
 
 export class RegistrationError extends Error {
   constructor(
@@ -12,6 +12,8 @@ export class RegistrationError extends Error {
 
 export function registrationError(code?: string): RegistrationError {
   switch (code) {
+    case "INVALID_TRAINER_SELECTION":
+      return new RegistrationError("Vyberte, zda se registrujete jako trenér.", "isTrainer")
     case "USER_ALREADY_EXISTS":
     case "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL":
       return new RegistrationError("Účet s tímto e-mailem už existuje.", "email", true)

@@ -23,6 +23,7 @@ import type { SignUpInput } from "@/features/auth/hooks/useSignUp"
 import type { RegistrationError } from "@/features/auth/lib/registration-errors"
 
 const schema = z.object({
+  isTrainer: z.boolean(),
   name: z.string().trim().min(1, "Vyplňte jméno."),
   email: z.string().trim().min(1, "Vyplňte e-mail.").email("Zadejte platný e-mail."),
   password: z
@@ -46,7 +47,7 @@ type SignUpFormProps = {
 export function SignUpForm({ isLoading, error, onSubmit }: SignUpFormProps) {
   const form = useForm<SignUpInput>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", email: "", password: "", privacyConsent: false },
+    defaultValues: { name: "", email: "", password: "", privacyConsent: false, isTrainer: false },
   })
   const { setError } = form
 
@@ -129,6 +130,30 @@ export function SignUpForm({ isLoading, error, onSubmit }: SignUpFormProps) {
                   {...field}
                 />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="isTrainer"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex min-h-12 items-center gap-3">
+                <FormControl>
+                  <Checkbox
+                    name={field.name}
+                    ref={field.ref}
+                    checked={field.value}
+                    onCheckedChange={(value) => field.onChange(value === true)}
+                    onBlur={field.onBlur}
+                    disabled={isLoading}
+                  />
+                </FormControl>
+                <FormLabel className="min-h-12 flex-1 cursor-pointer py-3 leading-normal">
+                  Jsem trenér
+                </FormLabel>
+              </div>
               <FormMessage />
             </FormItem>
           )}
