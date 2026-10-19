@@ -24,13 +24,13 @@ export const Route = createFileRoute("/_ProtectedPages")({
 
 function Layout() {
   return (
-    <>
+    <div className="flex min-h-svh flex-col">
       <Seo />
       <Header userMenu={<HeaderMenu />} />
-      <main className="min-h-svh pb-20 md:pb-8">
+      <main className="flex-1 pb-20 md:pb-8">
         <Outlet />
       </main>
       <BottomNav />
-    </>
+    </div>
   )
 }

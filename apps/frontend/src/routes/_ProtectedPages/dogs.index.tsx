@@ -7,7 +7,7 @@ import { dogsQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 import { CreateDogDialog } from "@/features/dog/components/CreateDogDialog"
 import { DogList } from "@/features/dog/components/DogList"
 
-export const Route = createFileRoute("/_ProtectedPages/dogs")({
+export const Route = createFileRoute("/_ProtectedPages/dogs/")({
   component: DogsPage,
 })
 

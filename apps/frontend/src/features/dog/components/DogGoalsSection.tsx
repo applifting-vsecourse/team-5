@@ -97,7 +97,7 @@ export function DogGoalsSection({ dogName }: DogGoalsSectionProps) {
           {goals.map((goal) => (
             <Card
               key={goal.id}
-              className="flex min-h-11 items-center justify-between gap-3 border border-border p-3 transition-colors hover:border-foreground/30"
+              className="flex min-h-11 flex-row items-center justify-between gap-3 border border-border p-3 transition-colors hover:border-foreground/30"
             >
               <div className="min-w-0">
                 <span className="truncate text-sm font-medium text-foreground">{goal.title}</span>

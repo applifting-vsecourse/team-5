@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router"
-import { Calendar, Dog, User, Users } from "lucide-react"
+import { Calendar, PawPrint, User, Users } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   {
     label: "Psi",
     to: "/dogs",
-    icon: Dog,
+    icon: PawPrint,
     matchPrefix: "/dogs",
   },
   {
