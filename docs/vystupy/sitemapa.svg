@@ -114,7 +114,7 @@
   <line x1="510" y1="625" x2="558" y2="625" class="arr" marker-end="url(#arrow)"/>
   <rect x="560" y="600" width="240" height="50" rx="8" class="page"/>
   <text x="576" y="621" class="t">Naplánovat trénink</text>
-  <text x="576" y="638" class="s">dny v týdnu → Týden psovoda</text>
+  <text x="576" y="638" class="s">jeden den → Týden psovoda</text>
 
   <!-- Legenda -->
   <rect x="40" y="704" width="22" height="14" rx="3" class="pub"/>
