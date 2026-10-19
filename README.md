@@ -56,6 +56,16 @@ pnpm backend seed                  # re-seed the database
 pnpm dev:down                      # stop the database container
 ```
 
+## Branches and staging
+
+| Branch        | What it is                                          | How changes get in                              |
+| ------------- | --------------------------------------------------- | ----------------------------------------------- |
+| `feature/...` | One user story, cut from `dev`                      | Commits                                         |
+| `dev`         | Integration branch, default target for PRs          | PR from a feature branch, green CI + 1 approval |
+| `main`        | Staging: https://team-5.vsepractical.applifting.dev | Release PR from `dev`, green CI + 1 approval    |
+
+Every merge to `main` builds and deploys through [`deploy.yml`](.github/workflows/deploy.yml) (Coolify). Details in [`CLAUDE.md`](CLAUDE.md#branches-and-pull-requests).
+
 ## Deployment
 
 The whole app ships as one Docker Compose stack — Postgres, the backend, and the frontend (built to static files, served by nginx). See [`docker-compose.yml`](docker-compose.yml).
