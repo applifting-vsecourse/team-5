@@ -9,6 +9,7 @@ export async function createDog(input: CreateDogInput): Promise<Dog> {
         name: input.name,
         breed: input.breed ?? undefined,
         color: input.color,
+        disciplines: input.disciplines ?? [],
       },
     })
     .json()

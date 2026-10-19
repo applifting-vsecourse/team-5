@@ -52,6 +52,7 @@ describe('DogsService', () => {
       breed: 'Kolie',
       color: 2,
       ownerId: 'u1',
+      disciplines: [],
     });
   });
 
@@ -72,6 +73,7 @@ describe('DogsService', () => {
       breed: null,
       color: 3,
       ownerId: 'u1',
+      disciplines: [],
     });
   });
 

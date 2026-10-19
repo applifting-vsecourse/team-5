@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   UseGuards,
   UsePipes,
@@ -22,6 +23,7 @@ import {
 } from '@nestjs/swagger';
 import { CreateDogDto } from './dto/create-dog.dto';
 import { DogResponseDto } from './dto/dog.response.dto';
+import { UpdateDogDto } from './dto/update-dog.dto';
 
 @ApiTags('dogs')
 @Controller('dogs')
@@ -72,7 +74,22 @@ export class DogsController {
       name: body.name,
       breed: body.breed,
       color: body.color,
+      disciplines: body.disciplines,
     });
+    return DogResponseDto.fromDomain(dog);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update an existing dog' })
+  @ApiResponse({ status: 200, type: DogResponseDto })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
+  @ApiResponse({ status: 404, description: 'Dog not found' })
+  async update(
+    @User() user: Identity,
+    @Param('id') id: string,
+    @Body() body: UpdateDogDto,
+  ): Promise<DogResponseDto> {
+    const dog = await this.dogsService.updateDog(user, id, body);
     return DogResponseDto.fromDomain(dog);
   }
 }

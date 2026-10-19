@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Calendar, ChevronLeft, ChevronRight, FileText } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -11,8 +12,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Skeleton } from "@/components/ui/skeleton"
 
 import type { DogActivity } from "@/features/dog/api/dogSchemas"
+import { dogActivitiesQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 
 const DEFAULT_ACTIVITIES: DogActivity[] = [
   {
@@ -70,20 +73,42 @@ const DEFAULT_ACTIVITIES: DogActivity[] = [
 const ITEMS_PER_PAGE = 3
 
 type DogActivitiesSectionProps = {
+  dogId?: string
   dogName: string
   activities?: DogActivity[]
 }
 
+function formatActivityDate(date?: Date | string, fallback?: string): string {
+  if (fallback) return fallback
+  if (!date) return "Nedávno"
+  const d = typeof date === "string" ? new Date(date) : date
+  if (isNaN(d.getTime())) return "Nedávno"
+  return d.toLocaleDateString("cs-CZ", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+}
+
 export function DogActivitiesSection({
+  dogId,
   dogName,
-  activities = DEFAULT_ACTIVITIES,
+  activities: initialActivities,
 }: DogActivitiesSectionProps) {
   const [page, setPage] = useState(1)
   const [selectedActivity, setSelectedActivity] = useState<DogActivity | null>(null)
 
-  const totalPages = Math.ceil(activities.length / ITEMS_PER_PAGE) || 1
+  const activitiesQuery = useQuery({
+    ...dogActivitiesQueryOptions(dogId ?? ""),
+    enabled: Boolean(dogId) && initialActivities === undefined,
+  })
+
+  const effectiveActivities =
+    initialActivities ?? activitiesQuery.data ?? (dogId ? [] : DEFAULT_ACTIVITIES)
+
+  const totalPages = Math.ceil(effectiveActivities.length / ITEMS_PER_PAGE) || 1
   const startIndex = (page - 1) * ITEMS_PER_PAGE
-  const currentItems = activities.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  const currentItems = effectiveActivities.slice(startIndex, startIndex + ITEMS_PER_PAGE)
 
   const hasNextPage = page < totalPages
   const hasPrevPage = page > 1
@@ -135,7 +160,12 @@ export function DogActivitiesSection({
         )}
       </div>
 
-      {activities.length === 0 ? (
+      {activitiesQuery.isLoading && !initialActivities ? (
+        <div className="space-y-3">
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <Skeleton className="h-24 w-full rounded-xl" />
+        </div>
+      ) : effectiveActivities.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-6 text-center">
           <p className="text-sm text-muted-foreground">
             {dogName} zatím nemá zaznamenané žádné tréninky.
@@ -165,7 +195,7 @@ export function DogActivitiesSection({
                   <div>
                     <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Calendar className="size-3.5" />
-                      {item.date}
+                      {formatActivityDate(item.completedAt, item.date)}
                     </span>
                     <h3 className="mt-1 font-semibold text-foreground transition-colors group-hover:text-primary">
                       {item.title}

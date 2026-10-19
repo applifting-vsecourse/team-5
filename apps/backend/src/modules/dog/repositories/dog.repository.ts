@@ -46,13 +46,44 @@ export class DogRepository {
     breed?: string | null;
     color: number;
     ownerId: string;
+    disciplines?: string[];
   }): Promise<Dog> {
     const dog = await this.prisma.dog.create({
       data: {
         name: createDogData.name,
         breed: createDogData.breed ?? null,
         color: createDogData.color,
+        disciplines: createDogData.disciplines ?? [],
         owner: { connect: { id: createDogData.ownerId } },
+      },
+    });
+    return mapPrismaDogToDomain(dog);
+  }
+
+  async updateDog(
+    id: string,
+    ownerId: string,
+    updateData: {
+      name?: string;
+      breed?: string | null;
+      color?: number;
+      disciplines?: string[];
+    },
+  ): Promise<Dog | null> {
+    const existing = await this.prisma.dog.findFirst({
+      where: { id, ownerId, isArchived: false },
+    });
+    if (!existing) return null;
+
+    const dog = await this.prisma.dog.update({
+      where: { id },
+      data: {
+        ...(updateData.name !== undefined && { name: updateData.name }),
+        ...(updateData.breed !== undefined && { breed: updateData.breed }),
+        ...(updateData.color !== undefined && { color: updateData.color }),
+        ...(updateData.disciplines !== undefined && {
+          disciplines: updateData.disciplines,
+        }),
       },
     });
     return mapPrismaDogToDomain(dog);

@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { ChevronRight, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -13,51 +14,44 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 
 import type { DogGoal } from "@/features/dog/api/dogSchemas"
-
-const DEFAULT_GOALS: DogGoal[] = [
-  {
-    id: "g1",
-    title: "Spolehlivá chůze u nohy",
-    category: "Poslušnost",
-    status: "active",
-  },
-  {
-    id: "g2",
-    title: "Odložení za pohybu",
-    category: "Poslušnost",
-    status: "active",
-  },
-  {
-    id: "g3",
-    title: "Přivolání s rušením",
-    category: "Každodenní dovednosti",
-    status: "active",
-  },
-]
+import { dogGoalsQueryOptions } from "@/features/dog/api/dogsQueryOptions"
+import { useCreateGoal } from "@/features/dog/hooks/useCreateGoal"
 
 type DogGoalsSectionProps = {
+  dogId?: string
   dogName: string
+  goals?: DogGoal[]
 }
 
-export function DogGoalsSection({ dogName }: DogGoalsSectionProps) {
-  const [goals, setGoals] = useState<DogGoal[]>(DEFAULT_GOALS)
+export function DogGoalsSection({ dogId, dogName, goals: initialGoals }: DogGoalsSectionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newGoalTitle, setNewGoalTitle] = useState("")
+  const [newGoalDiscipline, setNewGoalDiscipline] = useState("")
 
-  const handleAddGoal = (e: React.FormEvent) => {
+  const goalsQuery = useQuery({
+    ...dogGoalsQueryOptions(dogId ?? ""),
+    enabled: Boolean(dogId) && initialGoals === undefined,
+  })
+
+  const createGoalMutation = useCreateGoal(dogId ?? "")
+
+  const displayGoals = initialGoals ?? goalsQuery.data ?? []
+
+  const handleAddGoal = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newGoalTitle.trim()) return
 
-    const newGoal: DogGoal = {
-      id: `g-${Date.now()}`,
-      title: newGoalTitle.trim(),
-      category: "Individuální plán",
-      status: "active",
+    if (dogId) {
+      await createGoalMutation.mutateAsync({
+        title: newGoalTitle.trim(),
+        discipline: newGoalDiscipline.trim() || undefined,
+      })
     }
-    setGoals((prev) => [newGoal, ...prev])
     setNewGoalTitle("")
+    setNewGoalDiscipline("")
     setIsDialogOpen(false)
   }
 
@@ -90,24 +84,33 @@ export function DogGoalsSection({ dogName }: DogGoalsSectionProps) {
         </Button>
       </div>
 
-      {goals.length === 0 ? (
+      {goalsQuery.isLoading && !initialGoals ? (
+        <div className="space-y-2">
+          <Skeleton className="h-11 w-full rounded-xl" />
+          <Skeleton className="h-11 w-full rounded-xl" />
+        </div>
+      ) : displayGoals.length === 0 ? (
         <p className="text-sm text-muted-foreground">Zatím nebyly nastaveny žádné aktivní cíle.</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {goals.map((goal) => (
-            <Card
-              key={goal.id}
-              className="flex min-h-11 flex-row items-center justify-between gap-3 border border-border p-3 transition-colors hover:border-foreground/30"
-            >
-              <div className="min-w-0">
-                <span className="truncate text-sm font-medium text-foreground">{goal.title}</span>
-                {goal.category && (
-                  <span className="ml-2 text-xs text-muted-foreground">({goal.category})</span>
-                )}
-              </div>
-              <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
-            </Card>
-          ))}
+          {displayGoals.map((goal) => {
+            const disciplineLabel = goal.discipline ?? goal.category
+
+            return (
+              <Card
+                key={goal.id}
+                className="flex min-h-11 flex-row items-center justify-between gap-3 border border-border p-3 transition-colors hover:border-foreground/30"
+              >
+                <div className="min-w-0">
+                  <span className="truncate text-sm font-medium text-foreground">{goal.title}</span>
+                  {disciplineLabel && (
+                    <span className="ml-2 text-xs text-muted-foreground">({disciplineLabel})</span>
+                  )}
+                </div>
+                <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+              </Card>
+            )
+          })}
         </div>
       )}
 
@@ -132,8 +135,19 @@ export function DogGoalsSection({ dogName }: DogGoalsSectionProps) {
                   placeholder="např. Klidné čekání před vchodem"
                   value={newGoalTitle}
                   onChange={(e) => setNewGoalTitle(e.target.value)}
-                  maxLength={60}
+                  maxLength={100}
                   required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="goal-discipline">Disciplína / kategorie (volitelné)</Label>
+                <Input
+                  id="goal-discipline"
+                  placeholder="např. Poslušnost, Canicross"
+                  value={newGoalDiscipline}
+                  onChange={(e) => setNewGoalDiscipline(e.target.value)}
+                  maxLength={60}
                 />
               </div>
             </div>
@@ -146,7 +160,12 @@ export function DogGoalsSection({ dogName }: DogGoalsSectionProps) {
               >
                 Zrušit
               </Button>
-              <Button type="submit">Přidat cíl</Button>
+              <Button
+                type="submit"
+                disabled={createGoalMutation.isPending}
+              >
+                {createGoalMutation.isPending ? "Ukládání..." : "Přidat cíl"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

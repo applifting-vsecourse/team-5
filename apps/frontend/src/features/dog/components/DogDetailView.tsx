@@ -13,11 +13,9 @@ type DogDetailViewProps = {
 
 export function DogDetailView({ dog }: DogDetailViewProps) {
   const disciplinesText =
-    dog.disciplines && dog.disciplines.length > 0
-      ? dog.disciplines.join(", ")
-      : "Agility, Canicross"
+    dog.disciplines && dog.disciplines.length > 0 ? dog.disciplines.join(", ") : undefined
 
-  const subtitle = dog.breed ? `${dog.breed} · ${disciplinesText}` : disciplinesText
+  const subtitle = [dog.breed, disciplinesText].filter(Boolean).join(" · ")
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
@@ -44,14 +42,20 @@ export function DogDetailView({ dog }: DogDetailViewProps) {
 
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">{dog.name}</h1>
-          <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
+          {subtitle && <p className="truncate text-sm text-muted-foreground">{subtitle}</p>}
         </div>
       </header>
 
       {/* Sections: Aktivní cíle + Aktivity */}
       <div className="space-y-8">
-        <DogGoalsSection dogName={dog.name} />
-        <DogActivitiesSection dogName={dog.name} />
+        <DogGoalsSection
+          dogId={dog.id}
+          dogName={dog.name}
+        />
+        <DogActivitiesSection
+          dogId={dog.id}
+          dogName={dog.name}
+        />
       </div>
     </div>
   )
