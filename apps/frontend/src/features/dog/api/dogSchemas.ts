@@ -32,3 +32,23 @@ export const createDogInputSchema = z.object({
 
 export type Dog = z.infer<typeof dogSchema>
 export type CreateDogInput = z.infer<typeof createDogInputSchema>
+
+export const dogGoalSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  category: z.string().optional(),
+  status: z.enum(["active", "completed"]).default("active"),
+})
+
+export const dogActivitySchema = z.object({
+  id: z.string(),
+  date: z.string(),
+  title: z.string(),
+  status: z.enum(["completed", "skipped"]),
+  successRate: z.number().min(0).max(100).optional(),
+  rating: z.number().min(1).max(5).optional(),
+  note: z.string().optional(),
+})
+
+export type DogGoal = z.infer<typeof dogGoalSchema>
+export type DogActivity = z.infer<typeof dogActivitySchema>
