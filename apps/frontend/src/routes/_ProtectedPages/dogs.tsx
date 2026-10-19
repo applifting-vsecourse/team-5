@@ -1,12 +1,20 @@
+import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
 import { Seo } from "@/components/Seo"
+
+import { dogsQueryOptions } from "@/features/dog/api/dogsQueryOptions"
+import { CreateDogDialog } from "@/features/dog/components/CreateDogDialog"
+import { DogList } from "@/features/dog/components/DogList"
 
 export const Route = createFileRoute("/_ProtectedPages/dogs")({
   component: DogsPage,
 })
 
 function DogsPage() {
+  const dogsQuery = useQuery(dogsQueryOptions())
+  const dogs = dogsQuery.data ?? []
+
   return (
     <>
       <Seo title="Psi" />
@@ -18,7 +26,16 @@ function DogsPage() {
               Správa psů a jejich tréninkových profilů
             </p>
           </div>
+
+          <CreateDogDialog existingDogs={dogs} />
         </header>
+
+        <DogList
+          dogs={dogs}
+          isLoading={dogsQuery.isLoading}
+          error={dogsQuery.error}
+          onReload={() => void dogsQuery.refetch()}
+        />
       </section>
     </>
   )
