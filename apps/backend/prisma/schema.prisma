@@ -93,6 +93,7 @@ model User {
   sessions        Session[]
   accounts        Account[]
   quacks          Quack[]
+  dogs            Dog[]
   role            UserRole  @default(user)
 
   username        String? @db.VarChar(50)
@@ -101,4 +102,20 @@ model User {
   @@unique([email])
   @@unique([username])
   @@map("user")
+}
+
+model Dog {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(40)
+  breed       String?  @db.VarChar(100)
+  color       Int
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  isArchived  Boolean  @default(false)
+  disciplines String[] @default([])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@index([ownerId])
+  @@map("dog")
 }
