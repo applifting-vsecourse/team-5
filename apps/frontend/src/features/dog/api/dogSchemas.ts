@@ -36,26 +36,32 @@ export type CreateDogInput = z.infer<typeof createDogInputSchema>
 
 export const dogGoalSchema = z.object({
   id: z.string(),
-  dogId: z.string().optional(),
+  dogId: z.string(),
+  createdBy: z.object({ id: z.string(), name: z.string() }),
   title: z.string().min(1),
-  discipline: z.string().nullable().optional(),
-  category: z.string().optional(),
-  principle: z.string().nullable().optional(),
-  status: z.string().default("ACTIVE"),
-  order: z.number().optional(),
-  createdAt: z.coerce.date().optional(),
+  discipline: z.string().nullable(),
+  principle: z.string().nullable(),
+  status: z.enum(["ACTIVE", "COMPLETED", "PAUSED", "ARCHIVED"]),
+  order: z.number(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
 })
 
 export const dogGoalsSchema = z.array(dogGoalSchema)
 
-export const createGoalInputSchema = z.object({
-  title: z.string().trim().min(1, "Název cíle je povinný").max(100),
-  discipline: z.string().trim().max(60).optional(),
-  principle: z.string().trim().optional(),
+// Limits match the API (goal.dto.ts). An empty discipline means "none".
+export const goalFormSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "Název cíle je povinný")
+    .max(100, "Název cíle může mít nejvýš 100 znaků"),
+  discipline: z.string(),
+  principle: z.string().trim().max(2000, "Princip může mít nejvýš 2000 znaků"),
 })
 
 export type DogGoal = z.infer<typeof dogGoalSchema>
-export type CreateGoalInput = z.infer<typeof createGoalInputSchema>
+export type GoalFormValues = z.infer<typeof goalFormSchema>
 
 export const dogActivitySchema = z.object({
   id: z.string(),

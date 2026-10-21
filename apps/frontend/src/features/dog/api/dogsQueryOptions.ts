@@ -3,7 +3,13 @@ import { queryOptions } from "@tanstack/react-query"
 import { api } from "@/lib/api-client"
 
 import { dogKeys } from "./dogKeys"
-import { dogActivitiesSchema, dogGoalsSchema, dogSchema, dogsSchema } from "./dogSchemas"
+import {
+  dogActivitiesSchema,
+  dogGoalSchema,
+  dogGoalsSchema,
+  dogSchema,
+  dogsSchema,
+} from "./dogSchemas"
 
 export function dogsQueryOptions() {
   return queryOptions({
@@ -34,6 +40,17 @@ export function dogGoalsQueryOptions(dogId: string) {
       return dogGoalsSchema.parse(json)
     },
     enabled: Boolean(dogId),
+  })
+}
+
+export function goalQueryOptions(goalId: string) {
+  return queryOptions({
+    queryKey: dogKeys.goal(goalId),
+    queryFn: async () => {
+      const json = await api.get(`goals/${goalId}`).json()
+      return dogGoalSchema.parse(json)
+    },
+    enabled: Boolean(goalId),
   })
 }
 
