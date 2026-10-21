@@ -41,7 +41,7 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
         <h2 className="text-lg font-semibold tracking-tight text-foreground">Sdílení psi</h2>
 
         {client.dogs.length === 0 ? (
-          <div className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
             Klient s vámi zatím nesdílí žádného psa.
           </div>
         ) : (

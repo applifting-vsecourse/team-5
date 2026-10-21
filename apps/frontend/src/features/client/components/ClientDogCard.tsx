@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router"
 import { ChevronRight } from "lucide-react"
 
-import { DOG_COLOR_CLASSES, PesAvatar } from "@/components/PesAvatar"
+import { PesAvatar } from "@/components/PesAvatar"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
@@ -13,7 +13,6 @@ type ClientDogCardProps = {
 }
 
 export function ClientDogCard({ dog, className }: ClientDogCardProps) {
-  const colorClass = DOG_COLOR_CLASSES[dog.color] ?? "bg-dog-1"
   const subtitle = [dog.breed, dog.disciplines?.join(", ")].filter(Boolean).join(" · ")
 
   return (
@@ -23,11 +22,6 @@ export function ClientDogCard({ dog, className }: ClientDogCardProps) {
         className,
       )}
     >
-      <div
-        aria-hidden="true"
-        className={cn("w-1.5 shrink-0 self-stretch", colorClass)}
-      />
-
       <Link
         to="/dogs/$dogId"
         params={{ dogId: dog.id }}
