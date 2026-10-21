@@ -18,7 +18,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 import { authSessionQueryOptions, type Session } from "@/features/auth/api/authSessionQueryOptions"
-import { HeaderMenu } from "@/features/auth/components/HeaderMenu"
 
 export function getLandingRedirect(session: Session): string | null {
   if (!session?.user) return null
@@ -56,8 +55,7 @@ export function LandingPage() {
     <div className="flex min-h-svh flex-col bg-background">
       <Seo title="TrainLoop" />
       <Header
-        className="hidden md:block"
-        userMenu={<HeaderMenu />}
+        userMenu={null}
         nav={null}
       />
 

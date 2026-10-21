@@ -8,12 +8,12 @@ import { cn } from "@/lib/utils"
 type HeaderProps = {
   // Auth-aware menu (sign-in CTA / user dropdown). Passed as a slot so
   // `components/` doesn't have to import from `features/auth`.
-  userMenu: ReactNode
+  userMenu?: ReactNode
   nav?: ReactNode
   className?: string
 }
 
-export function Header({ userMenu, nav = <HeaderNav />, className }: HeaderProps) {
+export function Header({ userMenu = null, nav = <HeaderNav />, className }: HeaderProps) {
   return (
     <header
       className={cn(
