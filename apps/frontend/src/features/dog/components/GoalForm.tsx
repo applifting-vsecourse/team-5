@@ -47,7 +47,9 @@ export function GoalForm({ disciplines, defaultValues, isPending, onSubmit }: Go
     resolver: zodResolver(goalFormSchema),
     defaultValues: {
       title: defaultValues?.title ?? "",
-      discipline: current ?? disciplineOptions[0] ?? "",
+      // The first discipline is only a convenience for a new goal. An existing
+      // goal keeps what it has, including "" (no discipline).
+      discipline: defaultValues?.discipline ?? disciplineOptions[0] ?? "",
       principle: defaultValues?.principle ?? "",
     },
   })

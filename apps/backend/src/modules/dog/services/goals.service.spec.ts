@@ -214,6 +214,27 @@ describe('GoalsService', () => {
       expect(goalRepository.updateGoal).not.toHaveBeenCalled();
     });
 
+    it('keeps a discipline the dog no longer does when it is unchanged', async () => {
+      const { service, goalRepository, dogAccess } = setup();
+      dogAccess.getAccessibleDog.mockResolvedValue(
+        aDog({ disciplines: ['Canicross'] }),
+      );
+      goalRepository.getGoalById.mockResolvedValue(
+        aGoal({ discipline: 'Poslušnost' }),
+      );
+      goalRepository.updateGoal.mockResolvedValue(aGoal());
+
+      await service.updateGoal(owner, 'g1', {
+        title: 'Nový název',
+        discipline: 'Poslušnost',
+      });
+
+      expect(goalRepository.updateGoal).toHaveBeenCalledWith(
+        'g1',
+        expect.objectContaining({ discipline: 'Poslušnost' }),
+      );
+    });
+
     it("does not update a goal of another user's dog", async () => {
       const { service, goalRepository } = setup();
       goalRepository.getGoalById.mockResolvedValue(aGoal());

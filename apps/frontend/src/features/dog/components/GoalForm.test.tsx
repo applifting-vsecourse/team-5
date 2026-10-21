@@ -86,6 +86,30 @@ describe("GoalForm", () => {
     })
   })
 
+  it("opens a goal without discipline with no discipline selected", async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn()
+    render(
+      <GoalForm
+        disciplines={["Poslušnost", "Canicross"]}
+        defaultValues={{ title: "Chůze", discipline: "", principle: "" }}
+        isPending={false}
+        onSubmit={onSubmit}
+      />,
+    )
+
+    expect(screen.getByRole("combobox")).toHaveTextContent("Bez disciplíny")
+
+    await user.click(screen.getByRole("button", { name: "Uložit" }))
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        { title: "Chůze", discipline: "", principle: "" },
+        expect.anything(),
+      )
+    })
+  })
+
   it("keeps the goal's discipline even if the dog no longer lists it", () => {
     render(
       <GoalForm

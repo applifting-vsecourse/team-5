@@ -45,15 +45,21 @@ export class GoalsService {
   }
 
   // The discipline is picked from the dog's own disciplines (#62). An empty
-  // value means "no discipline" and is stored as null.
+  // value means "no discipline" and is stored as null. A goal may keep the
+  // discipline it already has even after the dog dropped it, so editing
+  // something else on that goal still works.
   private normalizeDiscipline(
     dog: Dog,
     discipline: string | undefined,
+    currentDiscipline?: string | null,
   ): string | null | undefined {
     if (discipline === undefined) return undefined;
     const trimmed = discipline.trim();
     if (!trimmed) return null;
-    if (!(dog.disciplines ?? []).includes(trimmed)) {
+    if (
+      trimmed !== currentDiscipline &&
+      !(dog.disciplines ?? []).includes(trimmed)
+    ) {
       throw new BadRequestException(
         `Discipline "${trimmed}" is not one of the dog's disciplines`,
       );
@@ -97,11 +103,15 @@ export class GoalsService {
     goalId: string,
     data: UpdateGoalData,
   ): Promise<Goal> {
-    const { dog } = await this.getAccessibleGoal(user, goalId);
+    const { goal, dog } = await this.getAccessibleGoal(user, goalId);
 
     return this.goalRepository.updateGoal(goalId, {
       title: data.title?.trim(),
-      discipline: this.normalizeDiscipline(dog, data.discipline),
+      discipline: this.normalizeDiscipline(
+        dog,
+        data.discipline,
+        goal.discipline,
+      ),
       principle:
         data.principle !== undefined
           ? data.principle.trim() || null
