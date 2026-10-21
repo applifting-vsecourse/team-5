@@ -19,7 +19,13 @@ export const decodeRedirectUri = (encoded?: string) => {
     }
     const url = new URL(destination, "https://trainloop.invalid")
     const path = decodeURIComponent(url.pathname)
-    const protectedPaths = [ROUTES.dogs, ROUTES.clients, ROUTES.week, ROUTES.account, ROUTES.quacks]
+    const protectedPaths = [
+      ROUTES.dogs,
+      ROUTES.clients,
+      ROUTES.week,
+      ROUTES.account,
+      ROUTES.dashboard,
+    ]
     if (!protectedPaths.some((route) => path === route || path.startsWith(`${route}/`))) {
       return undefined
     }

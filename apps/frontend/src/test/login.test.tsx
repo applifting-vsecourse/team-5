@@ -7,12 +7,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { authKeys } from "@/lib/auth-keys"
 import { routeTree } from "@/routeTree.gen"
 
+import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
+import { dogKeys } from "@/features/dog/api/dogKeys"
+
 const auth = vi.hoisted(() => ({
   signUp: vi.fn(),
   getSession: vi.fn(),
   signIn: vi.fn(),
   signOut: vi.fn(),
 }))
+const dogApi = vi.hoisted(() => ({ get: vi.fn() }))
+vi.mock("@/lib/api-client", () => ({ api: { get: dogApi.get } }))
 vi.mock("@/features/auth/lib/auth-client", () => ({
   authClient: {
     signUp: { email: auth.signUp },
@@ -76,6 +81,7 @@ beforeEach(() => {
   )
   auth.getSession.mockResolvedValue({ data: null, error: null })
   auth.signUp.mockResolvedValue({ data: { user }, error: null })
+  dogApi.get.mockReturnValue({ json: () => Promise.resolve([]) })
 })
 
 afterEach(() => {
@@ -92,6 +98,127 @@ function acceptLogin(role = "user") {
 }
 
 describe("login and logout", () => {
+  const oldDog = {
+    id: "dog-a",
+    name: "Private dog A",
+    ownerId: user.id,
+    color: 1,
+    createdAt: "2026-10-21T10:00:00Z",
+    updatedAt: "2026-10-21T10:00:00Z",
+  }
+  const otherUser = { ...user, id: "owner-2", name: "Other owner", email: "other@example.com" }
+  const newDog = { ...oldDog, id: "dog-b", ownerId: otherUser.id, name: "Private dog B" }
+
+  it("clears expired private data and late requests before another owner signs in", async () => {
+    auth.getSession.mockResolvedValue({ data: { user }, error: null })
+    dogApi.get.mockReturnValue({ json: () => Promise.resolve([oldDog]) })
+    const { interaction, router, queryClient } = await openPage("/dogs")
+    await screen.findByText(oldDog.name)
+    queryClient.setQueryData(["week", "2026-10-19"], [{ ownerId: user.id }])
+    let finish: (value: unknown) => void = () => undefined
+    const pendingKey = ["dogs", "detail", "pending"]
+    const pending = queryClient
+      .fetchQuery({
+        queryKey: pendingKey,
+        queryFn: () =>
+          new Promise((resolve) => {
+            finish = resolve
+          }),
+      })
+      .catch(() => undefined)
+    auth.getSession.mockResolvedValue({ data: null, error: null })
+    await act(async () => {
+      await router.navigate({ to: "/account" })
+    })
+    await screen.findByRole("dialog", { name: "Přihlášení" })
+    expect(queryClient.getQueryData(dogKeys.lists())).toBeUndefined()
+    expect(queryClient.getQueryData(["week", "2026-10-19"])).toBeUndefined()
+    await act(async () => {
+      finish(oldDog)
+      await pending
+    })
+    expect(queryClient.getQueryData(pendingKey)).toBeUndefined()
+    auth.signIn.mockImplementation(() => {
+      auth.getSession.mockResolvedValue({ data: { user: otherUser }, error: null })
+      return Promise.resolve({ data: { user: otherUser }, error: null })
+    })
+    dogApi.get.mockReturnValue({ json: () => Promise.resolve([newDog]) })
+    await fillForm(interaction)
+    await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
+    await screen.findByText(otherUser.email)
+    await act(async () => {
+      await router.navigate({ to: "/dogs" })
+    })
+    expect(await screen.findByText(newDog.name)).toBeInTheDocument()
+    expect(screen.queryByText(oldDog.name)).not.toBeInTheDocument()
+    expect(queryClient.getQueryData(dogKeys.lists())).toEqual([
+      expect.objectContaining({ id: newDog.id }),
+    ])
+  })
+
+  it("remounts private views when a session refresh changes the account", async () => {
+    auth.getSession.mockResolvedValue({ data: { user }, error: null })
+    dogApi.get.mockReturnValue({ json: () => Promise.resolve([oldDog]) })
+    const { queryClient } = await openPage("/dogs")
+    await screen.findByText(oldDog.name)
+    auth.getSession.mockResolvedValue({ data: { user: otherUser }, error: null })
+    dogApi.get.mockReturnValue({ json: () => Promise.resolve([newDog]) })
+    await act(async () => {
+      await queryClient.fetchQuery({ ...authSessionQueryOptions(), staleTime: 0 })
+    })
+    expect(await screen.findByText(newDog.name)).toBeInTheDocument()
+    expect(screen.queryByText(oldDog.name)).not.toBeInTheDocument()
+  })
+
+  it("cancels pre-login session requests so a late response cannot restore another account", async () => {
+    const { interaction, queryClient } = await openPage()
+    await screen.findByRole("dialog")
+    let finish: (value: unknown) => void = () => undefined
+    auth.getSession.mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve
+      }),
+    )
+    const pending = queryClient
+      .fetchQuery({ ...authSessionQueryOptions(), staleTime: 0 })
+      .catch(() => undefined)
+    acceptLogin()
+    await fillForm(interaction)
+    await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
+    await screen.findByRole("heading", { name: "Týden" })
+    await act(async () => {
+      finish({ data: { user: otherUser }, error: null })
+      await pending
+    })
+    expect(queryClient.getQueryData(authKeys.session())).toMatchObject({ user: { id: user.id } })
+  })
+
+  it("returns to login when a background refresh discovers session expiry", async () => {
+    auth.getSession.mockResolvedValue({ data: { user }, error: null })
+    dogApi.get.mockReturnValue({ json: () => Promise.resolve([oldDog]) })
+    const { queryClient } = await openPage("/dogs")
+    await screen.findByText(oldDog.name)
+    auth.getSession.mockResolvedValue({ data: null, error: null })
+    await act(async () => {
+      await queryClient.invalidateQueries({ queryKey: authKeys.session() })
+    })
+    expect(await screen.findByRole("dialog", { name: "Přihlášení" })).toBeInTheDocument()
+    expect(screen.queryByText(oldDog.name)).not.toBeInTheDocument()
+    expect(queryClient.getQueryData(dogKeys.lists())).toBeUndefined()
+  })
+
+  it("rechecks trainer-only routes when the refreshed session belongs to an owner", async () => {
+    auth.getSession.mockResolvedValue({ data: { user: { ...user, role: "trainer" } }, error: null })
+    const { router, queryClient } = await openPage("/clients")
+    await screen.findByText("Pozvěte prvního klienta")
+    auth.getSession.mockResolvedValue({ data: { user: otherUser }, error: null })
+    await act(async () => {
+      await queryClient.fetchQuery({ ...authSessionQueryOptions(), staleTime: 0 })
+    })
+    expect(await screen.findByRole("heading", { name: "Psi" })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe("/dogs")
+    expect(screen.queryByRole("link", { name: "Klienti" })).not.toBeInTheDocument()
+  })
   it("opens an accessible modal from the landing page and closes it with Escape", async () => {
     const { interaction, router } = await openPage("/")
     const links = await screen.findAllByRole("link", { name: "Přihlásit se" })
@@ -183,7 +310,7 @@ describe("login and logout", () => {
     await screen.findByRole("heading", { name: "Psi" })
     auth.getSession.mockResolvedValue({ data: null, error: null })
     await interaction.click(
-      within(screen.getByRole("navigation", { name: "Hlavní navigace" })).getByRole("link", {
+      within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("link", {
         name: "Účet",
       }),
     )
@@ -254,7 +381,7 @@ describe("login and logout", () => {
     const { interaction, router, queryClient } = await openPage("/dogs")
     await screen.findByRole("heading", { name: "Psi" })
     await interaction.click(
-      within(screen.getByRole("navigation", { name: "Hlavní navigace" })).getByRole("link", {
+      within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("link", {
         name: "Účet",
       }),
     )
@@ -269,7 +396,7 @@ describe("login and logout", () => {
     expect(auth.signOut).toHaveBeenCalledTimes(1)
     expect(queryClient.getQueryData(["private-dogs"])).toBeUndefined()
     expect(queryClient.getQueryData(authKeys.session())).toBeNull()
-    expect(screen.queryByRole("navigation", { name: "Hlavní navigace" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("navigation", { name: "Spodní navigace" })).not.toBeInTheDocument()
     act(() => {
       router.history.back()
     })
