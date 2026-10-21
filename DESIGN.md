@@ -15,6 +15,7 @@ These are rules, not suggestions. When a rule and a "nicer looking" idea disagre
 - **`destructive` only for destructive actions and errors.** Never for emphasis.
 - **`accent` is a hover/active surface, not a brand colour.** It tints menu items and ghost buttons on hover, so it must stay quiet. The brand colour is `primary`.
 - Body text is `foreground`; supporting text is `muted-foreground`. There is no third level.
+- **Dog colours are data, not decoration.** Each dog has one of `bg-dog-1` … `bg-dog-6` (chosen when the dog is created). Use it only to tell dogs apart: the strip on a training card, the dots in the week view, the avatar behind the dog's initial (white text). Never for buttons, headings or states.
 
 ## Layout
 
@@ -59,6 +60,12 @@ Data refreshes itself: refetch when the tab regains focus, and invalidate the qu
 - Every icon-only control has an `aria-label`.
 - Focus rings are never removed. If you restyle focus, it must stay clearly visible.
 - Text contrast at least 4.5:1 — the tokens are chosen to satisfy this; hardcoded colours are how you break it.
+
+## TrainLoop specifics
+
+- **Mobile first.** The phone (390 px wide) is the primary device: the dog owner logs a training outside. Navigation is a bottom bar — owner `Psi · Týden · Účet`, trainer adds `Klienti`. Desktop is secondary (trainer building a plan at a computer).
+- **Touch targets are at least 44 × 44 px**, including icon-only buttons (reorder arrows, edit, delete).
+- **Visual reference:** [Figma: Trainloop](https://www.figma.com/design/LBlhF1wiyl639ENDDG2RWE/Trainloop) — page _Základy_ (tokens), _Komponenty_ (Button, Input, Badge, Karta tréninku, Cvik v plánu, Spodní lišta, Dialog, Prázdný stav) and _Obrazovky sprintu 2_ (screens named after their user stories). Figma variables have the same names and values as the tokens in `global.css`; when they disagree, `global.css` wins and Figma gets fixed.
 
 ## When you are unsure
 

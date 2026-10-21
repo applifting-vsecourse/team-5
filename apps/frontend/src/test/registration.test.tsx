@@ -13,6 +13,8 @@ const auth = vi.hoisted(() => ({
   signIn: vi.fn(),
   signOut: vi.fn(),
 }))
+const dogApi = vi.hoisted(() => ({ get: vi.fn() }))
+vi.mock("@/lib/api-client", () => ({ api: { get: dogApi.get } }))
 vi.mock("@/features/auth/lib/auth-client", () => ({
   authClient: {
     signUp: { email: auth.signUp },
@@ -77,6 +79,7 @@ beforeEach(() => {
   )
   auth.getSession.mockResolvedValue({ data: null, error: null })
   auth.signUp.mockResolvedValue({ data: { user }, error: null })
+  dogApi.get.mockReturnValue({ json: () => Promise.resolve([]) })
 })
 
 afterEach(() => {
@@ -88,7 +91,7 @@ afterEach(() => {
 describe("owner registration", () => {
   it("opens registration from the landing page and validates each required field", async () => {
     const { interaction } = await openPage("/")
-    await interaction.click(await screen.findByRole("link", { name: "Registrace" }))
+    await interaction.click(await screen.findByRole("link", { name: "Zaregistrovat se" }))
     expect(await screen.findByRole("heading", { name: "Registrace psovoda" })).toBeInTheDocument()
     expect(
       screen.queryByLabelText(/username|confirm password|pozvánka|karta/i),
@@ -141,7 +144,7 @@ describe("owner registration", () => {
     await interaction.click(screen.getByRole("checkbox"))
     await interaction.click(screen.getByRole("button", { name: "Zaregistrovat se" }))
     expect(await screen.findByRole("heading", { name: "Psi" })).toBeInTheDocument()
-    expect(screen.getByText("Přidejte prvního psa")).toBeInTheDocument()
+    expect(await screen.findByText("Přidejte prvního psa")).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/dogs")
     expect(queryClient.getQueryData(authKeys.session())).toMatchObject({ user })
     expect(auth.signUp).toHaveBeenCalledExactlyOnceWith({
@@ -210,5 +213,40 @@ describe("owner registration", () => {
     const { router } = await openPage("/dogs")
     await waitFor(() => expect(router.state.location.pathname).toBe("/login"))
     expect(screen.queryByText("Přidejte prvního psa")).not.toBeInTheDocument()
+  })
+
+  it("keeps the trainer invitation code when opening registration from the landing page", async () => {
+    const { interaction, router } = await openPage("/")
+    await interaction.click(await screen.findByRole("button", { name: "Mám kód od trenéra" }))
+    await interaction.type(screen.getByLabelText("Kód pozvánky"), "ABC123")
+    await interaction.click(screen.getByRole("button", { name: "Pokračovat k registraci" }))
+    await screen.findByRole("heading", { name: "Registrace psovoda" })
+    expect(router.state.location.search).toMatchObject({ code: "ABC123" })
+  })
+
+  it("renders the existing dog list, detail and new-goal routes after integration", async () => {
+    const dog = {
+      id: "dog-1",
+      name: "Rex",
+      ownerId: user.id,
+      color: 1,
+      createdAt: "2026-10-21T10:00:00Z",
+      updatedAt: "2026-10-21T10:00:00Z",
+    }
+    auth.getSession.mockResolvedValue({ data: { user }, error: null })
+    dogApi.get.mockImplementation((path: string) => ({
+      json: () => Promise.resolve(path === "dogs" ? [dog] : path === "dogs/dog-1" ? dog : []),
+    }))
+    const { router } = await openPage("/dogs")
+    expect(await screen.findByText("Rex")).toBeInTheDocument()
+    expect(screen.queryByText("Přidejte prvního psa")).not.toBeInTheDocument()
+    await act(async () => {
+      await router.navigate({ to: "/dogs/$dogId", params: { dogId: dog.id } })
+    })
+    expect(await screen.findByRole("heading", { name: "Rex", level: 1 })).toBeInTheDocument()
+    await act(async () => {
+      await router.navigate({ to: "/dogs/$dogId/goals/new", params: { dogId: dog.id } })
+    })
+    expect(await screen.findByLabelText("Název cíle")).toBeInTheDocument()
   })
 })

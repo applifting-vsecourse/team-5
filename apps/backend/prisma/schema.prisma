@@ -22,18 +22,6 @@ enum UserRole {
   @@map("user_role")
 }
 
-model Quack {
-  id        String   @id @default(cuid())
-  text      String   @db.Text
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  @@index([userId])
-  @@map("quack")
-}
-
 model Session {
   id        String   @id
   expiresAt DateTime
@@ -83,17 +71,20 @@ model Verification {
 }
 
 model User {
-  id              String    @id
-  name            String
-  email           String
-  emailVerified   Boolean
-  image           String?   @db.Text
-  createdAt       DateTime
-  updatedAt       DateTime
-  sessions        Session[]
-  accounts        Account[]
-  quacks          Quack[]
-  role            UserRole  @default(user)
+  id                 String              @id
+  name               String
+  email              String
+  emailVerified      Boolean
+  image              String?             @db.Text
+  createdAt          DateTime
+  updatedAt          DateTime
+  sessions           Session[]
+  accounts           Account[]
+  dogs               Dog[]
+  createdGoals       TrainingGoal[]      @relation("GoalCreator")
+  workoutLogs        WorkoutLog[]        @relation("LogAuthor")
+  scheduledTrainings ScheduledTraining[] @relation("TrainingScheduler")
+  role               UserRole            @default(user)
 
   username        String? @db.VarChar(50)
   displayUsername String? @db.VarChar(50)
@@ -101,4 +92,151 @@ model User {
   @@unique([email])
   @@unique([username])
   @@map("user")
+}
+
+model Dog {
+  id          String              @id @default(cuid())
+  name        String              @db.VarChar(40)
+  breed       String?             @db.VarChar(100)
+  color       Int
+  ownerId     String
+  owner       User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  isArchived  Boolean             @default(false)
+  disciplines String[]            @default([])
+  goals       TrainingGoal[]
+  workoutLogs WorkoutLog[]
+  trainings   ScheduledTraining[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @default(now()) @updatedAt
+
+  @@index([ownerId])
+  @@map("dog")
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  ARCHIVED
+
+  @@map("goal_status")
+}
+
+enum WorkoutStatus {
+  COMPLETED
+  SKIPPED
+
+  @@map("workout_status")
+}
+
+enum FocusLevel {
+  YES
+  PARTIALLY
+  NO
+
+  @@map("focus_level")
+}
+
+enum MistakeLevel {
+  YES
+  PARTIALLY
+  NO
+
+  @@map("mistake_level")
+}
+
+model TrainingGoal {
+  id          String              @id @default(cuid())
+  dogId       String
+  dog         Dog                 @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User                @relation("GoalCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  title       String              @db.VarChar(100)
+  discipline  String?             @db.VarChar(60)
+  principle   String?             @db.Text
+  status      GoalStatus          @default(ACTIVE)
+  order       Int                 @default(0)
+  workoutLogs WorkoutLog[]
+  blocks      PlanBlock[]
+  trainings   ScheduledTraining[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @default(now()) @updatedAt
+
+  @@index([dogId, status])
+  @@index([dogId, order])
+  @@map("training_goal")
+}
+
+// One step of a goal's plan, shown top to bottom by position (#63).
+// Sequences (#64) and sub-steps (#67) will build on this model.
+model PlanBlock {
+  id          String       @id @default(cuid())
+  goalId      String
+  goal        TrainingGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  position    Int
+  title       String       @db.VarChar(100)
+  instruction String?      @db.Text
+  criterion   String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+
+  @@index([goalId, position])
+  @@map("plan_block")
+}
+
+enum TrainingStatus {
+  PLANNED
+  COMPLETED
+  SKIPPED
+
+  @@map("training_status")
+}
+
+// A goal's training put on one concrete day (#71). It shows in the owner's
+// week (#72) and is later moved (#74), skipped (#75) or completed (#77).
+// A goal has at most one PLANNED training at a time (enforced in
+// ScheduledTrainingRepository under a lock on the goal row); another day for
+// the same training is a move, not a second plan (duplication is #103).
+model ScheduledTraining {
+  id          String         @id @default(cuid())
+  goalId      String
+  goal        TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  dogId       String
+  dog         Dog            @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User           @relation("TrainingScheduler", fields: [createdById], references: [id], onDelete: Cascade)
+  date        DateTime       @db.Date
+  status      TrainingStatus @default(PLANNED)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @default(now()) @updatedAt
+
+  @@index([dogId, date])
+  @@index([goalId, status])
+  @@map("scheduled_training")
+}
+
+model WorkoutLog {
+  id               String        @id @default(cuid())
+  dogId            String
+  dog              Dog           @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  goalId           String?
+  goal             TrainingGoal? @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  authorId         String
+  author           User          @relation("LogAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  title            String        @db.VarChar(120)
+  discipline       String?       @db.VarChar(60)
+  status           WorkoutStatus @default(COMPLETED)
+  completedAt      DateTime      @default(now())
+  successRate      Int?
+  rating           Int?
+  focus            FocusLevel?
+  repeatedMistakes MistakeLevel?
+  note             String?       @db.Text
+  videoUrl         String?       @db.VarChar(500)
+  skipReason       String?       @db.Text
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @default(now()) @updatedAt
+
+  @@index([dogId, completedAt(sort: Desc)])
+  @@map("workout_log")
 }

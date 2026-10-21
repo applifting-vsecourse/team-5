@@ -1,7 +1,10 @@
 export const ROUTES = {
   home: "/",
-  quacks: "/quacks",
   dogs: "/dogs",
+  week: "/week",
+  clients: "/clients",
+  account: "/account",
   login: "/login",
   signup: "/signup",
+  dashboard: "/dashboard",
 } as const
