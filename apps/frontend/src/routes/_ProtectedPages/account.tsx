@@ -1,8 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router"
-import { LogOut, Moon, Sun } from "lucide-react"
+import { ChevronDown, LogOut, Monitor, Moon, Sun } from "lucide-react"
+import { toast } from "sonner"
 
 import { Seo } from "@/components/Seo"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Separator } from "@/components/ui/separator"
 import { useTheme } from "@/hooks/useTheme"
 
 import { useSession } from "@/features/auth/hooks/useSession"
@@ -12,10 +20,14 @@ export const Route = createFileRoute("/_ProtectedPages/account")({
   component: AccountPage,
 })
 
-function AccountPage() {
+export function AccountPage() {
   const { user } = useSession()
   const signOut = useSignOut()
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, resolvedTheme } = useTheme()
+
+  const currentThemeLabel = theme === "system" ? "Systémový" : theme === "dark" ? "Tmavý" : "Světlý"
+
+  const ThemeIcon = resolvedTheme === "dark" ? Moon : Sun
 
   return (
     <>
@@ -28,26 +40,54 @@ function AccountPage() {
 
         {user && (
           <div className="mt-8 space-y-6">
-            <div className="rounded-lg border border-border p-4">
-              <div className="text-sm font-medium text-muted-foreground">Přihlášený uživatel</div>
-              <div className="mt-1 text-lg font-semibold text-foreground">{user.name}</div>
-              <div className="text-sm text-muted-foreground">{user.email}</div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-muted-foreground">Přihlášený uživatel</p>
+              <p className="text-lg font-semibold text-foreground">{user.name}</p>
+              <p className="text-sm text-muted-foreground">{user.email}</p>
             </div>
 
+            <Separator />
+
             <div className="flex flex-col gap-3">
-              <Button
-                variant="outline"
-                className="min-h-11 w-full justify-start gap-2"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              >
-                {theme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-                Přepnout vzhled ({theme === "dark" ? "Tmavý" : "Světlý"})
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="min-h-11 w-full justify-between gap-2"
+                  >
+                    <span className="flex items-center gap-2">
+                      <ThemeIcon className="size-4" />
+                      <span>Vzhled: {currentThemeLabel}</span>
+                    </span>
+                    <ChevronDown className="size-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-56"
+                >
+                  <DropdownMenuItem onClick={() => setTheme("light")}>
+                    <Sun className="size-4" /> Světlý
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme("dark")}>
+                    <Moon className="size-4" /> Tmavý
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme("system")}>
+                    <Monitor className="size-4" /> Systémový
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               <Button
                 variant="outline"
                 className="min-h-11 w-full justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => signOut.mutate()}
+                onClick={() =>
+                  signOut.mutate(undefined, {
+                    onError: () => {
+                      toast.error("Odhlášení se nezdařilo. Zkontrolujte připojení k síti.")
+                    },
+                  })
+                }
                 disabled={signOut.isPending}
               >
                 <LogOut className="size-4" />
