@@ -1,13 +1,7 @@
+import { DOG_COLOR_CLASSES } from "@/lib/dogColors"
 import { cn } from "@/lib/utils"
 
-export const DOG_COLOR_CLASSES: Record<number, string> = {
-  1: "bg-dog-1",
-  2: "bg-dog-2",
-  3: "bg-dog-3",
-  4: "bg-dog-4",
-  5: "bg-dog-5",
-  6: "bg-dog-6",
-}
+export { DOG_COLOR_CLASSES }
 
 const SIZE_CLASSES = {
   sm: "size-8 text-xs",

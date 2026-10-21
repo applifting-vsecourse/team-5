@@ -1,11 +1,43 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
 import { TrainingStatus } from '@/generated/prisma/client';
-import { ScheduledTraining } from '@/modules/dog/domain/scheduled-training';
+import {
+  ScheduledTraining,
+  WeekTraining,
+} from '@/modules/dog/domain/scheduled-training';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ScheduledTrainingRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  // The week is the owner's own view (#72): trainings of their active dogs.
+  // A trainer sees clients' dogs elsewhere (Klienti), not in this week.
+  async getOwnerTrainingsBetween(
+    ownerId: string,
+    from: Date,
+    to: Date,
+  ): Promise<WeekTraining[]> {
+    return this.prisma.scheduledTraining.findMany({
+      where: {
+        date: { gte: from, lte: to },
+        dog: { ownerId, isArchived: false },
+      },
+      include: {
+        dog: { select: { id: true, name: true, color: true } },
+        goal: {
+          select: {
+            id: true,
+            title: true,
+            blocks: {
+              select: { id: true, title: true },
+              orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+            },
+          },
+        },
+      },
+      orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
+    });
+  }
 
   async getTrainingsByGoalId(goalId: string): Promise<ScheduledTraining[]> {
     return this.prisma.scheduledTraining.findMany({

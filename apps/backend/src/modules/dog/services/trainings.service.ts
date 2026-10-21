@@ -2,7 +2,10 @@ import {
   fromCalendarDate,
   todayInAppZone,
 } from '@/modules/dog/domain/calendar-date';
-import { ScheduledTraining } from '@/modules/dog/domain/scheduled-training';
+import {
+  ScheduledTraining,
+  WeekTraining,
+} from '@/modules/dog/domain/scheduled-training';
 import { ScheduledTrainingRepository } from '@/modules/dog/repositories/scheduled-training.repository';
 import { GoalsService } from '@/modules/dog/services/goals.service';
 import { Identity } from '@/shared/auth/domain/identity';
@@ -12,12 +15,38 @@ import {
   Injectable,
 } from '@nestjs/common';
 
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+// Six weeks: enough for a month view later, small enough for one request.
+const MAX_RANGE_IN_DAYS = 42;
+
 @Injectable()
 export class TrainingsService {
   constructor(
     private readonly scheduledTrainingRepository: ScheduledTrainingRepository,
     private readonly goalsService: GoalsService,
   ) {}
+
+  // The owner's trainings between two days, both included (#72). The range is
+  // capped so one request cannot pull a whole year.
+  async getWeekTrainings(
+    user: Identity,
+    from: string,
+    to: string,
+  ): Promise<WeekTraining[]> {
+    const fromDate = fromCalendarDate(from);
+    const toDate = fromCalendarDate(to);
+    const days = (toDate.getTime() - fromDate.getTime()) / DAY_IN_MS + 1;
+    if (days < 1 || days > MAX_RANGE_IN_DAYS) {
+      throw new BadRequestException(
+        `The range must cover 1 to ${MAX_RANGE_IN_DAYS} days`,
+      );
+    }
+    return this.scheduledTrainingRepository.getOwnerTrainingsBetween(
+      user.id,
+      fromDate,
+      toDate,
+    );
+  }
 
   // Trainings are visible exactly when their goal is; getGoal throws 404 otherwise.
   async getGoalTrainings(

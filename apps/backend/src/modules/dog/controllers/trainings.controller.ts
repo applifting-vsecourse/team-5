@@ -1,6 +1,8 @@
 import {
   ScheduleTrainingDto,
   TrainingResponseDto,
+  WeekQueryDto,
+  WeekTrainingResponseDto,
 } from '@/modules/dog/controllers/dto/training.dto';
 import { TrainingsService } from '@/modules/dog/services/trainings.service';
 import { User } from '@/shared/auth/decorators/user.decorator';
@@ -14,6 +16,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -38,6 +41,27 @@ import {
 )
 export class TrainingsController {
   constructor(private readonly trainingsService: TrainingsService) {}
+
+  @Get('trainings')
+  @ApiOperation({
+    summary: "The signed-in owner's trainings between two days (the week)",
+  })
+  @ApiResponse({ status: 200, type: [WeekTrainingResponseDto] })
+  @ApiResponse({ status: 400, description: 'Invalid or too long range' })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
+  async listWeek(
+    @User() user: Identity,
+    @Query() query: WeekQueryDto,
+  ): Promise<WeekTrainingResponseDto[]> {
+    const trainings = await this.trainingsService.getWeekTrainings(
+      user,
+      query.from,
+      query.to,
+    );
+    return trainings.map((training) =>
+      WeekTrainingResponseDto.fromDomain(training),
+    );
+  }
 
   @Get('goals/:goalId/trainings')
   @ApiOperation({ summary: 'List the scheduled trainings of a goal' })

@@ -136,4 +136,40 @@ describe('TrainingsService', () => {
       expect(repository.getTrainingsByGoalId).not.toHaveBeenCalled();
     });
   });
+
+  describe('getWeekTrainings', () => {
+    it("asks only for the signed-in owner's trainings in the range", async () => {
+      const { service, repository } = setup();
+      repository.getOwnerTrainingsBetween.mockResolvedValue([]);
+
+      await service.getWeekTrainings(owner, '2026-10-19', '2026-10-25');
+
+      expect(repository.getOwnerTrainingsBetween).toHaveBeenCalledWith(
+        'u1',
+        new Date('2026-10-19T00:00:00.000Z'),
+        new Date('2026-10-25T00:00:00.000Z'),
+      );
+    });
+
+    it('accepts a single day', async () => {
+      const { service, repository } = setup();
+      repository.getOwnerTrainingsBetween.mockResolvedValue([]);
+
+      await expect(
+        service.getWeekTrainings(owner, '2026-10-22', '2026-10-22'),
+      ).resolves.toEqual([]);
+    });
+
+    it.each([
+      ['ends before it starts', '2026-10-25', '2026-10-19'],
+      ['is longer than six weeks', '2026-10-01', '2026-11-30'],
+    ])('rejects a range that %s', async (_case, from, to) => {
+      const { service, repository } = setup();
+
+      await expect(service.getWeekTrainings(owner, from, to)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(repository.getOwnerTrainingsBetween).not.toHaveBeenCalled();
+    });
+  });
 });

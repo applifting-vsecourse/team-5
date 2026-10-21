@@ -3,9 +3,82 @@ import {
   CALENDAR_DATE_PATTERN,
   toCalendarDate,
 } from '@/modules/dog/domain/calendar-date';
-import { ScheduledTraining } from '@/modules/dog/domain/scheduled-training';
+import {
+  ScheduledTraining,
+  WeekTraining,
+} from '@/modules/dog/domain/scheduled-training';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsDateString, Matches } from 'class-validator';
+
+export class WeekQueryDto {
+  @ApiProperty({ example: '2026-10-19', format: 'date' })
+  @Matches(CALENDAR_DATE_PATTERN, { message: 'from must be YYYY-MM-DD' })
+  @IsDateString({ strict: true })
+  from!: string;
+
+  @ApiProperty({ example: '2026-10-25', format: 'date' })
+  @Matches(CALENDAR_DATE_PATTERN, { message: 'to must be YYYY-MM-DD' })
+  @IsDateString({ strict: true })
+  to!: string;
+}
+
+export class WeekTrainingDogDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ minimum: 1, maximum: 6 })
+  color!: number;
+}
+
+export class WeekTrainingGoalDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  title!: string;
+}
+
+export class WeekTrainingExerciseDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  title!: string;
+}
+
+export class WeekTrainingResponseDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty({ example: '2026-10-22', format: 'date' })
+  date!: string;
+
+  @ApiProperty({ enum: TrainingStatus })
+  status!: TrainingStatus;
+
+  @ApiProperty({ type: WeekTrainingDogDto })
+  dog!: WeekTrainingDogDto;
+
+  @ApiProperty({ type: WeekTrainingGoalDto })
+  goal!: WeekTrainingGoalDto;
+
+  @ApiProperty({ type: [WeekTrainingExerciseDto] })
+  exercises!: WeekTrainingExerciseDto[];
+
+  static fromDomain(training: WeekTraining): WeekTrainingResponseDto {
+    return {
+      id: training.id,
+      date: toCalendarDate(training.date),
+      status: training.status,
+      dog: training.dog,
+      goal: { id: training.goal.id, title: training.goal.title },
+      exercises: training.goal.blocks,
+    };
+  }
+}
 
 export class ScheduleTrainingDto {
   @ApiProperty({
