@@ -25,6 +25,7 @@ Deliberately sparse — this file grows as the team learns what it expects from 
 - `dev` is the integration branch: every change goes in through a pull request from a feature branch (`feature/<issue>-<short-name>`, `fix/…`, `docs/…`, `chore/…`) cut from `dev`.
 - `main` is what runs on staging (`team-5.vsepractical.applifting.dev`). It only receives release pull requests from `dev`; every merge to `main` deploys.
 - Both branches need a green CI (`verify`) and one approving review from someone other than the author. Never push to them directly.
+- Stacked pull requests (each one containing the previous one's commits) are merged by their author, bottom-up; the reviewer only approves. Merging the lower PR changes the diff of the ones above it, and the `dev` ruleset then refuses an approval from whoever did that merge. Approve the upper PRs only once the lower ones are in.
 - Reference the user story in the PR with `Refs #62`, not `Closes #62`: the PO closes stories when accepting them (last column of the board). Implementation details belong in the PR description, not in the story.
 
 ### UI controls come from the kit
