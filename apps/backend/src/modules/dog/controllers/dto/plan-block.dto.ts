@@ -1,4 +1,5 @@
 import { PlanBlock } from '@/modules/dog/domain/plan-block';
+import { Trim } from '@/shared/validation/trim';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
@@ -14,6 +15,7 @@ export class CreatePlanBlockDto {
     example: 'Sedni u nohy',
     maxLength: TITLE_MAX_LENGTH,
   })
+  @Trim()
   @IsString()
   @IsNotEmpty()
   @MaxLength(TITLE_MAX_LENGTH)
