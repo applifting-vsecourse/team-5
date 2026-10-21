@@ -159,6 +159,15 @@ describe('PlanBlocksService', () => {
       expect(planBlockRepository.updateBlock).not.toHaveBeenCalled();
     });
 
+    it("does not reveal the goal or dog behind another user's block", async () => {
+      const { service, planBlockRepository } = setup();
+      planBlockRepository.getBlockById.mockResolvedValue(aBlock());
+
+      await expect(
+        service.updateBlock(stranger, 'b1', { title: 'Cizí' }),
+      ).rejects.toThrow('Plan block with ID b1 not found');
+    });
+
     it('reports a missing block as not found', async () => {
       const { service, planBlockRepository } = setup();
       planBlockRepository.getBlockById.mockResolvedValue(null);

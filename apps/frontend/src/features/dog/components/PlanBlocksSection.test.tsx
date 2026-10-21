@@ -56,10 +56,8 @@ describe("PlanBlocksSection", () => {
     ])
 
     expect(screen.getAllByRole("listitem")).toHaveLength(2)
-    const headings = screen
-      .getAllByRole("heading", { level: 3 })
-      .map((heading) => heading.textContent)
-    expect(headings).toEqual(["Cvik 1: Sedni u nohy", "Cvik 2: Krok vpřed"])
+    expect(screen.getByRole("button", { name: /^Cvik 1: ?Sedni u nohy/ })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /^Cvik 2: ?Krok vpřed/ })).toBeInTheDocument()
 
     // The criterion is shown on the closed block (#63).
     expect(screen.getByText("Kritérium: Sedí 5 s, i když kolem letí míček.")).toBeVisible()
@@ -87,7 +85,7 @@ describe("PlanBlocksSection", () => {
     const user = userEvent.setup()
     renderWithBlocks([aBlock()])
 
-    await user.click(screen.getByRole("heading", { name: /Sedni u nohy/ }))
+    await user.click(screen.getByRole("button", { name: /^Cvik 1: ?Sedni u nohy/ }))
     const dialog = await screen.findByRole("dialog")
 
     expect(within(dialog).getByRole("heading", { name: "Upravit cvik" })).toBeInTheDocument()
@@ -110,7 +108,7 @@ describe("PlanBlocksSection", () => {
     await user.click(within(confirm).getByRole("button", { name: "Ponechat" }))
 
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: /Sedni u nohy/ })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /^Cvik 1: ?Sedni u nohy/ })).toBeInTheDocument()
   })
 
   it("lets a new exercise go between existing ones (#65)", async () => {

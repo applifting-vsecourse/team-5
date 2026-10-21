@@ -61,18 +61,19 @@ function PlanBlockItem({
         onClick={onEdit}
         className="flex min-w-0 flex-1 flex-col justify-start gap-1 rounded-md py-1 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
       >
-        <h3 className="text-base font-medium text-foreground">
+        {/* A button only allows phrasing content, so spans instead of h3/p. */}
+        <span className="block text-base font-medium text-foreground">
           <span className="sr-only">Cvik {number}: </span>
           {block.title}
-        </h3>
+        </span>
         {block.instruction ? (
-          <p className="line-clamp-2 text-sm text-muted-foreground">
+          <span className="line-clamp-2 block text-sm text-muted-foreground">
             Instrukce: {block.instruction}
-          </p>
+          </span>
         ) : null}
         {/* The criterion stays visible without opening the block (#63). */}
         {block.criterion ? (
-          <p className="text-sm text-foreground">Kritérium: {block.criterion}</p>
+          <span className="block text-sm text-foreground">Kritérium: {block.criterion}</span>
         ) : null}
       </button>
 

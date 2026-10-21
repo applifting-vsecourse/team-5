@@ -33,7 +33,15 @@ export class PlanBlocksService {
     if (!block) {
       throw new NotFoundException(`Plan block with ID ${blockId} not found`);
     }
-    await this.goalsService.getGoal(user, block.goalId);
+    try {
+      await this.goalsService.getGoal(user, block.goalId);
+    } catch (error) {
+      // Report the block the caller asked for, not the goal or dog behind it.
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`Plan block with ID ${blockId} not found`);
+      }
+      throw error;
+    }
     return block;
   }
 
