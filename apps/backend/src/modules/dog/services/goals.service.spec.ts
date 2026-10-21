@@ -4,7 +4,7 @@ import { GoalRepository } from '@/modules/dog/repositories/goal.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { mock } from 'jest-mock-extended';
+import { mock, MockProxy } from 'jest-mock-extended';
 import { GoalsService } from './goals.service';
 
 const aDog = (overrides: Partial<Dog> = {}): Dog => ({
@@ -38,7 +38,11 @@ const aGoal = (overrides: Partial<Goal> = {}): Goal => ({
 const owner = { id: 'u1' } as Identity;
 const stranger = { id: 'u2' } as Identity;
 
-const setup = () => {
+const setup = (): {
+  service: GoalsService;
+  goalRepository: MockProxy<GoalRepository>;
+  dogAccess: MockProxy<DogAccessService>;
+} => {
   const goalRepository = mock<GoalRepository>();
   const dogAccess = mock<DogAccessService>();
   // The owner sees dog d1; anyone else gets the same 404 as for a missing dog.
