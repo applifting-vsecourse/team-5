@@ -61,7 +61,8 @@ export function ClientList() {
           <AlertTitle>Chyba při načítání klientů</AlertTitle>
           <AlertDescription className="mt-2 flex flex-col items-start gap-3">
             <span>
-              Nepodařilo se načíst seznam klientů. Zkontrolujte prosím připojení k síti a zkuste to znovu.
+              Nepodařilo se načíst seznam klientů. Zkontrolujte prosím připojení k síti a zkuste to
+              znovu.
             </span>
             <Button
               type="button"
