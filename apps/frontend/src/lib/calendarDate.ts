@@ -1,4 +1,4 @@
-import { addDays, format, getDay, isSameMonth, parseISO, startOfWeek } from "date-fns"
+import { addDays, format, getDay, isSameMonth, isValid, parseISO, startOfWeek } from "date-fns"
 import { cs } from "date-fns/locale"
 
 // Trainings are planned for a day, not a moment: the API speaks in plain
@@ -11,6 +11,13 @@ export const toCalendarDate = (date: Date): CalendarDate => format(date, "yyyy-M
 export const fromCalendarDate = (calendarDate: CalendarDate): Date => parseISO(calendarDate)
 
 export const todayCalendarDate = (): CalendarDate => toCalendarDate(new Date())
+
+// A real day written as YYYY-MM-DD, e.g. from a URL ("2026-02-30" is not one).
+export const isCalendarDate = (value: unknown): value is CalendarDate =>
+  typeof value === "string" &&
+  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  isValid(parseISO(value)) &&
+  toCalendarDate(parseISO(value)) === value
 
 // Weeks start on Monday, as in the Czech calendar.
 export const startOfWeekOf = (calendarDate: CalendarDate): CalendarDate =>

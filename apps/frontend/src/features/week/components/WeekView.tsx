@@ -1,17 +1,20 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
+  addCalendarDays,
   daysOfWeek,
   formatDayLong,
   formatDayOfMonth,
   formatWeekdayShort,
   formatWeekRange,
+  startOfWeekOf,
   type CalendarDate,
 } from "@/lib/calendarDate"
 import { dogColorClass } from "@/lib/dogColors"
@@ -65,9 +68,11 @@ function WeekTrainingCard({ training }: { training: WeekTraining }) {
 type WeekViewProps = {
   weekStart: CalendarDate
   today: CalendarDate
+  onWeekChange: (weekStart: CalendarDate) => void
 }
 
-export function WeekView({ weekStart, today }: WeekViewProps) {
+export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
+  const currentWeek = startOfWeekOf(today)
   const days = daysOfWeek(weekStart)
   // Today when it is in the shown week, otherwise its Monday.
   const [selectedDay, setSelectedDay] = useState<CalendarDate>(
@@ -81,9 +86,47 @@ export function WeekView({ weekStart, today }: WeekViewProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="space-y-1">
+      <header className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Týden</h1>
-        <p className="text-sm text-muted-foreground">{formatWeekRange(weekStart)}</p>
+        {/* Week switching (#73): arrows a week back and forth, "Dnes" back to this week. */}
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-11"
+            aria-label="Předchozí týden"
+            onClick={() => onWeekChange(addCalendarDays(weekStart, -7))}
+          >
+            <ChevronLeft className="size-5" />
+          </Button>
+          <p
+            className="flex-1 text-center text-lg font-semibold tracking-tight text-foreground"
+            aria-live="polite"
+          >
+            {formatWeekRange(weekStart)}
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-11"
+            aria-label="Další týden"
+            onClick={() => onWeekChange(addCalendarDays(weekStart, 7))}
+          >
+            <ChevronRight className="size-5" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-11"
+            disabled={weekStart === currentWeek}
+            onClick={() => onWeekChange(currentWeek)}
+          >
+            Dnes
+          </Button>
+        </div>
       </header>
 
       <ToggleGroup

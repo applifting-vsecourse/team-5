@@ -7,6 +7,7 @@ import {
   formatDayLong,
   formatWeekdayShort,
   formatWeekRange,
+  isCalendarDate,
   startOfWeekOf,
 } from "./calendarDate"
 
@@ -43,6 +44,14 @@ describe("calendarDate", () => {
   it("formats a day in Czech", () => {
     expect(formatDayLong("2026-10-22")).toBe("čtvrtek 22. 10.")
     expect(formatWeekdayShort("2026-10-22")).toBe("Čt")
+  })
+
+  it("recognises a real calendar date", () => {
+    expect(isCalendarDate("2026-10-19")).toBe(true)
+    expect(isCalendarDate("2026-02-30")).toBe(false)
+    expect(isCalendarDate("19.10.2026")).toBe(false)
+    expect(isCalendarDate(undefined)).toBe(false)
+    expect(isCalendarDate(20261019)).toBe(false)
   })
 
   it("uses the accusative after 'na'", () => {

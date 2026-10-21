@@ -32,19 +32,22 @@ const aTraining = (overrides: Partial<WeekTraining> = {}): WeekTraining => ({
 })
 
 // Seed the cache so the week renders without hitting the API.
-const renderWeek = (trainings: WeekTraining[]) => {
+const renderWeek = (trainings: WeekTraining[], weekStart = "2026-10-19") => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   })
-  queryClient.setQueryData(weekKeys.week("2026-10-19"), trainings)
-  return render(
+  queryClient.setQueryData(weekKeys.week(weekStart), trainings)
+  const onWeekChange = vi.fn()
+  render(
     <QueryClientProvider client={queryClient}>
       <WeekView
-        weekStart="2026-10-19"
+        weekStart={weekStart}
         today="2026-10-21"
+        onWeekChange={onWeekChange}
       />
     </QueryClientProvider>,
   )
+  return { onWeekChange }
 }
 
 describe("WeekView", () => {
@@ -88,6 +91,33 @@ describe("WeekView", () => {
 
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("čtvrtek 22. 10.")
     expect(screen.getByText("Na tento den nemáte nic naplánováno.")).toBeInTheDocument()
+  })
+
+  it("moves a week back and forth with the arrows (#73)", async () => {
+    const user = userEvent.setup()
+    const { onWeekChange } = renderWeek([])
+
+    await user.click(screen.getByRole("button", { name: "Předchozí týden" }))
+    await user.click(screen.getByRole("button", { name: "Další týden" }))
+
+    expect(onWeekChange).toHaveBeenNthCalledWith(1, "2026-10-12")
+    expect(onWeekChange).toHaveBeenNthCalledWith(2, "2026-10-26")
+  })
+
+  it("offers 'Dnes' only away from the current week (#73)", () => {
+    renderWeek([])
+    expect(screen.getByRole("button", { name: "Dnes" })).toBeDisabled()
+  })
+
+  it("returns to the current week with 'Dnes' and starts another week on Monday", async () => {
+    const user = userEvent.setup()
+    const { onWeekChange } = renderWeek([], "2026-11-02")
+
+    expect(screen.getByText("2.–8. listopadu")).toBeInTheDocument()
+    expect(screen.getByRole("radio", { name: /^pondělí 2\. 11\./ })).toBeChecked()
+
+    await user.click(screen.getByRole("button", { name: "Dnes" }))
+    expect(onWeekChange).toHaveBeenCalledWith("2026-10-19")
   })
 
   it("says what to do when the whole week is empty", () => {
