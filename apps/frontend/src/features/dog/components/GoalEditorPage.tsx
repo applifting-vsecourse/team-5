@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link, useNavigate } from "@tanstack/react-router"
+import { HTTPError } from "ky"
 import { AlertCircle, ChevronLeft } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -57,6 +58,13 @@ function GoalPageLoading() {
   )
 }
 
+// "Does not exist or no access" only for a real 404; a network error, a 500 or
+// an unexpected response is worth retrying, so it says so.
+const loadFailureMessage = (errors: (Error | null)[], notFoundMessage: string): string =>
+  errors.some((error) => error && !(error instanceof HTTPError && error.response.status === 404))
+    ? "Nepodařilo se načíst. Zkontrolujte připojení a zkuste to znovu."
+    : notFoundMessage
+
 function GoalPageError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <Alert variant="destructive">
@@ -109,7 +117,10 @@ export function NewGoalPage({ dogId }: { dogId: string }) {
         <GoalPageLoading />
       ) : dogQuery.error || !dog ? (
         <GoalPageError
-          message="Tento pes neexistuje nebo k němu nemáte přístup."
+          message={loadFailureMessage(
+            [dogQuery.error],
+            "Tento pes neexistuje nebo k němu nemáte přístup.",
+          )}
           onRetry={() => void dogQuery.refetch()}
         />
       ) : (
@@ -153,7 +164,10 @@ export function EditGoalPage({ dogId, goalId }: { dogId: string; goalId: string 
         <GoalPageLoading />
       ) : !dog || !goal ? (
         <GoalPageError
-          message="Tento cíl neexistuje nebo k němu nemáte přístup."
+          message={loadFailureMessage(
+            [dogQuery.error, goalQuery.error],
+            "Tento cíl neexistuje nebo k němu nemáte přístup.",
+          )}
           onRetry={() => {
             void dogQuery.refetch()
             void goalQuery.refetch()

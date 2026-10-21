@@ -1,6 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { CreateGoalDto, ListGoalsQueryDto } from './goal.dto';
+import { CreateGoalDto, ListGoalsQueryDto, UpdateGoalDto } from './goal.dto';
 
 const errorsFor = async <T extends object>(
   cls: new () => T,
@@ -36,6 +36,15 @@ describe('goal DTOs', () => {
       await expect(errorsFor(CreateGoalDto, { title: '' })).resolves.toEqual([
         'title',
       ]);
+    });
+
+    it('rejects a title made only of spaces', async () => {
+      await expect(errorsFor(CreateGoalDto, { title: '   ' })).resolves.toEqual(
+        ['title'],
+      );
+      await expect(errorsFor(UpdateGoalDto, { title: '   ' })).resolves.toEqual(
+        ['title'],
+      );
     });
 
     it('caps the principle length', async () => {

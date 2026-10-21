@@ -1,5 +1,6 @@
 import { GoalStatus } from '@/generated/prisma/client';
 import { Goal } from '@/modules/dog/domain/goal';
+import { Trim } from '@/shared/validation/trim';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEnum,
@@ -32,6 +33,7 @@ export class CreateGoalDto {
     example: 'Spolehlivá chůze u nohy',
     maxLength: TITLE_MAX_LENGTH,
   })
+  @Trim()
   @IsString()
   @IsNotEmpty()
   @MaxLength(TITLE_MAX_LENGTH)
@@ -84,6 +86,7 @@ export class UpdateGoalDto {
     maxLength: TITLE_MAX_LENGTH,
   })
   @IsOptional()
+  @Trim()
   @IsString()
   @IsNotEmpty()
   @MaxLength(TITLE_MAX_LENGTH)
