@@ -31,8 +31,17 @@ export class GoalsService {
     if (!goal) {
       throw new NotFoundException(`Goal with ID ${goalId} not found`);
     }
-    const dog = await this.dogAccess.getAccessibleDog(user, goal.dogId);
-    return { goal, dog };
+    try {
+      const dog = await this.dogAccess.getAccessibleDog(user, goal.dogId);
+      return { goal, dog };
+    } catch (error) {
+      // Report the goal, not its dog: the dog's ID must not leak to a caller
+      // who cannot see it.
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`Goal with ID ${goalId} not found`);
+      }
+      throw error;
+    }
   }
 
   // The discipline is picked from the dog's own disciplines (#62). An empty

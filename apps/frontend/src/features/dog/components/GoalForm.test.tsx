@@ -99,6 +99,35 @@ describe("GoalForm", () => {
     expect(screen.getByRole("combobox")).toHaveTextContent("Poslušnost")
   })
 
+  it("lets the user clear the discipline", async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn()
+    // jsdom lacks the pointer-capture and scroll APIs Radix Select calls on open.
+    Element.prototype.hasPointerCapture = () => false
+    Element.prototype.setPointerCapture = vi.fn()
+    Element.prototype.releasePointerCapture = vi.fn()
+    Element.prototype.scrollIntoView = vi.fn()
+    render(
+      <GoalForm
+        disciplines={["Poslušnost", "Canicross"]}
+        defaultValues={{ title: "Chůze", discipline: "Canicross", principle: "" }}
+        isPending={false}
+        onSubmit={onSubmit}
+      />,
+    )
+
+    await user.click(screen.getByRole("combobox"))
+    await user.click(await screen.findByRole("option", { name: "Bez disciplíny" }))
+    await user.click(screen.getByRole("button", { name: "Uložit" }))
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        { title: "Chůze", discipline: "", principle: "" },
+        expect.anything(),
+      )
+    })
+  })
+
   it("disables the submit button while saving", () => {
     render(
       <GoalForm

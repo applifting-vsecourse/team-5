@@ -31,6 +31,10 @@ type GoalFormProps = {
   onSubmit: (values: GoalFormValues) => void | Promise<void>
 }
 
+// Radix Select rejects an empty item value, so "none" gets a stand-in that
+// is mapped back to "" (the API's "no discipline") on change.
+const NO_DISCIPLINE = "__none__"
+
 export function GoalForm({ disciplines, defaultValues, isPending, onSubmit }: GoalFormProps) {
   // Keep a discipline the goal already has selectable even if the dog no
   // longer lists it, so opening the form never silently changes the goal.
@@ -81,8 +85,10 @@ export function GoalForm({ disciplines, defaultValues, isPending, onSubmit }: Go
               <FormItem>
                 <FormLabel>Disciplína</FormLabel>
                 <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
+                  value={field.value || NO_DISCIPLINE}
+                  onValueChange={(value) =>
+                    field.onChange(value === NO_DISCIPLINE ? "" : value)
+                  }
                 >
                   <FormControl>
                     <SelectTrigger className="w-full data-[size=default]:h-11">
@@ -90,6 +96,7 @@ export function GoalForm({ disciplines, defaultValues, isPending, onSubmit }: Go
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
+                    <SelectItem value={NO_DISCIPLINE}>Bez disciplíny</SelectItem>
                     {disciplineOptions.map((discipline) => (
                       <SelectItem
                         key={discipline}

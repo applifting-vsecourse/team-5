@@ -109,6 +109,15 @@ describe('GoalsService', () => {
         NotFoundException,
       );
     });
+
+    it("does not reveal the ID of another user's dog", async () => {
+      const { service, goalRepository } = setup();
+      goalRepository.getGoalById.mockResolvedValue(aGoal());
+
+      await expect(service.getGoal(stranger, 'g1')).rejects.toThrow(
+        'Goal with ID g1 not found',
+      );
+    });
   });
 
   describe('createGoal', () => {
