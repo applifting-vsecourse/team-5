@@ -18,6 +18,7 @@ import {
 import {
   ApiCookieAuth,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -59,7 +60,9 @@ export class ClientsController {
   @Delete('invitations/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Cancel an unused invitation' })
+  @ApiParam({ name: 'id', description: 'Invitation ID', type: String })
   @ApiResponse({ status: 204, description: 'Invitation canceled' })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
   @ApiResponse({ status: 404, description: 'Invitation not found' })
   async cancelInvitation(
     @Param('id') id: string,
@@ -70,7 +73,9 @@ export class ClientsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get details of a client and their shared dogs' })
+  @ApiParam({ name: 'id', description: 'Client ID', type: String })
   @ApiResponse({ status: 200, type: ClientResponseDto })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
   @ApiResponse({ status: 404, description: 'Client not found' })
   async getClient(
     @Param('id') id: string,

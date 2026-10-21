@@ -6,6 +6,36 @@ import { Injectable } from '@nestjs/common';
 export class ClientRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  private mapToDomainClient(conn: {
+    client: {
+      id: string;
+      name: string;
+      email: string;
+      dogs: Array<{
+        id: string;
+        name: string;
+        color: number;
+        breed: string | null;
+        disciplines: string[];
+      }>;
+    };
+    createdAt: Date;
+  }): Client {
+    return {
+      id: conn.client.id,
+      name: conn.client.name,
+      email: conn.client.email,
+      dogs: conn.client.dogs.map((d) => ({
+        id: d.id,
+        name: d.name,
+        color: d.color,
+        breed: d.breed,
+        disciplines: d.disciplines,
+      })),
+      createdAt: conn.createdAt,
+    };
+  }
+
   async getClientsByTrainerId(trainerId: string): Promise<Client[]> {
     const connections = await this.prisma.clientConnection.findMany({
       where: { trainerId },
@@ -27,27 +57,17 @@ export class ClientRepository {
       orderBy: { createdAt: 'desc' },
     });
 
-    return connections.map((conn) => ({
-      id: conn.client.id,
-      name: conn.client.name,
-      email: conn.client.email,
-      dogs: conn.client.dogs.map((d) => ({
-        id: d.id,
-        name: d.name,
-        color: d.color,
-        breed: d.breed,
-        disciplines: d.disciplines,
-      })),
-      createdAt: conn.createdAt,
-    }));
+    return connections.map((conn) => this.mapToDomainClient(conn));
   }
 
   async getClientById(
     clientId: string,
     trainerId: string,
   ): Promise<Client | null> {
-    const connection = await this.prisma.clientConnection.findFirst({
-      where: { clientId, trainerId },
+    const connection = await this.prisma.clientConnection.findUnique({
+      where: {
+        trainerId_clientId: { trainerId, clientId },
+      },
       include: {
         client: {
           include: {
@@ -69,19 +89,7 @@ export class ClientRepository {
       return null;
     }
 
-    return {
-      id: connection.client.id,
-      name: connection.client.name,
-      email: connection.client.email,
-      dogs: connection.client.dogs.map((d) => ({
-        id: d.id,
-        name: d.name,
-        color: d.color,
-        breed: d.breed,
-        disciplines: d.disciplines,
-      })),
-      createdAt: connection.createdAt,
-    };
+    return this.mapToDomainClient(connection);
   }
 
   async getInvitationsByTrainerId(trainerId: string): Promise<Invitation[]> {
@@ -109,7 +117,7 @@ export class ClientRepository {
     trainerId: string,
   ): Promise<boolean> {
     const result = await this.prisma.invitation.deleteMany({
-      where: { id: invitationId, trainerId },
+      where: { id: invitationId, trainerId, usedAt: null },
     });
     return result.count > 0;
   }

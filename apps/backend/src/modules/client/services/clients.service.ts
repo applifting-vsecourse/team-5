@@ -17,7 +17,7 @@ export class ClientsService {
       trainer.id,
     );
     if (!client) {
-      throw new NotFoundException(`Klient s ID ${clientId} nebyl nalezen`);
+      throw new NotFoundException(`Client with ID ${clientId} not found`);
     }
     return client;
   }
@@ -35,7 +35,7 @@ export class ClientsService {
       trainer.id,
     );
     if (!success) {
-      throw new NotFoundException('Pozvánka nebyla nalezena');
+      throw new NotFoundException('Invitation not found');
     }
   }
 }
