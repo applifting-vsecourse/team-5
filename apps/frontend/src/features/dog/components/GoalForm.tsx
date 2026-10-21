@@ -86,9 +86,7 @@ export function GoalForm({ disciplines, defaultValues, isPending, onSubmit }: Go
                 <FormLabel>Disciplína</FormLabel>
                 <Select
                   value={field.value || NO_DISCIPLINE}
-                  onValueChange={(value) =>
-                    field.onChange(value === NO_DISCIPLINE ? "" : value)
-                  }
+                  onValueChange={(value) => field.onChange(value === NO_DISCIPLINE ? "" : value)}
                 >
                   <FormControl>
                     <SelectTrigger className="w-full data-[size=default]:h-11">
