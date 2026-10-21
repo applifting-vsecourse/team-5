@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router"
+import { z } from "zod"
 
 import { ROUTES } from "@/app/routes"
 import { AuthLayout } from "@/components/AuthLayout"
@@ -9,8 +10,13 @@ import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOpt
 import { SignUpForm } from "@/features/auth/components/SignUpForm"
 import { useSignUp } from "@/features/auth/hooks/useSignUp"
 
+const signupSearchParamsSchema = z.object({
+  code: z.string().optional(),
+})
+
 export const Route = createFileRoute("/signup")({
   component: SignUpPage,
+  validateSearch: signupSearchParamsSchema,
   loader: async ({ context }) => {
     const session = await context.queryClient.ensureQueryData(authSessionQueryOptions())
     if (!session) return
