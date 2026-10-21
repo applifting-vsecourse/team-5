@@ -43,11 +43,17 @@ function ClientDetailPage() {
           className="group inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           aria-label="Zpět na seznam klientů"
         >
-          <ChevronLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
+          <ChevronLeft
+            className="size-5 transition-transform group-hover:-translate-x-0.5"
+            aria-hidden="true"
+          />
           <span>Klienti</span>
         </Link>
         <Alert variant="destructive">
-          <AlertCircle className="size-4" />
+          <AlertCircle
+            className="size-4"
+            aria-hidden="true"
+          />
           <AlertTitle>Klient nebyl nalezen</AlertTitle>
           <AlertDescription className="space-y-3">
             <p>Tento klient neexistuje nebo k němu nemáte přístup.</p>
@@ -55,6 +61,7 @@ function ClientDetailPage() {
               type="button"
               variant="outline"
               size="sm"
+              className="min-h-11"
               onClick={() => void clientQuery.refetch()}
             >
               Zkusit znovu
