@@ -19,15 +19,20 @@ export function ClientList() {
       {/* Nadpis a akce (Figma node 50:97) */}
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Vaši klienti</h1>
-        <Button
-          variant="default"
-          className="min-h-11 font-medium"
-          onClick={() => setIsInviteOpen(true)}
-          aria-label="Pozvat klienta"
-        >
-          <UserPlus className="mr-1.5 size-4" />
-          Pozvat klienta
-        </Button>
+        {clients && clients.length > 0 && (
+          <Button
+            variant="default"
+            className="min-h-11 font-medium"
+            onClick={() => setIsInviteOpen(true)}
+            aria-label="Pozvat klienta"
+          >
+            <UserPlus
+              className="mr-1.5 size-4"
+              aria-hidden="true"
+            />
+            Pozvat klienta
+          </Button>
+        )}
       </div>
 
       {/* Loading state */}
@@ -86,7 +91,10 @@ export function ClientList() {
             className="mt-6 min-h-11"
             onClick={() => setIsInviteOpen(true)}
           >
-            <UserPlus className="mr-1.5 size-4" />
+            <UserPlus
+              className="mr-1.5 size-4"
+              aria-hidden="true"
+            />
             Pozvěte prvního klienta
           </Button>
         </div>

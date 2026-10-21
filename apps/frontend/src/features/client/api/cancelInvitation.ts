@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 
 import { api } from "@/lib/api-client"
 
@@ -12,7 +13,11 @@ export function useCancelInvitation() {
       await api.delete(`clients/invitations/${invitationId}`)
     },
     onSuccess: () => {
+      toast.success("Pozvánka byla zrušena")
       void queryClient.invalidateQueries({ queryKey: clientKeys.invitations() })
+    },
+    onError: () => {
+      toast.error("Zrušení pozvánky se nezdařilo")
     },
   })
 }

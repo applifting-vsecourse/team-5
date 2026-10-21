@@ -4,7 +4,7 @@ import { Seo } from "@/components/Seo"
 
 import { ClientList } from "@/features/client/components/ClientList"
 
-export const Route = createFileRoute("/_ProtectedPages/clients")({
+export const Route = createFileRoute("/_ProtectedPages/clients/")({
   component: ClientsPage,
 })
 
