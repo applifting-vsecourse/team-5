@@ -1,10 +1,10 @@
 import { ClientResponseDto } from '@/modules/client/controllers/dto/client.response.dto';
 import { InvitationResponseDto } from '@/modules/client/controllers/dto/invitation.response.dto';
+import { TrainerRoleGuard } from '@/modules/client/guards/trainer-role.guard';
 import { ClientsService } from '@/modules/client/services/clients.service';
 import { User } from '@/shared/auth/decorators/user.decorator';
 import { Identity } from '@/shared/auth/domain/identity';
 import { AuthenticatedUserGuard } from '@/shared/auth/guards/authenticated-user.guard';
-import { TrainerRoleGuard } from '@/modules/client/guards/trainer-role.guard';
 import {
   Controller,
   Delete,
@@ -28,7 +28,10 @@ import {
 @Controller('clients')
 @UseGuards(AuthenticatedUserGuard, TrainerRoleGuard)
 @ApiCookieAuth()
-@ApiResponse({ status: 403, description: 'Forbidden - only trainers can manage clients' })
+@ApiResponse({
+  status: 403,
+  description: 'Forbidden - only trainers can manage clients',
+})
 @UsePipes(
   new ValidationPipe({
     whitelist: true,

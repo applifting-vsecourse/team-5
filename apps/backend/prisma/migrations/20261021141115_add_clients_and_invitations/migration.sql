@@ -1,3 +1,6 @@
+-- AlterEnum
+ALTER TYPE "user_role" ADD VALUE IF NOT EXISTS 'trainer';
+
 -- CreateTable
 CREATE TABLE "client_connection" (
     "id" TEXT NOT NULL,

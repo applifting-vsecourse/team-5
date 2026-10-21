@@ -1,10 +1,10 @@
+import { Identity } from '@/shared/auth/domain/identity';
 import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
-import { Identity } from '@/shared/auth/domain/identity';
 
 @Injectable()
 export class TrainerRoleGuard implements CanActivate {
