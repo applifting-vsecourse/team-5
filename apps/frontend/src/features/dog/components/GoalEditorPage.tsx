@@ -13,6 +13,7 @@ import { useCreateGoal } from "@/features/dog/hooks/useCreateGoal"
 import { useUpdateGoal } from "@/features/dog/hooks/useUpdateGoal"
 
 import { GoalForm } from "./GoalForm"
+import { PlanBlocksSection } from "./PlanBlocksSection"
 
 type GoalPageShellProps = {
   dogId: string
@@ -124,11 +125,16 @@ export function NewGoalPage({ dogId }: { dogId: string }) {
           onRetry={() => void dogQuery.refetch()}
         />
       ) : (
-        <GoalForm
-          disciplines={dog.disciplines}
-          isPending={createGoal.isPending}
-          onSubmit={handleSubmit}
-        />
+        <div className="flex flex-col gap-6">
+          <GoalForm
+            disciplines={dog.disciplines}
+            isPending={createGoal.isPending}
+            onSubmit={handleSubmit}
+          />
+          <p className="text-sm text-muted-foreground">
+            Cviky k cíli přidáte hned po jeho uložení.
+          </p>
+        </div>
       )}
     </GoalPageShell>
   )
@@ -174,17 +180,20 @@ export function EditGoalPage({ dogId, goalId }: { dogId: string; goalId: string 
           }}
         />
       ) : (
-        <GoalForm
-          key={goal.id}
-          disciplines={dog.disciplines}
-          defaultValues={{
-            title: goal.title,
-            discipline: goal.discipline ?? "",
-            principle: goal.principle ?? "",
-          }}
-          isPending={updateGoal.isPending}
-          onSubmit={handleSubmit}
-        />
+        <div className="flex flex-col gap-12">
+          <GoalForm
+            key={goal.id}
+            disciplines={dog.disciplines}
+            defaultValues={{
+              title: goal.title,
+              discipline: goal.discipline ?? "",
+              principle: goal.principle ?? "",
+            }}
+            isPending={updateGoal.isPending}
+            onSubmit={handleSubmit}
+          />
+          <PlanBlocksSection goalId={goal.id} />
+        </div>
       )}
     </GoalPageShell>
   )

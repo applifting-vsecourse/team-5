@@ -156,12 +156,30 @@ model TrainingGoal {
   status      GoalStatus    @default(ACTIVE)
   order       Int           @default(0)
   workoutLogs WorkoutLog[]
+  blocks      PlanBlock[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @default(now()) @updatedAt
 
   @@index([dogId, status])
   @@index([dogId, order])
   @@map("training_goal")
+}
+
+// One step of a goal's plan, shown top to bottom by position (#63).
+// Sequences (#64) and sub-steps (#67) will build on this model.
+model PlanBlock {
+  id          String       @id @default(cuid())
+  goalId      String
+  goal        TrainingGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  position    Int
+  title       String       @db.VarChar(100)
+  instruction String?      @db.Text
+  criterion   String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+
+  @@index([goalId, position])
+  @@map("plan_block")
 }
 
 model WorkoutLog {

@@ -4,23 +4,33 @@ import { Module } from '@nestjs/common';
 import { ActivitiesController } from './controllers/activities.controller';
 import { DogsController } from './controllers/dogs.controller';
 import { GoalsController } from './controllers/goals.controller';
+import { PlanBlocksController } from './controllers/plan-blocks.controller';
 import { ActivityRepository } from './repositories/activity.repository';
 import { DogRepository } from './repositories/dog.repository';
 import { GoalRepository } from './repositories/goal.repository';
+import { PlanBlockRepository } from './repositories/plan-block.repository';
 import { ActivitiesService } from './services/activities.service';
 import { DogAccessService } from './services/dog-access.service';
 import { DogsService } from './services/dogs.service';
 import { GoalsService } from './services/goals.service';
+import { PlanBlocksService } from './services/plan-blocks.service';
 
 @Module({
   imports: [AuthModule, PrismaModule],
-  controllers: [DogsController, GoalsController, ActivitiesController],
+  controllers: [
+    DogsController,
+    GoalsController,
+    PlanBlocksController,
+    ActivitiesController,
+  ],
   providers: [
     DogsService,
     DogRepository,
     DogAccessService,
     GoalsService,
     GoalRepository,
+    PlanBlocksService,
+    PlanBlockRepository,
     ActivitiesService,
     ActivityRepository,
   ],

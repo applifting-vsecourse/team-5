@@ -63,6 +63,33 @@ export const goalFormSchema = z.object({
 export type DogGoal = z.infer<typeof dogGoalSchema>
 export type GoalFormValues = z.infer<typeof goalFormSchema>
 
+export const planBlockSchema = z.object({
+  id: z.string(),
+  goalId: z.string(),
+  position: z.number(),
+  title: z.string(),
+  instruction: z.string().nullable(),
+  criterion: z.string().nullable(),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+})
+
+export const planBlocksSchema = z.array(planBlockSchema)
+
+// Limits match the API (plan-block.dto.ts).
+export const exerciseFormSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, "Název cviku je povinný")
+    .max(100, "Název cviku může mít nejvýš 100 znaků"),
+  instruction: z.string().trim().max(2000, "Instrukce může mít nejvýš 2000 znaků"),
+  criterion: z.string().trim().max(1000, "Kritérium může mít nejvýš 1000 znaků"),
+})
+
+export type PlanBlock = z.infer<typeof planBlockSchema>
+export type ExerciseFormValues = z.infer<typeof exerciseFormSchema>
+
 export const dogActivitySchema = z.object({
   id: z.string(),
   dogId: z.string().optional(),
