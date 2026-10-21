@@ -29,7 +29,8 @@ export class TrainingsService {
   }
 
   // Puts the goal's training on one day (#71). A day in the past is refused,
-  // and a goal that already has a planned training is moved instead (#74).
+  // and a goal that already has a planned training is refused with 409;
+  // changing its day will be a move (#74), not a second plan.
   async scheduleTraining(
     user: Identity,
     goalId: string,
@@ -51,9 +52,7 @@ export class TrainingsService {
         date: fromCalendarDate(date),
       });
     if (!training) {
-      throw new ConflictException(
-        'This training is already planned; move it to another day instead',
-      );
+      throw new ConflictException('This training is already planned for a day');
     }
     return training;
   }

@@ -194,8 +194,9 @@ enum TrainingStatus {
 
 // A goal's training put on one concrete day (#71). It shows in the owner's
 // week (#72) and is later moved (#74), skipped (#75) or completed (#77).
-// A goal has at most one PLANNED training at a time; another day for the same
-// training is a move, not a second plan (duplication is #103).
+// A goal has at most one PLANNED training at a time (enforced in
+// ScheduledTrainingRepository under a lock on the goal row); another day for
+// the same training is a move, not a second plan (duplication is #103).
 model ScheduledTraining {
   id          String         @id @default(cuid())
   goalId      String

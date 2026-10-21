@@ -83,7 +83,7 @@ export function TrainingScheduleSection({
           </Button>
         </div>
       ) : planned ? (
-        // Another day for a planned training is a move, which lives in the week (#74).
+        // Changing the day of a planned training arrives with the move in the week (#74).
         <p className="flex items-center gap-2 text-base text-foreground">
           <CalendarDays
             className="size-5 text-muted-foreground"

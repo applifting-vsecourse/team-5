@@ -94,20 +94,22 @@ export function NewGoalPage({ dogId }: { dogId: string }) {
 
   const dog = dogQuery.data
 
-  const saveGoal = async (values: GoalFormValues, shouldSchedule: boolean) => {
-    try {
-      const goal = await createGoal.mutateAsync(values)
-      // The plan's exercises are added to this goal next, so stay on its page;
-      // "Uložit a naplánovat" also opens the day picker there (#71).
-      await navigate({
-        to: "/dogs/$dogId/goals/$goalId",
-        params: { dogId, goalId: goal.id },
-        search: shouldSchedule ? { naplanovat: true } : {},
-        replace: true,
-      })
-    } catch {
-      // useCreateGoal already told the user; keep the form as it is.
-    }
+  // A failed save is reported by useCreateGoal and keeps the form as it is.
+  // Navigation only runs after a successful save, outside any catch, so a
+  // problem there cannot be mistaken for a failed save.
+  const saveGoal = (values: GoalFormValues, shouldSchedule: boolean) => {
+    createGoal.mutate(values, {
+      onSuccess: (goal) => {
+        // The plan's exercises are added to this goal next, so stay on its page;
+        // "Uložit a naplánovat" also opens the day picker there (#71).
+        void navigate({
+          to: "/dogs/$dogId/goals/$goalId",
+          params: { dogId, goalId: goal.id },
+          search: shouldSchedule ? { naplanovat: true } : {},
+          replace: true,
+        })
+      },
+    })
   }
 
   return (

@@ -14,8 +14,11 @@ export class ScheduledTrainingRepository {
     });
   }
 
-  // Returns null when the goal already has a planned training: the check and
-  // the insert run in one transaction, so two quick clicks cannot plan twice.
+  // Returns null when the goal already has a planned training.
+  // A transaction alone does not stop two quick clicks: under READ COMMITTED
+  // both would see "nothing planned" and insert. Locking the goal row first
+  // makes concurrent requests for the same goal wait for each other, so the
+  // second one sees the first one's training.
   async createPlannedTraining(data: {
     goalId: string;
     dogId: string;
@@ -23,6 +26,8 @@ export class ScheduledTrainingRepository {
     date: Date;
   }): Promise<ScheduledTraining | null> {
     return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "training_goal" WHERE "id" = ${data.goalId} FOR UPDATE`;
+
       const planned = await tx.scheduledTraining.findFirst({
         where: { goalId: data.goalId, status: TrainingStatus.PLANNED },
         select: { id: true },
