@@ -26,7 +26,10 @@ function Layout() {
   return (
     <div className="flex min-h-svh flex-col">
       <Seo />
-      <Header userMenu={<HeaderMenu />} />
+      <Header
+        className="hidden md:block"
+        userMenu={<HeaderMenu />}
+      />
       <main className="flex-1 pb-20 md:pb-8">
         <Outlet />
       </main>
