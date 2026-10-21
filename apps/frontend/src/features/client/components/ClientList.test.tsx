@@ -113,7 +113,7 @@ describe("ClientCard", () => {
     expect(barykAvatar).toHaveTextContent("B")
     expect(barykAvatar).toHaveClass("bg-dog-3")
 
-    const link = screen.getByRole("link", { name: /detail klienta jan novák/i })
+    const link = screen.getByRole("link", { name: /jan novák/i })
     expect(link).toHaveAttribute("href", "/clients/c-1")
   })
 })
@@ -139,7 +139,6 @@ describe("ClientList", () => {
 
     // Header
     expect(screen.getByRole("heading", { level: 1, name: "Vaši klienti" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /pozvat klienta/i })).toBeInTheDocument()
 
     // Clients
     await waitFor(() => {
@@ -147,6 +146,7 @@ describe("ClientList", () => {
       expect(screen.getByText("Petra Svobodová")).toBeInTheDocument()
       expect(screen.getByText("Tomáš Dvořák")).toBeInTheDocument()
     })
+    expect(screen.getByRole("button", { name: /pozvat klienta/i })).toBeInTheDocument()
 
     // Unused invitation from Figma node 50:135
     expect(screen.getByText("K7M2PQ")).toBeInTheDocument()
@@ -171,9 +171,37 @@ describe("ClientList", () => {
       expect(screen.getByText("Zatím nemáte žádné klienty")).toBeInTheDocument()
     })
     expect(screen.getByRole("button", { name: /pozvěte prvního klienta/i })).toBeInTheDocument()
+    // V prázdném stavu je dle DESIGN.md pouze jedno primární tlačítko (horní tlačítko v hlavičce se nezobrazuje)
+    expect(screen.queryByRole("button", { name: "Pozvat klienta" })).not.toBeInTheDocument()
   })
 
-  it("opens invite dialog when Pozvat klienta is clicked", async () => {
+  it("opens invite dialog when Pozvat klienta in header is clicked", async () => {
+    const user = userEvent.setup()
+    vi.mocked(api.get).mockImplementation((url: unknown) => {
+      const urlStr = String(url)
+      if (urlStr === "clients") {
+        return { json: () => Promise.resolve(mockClients) } as ReturnType<typeof api.get>
+      }
+      if (urlStr === "clients/invitations") {
+        return { json: () => Promise.resolve([]) } as ReturnType<typeof api.get>
+      }
+      throw new Error(`Unexpected url: ${urlStr}`)
+    })
+
+    render(<ClientList />, { wrapper: createWrapper() })
+
+    const inviteBtn = await screen.findByRole("button", { name: "Pozvat klienta" })
+    await user.click(inviteBtn)
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        "Předání 6místného kódu nebo odkazu klientovi na lekci připravujeme v rámci user story #58.",
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it("opens invite dialog when Pozvěte prvního klienta in empty state is clicked", async () => {
     const user = userEvent.setup()
     vi.mocked(api.get).mockImplementation((url: unknown) => {
       const urlStr = String(url)
@@ -188,15 +216,34 @@ describe("ClientList", () => {
 
     render(<ClientList />, { wrapper: createWrapper() })
 
-    const inviteBtn = screen.getByRole("button", { name: "Pozvat klienta" })
-    await user.click(inviteBtn)
+    const emptyCta = await screen.findByRole("button", { name: /pozvěte prvního klienta/i })
+    await user.click(emptyCta)
 
     expect(screen.getByRole("dialog")).toBeInTheDocument()
-    expect(
-      screen.getByText(
-        "Předání 6místného kódu nebo odkazu klientovi na lekci připravujeme v rámci user story #58.",
-      ),
-    ).toBeInTheDocument()
+  })
+
+  it("cancels invitation when Zrušit button is clicked", async () => {
+    const user = userEvent.setup()
+    vi.mocked(api.get).mockImplementation((url: unknown) => {
+      const urlStr = String(url)
+      if (urlStr === "clients") {
+        return { json: () => Promise.resolve(mockClients) } as ReturnType<typeof api.get>
+      }
+      if (urlStr === "clients/invitations") {
+        return { json: () => Promise.resolve(mockInvitations) } as ReturnType<typeof api.get>
+      }
+      throw new Error(`Unexpected url: ${urlStr}`)
+    })
+    vi.mocked(api.delete).mockResolvedValue({} as Response)
+
+    render(<ClientList />, { wrapper: createWrapper() })
+
+    const cancelBtn = await screen.findByRole("button", {
+      name: /zrušit pozvánku k7m2pq/i,
+    })
+    await user.click(cancelBtn)
+
+    expect(api.delete).toHaveBeenCalledWith("clients/invitations/inv-1")
   })
 
   it("renders error state when request fails", async () => {
