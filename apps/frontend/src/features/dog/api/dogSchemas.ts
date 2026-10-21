@@ -88,6 +88,20 @@ export const exerciseFormSchema = z.object({
 })
 
 export type PlanBlock = z.infer<typeof planBlockSchema>
+
+// A goal's training planned for one calendar day (#71).
+export const trainingSchema = z.object({
+  id: z.string(),
+  goalId: z.string(),
+  dogId: z.string(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  status: z.enum(["PLANNED", "COMPLETED", "SKIPPED"]),
+  createdAt: z.coerce.date(),
+})
+
+export const trainingsSchema = z.array(trainingSchema)
+
+export type Training = z.infer<typeof trainingSchema>
 export type ExerciseFormValues = z.infer<typeof exerciseFormSchema>
 
 export const dogActivitySchema = z.object({

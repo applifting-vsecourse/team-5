@@ -14,6 +14,7 @@ import { useUpdateGoal } from "@/features/dog/hooks/useUpdateGoal"
 
 import { GoalForm } from "./GoalForm"
 import { PlanBlocksSection } from "./PlanBlocksSection"
+import { TrainingScheduleSection } from "./TrainingScheduleSection"
 
 type GoalPageShellProps = {
   dogId: string
@@ -93,13 +94,15 @@ export function NewGoalPage({ dogId }: { dogId: string }) {
 
   const dog = dogQuery.data
 
-  const handleSubmit = async (values: GoalFormValues) => {
+  const saveGoal = async (values: GoalFormValues, shouldSchedule: boolean) => {
     try {
       const goal = await createGoal.mutateAsync(values)
-      // The plan's exercises are added to this goal next, so stay on its page.
+      // The plan's exercises are added to this goal next, so stay on its page;
+      // "Uložit a naplánovat" also opens the day picker there (#71).
       await navigate({
         to: "/dogs/$dogId/goals/$goalId",
         params: { dogId, goalId: goal.id },
+        search: shouldSchedule ? { naplanovat: true } : {},
         replace: true,
       })
     } catch {
@@ -129,7 +132,8 @@ export function NewGoalPage({ dogId }: { dogId: string }) {
           <GoalForm
             disciplines={dog.disciplines}
             isPending={createGoal.isPending}
-            onSubmit={handleSubmit}
+            onSubmit={(values) => saveGoal(values, false)}
+            onSubmitAndSchedule={(values) => saveGoal(values, true)}
           />
           <p className="text-sm text-muted-foreground">
             Cviky k cíli přidáte hned po jeho uložení.
@@ -140,7 +144,19 @@ export function NewGoalPage({ dogId }: { dogId: string }) {
   )
 }
 
-export function EditGoalPage({ dogId, goalId }: { dogId: string; goalId: string }) {
+type EditGoalPageProps = {
+  dogId: string
+  goalId: string
+  isScheduleRequested?: boolean
+  onScheduleRequestHandled?: () => void
+}
+
+export function EditGoalPage({
+  dogId,
+  goalId,
+  isScheduleRequested,
+  onScheduleRequestHandled,
+}: EditGoalPageProps) {
   const dogQuery = useQuery(dogDetailQueryOptions(dogId))
   const goalQuery = useQuery(goalQueryOptions(goalId))
   const updateGoal = useUpdateGoal(dogId, goalId)
@@ -193,6 +209,12 @@ export function EditGoalPage({ dogId, goalId }: { dogId: string; goalId: string 
             onSubmit={handleSubmit}
           />
           <PlanBlocksSection goalId={goal.id} />
+          <TrainingScheduleSection
+            goalId={goal.id}
+            dogName={dog.name}
+            isScheduleRequested={isScheduleRequested}
+            onScheduleRequestHandled={onScheduleRequestHandled}
+          />
         </div>
       )}
     </GoalPageShell>

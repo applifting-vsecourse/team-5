@@ -29,13 +29,21 @@ type GoalFormProps = {
   defaultValues?: Partial<GoalFormValues>
   isPending: boolean
   onSubmit: (values: GoalFormValues) => void | Promise<void>
+  // When given, the form offers "Uložit a naplánovat" as its main action (#71).
+  onSubmitAndSchedule?: (values: GoalFormValues) => void | Promise<void>
 }
 
 // Radix Select rejects an empty item value, so "none" gets a stand-in that
 // is mapped back to "" (the API's "no discipline") on change.
 const NO_DISCIPLINE = "__none__"
 
-export function GoalForm({ disciplines, defaultValues, isPending, onSubmit }: GoalFormProps) {
+export function GoalForm({
+  disciplines,
+  defaultValues,
+  isPending,
+  onSubmit,
+  onSubmitAndSchedule,
+}: GoalFormProps) {
   // Keep a discipline the goal already has selectable even if the dog no
   // longer lists it, so opening the form never silently changes the goal.
   // An empty discipline means "none".
@@ -136,15 +144,39 @@ export function GoalForm({ disciplines, defaultValues, isPending, onSubmit }: Go
           )}
         />
 
-        <Button
-          type="submit"
-          size="lg"
-          className="min-h-11 w-full"
-          disabled={isPending}
-        >
-          {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-          Uložit
-        </Button>
+        {onSubmitAndSchedule ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="submit"
+              size="lg"
+              variant="outline"
+              className="min-h-11"
+              disabled={isPending}
+            >
+              Uložit
+            </Button>
+            <Button
+              type="button"
+              size="lg"
+              className="min-h-11"
+              disabled={isPending}
+              onClick={form.handleSubmit(onSubmitAndSchedule)}
+            >
+              {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Uložit a naplánovat
+            </Button>
+          </div>
+        ) : (
+          <Button
+            type="submit"
+            size="lg"
+            className="min-h-11 w-full"
+            disabled={isPending}
+          >
+            {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+            Uložit
+          </Button>
+        )}
       </form>
     </Form>
   )

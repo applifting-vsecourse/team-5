@@ -1,0 +1,54 @@
+import { describe, expect, it } from "vitest"
+
+import {
+  addCalendarDays,
+  daysOfWeek,
+  formatDayAccusative,
+  formatDayLong,
+  formatWeekdayShort,
+  formatWeekRange,
+  startOfWeekOf,
+} from "./calendarDate"
+
+describe("calendarDate", () => {
+  it("starts the week on Monday", () => {
+    expect(startOfWeekOf("2026-10-22")).toBe("2026-10-19")
+    expect(startOfWeekOf("2026-10-25")).toBe("2026-10-19")
+    expect(startOfWeekOf("2026-10-19")).toBe("2026-10-19")
+  })
+
+  it("lists the seven days of a week", () => {
+    expect(daysOfWeek("2026-10-19")).toEqual([
+      "2026-10-19",
+      "2026-10-20",
+      "2026-10-21",
+      "2026-10-22",
+      "2026-10-23",
+      "2026-10-24",
+      "2026-10-25",
+    ])
+  })
+
+  it("moves across months and the daylight saving change", () => {
+    // Summer time ends in the night to 25 Oct 2026.
+    expect(addCalendarDays("2026-10-24", 2)).toBe("2026-10-26")
+    expect(addCalendarDays("2026-10-31", 1)).toBe("2026-11-01")
+  })
+
+  it("formats a week range in Czech", () => {
+    expect(formatWeekRange("2026-10-19")).toBe("19.–25. října")
+    expect(formatWeekRange("2026-10-26")).toBe("26. října – 1. listopadu")
+  })
+
+  it("formats a day in Czech", () => {
+    expect(formatDayLong("2026-10-22")).toBe("čtvrtek 22. 10.")
+    expect(formatWeekdayShort("2026-10-22")).toBe("Čt")
+  })
+
+  it("uses the accusative after 'na'", () => {
+    expect(formatDayAccusative("2026-10-21")).toBe("středu 21. 10.")
+    expect(formatDayAccusative("2026-10-22")).toBe("čtvrtek 22. 10.")
+    expect(formatDayAccusative("2026-10-24")).toBe("sobotu 24. 10.")
+    expect(formatDayAccusative("2026-10-25")).toBe("neděli 25. 10.")
+  })
+})
