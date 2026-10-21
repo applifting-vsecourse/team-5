@@ -3,7 +3,15 @@ import { queryOptions } from "@tanstack/react-query"
 import { api } from "@/lib/api-client"
 
 import { dogKeys } from "./dogKeys"
-import { dogActivitiesSchema, dogGoalsSchema, dogSchema, dogsSchema } from "./dogSchemas"
+import {
+  dogActivitiesSchema,
+  dogGoalSchema,
+  dogGoalsSchema,
+  dogSchema,
+  dogsSchema,
+  planBlocksSchema,
+  trainingsSchema,
+} from "./dogSchemas"
 
 export function dogsQueryOptions() {
   return queryOptions({
@@ -34,6 +42,40 @@ export function dogGoalsQueryOptions(dogId: string) {
       return dogGoalsSchema.parse(json)
     },
     enabled: Boolean(dogId),
+  })
+}
+
+export function goalQueryOptions(goalId: string) {
+  return queryOptions({
+    queryKey: dogKeys.goal(goalId),
+    queryFn: async () => {
+      const json = await api.get(`goals/${goalId}`).json()
+      return dogGoalSchema.parse(json)
+    },
+    enabled: Boolean(goalId),
+  })
+}
+
+// The plan of one goal, in the order it is trained.
+export function goalBlocksQueryOptions(goalId: string) {
+  return queryOptions({
+    queryKey: dogKeys.goalBlocks(goalId),
+    queryFn: async () => {
+      const json = await api.get(`goals/${goalId}/blocks`).json()
+      return planBlocksSchema.parse(json)
+    },
+    enabled: Boolean(goalId),
+  })
+}
+
+export function goalTrainingsQueryOptions(goalId: string) {
+  return queryOptions({
+    queryKey: dogKeys.goalTrainings(goalId),
+    queryFn: async () => {
+      const json = await api.get(`goals/${goalId}/trainings`).json()
+      return trainingsSchema.parse(json)
+    },
+    enabled: Boolean(goalId),
   })
 }
 
