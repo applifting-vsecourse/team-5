@@ -18,10 +18,7 @@ type AuthLayoutProps = {
 export function AuthLayout({ title, description, children, footer }: AuthLayoutProps) {
   return (
     <>
-      <Header
-        userMenu={null}
-        nav={null}
-      />
+      <Header nav={null} />
       <main className="min-h-svh">
         <section className="mx-auto w-full max-w-sm px-4 py-16">
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>

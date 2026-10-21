@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, isRedirect, Link, redirect, useNavigate } from "@tanstack/react-router"
 import { Check, PawPrint, Users } from "lucide-react"
 
 import { ROUTES } from "@/app/routes"
@@ -19,6 +19,18 @@ import { Label } from "@/components/ui/label"
 
 import { authSessionQueryOptions, type Session } from "@/features/auth/api/authSessionQueryOptions"
 
+const TRAINER_BENEFITS = [
+  "Zadání mezi lekcemi máte písemně u psa klienta",
+  "Klienta připojíte kódem, který mu dáte na lekci",
+  "Vidíte jen své klienty a jejich psy",
+] as const
+
+const HANDLER_BENEFITS = [
+  "V týdnu vidíte, co máte kdy cvičit",
+  "Trénink projdete cvik po cviku s kritériem",
+  "Po tréninku zapíšete, jak to šlo, trenér to uvidí",
+] as const
+
 export function getLandingRedirect(session: Session): string | null {
   if (!session?.user) return null
   return session.user.role === "trainer" ? ROUTES.clients : ROUTES.week
@@ -26,10 +38,17 @@ export function getLandingRedirect(session: Session): string | null {
 
 export const Route = createFileRoute("/")({
   beforeLoad: async ({ context }) => {
-    const session = await context.queryClient.ensureQueryData(authSessionQueryOptions())
-    const redirectTarget = getLandingRedirect(session)
-    if (redirectTarget) {
-      throw redirect({ to: redirectTarget })
+    try {
+      const session = await context.queryClient.ensureQueryData(authSessionQueryOptions())
+      const redirectTarget = getLandingRedirect(session)
+      if (redirectTarget) {
+        throw redirect({ to: redirectTarget })
+      }
+    } catch (error) {
+      if (isRedirect(error)) {
+        throw error
+      }
+      // Při síťové chybě nezobrazovat error boundary na veřejné úvodní stránce
     }
   },
   component: LandingPage,
@@ -54,10 +73,7 @@ export function LandingPage() {
   return (
     <div className="flex min-h-svh flex-col bg-background">
       <Seo title="TrainLoop" />
-      <Header
-        userMenu={null}
-        nav={null}
-      />
+      <Header nav={null} />
 
       <main className="flex-1">
         <div className="mx-auto flex w-full max-w-md flex-col gap-8 px-4 py-6 sm:max-w-xl sm:py-10">
@@ -103,24 +119,15 @@ export function LandingPage() {
               <h2 className="text-lg font-semibold tracking-tight text-foreground">Pro trenéra</h2>
             </div>
             <ul className="flex flex-col gap-3">
-              <li className="flex items-start gap-2.5">
-                <Check className="mt-0.5 size-5 shrink-0 text-foreground" />
-                <span className="text-base leading-normal text-foreground">
-                  Zadání mezi lekcemi máte písemně u psa klienta
-                </span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <Check className="mt-0.5 size-5 shrink-0 text-foreground" />
-                <span className="text-base leading-normal text-foreground">
-                  Klienta připojíte kódem, který mu dáte na lekci
-                </span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <Check className="mt-0.5 size-5 shrink-0 text-foreground" />
-                <span className="text-base leading-normal text-foreground">
-                  Vidíte jen své klienty a jejich psy
-                </span>
-              </li>
+              {TRAINER_BENEFITS.map((text) => (
+                <li
+                  key={text}
+                  className="flex items-start gap-2.5"
+                >
+                  <Check className="mt-0.5 size-5 shrink-0 text-foreground" />
+                  <span className="text-base leading-normal text-foreground">{text}</span>
+                </li>
+              ))}
             </ul>
           </section>
 
@@ -131,24 +138,15 @@ export function LandingPage() {
               <h2 className="text-lg font-semibold tracking-tight text-foreground">Pro psovoda</h2>
             </div>
             <ul className="flex flex-col gap-3">
-              <li className="flex items-start gap-2.5">
-                <Check className="mt-0.5 size-5 shrink-0 text-foreground" />
-                <span className="text-base leading-normal text-foreground">
-                  V týdnu vidíte, co máte kdy cvičit
-                </span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <Check className="mt-0.5 size-5 shrink-0 text-foreground" />
-                <span className="text-base leading-normal text-foreground">
-                  Trénink projdete cvik po cviku s kritériem
-                </span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <Check className="mt-0.5 size-5 shrink-0 text-foreground" />
-                <span className="text-base leading-normal text-foreground">
-                  Po tréninku zapíšete, jak to šlo, trenér to uvidí
-                </span>
-              </li>
+              {HANDLER_BENEFITS.map((text) => (
+                <li
+                  key={text}
+                  className="flex items-start gap-2.5"
+                >
+                  <Check className="mt-0.5 size-5 shrink-0 text-foreground" />
+                  <span className="text-base leading-normal text-foreground">{text}</span>
+                </li>
+              ))}
             </ul>
           </section>
         </div>

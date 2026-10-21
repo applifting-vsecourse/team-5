@@ -1,32 +1,40 @@
+import type * as TanstackReactRouter from "@tanstack/react-router"
 import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
-import { getLandingRedirect, LandingPage } from "./index"
+import { getLandingRedirect, LandingPage, Route } from "./index"
 
 const mockNavigate = vi.fn()
 
 // Mock @tanstack/react-router
-vi.mock("@tanstack/react-router", () => ({
-  createFileRoute: () => () => ({}),
-  Link: ({
-    children,
-    to,
-    className,
-  }: {
-    children: React.ReactNode
-    to: string
-    className?: string
-  }) => (
-    <a
-      href={to}
-      className={className}
-    >
-      {children}
-    </a>
-  ),
-  useNavigate: () => mockNavigate,
-}))
+vi.mock("@tanstack/react-router", async (importOriginal) => {
+  const actual = await importOriginal<typeof TanstackReactRouter>()
+  return {
+    ...actual,
+    createFileRoute: () => (config: Record<string, unknown>) => ({
+      options: config,
+      beforeLoad: config.beforeLoad,
+    }),
+    Link: ({
+      children,
+      to,
+      className,
+    }: {
+      children: React.ReactNode
+      to: string
+      className?: string
+    }) => (
+      <a
+        href={to}
+        className={className}
+      >
+        {children}
+      </a>
+    ),
+    useNavigate: () => mockNavigate,
+  }
+})
 
 // Mock Header
 vi.mock("@/components/Header/Header", () => ({
@@ -36,11 +44,6 @@ vi.mock("@/components/Header/Header", () => ({
 // Mock Seo
 vi.mock("@/components/Seo", () => ({
   Seo: () => null,
-}))
-
-// Mock HeaderMenu
-vi.mock("@/features/auth/components/HeaderMenu", () => ({
-  HeaderMenu: () => null,
 }))
 
 describe("LandingPage", () => {
@@ -142,6 +145,59 @@ describe("LandingPage", () => {
         },
       }
       expect(getLandingRedirect(trainerSession)).toBe("/clients")
+    })
+  })
+
+  describe("beforeLoad", () => {
+    it("redirects authenticated users to their respective tabs", async () => {
+      const beforeLoad = (Route as unknown as { beforeLoad: (ctx: unknown) => Promise<void> })
+        .beforeLoad
+
+      const queryClient = {
+        ensureQueryData: vi.fn().mockResolvedValue({
+          user: { role: "trainer" },
+        }),
+      }
+
+      await expect(
+        beforeLoad({
+          context: { queryClient },
+        }),
+      ).rejects.toMatchObject({
+        options: {
+          to: "/clients",
+        },
+      })
+    })
+
+    it("does not redirect unauthenticated users", async () => {
+      const beforeLoad = (Route as unknown as { beforeLoad: (ctx: unknown) => Promise<void> })
+        .beforeLoad
+
+      const queryClient = {
+        ensureQueryData: vi.fn().mockResolvedValue(null),
+      }
+
+      await expect(
+        beforeLoad({
+          context: { queryClient },
+        }),
+      ).resolves.toBeUndefined()
+    })
+
+    it("catches network errors gracefully and keeps user on the landing page", async () => {
+      const beforeLoad = (Route as unknown as { beforeLoad: (ctx: unknown) => Promise<void> })
+        .beforeLoad
+
+      const queryClient = {
+        ensureQueryData: vi.fn().mockRejectedValue(new Error("Network offline")),
+      }
+
+      await expect(
+        beforeLoad({
+          context: { queryClient },
+        }),
+      ).resolves.toBeUndefined()
     })
   })
 })
