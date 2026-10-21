@@ -22,7 +22,6 @@ enum UserRole {
   @@map("user_role")
 }
 
-
 model Session {
   id        String   @id
   expiresAt DateTime
@@ -72,23 +71,23 @@ model Verification {
 }
 
 model User {
-  id              String    @id
-  name            String
-  email           String
-  emailVerified   Boolean
-  image           String?   @db.Text
-  createdAt       DateTime
-  updatedAt       DateTime
-  sessions        Session[]
-  accounts        Account[]
-  dogs            Dog[]
-  createdGoals    TrainingGoal[] @relation("GoalCreator")
-  workoutLogs     WorkoutLog[]   @relation("LogAuthor")
+  id                 String             @id
+  name               String
+  email              String
+  emailVerified      Boolean
+  image              String?            @db.Text
+  createdAt          DateTime
+  updatedAt          DateTime
+  sessions           Session[]
+  accounts           Account[]
+  dogs               Dog[]
+  createdGoals       TrainingGoal[]     @relation("GoalCreator")
+  workoutLogs        WorkoutLog[]       @relation("LogAuthor")
   trainerConnections ClientConnection[] @relation("TrainerClients")
   clientConnections  ClientConnection[] @relation("ClientTrainers")
   sharedDogs         DogShare[]         @relation("TrainerSharedDogs")
   invitations        Invitation[]       @relation("TrainerInvitations")
-  role            UserRole  @default(user)
+  role               UserRole           @default(user)
 
   username        String? @db.VarChar(50)
   displayUsername String? @db.VarChar(50)
@@ -99,19 +98,19 @@ model User {
 }
 
 model Dog {
-  id          String   @id @default(cuid())
-  name        String   @db.VarChar(40)
-  breed       String?  @db.VarChar(100)
+  id          String         @id @default(cuid())
+  name        String         @db.VarChar(40)
+  breed       String?        @db.VarChar(100)
   color       Int
   ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  isArchived  Boolean  @default(false)
-  disciplines String[] @default([])
+  owner       User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  isArchived  Boolean        @default(false)
+  disciplines String[]       @default([])
   goals       TrainingGoal[]
   workoutLogs WorkoutLog[]
   shares      DogShare[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @default(now()) @updatedAt
 
   @@index([ownerId])
   @@map("dog")
@@ -150,19 +149,19 @@ enum MistakeLevel {
 }
 
 model TrainingGoal {
-  id          String        @id @default(cuid())
+  id          String       @id @default(cuid())
   dogId       String
-  dog         Dog           @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  dog         Dog          @relation(fields: [dogId], references: [id], onDelete: Cascade)
   createdById String
-  createdBy   User          @relation("GoalCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  title       String        @db.VarChar(100)
-  discipline  String?       @db.VarChar(60)
-  principle   String?       @db.Text
-  status      GoalStatus    @default(ACTIVE)
-  order       Int           @default(0)
+  createdBy   User         @relation("GoalCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  title       String       @db.VarChar(100)
+  discipline  String?      @db.VarChar(60)
+  principle   String?      @db.Text
+  status      GoalStatus   @default(ACTIVE)
+  order       Int          @default(0)
   workoutLogs WorkoutLog[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @default(now()) @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
 
   @@index([dogId, status])
   @@index([dogId, order])
@@ -235,4 +234,3 @@ model Invitation {
   @@index([trainerId])
   @@map("invitation")
 }
-

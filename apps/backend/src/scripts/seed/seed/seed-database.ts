@@ -21,6 +21,12 @@ export const seedDatabase = async (
       where: { email: 'caffeinatedduck@example.com' },
     });
     if (existingDuck) {
+      if (existingDuck.role !== 'trainer') {
+        await prisma.user.update({
+          where: { id: existingDuck.id },
+          data: { role: 'trainer' },
+        });
+      }
       await seedDogData(prisma, existingDuck.id);
       await seedClientData(prisma, auth, existingDuck.id);
     }
@@ -54,6 +60,7 @@ export const seedDatabase = async (
     password: 'password1',
     name: 'Caffeinated Duck',
     username: 'CaffeinatedDuck',
+    role: 'trainer',
   });
 
   await createUser(prisma, auth, {

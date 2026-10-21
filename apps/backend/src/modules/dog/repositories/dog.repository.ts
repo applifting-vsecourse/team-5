@@ -30,7 +30,18 @@ export class DogRepository {
     return dogs.map(mapPrismaDogToDomain);
   }
 
-  async getDogById(id: string, userId: string): Promise<Dog | null> {
+  async getDogById(id: string, ownerId: string): Promise<Dog | null> {
+    const dog = await this.prisma.dog.findFirst({
+      where: {
+        id,
+        ownerId,
+        isArchived: false,
+      },
+    });
+    return dog ? mapPrismaDogToDomain(dog) : null;
+  }
+
+  async getDogByIdWithAccess(id: string, userId: string): Promise<Dog | null> {
     const dog = await this.prisma.dog.findFirst({
       where: {
         id,
