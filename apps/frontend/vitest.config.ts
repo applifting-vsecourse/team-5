@@ -9,6 +9,10 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     globals: true,
+    env: {
+      VITE_API_URL: "http://localhost:3000/api",
+      VITE_BETTER_AUTH_URL: "http://localhost:3000/api/auth",
+    },
     exclude: [...configDefaults.exclude, "e2e/**"],
   },
 })
