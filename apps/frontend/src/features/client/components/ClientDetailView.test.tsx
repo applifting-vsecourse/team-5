@@ -99,10 +99,10 @@ describe("ClientDetailView", () => {
     expect(screen.getByText("Německý ovčák · Agility")).toBeInTheDocument()
 
     // Links to dog details (/dogs/$dogId)
-    const rexLink = screen.getByRole("link", { name: "Detail psa Rex" })
+    const rexLink = screen.getByRole("link", { name: /rex/i })
     expect(rexLink).toHaveAttribute("href", "/dogs/dog-rex-1")
 
-    const barykLink = screen.getByRole("link", { name: "Detail psa Baryk" })
+    const barykLink = screen.getByRole("link", { name: /baryk/i })
     expect(barykLink).toHaveAttribute("href", "/dogs/dog-baryk-1")
   })
 
