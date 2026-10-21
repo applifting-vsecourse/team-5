@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { dogDetailQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 import { DogDetailView } from "@/features/dog/components/DogDetailView"
 
-export const Route = createFileRoute("/_ProtectedPages/dogs/$dogId")({
+export const Route = createFileRoute("/_ProtectedPages/dogs/$dogId/")({
   component: DogDetailPage,
 })
 

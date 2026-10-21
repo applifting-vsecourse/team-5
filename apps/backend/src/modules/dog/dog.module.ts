@@ -8,6 +8,7 @@ import { ActivityRepository } from './repositories/activity.repository';
 import { DogRepository } from './repositories/dog.repository';
 import { GoalRepository } from './repositories/goal.repository';
 import { ActivitiesService } from './services/activities.service';
+import { DogAccessService } from './services/dog-access.service';
 import { DogsService } from './services/dogs.service';
 import { GoalsService } from './services/goals.service';
 
@@ -17,6 +18,7 @@ import { GoalsService } from './services/goals.service';
   providers: [
     DogsService,
     DogRepository,
+    DogAccessService,
     GoalsService,
     GoalRepository,
     ActivitiesService,

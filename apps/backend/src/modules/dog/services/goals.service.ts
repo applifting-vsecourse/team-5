@@ -1,49 +1,82 @@
-import { GoalStatus, TrainingGoal } from '@/generated/prisma/client';
+import { GoalStatus } from '@/generated/prisma/client';
 import { Dog } from '@/modules/dog/domain/dog';
-import { CreateGoalData, UpdateGoalData } from '@/modules/dog/domain/goal';
-import { DogRepository } from '@/modules/dog/repositories/dog.repository';
+import {
+  CreateGoalData,
+  Goal,
+  UpdateGoalData,
+} from '@/modules/dog/domain/goal';
 import { GoalRepository } from '@/modules/dog/repositories/goal.repository';
+import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { Identity } from '@/shared/auth/domain/identity';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 @Injectable()
 export class GoalsService {
   constructor(
     private readonly goalRepository: GoalRepository,
-    private readonly dogRepository: DogRepository,
+    private readonly dogAccess: DogAccessService,
   ) {}
 
-  private async assertDogOwnership(
+  // A goal is visible exactly when its dog is. A goal of someone else's dog
+  // is reported as missing, the same as one that does not exist.
+  private async getAccessibleGoal(
     user: Identity,
-    dogId: string,
-  ): Promise<Dog> {
-    const dog = await this.dogRepository.getDogById(dogId, user.id);
-    if (!dog) {
-      throw new NotFoundException(`Dog with ID ${dogId} not found`);
+    goalId: string,
+  ): Promise<{ goal: Goal; dog: Dog }> {
+    const goal = await this.goalRepository.getGoalById(goalId);
+    if (!goal) {
+      throw new NotFoundException(`Goal with ID ${goalId} not found`);
     }
-    return dog;
+    const dog = await this.dogAccess.getAccessibleDog(user, goal.dogId);
+    return { goal, dog };
+  }
+
+  // The discipline is picked from the dog's own disciplines (#62). An empty
+  // value means "no discipline" and is stored as null.
+  private normalizeDiscipline(
+    dog: Dog,
+    discipline: string | undefined,
+  ): string | null | undefined {
+    if (discipline === undefined) return undefined;
+    const trimmed = discipline.trim();
+    if (!trimmed) return null;
+    if (!(dog.disciplines ?? []).includes(trimmed)) {
+      throw new BadRequestException(
+        `Discipline "${trimmed}" is not one of the dog's disciplines`,
+      );
+    }
+    return trimmed;
   }
 
   async getGoalsByDogId(
     user: Identity,
     dogId: string,
     status?: GoalStatus,
-  ): Promise<TrainingGoal[]> {
-    await this.assertDogOwnership(user, dogId);
+  ): Promise<Goal[]> {
+    await this.dogAccess.getAccessibleDog(user, dogId);
     return this.goalRepository.getGoalsByDogId(dogId, status);
+  }
+
+  async getGoal(user: Identity, goalId: string): Promise<Goal> {
+    const { goal } = await this.getAccessibleGoal(user, goalId);
+    return goal;
   }
 
   async createGoal(
     user: Identity,
     dogId: string,
     data: CreateGoalData,
-  ): Promise<TrainingGoal> {
-    await this.assertDogOwnership(user, dogId);
+  ): Promise<Goal> {
+    const dog = await this.dogAccess.getAccessibleDog(user, dogId);
     return this.goalRepository.createGoal({
       dogId,
       createdById: user.id,
       title: data.title.trim(),
-      discipline: data.discipline?.trim() || null,
+      discipline: this.normalizeDiscipline(dog, data.discipline) ?? null,
       principle: data.principle?.trim() || null,
       status: data.status,
       order: data.order,
@@ -54,19 +87,12 @@ export class GoalsService {
     user: Identity,
     goalId: string,
     data: UpdateGoalData,
-  ): Promise<TrainingGoal> {
-    const goal = await this.goalRepository.getGoalById(goalId);
-    if (!goal) {
-      throw new NotFoundException(`Goal with ID ${goalId} not found`);
-    }
-    await this.assertDogOwnership(user, goal.dogId);
+  ): Promise<Goal> {
+    const { dog } = await this.getAccessibleGoal(user, goalId);
 
     return this.goalRepository.updateGoal(goalId, {
       title: data.title?.trim(),
-      discipline:
-        data.discipline !== undefined
-          ? data.discipline.trim() || null
-          : undefined,
+      discipline: this.normalizeDiscipline(dog, data.discipline),
       principle:
         data.principle !== undefined
           ? data.principle.trim() || null
@@ -76,12 +102,8 @@ export class GoalsService {
     });
   }
 
-  async deleteGoal(user: Identity, goalId: string): Promise<TrainingGoal> {
-    const goal = await this.goalRepository.getGoalById(goalId);
-    if (!goal) {
-      throw new NotFoundException(`Goal with ID ${goalId} not found`);
-    }
-    await this.assertDogOwnership(user, goal.dogId);
+  async deleteGoal(user: Identity, goalId: string): Promise<Goal> {
+    await this.getAccessibleGoal(user, goalId);
     return this.goalRepository.deleteGoal(goalId);
   }
 }

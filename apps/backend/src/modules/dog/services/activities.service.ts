@@ -1,34 +1,22 @@
 import { WorkoutLog, WorkoutStatus } from '@/generated/prisma/client';
 import { CreateActivityData } from '@/modules/dog/domain/activity';
-import { Dog } from '@/modules/dog/domain/dog';
 import { ActivityRepository } from '@/modules/dog/repositories/activity.repository';
-import { DogRepository } from '@/modules/dog/repositories/dog.repository';
+import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { Identity } from '@/shared/auth/domain/identity';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ActivitiesService {
   constructor(
     private readonly activityRepository: ActivityRepository,
-    private readonly dogRepository: DogRepository,
+    private readonly dogAccess: DogAccessService,
   ) {}
-
-  private async assertDogOwnership(
-    user: Identity,
-    dogId: string,
-  ): Promise<Dog> {
-    const dog = await this.dogRepository.getDogById(dogId, user.id);
-    if (!dog) {
-      throw new NotFoundException(`Dog with ID ${dogId} not found`);
-    }
-    return dog;
-  }
 
   async getActivitiesByDogId(
     user: Identity,
     dogId: string,
   ): Promise<WorkoutLog[]> {
-    await this.assertDogOwnership(user, dogId);
+    await this.dogAccess.getAccessibleDog(user, dogId);
     return this.activityRepository.getActivitiesByDogId(dogId);
   }
 
@@ -37,7 +25,7 @@ export class ActivitiesService {
     dogId: string,
     data: CreateActivityData,
   ): Promise<WorkoutLog> {
-    await this.assertDogOwnership(user, dogId);
+    await this.dogAccess.getAccessibleDog(user, dogId);
 
     return this.activityRepository.createActivity({
       dogId,

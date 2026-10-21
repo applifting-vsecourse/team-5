@@ -1,27 +1,31 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
-import { GoalStatus, TrainingGoal } from '@/generated/prisma/client';
+import { GoalStatus } from '@/generated/prisma/client';
+import { Goal } from '@/modules/dog/domain/goal';
 import { Injectable } from '@nestjs/common';
+
+const withAuthor = {
+  createdBy: { select: { id: true, name: true } },
+} as const;
 
 @Injectable()
 export class GoalRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getGoalsByDogId(
-    dogId: string,
-    status?: GoalStatus,
-  ): Promise<TrainingGoal[]> {
+  async getGoalsByDogId(dogId: string, status?: GoalStatus): Promise<Goal[]> {
     return this.prisma.trainingGoal.findMany({
       where: {
         dogId,
         ...(status ? { status } : {}),
       },
+      include: withAuthor,
       orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
     });
   }
 
-  async getGoalById(id: string): Promise<TrainingGoal | null> {
+  async getGoalById(id: string): Promise<Goal | null> {
     return this.prisma.trainingGoal.findUnique({
       where: { id },
+      include: withAuthor,
     });
   }
 
@@ -33,7 +37,7 @@ export class GoalRepository {
     principle?: string | null;
     status?: GoalStatus;
     order?: number;
-  }): Promise<TrainingGoal> {
+  }): Promise<Goal> {
     return this.prisma.trainingGoal.create({
       data: {
         dog: { connect: { id: data.dogId } },
@@ -44,6 +48,7 @@ export class GoalRepository {
         status: data.status ?? GoalStatus.ACTIVE,
         order: data.order ?? 0,
       },
+      include: withAuthor,
     });
   }
 
@@ -56,7 +61,7 @@ export class GoalRepository {
       status?: GoalStatus;
       order?: number;
     },
-  ): Promise<TrainingGoal> {
+  ): Promise<Goal> {
     return this.prisma.trainingGoal.update({
       where: { id },
       data: {
@@ -66,12 +71,14 @@ export class GoalRepository {
         ...(data.status !== undefined && { status: data.status }),
         ...(data.order !== undefined && { order: data.order }),
       },
+      include: withAuthor,
     });
   }
 
-  async deleteGoal(id: string): Promise<TrainingGoal> {
+  async deleteGoal(id: string): Promise<Goal> {
     return this.prisma.trainingGoal.delete({
       where: { id },
+      include: withAuthor,
     });
   }
 }
