@@ -13,7 +13,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtectedPagesRouteImport } from './routes/_ProtectedPages'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ProtectedPagesAccountRouteImport } from './routes/_ProtectedPages/account'
+import { Route as ProtectedPagesClientsRouteImport } from './routes/_ProtectedPages/clients'
 import { Route as ProtectedPagesDashboardRouteImport } from './routes/_ProtectedPages/dashboard'
+import { Route as ProtectedPagesWeekRouteImport } from './routes/_ProtectedPages/week'
+import { Route as ProtectedPagesDogsIndexRouteImport } from './routes/_ProtectedPages/dogs.index'
+import { Route as ProtectedPagesDogsDogIdRouteImport } from './routes/_ProtectedPages/dogs.$dogId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,9 +39,34 @@ const SignupRoute = SignupRouteImport.update({
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProtectedPagesAccountRoute = ProtectedPagesAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => ProtectedPagesRoute,
+} as any)
+const ProtectedPagesClientsRoute = ProtectedPagesClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => ProtectedPagesRoute,
+} as any)
 const ProtectedPagesDashboardRoute = ProtectedPagesDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => ProtectedPagesRoute,
+} as any)
+const ProtectedPagesWeekRoute = ProtectedPagesWeekRouteImport.update({
+  id: '/week',
+  path: '/week',
+  getParentRoute: () => ProtectedPagesRoute,
+} as any)
+const ProtectedPagesDogsIndexRoute = ProtectedPagesDogsIndexRouteImport.update({
+  id: '/dogs/',
+  path: '/dogs/',
+  getParentRoute: () => ProtectedPagesRoute,
+} as any)
+const ProtectedPagesDogsDogIdRoute = ProtectedPagesDogsDogIdRouteImport.update({
+  id: '/dogs/$dogId',
+  path: '/dogs/$dogId',
   getParentRoute: () => ProtectedPagesRoute,
 } as any)
 
@@ -44,13 +74,23 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/account': typeof ProtectedPagesAccountRoute
+  '/clients': typeof ProtectedPagesClientsRoute
   '/dashboard': typeof ProtectedPagesDashboardRoute
+  '/week': typeof ProtectedPagesWeekRoute
+  '/dogs/$dogId': typeof ProtectedPagesDogsDogIdRoute
+  '/dogs/': typeof ProtectedPagesDogsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/account': typeof ProtectedPagesAccountRoute
+  '/clients': typeof ProtectedPagesClientsRoute
   '/dashboard': typeof ProtectedPagesDashboardRoute
+  '/week': typeof ProtectedPagesWeekRoute
+  '/dogs/$dogId': typeof ProtectedPagesDogsDogIdRoute
+  '/dogs': typeof ProtectedPagesDogsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -58,20 +98,48 @@ export interface FileRoutesById {
   '/_ProtectedPages': typeof ProtectedPagesRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/_ProtectedPages/account': typeof ProtectedPagesAccountRoute
+  '/_ProtectedPages/clients': typeof ProtectedPagesClientsRoute
   '/_ProtectedPages/dashboard': typeof ProtectedPagesDashboardRoute
+  '/_ProtectedPages/week': typeof ProtectedPagesWeekRoute
+  '/_ProtectedPages/dogs/$dogId': typeof ProtectedPagesDogsDogIdRoute
+  '/_ProtectedPages/dogs/': typeof ProtectedPagesDogsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/signup' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/account'
+    | '/clients'
+    | '/dashboard'
+    | '/week'
+    | '/dogs/$dogId'
+    | '/dogs/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup' | '/dashboard'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/account'
+    | '/clients'
+    | '/dashboard'
+    | '/week'
+    | '/dogs/$dogId'
+    | '/dogs'
   id:
     | '__root__'
     | '/'
     | '/_ProtectedPages'
     | '/login'
     | '/signup'
+    | '/_ProtectedPages/account'
+    | '/_ProtectedPages/clients'
     | '/_ProtectedPages/dashboard'
+    | '/_ProtectedPages/week'
+    | '/_ProtectedPages/dogs/$dogId'
+    | '/_ProtectedPages/dogs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -111,6 +179,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_ProtectedPages/account': {
+      id: '/_ProtectedPages/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof ProtectedPagesAccountRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
+    '/_ProtectedPages/clients': {
+      id: '/_ProtectedPages/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof ProtectedPagesClientsRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
     '/_ProtectedPages/dashboard': {
       id: '/_ProtectedPages/dashboard'
       path: '/dashboard'
@@ -118,15 +200,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPagesDashboardRouteImport
       parentRoute: typeof ProtectedPagesRoute
     }
+    '/_ProtectedPages/week': {
+      id: '/_ProtectedPages/week'
+      path: '/week'
+      fullPath: '/week'
+      preLoaderRoute: typeof ProtectedPagesWeekRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
+    '/_ProtectedPages/dogs/': {
+      id: '/_ProtectedPages/dogs/'
+      path: '/dogs'
+      fullPath: '/dogs/'
+      preLoaderRoute: typeof ProtectedPagesDogsIndexRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
+    '/_ProtectedPages/dogs/$dogId': {
+      id: '/_ProtectedPages/dogs/$dogId'
+      path: '/dogs/$dogId'
+      fullPath: '/dogs/$dogId'
+      preLoaderRoute: typeof ProtectedPagesDogsDogIdRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
   }
 }
 
 interface ProtectedPagesRouteChildren {
+  ProtectedPagesAccountRoute: typeof ProtectedPagesAccountRoute
+  ProtectedPagesClientsRoute: typeof ProtectedPagesClientsRoute
   ProtectedPagesDashboardRoute: typeof ProtectedPagesDashboardRoute
+  ProtectedPagesWeekRoute: typeof ProtectedPagesWeekRoute
+  ProtectedPagesDogsDogIdRoute: typeof ProtectedPagesDogsDogIdRoute
+  ProtectedPagesDogsIndexRoute: typeof ProtectedPagesDogsIndexRoute
 }
 
 const ProtectedPagesRouteChildren: ProtectedPagesRouteChildren = {
+  ProtectedPagesAccountRoute: ProtectedPagesAccountRoute,
+  ProtectedPagesClientsRoute: ProtectedPagesClientsRoute,
   ProtectedPagesDashboardRoute: ProtectedPagesDashboardRoute,
+  ProtectedPagesWeekRoute: ProtectedPagesWeekRoute,
+  ProtectedPagesDogsDogIdRoute: ProtectedPagesDogsDogIdRoute,
+  ProtectedPagesDogsIndexRoute: ProtectedPagesDogsIndexRoute,
 }
 
 const ProtectedPagesRouteWithChildren = ProtectedPagesRoute._addFileChildren(

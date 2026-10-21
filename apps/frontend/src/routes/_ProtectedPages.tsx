@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 
 import { ROUTES } from "@/app/routes"
+import { BottomNav } from "@/components/BottomNav/BottomNav"
 import { Header } from "@/components/Header/Header"
 import { Seo } from "@/components/Seo"
 
@@ -23,12 +24,13 @@ export const Route = createFileRoute("/_ProtectedPages")({
 
 function Layout() {
   return (
-    <>
+    <div className="flex min-h-svh flex-col">
       <Seo />
       <Header userMenu={<HeaderMenu />} />
-      <main className="min-h-svh">
+      <main className="flex-1 pb-20 md:pb-8">
         <Outlet />
       </main>
-    </>
+      <BottomNav />
+    </div>
   )
 }
