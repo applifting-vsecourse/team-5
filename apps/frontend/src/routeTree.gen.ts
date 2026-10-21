@@ -15,7 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ProtectedPagesAccountRouteImport } from './routes/_ProtectedPages/account'
 import { Route as ProtectedPagesClientsRouteImport } from './routes/_ProtectedPages/clients'
-import { Route as ProtectedPagesQuacksRouteImport } from './routes/_ProtectedPages/quacks'
+import { Route as ProtectedPagesDashboardRouteImport } from './routes/_ProtectedPages/dashboard'
 import { Route as ProtectedPagesWeekRouteImport } from './routes/_ProtectedPages/week'
 import { Route as ProtectedPagesDogsIndexRouteImport } from './routes/_ProtectedPages/dogs.index'
 import { Route as ProtectedPagesDogsDogIdRouteImport } from './routes/_ProtectedPages/dogs.$dogId'
@@ -49,9 +49,9 @@ const ProtectedPagesClientsRoute = ProtectedPagesClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => ProtectedPagesRoute,
 } as any)
-const ProtectedPagesQuacksRoute = ProtectedPagesQuacksRouteImport.update({
-  id: '/quacks',
-  path: '/quacks',
+const ProtectedPagesDashboardRoute = ProtectedPagesDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => ProtectedPagesRoute,
 } as any)
 const ProtectedPagesWeekRoute = ProtectedPagesWeekRouteImport.update({
@@ -76,7 +76,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/account': typeof ProtectedPagesAccountRoute
   '/clients': typeof ProtectedPagesClientsRoute
-  '/quacks': typeof ProtectedPagesQuacksRoute
+  '/dashboard': typeof ProtectedPagesDashboardRoute
   '/week': typeof ProtectedPagesWeekRoute
   '/dogs/$dogId': typeof ProtectedPagesDogsDogIdRoute
   '/dogs/': typeof ProtectedPagesDogsIndexRoute
@@ -87,7 +87,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/account': typeof ProtectedPagesAccountRoute
   '/clients': typeof ProtectedPagesClientsRoute
-  '/quacks': typeof ProtectedPagesQuacksRoute
+  '/dashboard': typeof ProtectedPagesDashboardRoute
   '/week': typeof ProtectedPagesWeekRoute
   '/dogs/$dogId': typeof ProtectedPagesDogsDogIdRoute
   '/dogs': typeof ProtectedPagesDogsIndexRoute
@@ -100,7 +100,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_ProtectedPages/account': typeof ProtectedPagesAccountRoute
   '/_ProtectedPages/clients': typeof ProtectedPagesClientsRoute
-  '/_ProtectedPages/quacks': typeof ProtectedPagesQuacksRoute
+  '/_ProtectedPages/dashboard': typeof ProtectedPagesDashboardRoute
   '/_ProtectedPages/week': typeof ProtectedPagesWeekRoute
   '/_ProtectedPages/dogs/$dogId': typeof ProtectedPagesDogsDogIdRoute
   '/_ProtectedPages/dogs/': typeof ProtectedPagesDogsIndexRoute
@@ -113,7 +113,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/account'
     | '/clients'
-    | '/quacks'
+    | '/dashboard'
     | '/week'
     | '/dogs/$dogId'
     | '/dogs/'
@@ -124,7 +124,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/account'
     | '/clients'
-    | '/quacks'
+    | '/dashboard'
     | '/week'
     | '/dogs/$dogId'
     | '/dogs'
@@ -136,7 +136,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_ProtectedPages/account'
     | '/_ProtectedPages/clients'
-    | '/_ProtectedPages/quacks'
+    | '/_ProtectedPages/dashboard'
     | '/_ProtectedPages/week'
     | '/_ProtectedPages/dogs/$dogId'
     | '/_ProtectedPages/dogs/'
@@ -193,11 +193,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPagesClientsRouteImport
       parentRoute: typeof ProtectedPagesRoute
     }
-    '/_ProtectedPages/quacks': {
-      id: '/_ProtectedPages/quacks'
-      path: '/quacks'
-      fullPath: '/quacks'
-      preLoaderRoute: typeof ProtectedPagesQuacksRouteImport
+    '/_ProtectedPages/dashboard': {
+      id: '/_ProtectedPages/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof ProtectedPagesDashboardRouteImport
       parentRoute: typeof ProtectedPagesRoute
     }
     '/_ProtectedPages/week': {
@@ -227,7 +227,7 @@ declare module '@tanstack/react-router' {
 interface ProtectedPagesRouteChildren {
   ProtectedPagesAccountRoute: typeof ProtectedPagesAccountRoute
   ProtectedPagesClientsRoute: typeof ProtectedPagesClientsRoute
-  ProtectedPagesQuacksRoute: typeof ProtectedPagesQuacksRoute
+  ProtectedPagesDashboardRoute: typeof ProtectedPagesDashboardRoute
   ProtectedPagesWeekRoute: typeof ProtectedPagesWeekRoute
   ProtectedPagesDogsDogIdRoute: typeof ProtectedPagesDogsDogIdRoute
   ProtectedPagesDogsIndexRoute: typeof ProtectedPagesDogsIndexRoute
@@ -236,7 +236,7 @@ interface ProtectedPagesRouteChildren {
 const ProtectedPagesRouteChildren: ProtectedPagesRouteChildren = {
   ProtectedPagesAccountRoute: ProtectedPagesAccountRoute,
   ProtectedPagesClientsRoute: ProtectedPagesClientsRoute,
-  ProtectedPagesQuacksRoute: ProtectedPagesQuacksRoute,
+  ProtectedPagesDashboardRoute: ProtectedPagesDashboardRoute,
   ProtectedPagesWeekRoute: ProtectedPagesWeekRoute,
   ProtectedPagesDogsDogIdRoute: ProtectedPagesDogsDogIdRoute,
   ProtectedPagesDogsIndexRoute: ProtectedPagesDogsIndexRoute,
