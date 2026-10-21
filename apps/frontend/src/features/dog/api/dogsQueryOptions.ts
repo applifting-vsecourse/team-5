@@ -55,6 +55,7 @@ export function goalQueryOptions(goalId: string) {
   })
 }
 
+// The plan of one goal, in the order it is trained.
 export function goalBlocksQueryOptions(goalId: string) {
   return queryOptions({
     queryKey: dogKeys.goalBlocks(goalId),

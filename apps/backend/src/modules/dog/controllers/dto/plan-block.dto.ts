@@ -1,13 +1,24 @@
 import { PlanBlock } from '@/modules/dog/domain/plan-block';
 import { Trim } from '@/shared/validation/trim';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 // Title mirrors the plan_block column; instruction and criterion are TEXT,
 // so their caps only keep a single request reasonable.
 const TITLE_MAX_LENGTH = 100;
 const INSTRUCTION_MAX_LENGTH = 2000;
 const CRITERION_MAX_LENGTH = 1000;
+const MAX_BLOCKS_IN_PLAN = 500;
 
 export class CreatePlanBlockDto {
   @ApiProperty({
@@ -40,6 +51,59 @@ export class CreatePlanBlockDto {
   @IsString()
   @MaxLength(CRITERION_MAX_LENGTH)
   criterion?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Index in the plan to insert the block at (0 = first); missing means at the end',
+    minimum: 0,
+    maximum: MAX_BLOCKS_IN_PLAN,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(MAX_BLOCKS_IN_PLAN)
+  insertAt?: number;
+}
+
+export class UpdatePlanBlockDto {
+  @ApiPropertyOptional({
+    description: 'Name of the exercise',
+    maxLength: TITLE_MAX_LENGTH,
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(TITLE_MAX_LENGTH)
+  title?: string;
+
+  @ApiPropertyOptional({
+    description: 'How to practise it; empty string clears it',
+    maxLength: INSTRUCTION_MAX_LENGTH,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(INSTRUCTION_MAX_LENGTH)
+  instruction?: string;
+
+  @ApiPropertyOptional({
+    description: 'When the exercise counts as mastered; empty string clears it',
+    maxLength: CRITERION_MAX_LENGTH,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(CRITERION_MAX_LENGTH)
+  criterion?: string;
+}
+
+export class ReorderPlanBlocksDto {
+  @ApiProperty({
+    description: 'IDs of all blocks of the plan in the new order',
+    type: [String],
+  })
+  @IsArray()
+  @ArrayMaxSize(MAX_BLOCKS_IN_PLAN)
+  @IsString({ each: true })
+  blockIds!: string[];
 }
 
 export class PlanBlockResponseDto {

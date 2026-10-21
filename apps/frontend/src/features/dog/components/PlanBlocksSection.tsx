@@ -1,26 +1,66 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Plus } from "lucide-react"
+import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from "lucide-react"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 
-import type { ExerciseFormValues, PlanBlock } from "@/features/dog/api/dogSchemas"
+import type { PlanBlock } from "@/features/dog/api/dogSchemas"
 import { goalBlocksQueryOptions } from "@/features/dog/api/dogsQueryOptions"
+import type { NewExercise } from "@/features/dog/api/savePlanBlock"
 import { useCreatePlanBlock } from "@/features/dog/hooks/useCreatePlanBlock"
+import { useDeletePlanBlock } from "@/features/dog/hooks/useDeletePlanBlock"
+import { useReorderPlanBlocks } from "@/features/dog/hooks/useReorderPlanBlocks"
+import { useUpdatePlanBlock } from "@/features/dog/hooks/useUpdatePlanBlock"
 
-import { AddExerciseDialog } from "./AddExerciseDialog"
+import { ExerciseDialog, type ExerciseDialogMode } from "./ExerciseDialog"
 
-function PlanBlockItem({ block, number }: { block: PlanBlock; number: number }) {
+type PlanBlockItemProps = {
+  block: PlanBlock
+  number: number
+  isFirst: boolean
+  isLast: boolean
+  isReordering: boolean
+  onEdit: () => void
+  onMove: (direction: -1 | 1) => void
+  onDelete: () => void
+}
+
+function PlanBlockItem({
+  block,
+  number,
+  isFirst,
+  isLast,
+  isReordering,
+  onEdit,
+  onMove,
+  onDelete,
+}: PlanBlockItemProps) {
   return (
-    <li className="flex gap-3 rounded-lg border border-border bg-card p-4">
+    <li className="flex gap-3 rounded-lg border border-border bg-card p-3">
       <span
         aria-hidden="true"
-        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-secondary-foreground"
+        className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-secondary-foreground"
       >
         {number}
       </span>
-      <div className="min-w-0 space-y-1">
+
+      {/* Clicking the block opens it for editing (#65). */}
+      <button
+        type="button"
+        onClick={onEdit}
+        className="flex min-w-0 flex-1 flex-col justify-start gap-1 rounded-md py-1 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
+      >
         <h3 className="text-base font-medium text-foreground">
           <span className="sr-only">Cvik {number}: </span>
           {block.title}
@@ -34,26 +74,98 @@ function PlanBlockItem({ block, number }: { block: PlanBlock; number: number }) 
         {block.criterion ? (
           <p className="text-sm text-foreground">Kritérium: {block.criterion}</p>
         ) : null}
+      </button>
+
+      {/* Arrows instead of drag and drop, so the order can be changed on a phone too. */}
+      <div className="grid shrink-0 grid-cols-2 content-start gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-11"
+          aria-label={`Posunout cvik ${block.title} nahoru`}
+          disabled={isFirst || isReordering}
+          onClick={() => onMove(-1)}
+        >
+          <ChevronUp className="size-5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-11"
+          aria-label={`Upravit cvik ${block.title}`}
+          onClick={onEdit}
+        >
+          <Pencil className="size-5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-11"
+          aria-label={`Posunout cvik ${block.title} dolů`}
+          disabled={isLast || isReordering}
+          onClick={() => onMove(1)}
+        >
+          <ChevronDown className="size-5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-11 text-destructive hover:text-destructive"
+          aria-label={`Smazat cvik ${block.title}`}
+          onClick={onDelete}
+        >
+          <Trash2 className="size-5" />
+        </Button>
       </div>
     </li>
   )
 }
 
 export function PlanBlocksSection({ goalId }: { goalId: string }) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [dialogMode, setDialogMode] = useState<ExerciseDialogMode | null>(null)
+  const [blockToDelete, setBlockToDelete] = useState<PlanBlock | null>(null)
+
   const blocksQuery = useQuery(goalBlocksQueryOptions(goalId))
   const createBlock = useCreatePlanBlock(goalId)
+  const updateBlock = useUpdatePlanBlock(goalId)
+  const deleteBlock = useDeletePlanBlock(goalId)
+  const reorderBlocks = useReorderPlanBlocks(goalId)
 
-  const handleAdd = async (values: ExerciseFormValues) => {
+  const blocks = blocksQuery.data ?? []
+
+  const handleSave = async (exercise: NewExercise) => {
     try {
-      await createBlock.mutateAsync(values)
-      setIsDialogOpen(false)
+      if (dialogMode?.kind === "edit") {
+        const { insertAt: _insertAt, ...values } = exercise
+        await updateBlock.mutateAsync({ blockId: dialogMode.block.id, values })
+      } else {
+        await createBlock.mutateAsync(exercise)
+      }
+      setDialogMode(null)
     } catch {
-      // useCreatePlanBlock already told the user; keep the dialog open.
+      // The hook already told the user; keep the dialog open.
     }
   }
 
-  const blocks = blocksQuery.data ?? []
+  const handleMove = (index: number, direction: -1 | 1) => {
+    const target = index + direction
+    if (target < 0 || target >= blocks.length) return
+    const reordered = [...blocks]
+    const [moved] = reordered.splice(index, 1)
+    if (!moved) return
+    reordered.splice(target, 0, moved)
+    reorderBlocks.mutate(reordered)
+  }
+
+  const handleConfirmDelete = () => {
+    if (!blockToDelete) return
+    deleteBlock.mutate(blockToDelete.id)
+    setBlockToDelete(null)
+  }
 
   return (
     <section
@@ -101,6 +213,12 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
               key={block.id}
               block={block}
               number={index + 1}
+              isFirst={index === 0}
+              isLast={index === blocks.length - 1}
+              isReordering={reorderBlocks.isPending}
+              onEdit={() => setDialogMode({ kind: "edit", block })}
+              onMove={(direction) => handleMove(index, direction)}
+              onDelete={() => setBlockToDelete(block)}
             />
           ))}
         </ol>
@@ -110,18 +228,44 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
         type="button"
         variant="ghost"
         className="min-h-11 w-full gap-2"
-        onClick={() => setIsDialogOpen(true)}
+        onClick={() => setDialogMode({ kind: "create", blocks })}
       >
         <Plus className="size-4" />
         Přidat cvik
       </Button>
 
-      <AddExerciseDialog
-        isOpen={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        isPending={createBlock.isPending}
-        onSubmit={handleAdd}
+      <ExerciseDialog
+        mode={dialogMode}
+        onClose={() => setDialogMode(null)}
+        isPending={createBlock.isPending || updateBlock.isPending}
+        onSubmit={handleSave}
       />
+
+      <AlertDialog
+        open={blockToDelete !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setBlockToDelete(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Smazat cvik?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cvik „{blockToDelete?.title}“ zmizí z plánu. Vrátit to nepůjde.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="min-h-11">Ponechat</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              className="min-h-11"
+              onClick={handleConfirmDelete}
+            >
+              Smazat
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   )
 }

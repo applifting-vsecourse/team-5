@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it } from "vitest"
+import { beforeAll, describe, expect, it } from "vitest"
 
 import { dogKeys } from "@/features/dog/api/dogKeys"
 import type { PlanBlock } from "@/features/dog/api/dogSchemas"
@@ -33,6 +33,15 @@ const renderWithBlocks = (blocks: PlanBlock[]) => {
   )
 }
 
+// Radix Select uses pointer capture and scrollIntoView, which jsdom lacks.
+beforeAll(() => {
+  Object.assign(Element.prototype, {
+    hasPointerCapture: () => false,
+    releasePointerCapture: () => undefined,
+    scrollIntoView: () => undefined,
+  })
+})
+
 describe("PlanBlocksSection", () => {
   it("lists exercises in order with instruction and criterion", () => {
     renderWithBlocks([
@@ -63,6 +72,57 @@ describe("PlanBlocksSection", () => {
 
     expect(screen.getByText(/Plán zatím nemá žádný cvik/)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Přidat cvik" })).toBeInTheDocument()
+  })
+
+  it("only offers the moves that make sense at the ends of the plan", () => {
+    renderWithBlocks([aBlock(), aBlock({ id: "b2", position: 1, title: "Krok vpřed" })])
+
+    expect(screen.getByRole("button", { name: "Posunout cvik Sedni u nohy nahoru" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Posunout cvik Sedni u nohy dolů" })).toBeEnabled()
+    expect(screen.getByRole("button", { name: "Posunout cvik Krok vpřed nahoru" })).toBeEnabled()
+    expect(screen.getByRole("button", { name: "Posunout cvik Krok vpřed dolů" })).toBeDisabled()
+  })
+
+  it("opens a block for editing when it is clicked (#65)", async () => {
+    const user = userEvent.setup()
+    renderWithBlocks([aBlock()])
+
+    await user.click(screen.getByRole("heading", { name: /Sedni u nohy/ }))
+    const dialog = await screen.findByRole("dialog")
+
+    expect(within(dialog).getByRole("heading", { name: "Upravit cvik" })).toBeInTheDocument()
+    expect(within(dialog).getByLabelText("Název cviku")).toHaveValue("Sedni u nohy")
+    expect(within(dialog).getByLabelText("Kritérium zvládnutí")).toHaveValue(
+      "Sedí 5 s, i když kolem letí míček.",
+    )
+    // Placement only matters for a new exercise.
+    expect(within(dialog).queryByText("Zařadit")).not.toBeInTheDocument()
+  })
+
+  it("asks before deleting a block and keeps it on cancel", async () => {
+    const user = userEvent.setup()
+    renderWithBlocks([aBlock()])
+
+    await user.click(screen.getByRole("button", { name: "Smazat cvik Sedni u nohy" }))
+    const confirm = await screen.findByRole("alertdialog")
+    expect(within(confirm).getByText(/Cvik „Sedni u nohy“ zmizí z plánu/)).toBeInTheDocument()
+
+    await user.click(within(confirm).getByRole("button", { name: "Ponechat" }))
+
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: /Sedni u nohy/ })).toBeInTheDocument()
+  })
+
+  it("lets a new exercise go between existing ones (#65)", async () => {
+    const user = userEvent.setup()
+    renderWithBlocks([aBlock(), aBlock({ id: "b2", position: 1, title: "Krok vpřed" })])
+
+    await user.click(screen.getByRole("button", { name: "Přidat cvik" }))
+    const dialog = await screen.findByRole("dialog")
+    await user.click(within(dialog).getByRole("combobox", { name: "Zařadit" }))
+
+    const options = screen.getAllByRole("option").map((option) => option.textContent)
+    expect(options).toEqual(["Na konec plánu", "Na začátek", "Za 1. Sedni u nohy"])
   })
 
   it("asks for the exercise name before adding it", async () => {
