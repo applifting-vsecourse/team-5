@@ -255,7 +255,7 @@ describe("ClientList", () => {
 
     await waitFor(() => {
       expect(screen.getByRole("alert")).toBeInTheDocument()
-      expect(screen.getByText("Nepodařilo se načíst seznam klientů.")).toBeInTheDocument()
+      expect(screen.getByText("Chyba při načítání klientů")).toBeInTheDocument()
     })
     expect(screen.getByRole("button", { name: /zkusit znovu/i })).toBeInTheDocument()
   })

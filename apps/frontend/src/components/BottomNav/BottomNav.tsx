@@ -30,9 +30,15 @@ const NAV_ITEMS = [
   },
 ] as const
 
-export function BottomNav() {
+type BottomNavProps = {
+  isTrainer?: boolean
+}
+
+export function BottomNav({ isTrainer = false }: BottomNavProps) {
   const location = useLocation()
   const currentPath = location.pathname
+
+  const items = NAV_ITEMS.filter((item) => item.to !== "/clients" || isTrainer)
 
   return (
     <nav
@@ -40,7 +46,7 @@ export function BottomNav() {
       className="fixed right-0 bottom-0 left-0 z-40 border-t border-border bg-background/95 backdrop-blur-xs md:hidden"
     >
       <div className="mx-auto flex h-16 max-w-md items-center justify-around px-2">
-        {NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const Icon = item.icon
           const isActive = currentPath.startsWith(item.matchPrefix)
 

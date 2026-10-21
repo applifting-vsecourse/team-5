@@ -7,6 +7,7 @@ import { Seo } from "@/components/Seo"
 
 import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
 import { HeaderMenu } from "@/features/auth/components/HeaderMenu"
+import { useSession } from "@/features/auth/hooks/useSession"
 import { encodeRedirectUri } from "@/features/auth/lib/redirect"
 
 export const Route = createFileRoute("/_ProtectedPages")({
@@ -23,17 +24,21 @@ export const Route = createFileRoute("/_ProtectedPages")({
 })
 
 function Layout() {
+  const { user } = useSession()
+  const isTrainer = user?.role === "trainer" || user?.role === "admin"
+
   return (
     <div className="flex min-h-svh flex-col">
       <Seo />
       <Header
         className="hidden md:block"
         userMenu={<HeaderMenu />}
+        isTrainer={isTrainer}
       />
       <main className="flex-1 pb-20 md:pb-8">
         <Outlet />
       </main>
-      <BottomNav />
+      <BottomNav isTrainer={isTrainer} />
     </div>
   )
 }

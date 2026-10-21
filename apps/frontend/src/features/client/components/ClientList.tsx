@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { AlertCircle, UserPlus, Users } from "lucide-react"
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 
 import { clientsQueryOptions } from "@/features/client/api/clientsQueryOptions"
@@ -12,7 +13,7 @@ import { UnusedInvitations } from "./UnusedInvitations"
 
 export function ClientList() {
   const [isInviteOpen, setIsInviteOpen] = useState(false)
-  const { data: clients, isLoading, isError, error, refetch } = useQuery(clientsQueryOptions())
+  const { data: clients, isLoading, isError, refetch } = useQuery(clientsQueryOptions())
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,33 +53,37 @@ export function ClientList() {
 
       {/* Error state */}
       {isError && (
-        <div
-          role="alert"
-          className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-6 text-center"
-        >
-          <AlertCircle className="size-8 text-destructive" />
-          <p className="mt-2 text-sm font-medium text-foreground">
-            Nepodařilo se načíst seznam klientů.
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {error instanceof Error ? error.message : "Zkontrolujte připojení k síti."}
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-4 min-h-11"
-            onClick={() => refetch()}
-          >
-            Zkusit znovu
-          </Button>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle
+            className="size-4"
+            aria-hidden="true"
+          />
+          <AlertTitle>Chyba při načítání klientů</AlertTitle>
+          <AlertDescription className="mt-2 flex flex-col items-start gap-3">
+            <span>
+              Nepodařilo se načíst seznam klientů. Zkontrolujte prosím připojení k síti a zkuste to znovu.
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-11"
+              onClick={() => void refetch()}
+            >
+              Zkusit znovu
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Empty state */}
       {!isLoading && !isError && clients && clients.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-8 text-center">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-8 text-center sm:p-12">
           <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-            <Users className="size-6 text-muted-foreground" />
+            <Users
+              className="size-6 text-muted-foreground"
+              aria-hidden="true"
+            />
           </div>
           <h2 className="mt-4 text-base font-semibold text-foreground">
             Zatím nemáte žádné klienty
