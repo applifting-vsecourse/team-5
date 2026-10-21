@@ -56,6 +56,7 @@ export function LandingPage() {
     <div className="flex min-h-svh flex-col bg-background">
       <Seo title="TrainLoop" />
       <Header
+        className="hidden md:block"
         userMenu={<HeaderMenu />}
         nav={null}
       />
