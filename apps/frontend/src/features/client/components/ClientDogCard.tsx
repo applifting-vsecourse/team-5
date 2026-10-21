@@ -32,7 +32,6 @@ export function ClientDogCard({ dog, className }: ClientDogCardProps) {
         to="/dogs/$dogId"
         params={{ dogId: dog.id }}
         className="flex min-h-16 flex-1 items-center justify-between gap-4 p-4 text-left outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        aria-label={`Detail psa ${dog.name}`}
       >
         <div className="flex min-w-0 items-center gap-3">
           <PesAvatar
@@ -49,7 +48,10 @@ export function ClientDogCard({ dog, className }: ClientDogCardProps) {
           </div>
         </div>
 
-        <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+        <ChevronRight
+          className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground"
+          aria-hidden="true"
+        />
       </Link>
     </Card>
   )
