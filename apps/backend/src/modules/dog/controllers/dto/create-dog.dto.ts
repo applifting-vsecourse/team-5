@@ -40,4 +40,13 @@ export class CreateDogDto {
   @Min(1)
   @Max(6)
   color!: number;
+
+  @ApiPropertyOptional({
+    description: 'Disciplines/sports of the dog',
+    example: ['Poslušnost', 'Canicross'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsString({ each: true })
+  disciplines?: string[];
 }

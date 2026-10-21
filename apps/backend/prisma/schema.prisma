@@ -94,6 +94,8 @@ model User {
   accounts        Account[]
   quacks          Quack[]
   dogs            Dog[]
+  createdGoals    TrainingGoal[] @relation("GoalCreator")
+  workoutLogs     WorkoutLog[]   @relation("LogAuthor")
   role            UserRole  @default(user)
 
   username        String? @db.VarChar(50)
@@ -113,9 +115,89 @@ model Dog {
   owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   isArchived  Boolean  @default(false)
   disciplines String[] @default([])
+  goals       TrainingGoal[]
+  workoutLogs WorkoutLog[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
   @@index([ownerId])
   @@map("dog")
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  ARCHIVED
+
+  @@map("goal_status")
+}
+
+enum WorkoutStatus {
+  COMPLETED
+  SKIPPED
+
+  @@map("workout_status")
+}
+
+enum FocusLevel {
+  YES
+  PARTIALLY
+  NO
+
+  @@map("focus_level")
+}
+
+enum MistakeLevel {
+  YES
+  PARTIALLY
+  NO
+
+  @@map("mistake_level")
+}
+
+model TrainingGoal {
+  id          String        @id @default(cuid())
+  dogId       String
+  dog         Dog           @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User          @relation("GoalCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  title       String        @db.VarChar(100)
+  discipline  String?       @db.VarChar(60)
+  principle   String?       @db.Text
+  status      GoalStatus    @default(ACTIVE)
+  order       Int           @default(0)
+  workoutLogs WorkoutLog[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+
+  @@index([dogId, status])
+  @@index([dogId, order])
+  @@map("training_goal")
+}
+
+model WorkoutLog {
+  id               String        @id @default(cuid())
+  dogId            String
+  dog              Dog           @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  goalId           String?
+  goal             TrainingGoal? @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  authorId         String
+  author           User          @relation("LogAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  title            String        @db.VarChar(120)
+  discipline       String?       @db.VarChar(60)
+  status           WorkoutStatus @default(COMPLETED)
+  completedAt      DateTime      @default(now())
+  successRate      Int?
+  rating           Int?
+  focus            FocusLevel?
+  repeatedMistakes MistakeLevel?
+  note             String?       @db.Text
+  videoUrl         String?       @db.VarChar(500)
+  skipReason       String?       @db.Text
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @default(now()) @updatedAt
+
+  @@index([dogId, completedAt(sort: Desc)])
+  @@map("workout_log")
 }

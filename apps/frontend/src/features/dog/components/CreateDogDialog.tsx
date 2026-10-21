@@ -27,6 +27,15 @@ export const DOG_COLORS = [
   { value: 6, label: "Barva 6", className: "bg-dog-6" },
 ] as const
 
+export const AVAILABLE_DISCIPLINES = [
+  "Poslušnost",
+  "Agility",
+  "Canicross",
+  "Nosework",
+  "Dogfrisbee",
+  "Triky",
+] as const
+
 export function getFirstUnusedColor(existingDogs?: { color: number }[]): number {
   if (!existingDogs || existingDogs.length === 0) return 1
   const used = new Set(existingDogs.map((d) => d.color))
@@ -60,12 +69,14 @@ export function CreateDogDialog({
   const [name, setName] = useState("")
   const [breed, setBreed] = useState("")
   const [color, setColor] = useState<number>(defaultColor)
+  const [disciplines, setDisciplines] = useState<string[]>([])
   const [errors, setErrors] = useState<{ name?: string; breed?: string }>({})
 
   const resetForm = useCallback(() => {
     setName("")
     setBreed("")
     setColor(defaultColor)
+    setDisciplines([])
     setErrors({})
   }, [defaultColor])
 
@@ -92,6 +103,7 @@ export function CreateDogDialog({
       name,
       breed,
       color,
+      disciplines,
     })
 
     if (!parseResult.success) {
@@ -207,6 +219,36 @@ export function CreateDogDialog({
                       )}
                     >
                       {isSelected && <Check className="size-5 stroke-[3] text-white" />}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Sporty a disciplíny (volitelné)</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {AVAILABLE_DISCIPLINES.map((disc) => {
+                  const isSelected = disciplines.includes(disc)
+                  return (
+                    <button
+                      key={disc}
+                      type="button"
+                      onClick={() =>
+                        setDisciplines((prev) =>
+                          prev.includes(disc) ? prev.filter((d) => d !== disc) : [...prev, disc],
+                        )
+                      }
+                      disabled={isPending}
+                      className={cn(
+                        "inline-flex cursor-pointer items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                        isSelected
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground",
+                      )}
+                    >
+                      {isSelected && <Check className="size-3" />}
+                      <span>{disc}</span>
                     </button>
                   )
                 })}
