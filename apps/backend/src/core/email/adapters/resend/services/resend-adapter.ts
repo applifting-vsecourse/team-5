@@ -13,16 +13,27 @@ export class ResendAdapter implements EmailService {
   }
 
   async sendEmail(to: string, subject: string, html: string): Promise<void> {
-    const { error } = await this.client.emails.send({
-      from: this.config.from,
-      to,
-      subject,
-      html,
-    });
+    try {
+      const { error } = await this.client.emails.send({
+        from: this.config.from,
+        to,
+        subject,
+        html,
+      });
 
-    if (error) {
-      this.logger.error(`Resend delivery failed: ${error.message}`, error);
-      throw new Error(`Resend delivery failed: ${error.message}`);
+      if (error) {
+        this.logger.error(`Resend delivery failed: ${error.message}`, error);
+        throw new Error('Zkuste to znovu');
+      }
+    } catch (error) {
+      if ((error as Error).message === 'Zkuste to znovu') {
+        throw error;
+      }
+      this.logger.error(
+        `Resend delivery failed: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
+      throw new Error('Zkuste to znovu', { cause: error });
     }
   }
 }

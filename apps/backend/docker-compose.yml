@@ -14,3 +14,12 @@ services:
       timeout: 3s
       retries: 20
       start_period: 10s
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: always
+    ports:
+      - 1025:1025
+      - 8025:8025
+    environment:
+      MP_MAX_MESSAGES: 500

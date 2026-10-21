@@ -1,10 +1,11 @@
 import { SMTPConfig } from '@/core/email/adapters/smtp/interfaces/smtp-config.interface';
 import { EmailService } from '@/core/email/interfaces/email-service.interface';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class SMTPAdapter implements EmailService {
+  private readonly logger = new Logger(SMTPAdapter.name);
   private readonly transporter: nodemailer.Transporter;
 
   constructor(private readonly config: SMTPConfig) {
@@ -12,19 +13,30 @@ export class SMTPAdapter implements EmailService {
       host: config.host,
       port: config.port,
       secure: config.secure,
-      auth: {
-        user: config.user,
-        pass: config.pass,
-      },
+      auth:
+        config.user && config.pass
+          ? {
+              user: config.user,
+              pass: config.pass,
+            }
+          : undefined,
     });
   }
 
   async sendEmail(to: string, subject: string, html: string): Promise<void> {
-    await this.transporter.sendMail({
-      from: this.config.user,
-      to,
-      subject,
-      html,
-    });
+    try {
+      await this.transporter.sendMail({
+        from: this.config.from,
+        to,
+        subject,
+        html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `SMTP delivery failed: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
+      throw new Error('Zkuste to znovu', { cause: error });
+    }
   }
 }

@@ -30,7 +30,7 @@ const createAuth = (
           username: user.name,
           url: passwordResetUrl,
         });
-        await emailProvider.sendEmail(user.email, 'Password reset', html);
+        await emailProvider.sendEmail(user.email, 'Obnova hesla', html);
       },
     },
     user: {
@@ -47,11 +47,7 @@ const createAuth = (
     emailVerification: {
       sendVerificationEmail: async ({ user, url }) => {
         const html = await renderEmail(VerifyEmail, { url });
-        await emailProvider.sendEmail(
-          user.email,
-          'Verify your email address',
-          html,
-        );
+        await emailProvider.sendEmail(user.email, 'Ověření e-mailu', html);
       },
       sendOnSignUp: true,
     },
