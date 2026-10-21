@@ -3,6 +3,7 @@ import { z } from "zod"
 
 import { api } from "@/lib/api-client"
 import { addCalendarDays, type CalendarDate } from "@/lib/calendarDate"
+import { weekKeys } from "@/lib/weekKeys"
 
 export const weekTrainingSchema = z.object({
   id: z.string(),
@@ -15,10 +16,7 @@ export const weekTrainingSchema = z.object({
 
 export type WeekTraining = z.infer<typeof weekTrainingSchema>
 
-export const weekKeys = {
-  all: ["week"] as const,
-  week: (weekStart: CalendarDate) => [...weekKeys.all, weekStart] as const,
-}
+export { weekKeys }
 
 // All of the owner's trainings from Monday to Sunday of one week (#72).
 export function weekTrainingsQueryOptions(weekStart: CalendarDate) {

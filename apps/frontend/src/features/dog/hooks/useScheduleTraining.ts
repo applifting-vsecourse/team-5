@@ -3,6 +3,7 @@ import { HTTPError } from "ky"
 import { toast } from "sonner"
 
 import { formatDayAccusative, type CalendarDate } from "@/lib/calendarDate"
+import { weekKeys } from "@/lib/weekKeys"
 
 import { dogKeys } from "@/features/dog/api/dogKeys"
 import { scheduleTraining } from "@/features/dog/api/scheduleTraining"
@@ -14,6 +15,8 @@ export function useScheduleTraining(goalId: string) {
     mutationFn: (date: CalendarDate) => scheduleTraining(goalId, date),
     onSuccess: (training) => {
       void queryClient.invalidateQueries({ queryKey: dogKeys.goalTrainings(goalId) })
+      // The week shows goals and their exercises too (#72).
+      void queryClient.invalidateQueries({ queryKey: weekKeys.all })
       toast.success(`Trénink je naplánovaný na ${formatDayAccusative(training.date)}`)
     },
     onError: (error) => {

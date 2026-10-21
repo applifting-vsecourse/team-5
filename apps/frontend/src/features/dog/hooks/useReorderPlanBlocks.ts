@@ -1,6 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
+import { weekKeys } from "@/lib/weekKeys"
+
 import { dogKeys } from "@/features/dog/api/dogKeys"
 import type { PlanBlock } from "@/features/dog/api/dogSchemas"
 import { reorderPlanBlocks } from "@/features/dog/api/savePlanBlock"
@@ -29,6 +31,8 @@ export function useReorderPlanBlocks(goalId: string) {
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey })
+      // The week lists the exercises in plan order too (#72).
+      void queryClient.invalidateQueries({ queryKey: weekKeys.all })
     },
   })
 }
