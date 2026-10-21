@@ -71,6 +71,7 @@ export class UpdatePlanBlockDto {
     maxLength: TITLE_MAX_LENGTH,
   })
   @IsOptional()
+  @Trim()
   @IsString()
   @IsNotEmpty()
   @MaxLength(TITLE_MAX_LENGTH)

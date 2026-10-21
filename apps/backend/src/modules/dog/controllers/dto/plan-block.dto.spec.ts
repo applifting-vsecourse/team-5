@@ -1,6 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { CreatePlanBlockDto } from './plan-block.dto';
+import { CreatePlanBlockDto, UpdatePlanBlockDto } from './plan-block.dto';
 
 const errorsFor = async <T extends object>(
   cls: new () => T,
@@ -11,6 +11,20 @@ const errorsFor = async <T extends object>(
 };
 
 describe('plan block DTOs', () => {
+  describe('UpdatePlanBlockDto', () => {
+    it('rejects renaming an exercise to spaces only (#65)', async () => {
+      await expect(
+        errorsFor(UpdatePlanBlockDto, { title: '   ' }),
+      ).resolves.toEqual(['title']);
+    });
+
+    it('still lets the title be left out', async () => {
+      await expect(
+        errorsFor(UpdatePlanBlockDto, { criterion: '' }),
+      ).resolves.toEqual([]);
+    });
+  });
+
   describe('CreatePlanBlockDto', () => {
     it('accepts an exercise with only a title', async () => {
       await expect(
