@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
 import { authClient } from "@/features/auth/lib/auth-client"
+import { clearPrivateQueries } from "@/features/auth/lib/clear-private-queries"
 import { registrationError } from "@/features/auth/lib/registration-errors"
 
 export type SignUpInput = {
@@ -31,7 +32,8 @@ export function useSignUp() {
     },
     onSuccess: async () => {
       const options = authSessionQueryOptions()
-      await queryClient.invalidateQueries({ queryKey: options.queryKey })
+      await queryClient.cancelQueries({ queryKey: options.queryKey })
+      await clearPrivateQueries(queryClient)
       // Refresh even an inactive anonymous query before protected route loaders run.
       await queryClient.fetchQuery({ ...options, staleTime: 0 })
     },

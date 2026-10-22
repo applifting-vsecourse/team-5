@@ -3,6 +3,7 @@ import { ChevronDown, LogOut, Monitor, Moon, Sun } from "lucide-react"
 import { toast } from "sonner"
 
 import { Seo } from "@/components/Seo"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -78,6 +79,13 @@ export function AccountPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
+              {signOut.isError ? (
+                <Alert variant="destructive">
+                  <AlertDescription>
+                    Odhlášení se nezdařilo. Zkuste to prosím znovu.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
               <Button
                 variant="outline"
                 className="min-h-11 w-full justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -91,7 +99,7 @@ export function AccountPage() {
                 disabled={signOut.isPending}
               >
                 <LogOut className="size-4" />
-                Odhlásit se
+                {signOut.isPending ? "Odhlašuji…" : "Odhlásit se"}
               </Button>
             </div>
           </div>
