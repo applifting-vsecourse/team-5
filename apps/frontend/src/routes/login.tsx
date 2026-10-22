@@ -57,7 +57,9 @@ function LoginPage() {
       <Dialog
         open
         onOpenChange={(isOpen) => {
-          if (!isOpen && !signIn.isPending) void navigate({ to: ROUTES.home, replace: true })
+          if (!isOpen && !signIn.isPending) {
+            void navigate({ to: ROUTES.home, replace: true })
+          }
         }}
       >
         <DialogContent showCloseButton={false}>
@@ -84,15 +86,25 @@ function LoginPage() {
             errorMessage={errorMessage}
             onSubmit={handleSubmit}
           />
-          <p className="text-sm text-muted-foreground">
-            Ještě nemáte účet?{" "}
-            <Link
-              to={ROUTES.signup}
-              className="font-medium text-foreground underline underline-offset-4"
-            >
-              Registrace
-            </Link>
-          </p>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <div>
+              <Link
+                to={ROUTES.forgotPassword}
+                className="font-medium text-foreground underline underline-offset-4"
+              >
+                Zapomenuté heslo?
+              </Link>
+            </div>
+            <p>
+              Ještě nemáte účet?{" "}
+              <Link
+                to={ROUTES.signup}
+                className="font-medium text-foreground underline underline-offset-4"
+              >
+                Registrace
+              </Link>
+            </p>
+          </div>
         </DialogContent>
       </Dialog>
     </>
