@@ -15,3 +15,4 @@ export class AcceptInvitationDto {
   )
   code!: string;
 }
+

@@ -13,3 +13,4 @@ export class VerifyInvitationResponseDto {
   @ApiPropertyOptional({ type: String, nullable: true })
   email?: string | null;
 }
+
