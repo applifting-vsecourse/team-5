@@ -17,14 +17,17 @@
     "start:debug": "prisma generate && nest start --path tsconfig.dev.json --env-file .env --debug --watch",
     "start:prod": "NODE_ENV=\"production\" node dist/main",
     "seed": "prisma generate && ts-node -r dotenv/config -r tsconfig-paths/register src/scripts/seed/seed.script.ts",
+    "seed:prod": "node dist/scripts/seed/seed.script.js",
     "migrate": "prisma migrate deploy",
-    "start:migrate:prod": "prisma migrate deploy && npm run start:prod",
+    "start:migrate:prod": "prisma migrate deploy && node dist/scripts/seed/seed.script.js && npm run start:prod",
     "lint:check": "eslint \"src/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:ci": "jest --ci",
+    "test:auth": "node --test test/registration.test.mjs test/login.test.mjs test/account-deletion.test.mjs",
+    "test:auth:postgres": "node --test test/trainer-registration.postgres.test.mjs test/account-deletion.postgres.test.mjs test/dog-access.postgres.test.mjs",
     "docker:up": "docker compose up",
     "docker:up:wait": "docker compose up -d --wait",
     "docker:up-rebuild": "docker compose down; docker compose up --renew-anon-volumes --build --force-recreate be",
@@ -52,6 +55,8 @@
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "heic-convert": "^2.1.0",
+    "multer": "^2.4.0",
     "nodemailer": "^9.0.5",
     "prisma": "^7.9.1",
     "react": "^19.2.8",
@@ -60,7 +65,8 @@
     "reflect-metadata": "^0.2.2",
     "resend": "^6.20.0",
     "rimraf": "^6.1.3",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@eslint/js": "catalog:lint",
@@ -70,7 +76,9 @@
     "@nestjs/testing": "^11.2.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
+    "@types/heic-convert": "^2.1.1",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.3.0",
     "@types/node": "^24.13.3",
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19.2.18",
@@ -92,7 +100,8 @@
     "moduleFileExtensions": [
       "js",
       "json",
-      "ts"
+      "ts",
+      "tsx"
     ],
     "rootDir": "./",
     "moduleDirectories": [
@@ -100,7 +109,7 @@
     ],
     "testRegex": "\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)sx?$": "ts-jest"
     },
     "collectCoverageFrom": [
       "**/*.ts"

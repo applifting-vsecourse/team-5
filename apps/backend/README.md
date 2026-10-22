@@ -61,7 +61,7 @@ This project uses PostgreSQL running in Docker Compose for both development and 
 pnpm backend docker:up
 ```
 
-   It listens on host port **5433** so it can't clash with a Postgres you already run locally. Credentials for development are `quacker` / `quacker` / `quacker`.
+It listens on host port **5433** so it can't clash with a Postgres you already run locally. Credentials for development are `quacker` / `quacker` / `quacker`.
 
 2. Browse the data:
 
@@ -141,6 +141,57 @@ $ pnpm backend test:cov
 
 ### Better Auth
 
+Registration defaults to a dog owner (`role: user`). Selecting **Jsem trenér**
+sends `isTrainer: true`; the signup hook stores `role: trainer`. Both account types
+require the same name, email, password and privacy consent. `role` remains
+server-owned and cannot be changed through the profile update API.
+
+After building the backend, `pnpm backend test:auth` tests both registration paths
+through BetterAuth's HTTP handler with an in-memory database. To verify persisted
+roles with the Prisma adapter, apply migrations to an isolated PostgreSQL test
+database, set `AUTH_TEST_DATABASE_URL` to its connection URL and run
+`pnpm backend test:auth:postgres`. The test removes only the accounts it creates.
+
+### Account deletion and consent (#88)
+
+Registration links to the public `/privacy` page and keeps the mandatory consent
+validation from #49/#50 on both the client and server. The Czech policy is a
+review draft: the project owner must supply the controller's identity/contact,
+legal bases, processors and retention details before public use.
+
+`POST /api/auth/delete-user` is BetterAuth's authenticated deletion endpoint.
+It always requires the current password, including for a fresh session; the
+passwordless callback is disabled. BetterAuth verifies the unmodified password,
+removes credentials and all sessions, and expires the browser cookie. The client
+cancels outstanding queries, clears its cache and returns to the public homepage.
+
+Database ownership determines the deletion scope:
+
+- Deleting a user cascades to their dogs and each dog's goals, plan blocks,
+  scheduled trainings, workout logs, private diary notes and message threads.
+- Client connections, dog shares and invitations cascade from the deleted user.
+- Authorship of another owner's goals, trainings, logs and messages is nullable
+  with `ON DELETE SET NULL`. Deleting a trainer therefore preserves client data.
+  Goal and message responses resolve a removed author to `smazaný uživatel` without
+  retaining a name/email snapshot. Clients can still read these messages in an
+  activity's detail; refreshing the data also updates an already open detail.
+
+The client connection/share/invitation schema and migration come from the clients list (#81, `20261021141115_add_clients_and_invitations`). `DogNote` and `TrainingMessage` supply the minimal
+persistence needed for #88; editing notes and composing messages remain the
+separate diary/thread features. A message thread belongs to a workout log, as in
+the sitemap, and must not belong to a client connection (deleting that connection
+must not erase the client's history).
+
+`pnpm check-all` includes the real BetterAuth HTTP-handler tests.
+`pnpm backend test:auth:postgres` additionally verifies the complete deletion
+graphs in an isolated migrated PostgreSQL database. CI runs both. Tests cover
+wrong/missing passwords, unauthorized requests, callback bypasses, all-session
+revocation, cross-account isolation, owner cascades and trainer anonymization.
+
+`test:auth` also checks login error privacy, persistent session cookies and logout
+revocation. The frontend always requests `rememberMe: true`; BetterAuth manages
+the cookie lifetime and invalidation. No auth tokens are stored in local storage.
+
 In this application, [**better-auth**](https://www.npmjs.com/package/better-auth) is utilized as the authentication module. It is designed to be easily extended with additional features or plugins, such as social login providers, multi-factor authentication, and more. Whenever database changes related to authentication are required, the following command should be run:
 
 ```bash
@@ -152,7 +203,27 @@ Hopefully you won't need to use this command and the following part, unless you 
 
 Keep in mind that there are 2 better auth configurations, one in the src/shared/auth/providers/better-auth.provider.ts (the complete config that is being used in the whole app) and one in the src/shared/auth/config/better-auth.config.ts (this config is being used by the CLI command above). You need to add the necessary changes to the better-auth config file to generate new database schema changes.
 
+### Access to dogs, plans and records (#85)
 
+The rules are enforced in the API, in one place: `DogAccessService`. Services never
+decide on their own who may see a dog.
+
+| | owner | trainer with a share | anyone else |
+| --- | --- | --- | --- |
+| read the dog | yes | yes | 404 |
+| goals, plan blocks, trainings (read and edit) | yes | yes | 404 |
+| read activity records | yes | yes | 404 |
+| edit the dog, log a workout, private notes (#70) | yes | 403 | 404 |
+
+A dog the user may not see is reported as missing (404), never as forbidden, so the
+API does not reveal that it exists. A trainer who can see the dog but may not do
+something gets 403. Access is read from the `dog_share` rows on every request, so when
+a share is removed (ending the collaboration, #61) the trainer loses access at once.
+
+New features pick the rule with `getAccessibleDog` (owner or trainer) or `getOwnedDog`
+(owner only). Writing into a record's thread (#80) belongs to the first group, private
+notes (#70) to the second. `pnpm backend test:auth:postgres` runs every rule against a
+real database (`test/dog-access.postgres.test.mjs`).
 
 ### Email Service
 

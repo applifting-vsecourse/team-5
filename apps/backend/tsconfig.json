@@ -5,8 +5,10 @@
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "target": "es2017",
+    "lib": ["es2022"],
     "jsx": "react-jsx",
     "sourceMap": true,
     "outDir": "./dist",
@@ -42,7 +44,7 @@
       "./node_modules/@types",
       "../node_modules/@types"
     ],
-    "types": ["node", "express", "jest"]
+    "types": ["node", "express", "jest", "multer"]
   },
   "include": [
     "src/**/*",

@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
         typescript: true,
         eslint: {
           useFlatConfig: true,
-          lintCommand: "eslint './src/**/*.{ts,tsx,js,cjs,mjs}'",
+          lintCommand: "eslint src",
         },
         overlay: { initialIsOpen: false },
       }),
@@ -32,6 +32,12 @@ export default defineConfig(({ mode }) => {
       // CORS allow-list would then reject with an opaque browser error.
       strictPort: true,
       allowedHosts: env.VITE_ALLOWED_HOSTS ? env.VITE_ALLOWED_HOSTS.split(",") : [],
+      proxy: {
+        "/uploads": {
+          target: env.VITE_BACKEND_URL ?? "http://localhost:4050",
+          changeOrigin: true,
+        },
+      },
     },
     build: { outDir: "build" },
   }

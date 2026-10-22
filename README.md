@@ -33,14 +33,14 @@ The ports are deliberately odd — 3050, 4050, and Postgres on 5433 rather than 
 
 ### Seeded users
 
-| Email                          | Password        |
-| ------------------------------ | --------------- |
-| `caffeinatedduck@example.com`  | `password1`     |
-| `deepduckthoughts@example.com` | `password2`     |
-| `breadcritic@example.com`      | `password3`     |
-| `migrationseason@example.com`  | `password4`     |
-| `pondadmin@example.com`        | `password5`     |
-| `admin@example.com`            | `adminpassword` |
+| Email                      | Password        | Role / Note                             |
+| -------------------------- | --------------- | --------------------------------------- |
+| `trener@trainloop.cz`      | `password1`     | Trenér (Marek Trenér, vlastní pes Argo) |
+| `jan.novak@seznam.cz`      | `password1`     | Klient (Jan Novák, psi Rex & Baryk)     |
+| `petra.svobodova@email.cz` | `password1`     | Klientka (Petra Svobodová, pes Alík)    |
+| `tomas.dvorak@gmail.com`   | `password1`     | Klient (Tomáš Dvořák, pes Lucky)        |
+| `eva.novotna@email.cz`     | `password2`     | Psovod (Eva Novotná)                    |
+| `admin@example.com`        | `adminpassword` | Administrátor                           |
 
 Verification/reset emails are printed to the backend terminal (console mailer) unless you configure Resend or SMTP in `apps/backend/.env`.
 
@@ -81,7 +81,7 @@ Two things worth knowing:
 
 - **You set exactly two URLs**, `BACKEND_URL` and `FRONTEND_URL`. The backend uses them for CORS, BetterAuth trusted origins and password-reset links; the frontend's API URL is derived from `BACKEND_URL`. Point them at the real domains or the backend rejects the browser.
 - **The frontend bakes its API URL in at build time** (`VITE_*` are build args, not runtime env), so changing `BACKEND_URL` needs a rebuild, not just a restart.
-- **Production migrates but does not seed** — the container runs `prisma migrate deploy` then starts. A fresh deployment has an empty database, so the first account is created through the sign-up form.
+- **Production migrates and seeds on startup** — the container runs `prisma migrate deploy` and `node dist/scripts/seed/seed.script.js` before starting the server. If the database is empty, it populates demo users and dogs; if data already exists, it preserves existing data.
 
 ## When something goes wrong
 

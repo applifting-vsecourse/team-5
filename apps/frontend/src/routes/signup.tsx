@@ -1,5 +1,7 @@
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router"
+import { z } from "zod"
 
 import { ROUTES } from "@/app/routes"
 import { AuthLayout } from "@/components/AuthLayout"
@@ -7,63 +9,59 @@ import { Seo } from "@/components/Seo"
 
 import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
 import { SignUpForm } from "@/features/auth/components/SignUpForm"
-import { useSignUp } from "@/features/auth/hooks/useSignUp"
+import { useSignUp, type SignUpInput } from "@/features/auth/hooks/useSignUp"
+import { accountHome } from "@/features/auth/lib/account-home"
+import { RegistrationError, registrationError } from "@/features/auth/lib/registration-errors"
 
 export const Route = createFileRoute("/signup")({
   component: SignUpPage,
+  validateSearch: z.object({ code: z.string().optional() }),
   loader: async ({ context }) => {
     const session = await context.queryClient.ensureQueryData(authSessionQueryOptions())
     if (!session) return
-    throw redirect({ to: ROUTES.quacks })
+    throw redirect({ to: accountHome(session.user) })
   },
 })
 
 function SignUpPage() {
   const navigate = useNavigate()
   const signUp = useSignUp()
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+  const [error, setError] = useState<RegistrationError | null>(null)
 
-  const handleSubmit = async (values: {
-    email: string
-    name: string
-    username: string
-    password: string
-  }) => {
-    setErrorMessage(null)
+  const handleSubmit = async (values: SignUpInput) => {
+    setError(null)
     try {
-      await signUp.mutateAsync({
-        email: values.email,
-        password: values.password,
-        name: values.name,
-        username: values.username,
-      })
-      await navigate({ to: ROUTES.quacks })
+      await signUp.mutateAsync(values)
+      const session = await queryClient.ensureQueryData(authSessionQueryOptions())
+      if (!session) throw registrationError()
+      await navigate({ to: accountHome(session.user) })
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Sign up failed")
+      setError(error instanceof RegistrationError ? error : registrationError())
     }
   }
 
   return (
     <>
-      <Seo title="Sign up" />
+      <Seo title="Registrace" />
       <AuthLayout
-        title="Sign up"
-        description="Create your Quacker account."
+        title="Registrace"
+        description="Založte si účet psovoda nebo trenéra zdarma. Pozvánku nepotřebujete."
         footer={
           <>
-            Already have an account?{" "}
+            Už máte účet?{" "}
             <Link
               to={ROUTES.login}
               className="font-medium text-foreground underline underline-offset-4"
             >
-              Sign in
+              Přihlásit se
             </Link>
           </>
         }
       >
         <SignUpForm
           isLoading={signUp.isPending}
-          errorMessage={errorMessage}
+          error={error}
           onSubmit={handleSubmit}
         />
       </AuthLayout>

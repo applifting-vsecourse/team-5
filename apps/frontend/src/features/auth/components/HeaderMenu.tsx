@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router"
-import { LogOut } from "lucide-react"
+import { UserRound } from "lucide-react"
 
+import { ROUTES } from "@/app/routes"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,19 +14,18 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 import { useSession } from "@/features/auth/hooks/useSession"
-import { useSignOut } from "@/features/auth/hooks/useSignOut"
 
 export function HeaderMenu() {
   const { user } = useSession()
-  const signOut = useSignOut()
 
   if (!user) {
     return (
       <Button
         asChild
         size="sm"
+        variant="outline"
       >
-        <Link to="/login">Sign in</Link>
+        <Link to={ROUTES.login}>Přihlásit se</Link>
       </Button>
     )
   }
@@ -43,7 +43,7 @@ export function HeaderMenu() {
         <Button
           variant="ghost"
           size="icon"
-          aria-label="User menu"
+          aria-label="Uživatelské menu"
           className="rounded-full"
         >
           <Avatar className="size-8">
@@ -58,16 +58,20 @@ export function HeaderMenu() {
         <DropdownMenuLabel>
           <div className="flex flex-col">
             <span className="text-sm leading-none font-medium">{user.name}</span>
-            <span className="mt-1 text-xs text-muted-foreground">@{user.username}</span>
+            <span className="mt-1 text-xs text-muted-foreground">
+              {user.username ? `@${user.username}` : user.email}
+            </span>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onSelect={() => signOut.mutate()}
-          disabled={signOut.isPending}
-        >
-          <LogOut className="size-4" />
-          Sign out
+        <DropdownMenuItem asChild>
+          <Link to={ROUTES.account}>
+            <UserRound
+              aria-hidden="true"
+              className="size-4"
+            />
+            Účet
+          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

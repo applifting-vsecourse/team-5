@@ -16,8 +16,8 @@ import {
 import { Input } from "@/components/ui/input"
 
 const schema = z.object({
-  email: z.string().trim().min(1, "Email is required").email("Invalid email"),
-  password: z.string().trim().min(1, "Password is required"),
+  email: z.string().trim().min(1, "Vyplňte e-mail.").email("Zadejte platný e-mail."),
+  password: z.string().min(1, "Vyplňte heslo."),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -42,6 +42,7 @@ export function SignInForm({ isLoading, errorMessage, onSubmit }: SignInFormProp
         noValidate
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4"
+        aria-busy={isLoading}
       >
         {errorMessage ? (
           <Alert variant="destructive">
@@ -54,12 +55,13 @@ export function SignInForm({ isLoading, errorMessage, onSubmit }: SignInFormProp
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>E-mail</FormLabel>
               <FormControl>
                 <Input
                   type="email"
-                  placeholder="e.g. john@doe.com"
                   autoComplete="email"
+                  required
+                  disabled={isLoading}
                   {...field}
                 />
               </FormControl>
@@ -73,11 +75,13 @@ export function SignInForm({ isLoading, errorMessage, onSubmit }: SignInFormProp
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Heslo</FormLabel>
               <FormControl>
                 <Input
                   type="password"
                   autoComplete="current-password"
+                  required
+                  disabled={isLoading}
                   {...field}
                 />
               </FormControl>
@@ -92,8 +96,13 @@ export function SignInForm({ isLoading, errorMessage, onSubmit }: SignInFormProp
           className="w-full"
           disabled={isLoading}
         >
-          {isLoading ? <Loader2 className="size-4 animate-spin" /> : null}
-          Sign in
+          {isLoading ? (
+            <Loader2
+              aria-hidden="true"
+              className="size-4 animate-spin"
+            />
+          ) : null}
+          {isLoading ? "Přihlašuji…" : "Přihlásit se"}
         </Button>
       </form>
     </Form>

@@ -18,13 +18,14 @@ export async function createUser(
   const { email, password, name, username, role } = params;
 
   // use better auth api to sign the user up using email & password
-  await auth.api.signUpEmail({
-    body: {
-      email,
-      password,
-      name,
-    },
-  });
+  const registration = {
+    email,
+    password,
+    name,
+    // Synthetic demo accounts exercise the same registration contract.
+    privacyConsent: true,
+  };
+  await auth.api.signUpEmail({ body: registration });
 
   // find the user in the database
   const user = await prisma.user.findFirst({

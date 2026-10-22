@@ -1,10 +1,14 @@
+import { useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { Link } from "@tanstack/react-router"
 import { Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
+import { ROUTES } from "@/app/routes"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Form,
   FormControl,
@@ -15,40 +19,43 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 
-const schema = z
-  .object({
-    email: z.string().trim().min(1, "Email is required").email("Invalid email"),
-    name: z.string().trim().min(1, "Name is required"),
-    username: z.string().trim().min(1, "Username is required"),
-    password: z.string().trim().min(8, "Password must be at least 8 characters"),
-    passwordConfirmation: z.string().trim().min(1, "Password confirmation is required"),
-  })
-  .refine((values) => values.password === values.passwordConfirmation, {
-    message: "Passwords must match",
-    path: ["passwordConfirmation"],
-  })
+import type { SignUpInput } from "@/features/auth/hooks/useSignUp"
+import type { RegistrationError } from "@/features/auth/lib/registration-errors"
 
-type FormValues = z.infer<typeof schema>
-
-const defaultValues: FormValues = {
-  email: "",
-  name: "",
-  username: "",
-  password: "",
-  passwordConfirmation: "",
-}
+const schema = z.object({
+  isTrainer: z.boolean(),
+  name: z.string().trim().min(1, "Vyplňte jméno."),
+  email: z.string().trim().min(1, "Vyplňte e-mail.").email("Zadejte platný e-mail."),
+  password: z
+    .string()
+    .min(8, "Heslo musí mít alespoň 8 znaků.")
+    .max(128, "Heslo může mít nejvýše 128 znaků."),
+  privacyConsent: z
+    .boolean()
+    .refine(
+      (isAccepted) => isAccepted,
+      "Pro registraci je nutný souhlas se zpracováním osobních údajů.",
+    ),
+})
 
 type SignUpFormProps = {
   isLoading: boolean
-  errorMessage?: string | null
-  onSubmit: (values: FormValues) => void | Promise<void>
+  error?: RegistrationError | null
+  onSubmit: (values: SignUpInput) => void | Promise<void>
 }
 
-export function SignUpForm({ isLoading, errorMessage, onSubmit }: SignUpFormProps) {
-  const form = useForm<FormValues>({
+export function SignUpForm({ isLoading, error, onSubmit }: SignUpFormProps) {
+  const form = useForm<SignUpInput>({
     resolver: zodResolver(schema),
-    defaultValues,
+    defaultValues: { name: "", email: "", password: "", privacyConsent: false, isTrainer: false },
   })
+  const { setError } = form
+
+  useEffect(() => {
+    if (error?.field) {
+      setError(error.field, { type: "server", message: error.message }, { shouldFocus: true })
+    }
+  }, [error, setError])
 
   return (
     <Form {...form}>
@@ -56,22 +63,24 @@ export function SignUpForm({ isLoading, errorMessage, onSubmit }: SignUpFormProp
         noValidate
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-4"
+        aria-busy={isLoading}
       >
-        {errorMessage ? (
+        {error && !error.field ? (
           <Alert variant="destructive">
-            <AlertDescription>{errorMessage}</AlertDescription>
+            <AlertDescription>{error.message}</AlertDescription>
           </Alert>
         ) : null}
-
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>Jméno</FormLabel>
               <FormControl>
                 <Input
                   autoComplete="name"
+                  required
+                  disabled={isLoading}
                   {...field}
                 />
               </FormControl>
@@ -79,53 +88,45 @@ export function SignUpForm({ isLoading, errorMessage, onSubmit }: SignUpFormProp
             </FormItem>
           )}
         />
-
-        <FormField
-          control={form.control}
-          name="username"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Username</FormLabel>
-              <FormControl>
-                <Input
-                  autoComplete="username"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>E-mail</FormLabel>
               <FormControl>
                 <Input
                   type="email"
-                  placeholder="e.g. john@doe.com"
                   autoComplete="email"
+                  required
+                  disabled={isLoading}
                   {...field}
                 />
               </FormControl>
               <FormMessage />
+              {error?.isDuplicateEmail ? (
+                <Link
+                  to={ROUTES.login}
+                  className="text-sm font-medium underline underline-offset-4"
+                >
+                  Přihlásit se
+                </Link>
+              ) : null}
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Heslo</FormLabel>
               <FormControl>
                 <Input
                   type="password"
                   autoComplete="new-password"
+                  required
+                  disabled={isLoading}
                   {...field}
                 />
               </FormControl>
@@ -133,33 +134,76 @@ export function SignUpForm({ isLoading, errorMessage, onSubmit }: SignUpFormProp
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
-          name="passwordConfirmation"
+          name="isTrainer"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Confirm password</FormLabel>
-              <FormControl>
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  {...field}
-                />
-              </FormControl>
+              <div className="flex min-h-12 items-center gap-3">
+                <FormControl>
+                  <Checkbox
+                    name={field.name}
+                    ref={field.ref}
+                    checked={field.value}
+                    onCheckedChange={(value) => field.onChange(value === true)}
+                    onBlur={field.onBlur}
+                    disabled={isLoading}
+                  />
+                </FormControl>
+                <FormLabel className="min-h-12 flex-1 cursor-pointer py-3 leading-normal">
+                  Jsem trenér
+                </FormLabel>
+              </div>
               <FormMessage />
             </FormItem>
           )}
         />
-
+        <FormField
+          control={form.control}
+          name="privacyConsent"
+          render={({ field }) => (
+            <FormItem>
+              <div className="flex min-h-12 items-center gap-3">
+                <FormControl>
+                  <Checkbox
+                    name={field.name}
+                    ref={field.ref}
+                    checked={field.value}
+                    onCheckedChange={(value) => field.onChange(value === true)}
+                    onBlur={field.onBlur}
+                    required
+                    disabled={isLoading}
+                  />
+                </FormControl>
+                <FormLabel className="min-h-12 flex-1 cursor-pointer py-3 leading-normal">
+                  Souhlasím se zpracováním osobních údajů.
+                </FormLabel>
+              </div>
+              <Link
+                to={ROUTES.privacy}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-12 items-center text-sm underline underline-offset-4"
+              >
+                Zásady zpracování osobních údajů (nová karta)
+              </Link>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <Button
           type="submit"
           size="lg"
           className="w-full"
           disabled={isLoading}
         >
-          {isLoading ? <Loader2 className="size-4 animate-spin" /> : null}
-          Sign up
+          {isLoading ? (
+            <Loader2
+              aria-hidden="true"
+              className="size-4 animate-spin"
+            />
+          ) : null}
+          {isLoading ? "Registruji…" : "Zaregistrovat se"}
         </Button>
       </form>
     </Form>

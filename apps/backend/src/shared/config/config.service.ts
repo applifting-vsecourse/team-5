@@ -14,9 +14,9 @@ import {
 @Injectable()
 export class Config {
   // basic info
-  readonly name: string = 'Quacker backend';
+  readonly name: string = 'TrainLoop backend';
   readonly description: string =
-    'Backend for Quacker, a social media platform for sharing short messages. Project example for educational purposes.';
+    'Backend for TrainLoop, a platform for dog trainers and handlers.';
 
   @IsSemVer()
   readonly version: string = '0.1.0';
@@ -73,7 +73,7 @@ export class Config {
 
   @Env('EMAIL_FROM', {
     expose: true,
-    defaultValue: 'Quacker <onboarding@resend.dev>',
+    defaultValue: 'TrainLoop <onboarding@resend.dev>',
   })
   @IsNotEmpty()
   readonly emailFrom!: string;
@@ -82,11 +82,11 @@ export class Config {
   @IsOptional()
   readonly smtpHost?: string;
 
-  @Env('SMTP_SECURE', { expose: true, defaultValue: true })
+  @Env('SMTP_SECURE', { expose: true, defaultValue: false })
   @IsBoolean()
   readonly smtpSecure!: boolean;
 
-  @Env('SMTP_PORT', { expose: true, defaultValue: 465 })
+  @Env('SMTP_PORT', { expose: true, defaultValue: 1025 })
   readonly smtpPort!: number;
 
   @Env('SMTP_USERNAME', { expose: true })

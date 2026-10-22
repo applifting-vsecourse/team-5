@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "dog" ADD COLUMN IF NOT EXISTS "photoUrl" VARCHAR(500);

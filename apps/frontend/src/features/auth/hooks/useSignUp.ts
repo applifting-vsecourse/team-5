@@ -1,14 +1,16 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
-import { authKeys } from "@/lib/auth-keys"
-
+import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
 import { authClient } from "@/features/auth/lib/auth-client"
+import { clearPrivateQueries } from "@/features/auth/lib/clear-private-queries"
+import { registrationError } from "@/features/auth/lib/registration-errors"
 
 export type SignUpInput = {
   name: string
-  username: string
   email: string
   password: string
+  privacyConsent: boolean
+  isTrainer: boolean
 }
 
 export function useSignUp() {
@@ -19,14 +21,21 @@ export function useSignUp() {
       // BetterAuth handles the whole flow (and signs the user in by default)
       const { error } = await authClient.signUp.email({
         name: input.name,
-        username: input.username,
         email: input.email,
         password: input.password,
+        // Request-only value, validated by the BetterAuth registration hook.
+        fetchOptions: {
+          body: { privacyConsent: input.privacyConsent, isTrainer: input.isTrainer },
+        },
       })
-      if (error) throw new Error(error.message ?? "Sign up failed")
+      if (error) throw registrationError(error.code)
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: authKeys.session() })
+      const options = authSessionQueryOptions()
+      await queryClient.cancelQueries({ queryKey: options.queryKey })
+      await clearPrivateQueries(queryClient)
+      // Refresh even an inactive anonymous query before protected route loaders run.
+      await queryClient.fetchQuery({ ...options, staleTime: 0 })
     },
   })
 }
