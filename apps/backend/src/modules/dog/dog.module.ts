@@ -13,6 +13,7 @@ import { PlanBlockRepository } from './repositories/plan-block.repository';
 import { ScheduledTrainingRepository } from './repositories/scheduled-training.repository';
 import { ActivitiesService } from './services/activities.service';
 import { DogAccessService } from './services/dog-access.service';
+import { DogPhotoService } from './services/dog-photo.service';
 import { DogsService } from './services/dogs.service';
 import { GoalsService } from './services/goals.service';
 import { PlanBlocksService } from './services/plan-blocks.service';
@@ -29,6 +30,7 @@ import { TrainingsService } from './services/trainings.service';
   ],
   providers: [
     DogsService,
+    DogPhotoService,
     DogRepository,
     DogAccessService,
     GoalsService,
@@ -42,6 +44,7 @@ import { TrainingsService } from './services/trainings.service';
   ],
   exports: [
     DogsService,
+    DogPhotoService,
     DogRepository,
     GoalsService,
     GoalRepository,

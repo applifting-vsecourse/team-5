@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type * as Router from "@tanstack/react-router"
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
@@ -74,6 +74,39 @@ describe("PesAvatar", () => {
     expect(avatar).toBeInTheDocument()
     expect(avatar).toHaveTextContent("A")
     expect(avatar).toHaveClass("bg-dog-2")
+  })
+
+  it("renders photo with ring color class when photoUrl is provided", () => {
+    render(
+      <PesAvatar
+        name="Baryk"
+        color={3}
+        photoUrl="https://example.com/baryk.jpg"
+      />,
+    )
+    const avatar = screen.getByRole("img", { name: "Avatar psa Baryk" })
+    expect(avatar).toBeInTheDocument()
+    expect(avatar).toHaveClass("ring-dog-3")
+    const img = screen.getByRole("img", { name: "Baryk" })
+    expect(img).toHaveAttribute("src", "https://example.com/baryk.jpg")
+    expect(img).toHaveClass("object-cover", "rounded-full")
+  })
+
+  it("falls back to uppercase initial on photo loading error", () => {
+    render(
+      <PesAvatar
+        name="Baryk"
+        color={1}
+        photoUrl="https://example.com/broken.jpg"
+      />,
+    )
+    const img = screen.getByRole("img", { name: "Baryk" })
+    fireEvent.error(img)
+
+    const avatar = screen.getByRole("img", { name: "Avatar psa Baryk" })
+    expect(avatar).toHaveTextContent("B")
+    expect(avatar).toHaveClass("bg-dog-1")
+    expect(screen.queryByRole("img", { name: "Baryk" })).not.toBeInTheDocument()
   })
 })
 

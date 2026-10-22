@@ -14,6 +14,9 @@ export class DogResponseDto {
   @ApiProperty()
   color!: number;
 
+  @ApiPropertyOptional({ nullable: true })
+  photoUrl!: string | null;
+
   @ApiProperty()
   ownerId!: string;
 
@@ -32,6 +35,7 @@ export class DogResponseDto {
       name: dog.name,
       breed: dog.breed ?? null,
       color: dog.color,
+      photoUrl: dog.photoUrl ?? null,
       ownerId: dog.ownerId,
       disciplines: dog.disciplines ?? [],
       createdAt: dog.createdAt,

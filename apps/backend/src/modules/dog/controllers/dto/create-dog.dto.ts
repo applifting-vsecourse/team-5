@@ -1,5 +1,8 @@
+import { sanitizeDisciplines } from '@/modules/dog/services/dogs.service';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
+  IsArray,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -47,6 +50,12 @@ export class CreateDogDto {
     type: [String],
   })
   @IsOptional()
+  @IsArray()
+  @Transform(({ value }) => sanitizeDisciplines(value))
   @IsString({ each: true })
+  @MaxLength(40, {
+    each: true,
+    message: 'Disciplína může mít maximálně 40 znaků',
+  })
   disciplines?: string[];
 }

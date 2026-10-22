@@ -7,6 +7,7 @@ export const dogSchema = z.object({
   name: z.string().min(1, "Jméno je povinné").max(40, "Jméno může mít maximálně 40 znaků"),
   breed: z.string().max(100).nullable().optional(),
   color: dogColorSchema,
+  photoUrl: z.string().nullable().optional(),
   ownerId: z.string(),
   disciplines: z.array(z.string()).default([]),
   createdAt: z.coerce.date(),
@@ -28,11 +29,33 @@ export const createDogInputSchema = z.object({
     .optional()
     .or(z.literal("")),
   color: dogColorSchema,
-  disciplines: z.array(z.string()).default([]),
+  disciplines: z.array(z.string().trim().max(40)).default([]),
+  photo: z.instanceof(File).optional().nullable(),
+})
+
+export const updateDogInputSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "Jméno psa je povinné")
+    .max(40, "Maximální délka jména je 40 znaků")
+    .optional(),
+  breed: z
+    .string()
+    .trim()
+    .max(100, "Maximální délka plemene je 100 znaků")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
+  color: dogColorSchema.optional(),
+  disciplines: z.array(z.string().trim().max(40)).optional(),
+  photo: z.instanceof(File).optional().nullable(),
+  removePhoto: z.boolean().optional(),
 })
 
 export type Dog = z.infer<typeof dogSchema>
 export type CreateDogInput = z.infer<typeof createDogInputSchema>
+export type UpdateDogInput = z.infer<typeof updateDogInputSchema>
 
 export const dogGoalSchema = z.object({
   id: z.string(),

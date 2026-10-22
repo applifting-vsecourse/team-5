@@ -5,6 +5,7 @@ export const clientDogSchema = z.object({
   name: z.string(),
   color: z.number().int().min(1).max(6),
   breed: z.string().nullable().optional(),
+  photoUrl: z.string().nullable().optional(),
   disciplines: z.array(z.string()).optional(),
 })
 

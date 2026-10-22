@@ -4,6 +4,7 @@ export interface ClientDog {
   color: number;
   breed?: string | null;
   disciplines?: string[];
+  photoUrl?: string | null;
 }
 
 export interface Client {

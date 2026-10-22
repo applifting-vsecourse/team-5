@@ -32,6 +32,7 @@ export function ClientCard({ client }: ClientCardProps) {
                   name={dog.name}
                   color={dog.color}
                   size="md"
+                  photoUrl={dog.photoUrl}
                 />
               </div>
             ))}

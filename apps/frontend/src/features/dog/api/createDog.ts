@@ -1,3 +1,5 @@
+import { toast } from "sonner"
+
 import { api } from "@/lib/api-client"
 
 import { dogSchema, type CreateDogInput, type Dog } from "./dogSchemas"
@@ -13,5 +15,21 @@ export async function createDog(input: CreateDogInput): Promise<Dog> {
       },
     })
     .json()
-  return dogSchema.parse(json)
+
+  let dog = dogSchema.parse(json)
+
+  if (input.photo) {
+    try {
+      const formData = new FormData()
+      formData.append("file", input.photo)
+      const photoJson = await api.post(`dogs/${dog.id}/photo`, { body: formData }).json()
+      dog = dogSchema.parse(photoJson)
+    } catch {
+      toast.error(
+        "Pes byl úspěšně vytvořen, ale nahrání fotky se nezdařilo. Fotku můžete nahrát v úpravě profilu psa.",
+      )
+    }
+  }
+
+  return dog
 }

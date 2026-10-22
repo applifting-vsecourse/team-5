@@ -8,6 +8,7 @@ const mapPrismaDogToDomain = (dog: PrismaDog): Dog => ({
   name: dog.name,
   breed: dog.breed,
   color: dog.color,
+  photoUrl: dog.photoUrl,
   ownerId: dog.ownerId,
   isArchived: dog.isArchived,
   disciplines: dog.disciplines,
@@ -96,6 +97,35 @@ export class DogRepository {
           disciplines: updateData.disciplines,
         }),
       },
+    });
+    return mapPrismaDogToDomain(dog);
+  }
+
+  async updatePhoto(
+    id: string,
+    ownerId: string,
+    photoUrl: string | null,
+  ): Promise<Dog | null> {
+    const existing = await this.prisma.dog.findFirst({
+      where: { id, ownerId, isArchived: false },
+    });
+    if (!existing) return null;
+
+    const dog = await this.prisma.dog.update({
+      where: { id },
+      data: { photoUrl },
+    });
+    return mapPrismaDogToDomain(dog);
+  }
+
+  async deleteDog(id: string, ownerId: string): Promise<Dog | null> {
+    const existing = await this.prisma.dog.findFirst({
+      where: { id, ownerId, isArchived: false },
+    });
+    if (!existing) return null;
+
+    const dog = await this.prisma.dog.delete({
+      where: { id },
     });
     return mapPrismaDogToDomain(dog);
   }

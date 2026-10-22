@@ -17,6 +17,7 @@ export class ClientRepository {
         color: number;
         breed: string | null;
         disciplines: string[];
+        photoUrl?: string | null;
       }>;
     };
     createdAt: Date;
@@ -31,6 +32,7 @@ export class ClientRepository {
         color: d.color,
         breed: d.breed,
         disciplines: d.disciplines,
+        photoUrl: d.photoUrl ?? null,
       })),
       createdAt: conn.createdAt,
     };
