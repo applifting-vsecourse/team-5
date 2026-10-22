@@ -1,7 +1,8 @@
 import { Dog } from '@/modules/dog/domain/dog';
 import { DogRepository } from '@/modules/dog/repositories/dog.repository';
+import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { Identity } from '@/shared/auth/domain/identity';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { mock } from 'jest-mock-extended';
 import { DogsService } from './dogs.service';
 
@@ -24,7 +25,7 @@ describe('DogsService', () => {
     const repository = mock<DogRepository>();
     repository.getDogsByOwnerId.mockResolvedValue(dogs);
 
-    const service = new DogsService(repository);
+    const service = new DogsService(repository, mock<DogAccessService>());
     const user = { id: 'u1' } as Identity;
 
     await expect(service.getDogs(user)).resolves.toEqual(dogs);
@@ -36,7 +37,7 @@ describe('DogsService', () => {
     const repository = mock<DogRepository>();
     repository.createDog.mockResolvedValue(created);
 
-    const service = new DogsService(repository);
+    const service = new DogsService(repository, mock<DogAccessService>());
     const user = { id: 'u1' } as Identity;
 
     await expect(
@@ -61,7 +62,7 @@ describe('DogsService', () => {
     const repository = mock<DogRepository>();
     repository.createDog.mockResolvedValue(created);
 
-    const service = new DogsService(repository);
+    const service = new DogsService(repository, mock<DogAccessService>());
     const user = { id: 'u1' } as Identity;
 
     await expect(
@@ -77,27 +78,78 @@ describe('DogsService', () => {
     });
   });
 
-  it('returns a dog by ID when it belongs to user or is shared with user', async () => {
+  it('returns a dog by ID through the access rules (owner or shared trainer)', async () => {
     const dog = aDog({ id: 'd1' });
-    const repository = mock<DogRepository>();
-    repository.getDogByIdWithAccess.mockResolvedValue(dog);
+    const dogAccess = mock<DogAccessService>();
+    dogAccess.getAccessibleDog.mockResolvedValue(dog);
 
-    const service = new DogsService(repository);
+    const service = new DogsService(mock<DogRepository>(), dogAccess);
     const user = { id: 'u1' } as Identity;
 
     await expect(service.getDogById(user, 'd1')).resolves.toEqual(dog);
-    expect(repository.getDogByIdWithAccess).toHaveBeenCalledWith('d1', 'u1');
+    expect(dogAccess.getAccessibleDog).toHaveBeenCalledWith(user, 'd1');
   });
 
-  it('throws NotFoundException when dog by ID is not found or not accessible', async () => {
-    const repository = mock<DogRepository>();
-    repository.getDogByIdWithAccess.mockResolvedValue(null);
+  it('throws NotFoundException when the dog is not accessible', async () => {
+    const dogAccess = mock<DogAccessService>();
+    dogAccess.getAccessibleDog.mockRejectedValue(new NotFoundException());
 
-    const service = new DogsService(repository);
+    const service = new DogsService(mock<DogRepository>(), dogAccess);
     const user = { id: 'u1' } as Identity;
 
     await expect(service.getDogById(user, 'non-existent')).rejects.toThrow(
       NotFoundException,
     );
+  });
+
+  describe('updateDog', () => {
+    it('lets the owner edit the dog', async () => {
+      const updated = aDog({ name: 'Rexík' });
+      const repository = mock<DogRepository>();
+      repository.updateDog.mockResolvedValue(updated);
+      const dogAccess = mock<DogAccessService>();
+      dogAccess.getOwnedDog.mockResolvedValue(aDog());
+
+      const service = new DogsService(repository, dogAccess);
+      const owner = { id: 'u1' } as Identity;
+
+      await expect(
+        service.updateDog(owner, 'd1', { name: ' Rexík ' }),
+      ).resolves.toEqual(updated);
+      expect(dogAccess.getOwnedDog).toHaveBeenCalledWith(owner, 'd1');
+      expect(repository.updateDog).toHaveBeenCalledWith(
+        'd1',
+        'u1',
+        expect.objectContaining({ name: 'Rexík' }),
+      );
+    });
+
+    it('does not let a trainer with a share edit the dog (403)', async () => {
+      const repository = mock<DogRepository>();
+      const dogAccess = mock<DogAccessService>();
+      dogAccess.getOwnedDog.mockRejectedValue(new ForbiddenException());
+
+      const service = new DogsService(repository, dogAccess);
+      const trainer = { id: 'u9' } as Identity;
+
+      await expect(
+        service.updateDog(trainer, 'd1', { name: 'Hacked' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(repository.updateDog).not.toHaveBeenCalled();
+    });
+
+    it("reports another user's dog as not found (404)", async () => {
+      const repository = mock<DogRepository>();
+      const dogAccess = mock<DogAccessService>();
+      dogAccess.getOwnedDog.mockRejectedValue(new NotFoundException());
+
+      const service = new DogsService(repository, dogAccess);
+      const stranger = { id: 'u2' } as Identity;
+
+      await expect(
+        service.updateDog(stranger, 'd1', { name: 'Hacked' }),
+      ).rejects.toThrow(NotFoundException);
+      expect(repository.updateDog).not.toHaveBeenCalled();
+    });
   });
 });

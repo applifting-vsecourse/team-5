@@ -36,6 +36,7 @@ const aGoal = (overrides: Partial<Goal> = {}): Goal => ({
 });
 
 const owner = { id: 'u1' } as Identity;
+const trainer = { id: 'u9' } as Identity; // has a share on dog d1
 const stranger = { id: 'u2' } as Identity;
 
 const setup = (): {
@@ -47,7 +48,7 @@ const setup = (): {
   const dogAccess = mock<DogAccessService>();
   // The owner sees dog d1; anyone else gets the same 404 as for a missing dog.
   dogAccess.getAccessibleDog.mockImplementation((user, dogId) =>
-    user.id === 'u1' && dogId === 'd1'
+    (user.id === 'u1' || user.id === 'u9') && dogId === 'd1'
       ? Promise.resolve(aDog())
       : Promise.reject(new NotFoundException()),
   );
@@ -265,6 +266,59 @@ describe('GoalsService', () => {
       await service.deleteGoal(owner, 'g1');
 
       expect(goalRepository.deleteGoal).toHaveBeenCalledWith('g1');
+    });
+  });
+
+  // #85: a trainer the dog is shared with works on the goals like the owner.
+  describe('a trainer with a share', () => {
+    it('lists and reads the goals of the shared dog', async () => {
+      const { service, goalRepository } = setup();
+      goalRepository.getGoalsByDogId.mockResolvedValue([aGoal()]);
+      goalRepository.getGoalById.mockResolvedValue(aGoal());
+
+      await expect(
+        service.getGoalsByDogId(trainer, 'd1'),
+      ).resolves.toHaveLength(1);
+      await expect(service.getGoal(trainer, 'g1')).resolves.toMatchObject({
+        id: 'g1',
+      });
+    });
+
+    it('creates a goal authored by the trainer', async () => {
+      const { service, goalRepository } = setup();
+      goalRepository.createGoal.mockResolvedValue(aGoal({ createdById: 'u9' }));
+
+      await service.createGoal(trainer, 'd1', { title: 'Zadání od trenéra' });
+
+      expect(goalRepository.createGoal).toHaveBeenCalledWith(
+        expect.objectContaining({ dogId: 'd1', createdById: 'u9' }),
+      );
+    });
+
+    it("edits and deletes the owner's goal", async () => {
+      const { service, goalRepository } = setup();
+      goalRepository.getGoalById.mockResolvedValue(aGoal());
+      goalRepository.updateGoal.mockResolvedValue(aGoal());
+      goalRepository.deleteGoal.mockResolvedValue(aGoal());
+
+      await service.updateGoal(trainer, 'g1', { title: 'Upraveno' });
+      await service.deleteGoal(trainer, 'g1');
+
+      expect(goalRepository.updateGoal).toHaveBeenCalled();
+      expect(goalRepository.deleteGoal).toHaveBeenCalledWith('g1');
+    });
+
+    it('is turned away once the share is gone (the dog is no longer accessible)', async () => {
+      const { service, goalRepository, dogAccess } = setup();
+      goalRepository.getGoalById.mockResolvedValue(aGoal());
+      dogAccess.getAccessibleDog.mockRejectedValue(new NotFoundException());
+
+      await expect(service.getGoal(trainer, 'g1')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(
+        service.createGoal(trainer, 'd1', { title: 'Nesmí projít' }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

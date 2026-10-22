@@ -28,7 +28,9 @@ export class ActivitiesService {
     dogId: string,
     data: CreateActivityData,
   ): Promise<WorkoutLog> {
-    await this.dogAccess.getAccessibleDog(user, dogId);
+    // A workout record is the owner's own log; a trainer only reads it and
+    // answers in its thread (#80).
+    await this.dogAccess.getOwnedDog(user, dogId);
 
     return this.activityRepository.createActivity({
       dogId,
