@@ -2,6 +2,7 @@ import { PrismaService } from '@/core/prisma/prisma.service';
 import { TrainingStatus } from '@/generated/prisma/client';
 import {
   ScheduledTraining,
+  ScheduledTrainingDetail,
   WeekTraining,
 } from '@/modules/dog/domain/scheduled-training';
 import { Injectable } from '@nestjs/common';
@@ -43,6 +44,40 @@ export class ScheduledTrainingRepository {
     return this.prisma.scheduledTraining.findMany({
       where: { goalId },
       orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
+    });
+  }
+
+  async getTrainingById(id: string): Promise<ScheduledTrainingDetail | null> {
+    return this.prisma.scheduledTraining.findUnique({
+      where: { id },
+      include: {
+        dog: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            shares: {
+              select: { id: true, trainerId: true },
+            },
+          },
+        },
+        goal: {
+          select: {
+            id: true,
+            title: true,
+            blocks: {
+              select: {
+                id: true,
+                position: true,
+                title: true,
+                instruction: true,
+                criterion: true,
+              },
+              orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+            },
+          },
+        },
+      },
     });
   }
 
