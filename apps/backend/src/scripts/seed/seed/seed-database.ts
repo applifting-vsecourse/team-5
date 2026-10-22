@@ -45,11 +45,27 @@ export const seedDatabase = async (
         username: 'trener',
         role: 'trainer',
       });
-    } else if (existingTrainer.role !== 'trainer') {
-      await prisma.user.update({
-        where: { id: existingTrainer.id },
-        data: { role: 'trainer' },
-      });
+    } else {
+      if (existingTrainer.email !== 'trener@trainloop.cz') {
+        console.log(
+          `Migrating legacy trainer email ${existingTrainer.email} -> trener@trainloop.cz`,
+        );
+        await prisma.user.update({
+          where: { id: existingTrainer.id },
+          data: {
+            email: 'trener@trainloop.cz',
+            name: 'Marek Trenér',
+            username: 'trener',
+            role: 'trainer',
+          },
+        });
+        existingTrainer.email = 'trener@trainloop.cz';
+      } else if (existingTrainer.role !== 'trainer') {
+        await prisma.user.update({
+          where: { id: existingTrainer.id },
+          data: { role: 'trainer' },
+        });
+      }
     }
 
     const existingUser = await prisma.user.findFirst({
@@ -67,6 +83,18 @@ export const seedDatabase = async (
         password: 'password2',
         name: 'Eva Novotná',
         username: 'evanow',
+      });
+    } else if (existingUser.email !== 'eva.novotna@email.cz') {
+      console.log(
+        `Migrating legacy user email ${existingUser.email} -> eva.novotna@email.cz`,
+      );
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          email: 'eva.novotna@email.cz',
+          name: 'Eva Novotná',
+          username: 'evanow',
+        },
       });
     }
 
