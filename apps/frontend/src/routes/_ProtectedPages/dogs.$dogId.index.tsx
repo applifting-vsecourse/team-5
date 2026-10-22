@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 
+import { useSession } from "@/features/auth/hooks/useSession"
 import { dogDetailQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 import { DogDetailView } from "@/features/dog/components/DogDetailView"
 
@@ -17,6 +18,7 @@ export const Route = createFileRoute("/_ProtectedPages/dogs/$dogId/")({
 function DogDetailPage() {
   const { dogId } = Route.useParams()
   const dogQuery = useQuery(dogDetailQueryOptions(dogId))
+  const { user } = useSession()
 
   if (dogQuery.isLoading) {
     return (
@@ -65,11 +67,15 @@ function DogDetailPage() {
   }
 
   const dog = dogQuery.data
+  const isOwner = user ? user.id === dog.ownerId : false
 
   return (
     <>
       <Seo title={`${dog.name} · Detail`} />
-      <DogDetailView dog={dog} />
+      <DogDetailView
+        dog={dog}
+        isOwner={isOwner}
+      />
     </>
   )
 }

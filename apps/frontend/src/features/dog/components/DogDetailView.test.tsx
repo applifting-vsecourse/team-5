@@ -15,20 +15,31 @@ vi.mock("@tanstack/react-router", async () => {
     ...actual,
     Link: ({
       to,
+      params,
       children,
       ...props
     }: {
       to?: string
+      params?: { clientId?: string; dogId?: string }
       children?: React.ReactNode
       [key: string]: unknown
-    }) => (
-      <a
-        href={to ?? "#"}
-        {...props}
-      >
-        {children}
-      </a>
-    ),
+    }) => {
+      let resolvedTo = typeof to === "string" ? to : "#"
+      if (params?.dogId) {
+        resolvedTo = resolvedTo.replace("$dogId", params.dogId)
+      }
+      if (params?.clientId) {
+        resolvedTo = resolvedTo.replace("$clientId", params.clientId)
+      }
+      return (
+        <a
+          href={resolvedTo}
+          {...props}
+        >
+          {children}
+        </a>
+      )
+    },
   }
 })
 
@@ -86,7 +97,7 @@ describe("DogDetailView", () => {
     // "+ Nový cíl" opens Tvorba tréninku (#62)
     expect(screen.getByRole("link", { name: /nový cíl/i })).toHaveAttribute(
       "href",
-      "/dogs/$dogId/goals/new",
+      "/dogs/d-123/goals/new",
     )
   })
 
@@ -111,6 +122,28 @@ describe("DogDetailView", () => {
     const img = screen.getByRole("img", { name: "Baryk" })
     expect(img).toBeInTheDocument()
     expect(img).toHaveAttribute("src", "https://example.com/baryk.jpg")
+  })
+
+  it("hides edit button and links back to client when user is not the owner", () => {
+    render(
+      <DogDetailView
+        dog={aDog}
+        isOwner={false}
+      />,
+      { wrapper: createWrapper() },
+    )
+
+    // Dog name is visible
+    expect(screen.getByRole("heading", { level: 1, name: "Baryk" })).toBeInTheDocument()
+
+    // Edit button must NOT be rendered
+    expect(screen.queryByRole("button", { name: /upravit psa/i })).not.toBeInTheDocument()
+
+    // Back button links to client detail
+    const backLink = screen.getByRole("link", { name: /zpět na detail klienta/i })
+    expect(backLink).toBeInTheDocument()
+    expect(backLink).toHaveAttribute("href", `/clients/${aDog.ownerId}`)
+    expect(screen.getByText("Klient")).toBeInTheDocument()
   })
 })
 
