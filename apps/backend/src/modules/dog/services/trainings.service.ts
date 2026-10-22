@@ -1,8 +1,10 @@
+import { TrainingStatus, WorkoutLog } from '@/generated/prisma/client';
 import {
   fromCalendarDate,
   todayInAppZone,
 } from '@/modules/dog/domain/calendar-date';
 import {
+  CompleteTrainingData,
   ScheduledTraining,
   ScheduledTrainingDetail,
   WeekTraining,
@@ -52,6 +54,32 @@ export class TrainingsService {
     }
 
     return training;
+  }
+
+  // Completes the scheduled training and writes a workout log (#77).
+  // Only the dog's owner can complete their dog's training.
+  async completeTraining(
+    user: Identity,
+    trainingId: string,
+    data: CompleteTrainingData,
+  ): Promise<WorkoutLog> {
+    const training =
+      await this.scheduledTrainingRepository.getTrainingById(trainingId);
+    if (!training) {
+      throw new NotFoundException(`Training with ID ${trainingId} not found`);
+    }
+
+    await this.dogAccessService.getOwnedDog(user, training.dogId);
+
+    if (training.status === TrainingStatus.COMPLETED) {
+      throw new ConflictException('This training is already completed');
+    }
+
+    return this.scheduledTrainingRepository.completeTraining(
+      trainingId,
+      user.id,
+      data,
+    );
   }
 
   // The owner's trainings between two days, both included (#72). The range is

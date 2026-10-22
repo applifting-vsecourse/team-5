@@ -1,11 +1,17 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
-import { TrainingStatus } from '@/generated/prisma/client';
+import {
+  FocusLevel,
+  MistakeLevel,
+  TrainingStatus,
+  WorkoutLog,
+  WorkoutStatus,
+} from '@/generated/prisma/client';
 import {
   ScheduledTraining,
   ScheduledTrainingDetail,
   WeekTraining,
 } from '@/modules/dog/domain/scheduled-training';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class ScheduledTrainingRepository {
@@ -107,6 +113,56 @@ export class ScheduledTrainingRepository {
           dog: { connect: { id: data.dogId } },
           createdBy: { connect: { id: data.createdById } },
           date: data.date,
+        },
+      });
+    });
+  }
+
+  async completeTraining(
+    trainingId: string,
+    authorId: string,
+    data: {
+      successRate?: number | null;
+      focus?: FocusLevel | null;
+      repeatedMistakes?: MistakeLevel | null;
+      note?: string | null;
+    },
+  ): Promise<WorkoutLog> {
+    return this.prisma.$transaction(async (tx) => {
+      const training = await tx.scheduledTraining.findUnique({
+        where: { id: trainingId },
+        include: {
+          goal: {
+            select: {
+              id: true,
+              title: true,
+              discipline: true,
+            },
+          },
+        },
+      });
+      if (!training) {
+        throw new NotFoundException(`Training with ID ${trainingId} not found`);
+      }
+
+      await tx.scheduledTraining.update({
+        where: { id: trainingId },
+        data: { status: TrainingStatus.COMPLETED },
+      });
+
+      return tx.workoutLog.create({
+        data: {
+          dog: { connect: { id: training.dogId } },
+          goal: { connect: { id: training.goalId } },
+          author: { connect: { id: authorId } },
+          title: training.goal.title,
+          discipline: training.goal.discipline ?? null,
+          status: WorkoutStatus.COMPLETED,
+          completedAt: new Date(),
+          successRate: data.successRate ?? null,
+          focus: data.focus ?? null,
+          repeatedMistakes: data.repeatedMistakes ?? null,
+          note: data.note?.trim() || null,
         },
       });
     });
