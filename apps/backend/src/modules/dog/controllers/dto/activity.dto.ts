@@ -114,15 +114,43 @@ export class CreateActivityDto {
   completedAt?: string;
 }
 
+export class MessageAuthorDto {
+  @ApiProperty({ type: String, nullable: true })
+  id!: string | null;
+
+  @ApiProperty()
+  name!: string;
+}
+
+export class TrainingMessageResponseDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  workoutLogId!: string;
+
+  @ApiProperty()
+  text!: string;
+
+  @ApiProperty({ type: String, format: 'date-time' })
+  createdAt!: Date;
+
+  @ApiProperty({ type: MessageAuthorDto })
+  author!: MessageAuthorDto;
+}
+
 export class ActivityResponseDto {
+  @ApiProperty({ type: [TrainingMessageResponseDto] })
+  messages!: TrainingMessageResponseDto[];
+
   @ApiProperty()
   id!: string;
 
   @ApiProperty()
   dogId!: string;
 
-  @ApiProperty()
-  authorId!: string;
+  @ApiProperty({ type: String, nullable: true })
+  authorId!: string | null;
 
   @ApiProperty()
   title!: string;

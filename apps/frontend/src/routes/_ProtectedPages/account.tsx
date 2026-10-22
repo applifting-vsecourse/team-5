@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import { ChevronDown, LogOut, Monitor, Moon, Sun } from "lucide-react"
 import { toast } from "sonner"
 
+import { ROUTES } from "@/app/routes"
 import { Seo } from "@/components/Seo"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,6 +14,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { useTheme } from "@/hooks/useTheme"
 
+import { DeleteAccountDialog } from "@/features/auth/components/DeleteAccountDialog"
 import { useSession } from "@/features/auth/hooks/useSession"
 import { useSignOut } from "@/features/auth/hooks/useSignOut"
 
@@ -93,6 +95,13 @@ export function AccountPage() {
                 <LogOut className="size-4" />
                 Odhlásit se
               </Button>
+              <DeleteAccountDialog isTrainer={user.role === "trainer"} />
+              <Link
+                to={ROUTES.privacy}
+                className="inline-flex min-h-12 items-center text-sm underline underline-offset-4"
+              >
+                Zásady zpracování osobních údajů
+              </Link>
             </div>
           </div>
         )}

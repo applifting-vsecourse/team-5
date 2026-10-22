@@ -96,7 +96,7 @@ export function DogActivitiesSection({
   activities: initialActivities,
 }: DogActivitiesSectionProps) {
   const [page, setPage] = useState(1)
-  const [selectedActivity, setSelectedActivity] = useState<DogActivity | null>(null)
+  const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
 
   const activitiesQuery = useQuery({
     ...dogActivitiesQueryOptions(dogId ?? ""),
@@ -105,6 +105,11 @@ export function DogActivitiesSection({
 
   const effectiveActivities =
     initialActivities ?? activitiesQuery.data ?? (dogId ? [] : DEFAULT_ACTIVITIES)
+  // Resolve from current query data so a refreshed author cannot remain in an
+  // already open dialog after the trainer deletes their account.
+  const selectedActivity = effectiveActivities.find(
+    (activity) => activity.id === selectedActivityId,
+  )
 
   const totalPages = Math.ceil(effectiveActivities.length / ITEMS_PER_PAGE) || 1
   const startIndex = (page - 1) * ITEMS_PER_PAGE
@@ -160,7 +165,23 @@ export function DogActivitiesSection({
         )}
       </div>
 
-      {activitiesQuery.isLoading && !initialActivities ? (
+      {activitiesQuery.isError && !initialActivities ? (
+        <div
+          className="space-y-3"
+          role="alert"
+        >
+          <p className="text-sm text-destructive">
+            Tréninkové záznamy a zprávy se nepodařilo načíst.
+          </p>
+          <Button
+            variant="outline"
+            className="min-h-12"
+            onClick={() => void activitiesQuery.refetch()}
+          >
+            Zkusit znovu
+          </Button>
+        </div>
+      ) : activitiesQuery.isLoading && !initialActivities ? (
         <div className="space-y-3">
           <Skeleton className="h-24 w-full rounded-xl" />
           <Skeleton className="h-24 w-full rounded-xl" />
@@ -179,14 +200,14 @@ export function DogActivitiesSection({
             return (
               <Card
                 key={item.id}
-                onClick={() => setSelectedActivity(item)}
+                onClick={() => setSelectedActivityId(item.id)}
                 className="group cursor-pointer border border-border p-4 transition-colors hover:border-foreground/30"
                 tabIndex={0}
                 role="button"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault()
-                    setSelectedActivity(item)
+                    setSelectedActivityId(item.id)
                   }
                 }}
                 aria-label={`Otevřít detail aktivity ${item.title}`}
@@ -231,7 +252,7 @@ export function DogActivitiesSection({
       <Dialog
         open={Boolean(selectedActivity)}
         onOpenChange={(isOpenState) => {
-          if (!isOpenState) setSelectedActivity(null)
+          if (!isOpenState) setSelectedActivityId(null)
         }}
       >
         <DialogContent className="sm:max-w-md">
@@ -291,10 +312,29 @@ export function DogActivitiesSection({
                   </div>
                 )}
 
-                <div className="rounded-md border border-dashed border-border p-3 text-xs text-muted-foreground">
-                  Odkaz na video a diskuzní vlákno s trenérem přibudou v návazných úlohách #78 a
-                  #80.
-                </div>
+                <section
+                  className="space-y-3"
+                  aria-label="Zprávy u tréninku"
+                >
+                  <h3 className="text-lg font-semibold tracking-tight">Zprávy u tréninku</h3>
+                  {selectedActivity.messages?.length ? (
+                    <ol className="space-y-4">
+                      {selectedActivity.messages.map((message) => (
+                        <li
+                          key={message.id}
+                          className="space-y-1"
+                        >
+                          <p className="text-sm font-medium">{message.author.name}</p>
+                          <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Zde se zobrazí zprávy k tomuto tréninku.
+                    </p>
+                  )}
+                </section>
               </div>
             </>
           )}

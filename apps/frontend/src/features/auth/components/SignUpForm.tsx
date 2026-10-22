@@ -179,6 +179,14 @@ export function SignUpForm({ isLoading, error, onSubmit }: SignUpFormProps) {
                   Souhlasím se zpracováním osobních údajů.
                 </FormLabel>
               </div>
+              <Link
+                to={ROUTES.privacy}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-12 items-center text-sm underline underline-offset-4"
+              >
+                Zásady zpracování osobních údajů (nová karta)
+              </Link>
               <FormMessage />
             </FormItem>
           )}

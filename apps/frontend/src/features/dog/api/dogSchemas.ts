@@ -37,7 +37,7 @@ export type CreateDogInput = z.infer<typeof createDogInputSchema>
 export const dogGoalSchema = z.object({
   id: z.string(),
   dogId: z.string(),
-  createdBy: z.object({ id: z.string(), name: z.string() }),
+  createdBy: z.object({ id: z.string().nullable(), name: z.string() }),
   title: z.string().min(1),
   discipline: z.string().nullable(),
   principle: z.string().nullable(),
@@ -121,6 +121,16 @@ export const dogActivitySchema = z.object({
   note: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
   skipReason: z.string().nullable().optional(),
+  messages: z
+    .array(
+      z.object({
+        id: z.string(),
+        text: z.string(),
+        createdAt: z.coerce.date(),
+        author: z.object({ id: z.string().nullable(), name: z.string() }),
+      }),
+    )
+    .optional(),
 })
 
 export const dogActivitiesSchema = z.array(dogActivitySchema)

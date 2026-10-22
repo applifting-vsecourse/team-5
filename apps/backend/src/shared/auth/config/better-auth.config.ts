@@ -16,6 +16,27 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      // BetterAuth otherwise permits a fresh session to delete without a
+      // password. This product always requires password confirmation (#88).
+      if (ctx.path === '/delete-user/callback') {
+        throw new APIError('BAD_REQUEST', {
+          code: 'PASSWORD_REQUIRED',
+          message: 'Smazání účtu potvrďte heslem v nastavení účtu.',
+        });
+      }
+      if (ctx.path === '/delete-user') {
+        if (
+          typeof ctx.body?.password !== 'string' ||
+          !ctx.body.password.length
+        ) {
+          throw new APIError('BAD_REQUEST', {
+            code: 'PASSWORD_REQUIRED',
+            message: 'Pro smazání účtu zadejte heslo.',
+          });
+        }
+        // Password verification and session/credential removal stay in BetterAuth.
+        return;
+      }
       if (ctx.path !== '/sign-up/email') return;
       try {
         const name = validateRegistration(ctx.body ?? {});
@@ -49,6 +70,7 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
     },
   },
   user: {
+    deleteUser: { enabled: true },
     additionalFields: {
       role: {
         type: 'string',

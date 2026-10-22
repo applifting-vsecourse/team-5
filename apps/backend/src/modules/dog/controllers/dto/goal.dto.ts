@@ -1,5 +1,6 @@
 import { GoalStatus } from '@/generated/prisma/client';
 import { Goal } from '@/modules/dog/domain/goal';
+import { presentAuthor } from '@/shared/auth/domain/present-author';
 import { Trim } from '@/shared/validation/trim';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
@@ -130,8 +131,8 @@ export class UpdateGoalDto {
 }
 
 export class GoalAuthorDto {
-  @ApiProperty()
-  id!: string;
+  @ApiProperty({ type: String, nullable: true })
+  id!: string | null;
 
   @ApiProperty()
   name!: string;
@@ -172,7 +173,7 @@ export class GoalResponseDto {
     return {
       id: goal.id,
       dogId: goal.dogId,
-      createdBy: { id: goal.createdBy.id, name: goal.createdBy.name },
+      createdBy: presentAuthor(goal.createdBy),
       title: goal.title,
       discipline: goal.discipline,
       principle: goal.principle,
