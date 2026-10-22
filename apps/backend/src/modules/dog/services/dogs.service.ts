@@ -1,6 +1,7 @@
 import 'multer';
 import { Dog } from '@/modules/dog/domain/dog';
 import { DogRepository } from '@/modules/dog/repositories/dog.repository';
+import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import {
   BadRequestException,
@@ -32,19 +33,19 @@ export function sanitizeDisciplines(
 export class DogsService {
   constructor(
     private readonly dogRepository: DogRepository,
-    private readonly dogPhotoService: DogPhotoService,
+    private readonly dogAccess: DogAccessService,
+    private readonly dogPhotoService?: DogPhotoService,
   ) {}
 
+  // The user's own dogs. A trainer reaches the dogs shared with them through
+  // their clients (#81), not through this list.
   async getDogs(user: Identity): Promise<Dog[]> {
     return this.dogRepository.getDogsByOwnerId(user.id);
   }
 
+  // The owner, or a trainer the dog is shared with (#85).
   async getDogById(user: Identity, id: string): Promise<Dog> {
-    const dog = await this.dogRepository.getDogByIdWithAccess(id, user.id);
-    if (!dog) {
-      throw new NotFoundException(`Dog with ID ${id} not found`);
-    }
-    return dog;
+    return this.dogAccess.getAccessibleDog(user, id);
   }
 
   async createDog(
@@ -79,6 +80,11 @@ export class DogsService {
       disciplines?: string[];
     },
   ): Promise<Dog> {
+    // Only the owner edits the profile: a trainer with a share gets 403, anyone
+    // else 404. The repository filters on the owner again, so the update itself
+    // can never touch someone else's dog.
+    await this.dogAccess.getOwnedDog(user, id);
+
     const sanitizedDisciplines =
       updateData.disciplines !== undefined
         ? sanitizeDisciplines(updateData.disciplines)
@@ -106,6 +112,10 @@ export class DogsService {
   ): Promise<Dog> {
     if (!file) {
       throw new BadRequestException('Soubor nebyl nahrán');
+    }
+
+    if (!this.dogPhotoService) {
+      throw new Error('DogPhotoService not configured');
     }
 
     const dog = await this.dogRepository.getDogById(dogId, user.id);
@@ -146,7 +156,7 @@ export class DogsService {
       throw new NotFoundException(`Dog with ID ${dogId} not found`);
     }
 
-    if (dog.photoUrl) {
+    if (dog.photoUrl && this.dogPhotoService) {
       await this.dogPhotoService.deletePhotoFile(dog.photoUrl);
     }
 
@@ -163,7 +173,7 @@ export class DogsService {
       throw new NotFoundException(`Dog with ID ${dogId} not found`);
     }
 
-    if (dog.photoUrl) {
+    if (dog.photoUrl && this.dogPhotoService) {
       await this.dogPhotoService.deletePhotoFile(dog.photoUrl);
     }
 
