@@ -2,6 +2,7 @@ import {
   ActivityResponseDto,
   CreateActivityDto,
 } from '@/modules/dog/controllers/dto/activity.dto';
+import { presentTrainingMessage } from '@/modules/dog/domain/training-message';
 import { ActivitiesService } from '@/modules/dog/services/activities.service';
 import { User } from '@/shared/auth/decorators/user.decorator';
 import { Identity } from '@/shared/auth/domain/identity';
@@ -56,6 +57,7 @@ export class ActivitiesController {
       id: a.id,
       dogId: a.dogId,
       authorId: a.authorId,
+      messages: a.messages.map(presentTrainingMessage),
       title: a.title,
       discipline: a.discipline,
       status: a.status,
@@ -88,6 +90,7 @@ export class ActivitiesController {
       id: a.id,
       dogId: a.dogId,
       authorId: a.authorId,
+      messages: [],
       title: a.title,
       discipline: a.discipline,
       status: a.status,

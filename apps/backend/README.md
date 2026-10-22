@@ -152,6 +152,42 @@ roles with the Prisma adapter, apply migrations to an isolated PostgreSQL test
 database, set `AUTH_TEST_DATABASE_URL` to its connection URL and run
 `pnpm backend test:auth:postgres`. The test removes only the accounts it creates.
 
+### Account deletion and consent (#88)
+
+Registration links to the public `/privacy` page and keeps the mandatory consent
+validation from #49/#50 on both the client and server. The Czech policy is a
+review draft: the project owner must supply the controller's identity/contact,
+legal bases, processors and retention details before public use.
+
+`POST /api/auth/delete-user` is BetterAuth's authenticated deletion endpoint.
+It always requires the current password, including for a fresh session; the
+passwordless callback is disabled. BetterAuth verifies the unmodified password,
+removes credentials and all sessions, and expires the browser cookie. The client
+cancels outstanding queries, clears its cache and returns to the public homepage.
+
+Database ownership determines the deletion scope:
+
+- Deleting a user cascades to their dogs and each dog's goals, plan blocks,
+  scheduled trainings, workout logs, private diary notes and message threads.
+- Client connections, dog shares and invitations cascade from the deleted user.
+- Authorship of another owner's goals, trainings, logs and messages is nullable
+  with `ON DELETE SET NULL`. Deleting a trainer therefore preserves client data.
+  Goal and message responses resolve a removed author to `smazaný uživatel` without
+  retaining a name/email snapshot. Clients can still read these messages in an
+  activity's detail; refreshing the data also updates an already open detail.
+
+The client connection/share/invitation schema and migration come from the clients list (#81, `20261021141115_add_clients_and_invitations`). `DogNote` and `TrainingMessage` supply the minimal
+persistence needed for #88; editing notes and composing messages remain the
+separate diary/thread features. A message thread belongs to a workout log, as in
+the sitemap, and must not belong to a client connection (deleting that connection
+must not erase the client's history).
+
+`pnpm check-all` includes the real BetterAuth HTTP-handler tests.
+`pnpm backend test:auth:postgres` additionally verifies the complete deletion
+graphs in an isolated migrated PostgreSQL database. CI runs both. Tests cover
+wrong/missing passwords, unauthorized requests, callback bypasses, all-session
+revocation, cross-account isolation, owner cascades and trainer anonymization.
+
 `test:auth` also checks login error privacy, persistent session cookies and logout
 revocation. The frontend always requests `rememberMe: true`; BetterAuth manages
 the cookie lifetime and invalidation. No auth tokens are stored in local storage.

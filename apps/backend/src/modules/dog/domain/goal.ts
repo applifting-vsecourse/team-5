@@ -10,7 +10,7 @@ export type GoalAuthor = {
 // A goal as the rest of the app sees it: the row plus who created it, because
 // the screen shows the author next to the goal (#62).
 export type Goal = TrainingGoal & {
-  createdBy: GoalAuthor;
+  createdBy: GoalAuthor | null;
 };
 
 export type CreateGoalData = {

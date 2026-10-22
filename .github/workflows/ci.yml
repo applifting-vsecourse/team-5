@@ -8,6 +8,20 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: trainloop_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d trainloop_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v5
 
@@ -48,8 +62,16 @@ jobs:
       - name: Build backend
         run: pnpm backend build
 
-      - name: Test registration API
+      - name: Test authentication API
         run: pnpm backend test:auth
+
+      - name: Test account lifecycle in PostgreSQL
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/trainloop_test
+          AUTH_TEST_DATABASE_URL: postgresql://test:test@localhost:5432/trainloop_test
+        run: |
+          pnpm backend migrate
+          pnpm backend test:auth:postgres
 
       - name: Build frontend
         run: pnpm frontend build

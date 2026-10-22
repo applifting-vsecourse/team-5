@@ -89,6 +89,7 @@ model User {
   clientConnections  ClientConnection[]  @relation("ClientTrainers")
   sharedDogs         DogShare[]          @relation("TrainerSharedDogs")
   invitations        Invitation[]        @relation("TrainerInvitations")
+  messages           TrainingMessage[]
   role               UserRole            @default(user)
 
   username        String? @db.VarChar(50)
@@ -110,8 +111,9 @@ model Dog {
   disciplines String[]            @default([])
   goals       TrainingGoal[]
   workoutLogs WorkoutLog[]
-  trainings   ScheduledTraining[]
   shares      DogShare[]
+  notes       DogNote[]
+  trainings   ScheduledTraining[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @default(now()) @updatedAt
 
@@ -155,8 +157,8 @@ model TrainingGoal {
   id          String              @id @default(cuid())
   dogId       String
   dog         Dog                 @relation(fields: [dogId], references: [id], onDelete: Cascade)
-  createdById String
-  createdBy   User                @relation("GoalCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String?
+  createdBy   User?               @relation("GoalCreator", fields: [createdById], references: [id], onDelete: SetNull)
   title       String              @db.VarChar(100)
   discipline  String?             @db.VarChar(60)
   principle   String?             @db.Text
@@ -209,8 +211,8 @@ model ScheduledTraining {
   goal        TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
   dogId       String
   dog         Dog            @relation(fields: [dogId], references: [id], onDelete: Cascade)
-  createdById String
-  createdBy   User           @relation("TrainingScheduler", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String?
+  createdBy   User?          @relation("TrainingScheduler", fields: [createdById], references: [id], onDelete: SetNull)
   date        DateTime       @db.Date
   status      TrainingStatus @default(PLANNED)
   createdAt   DateTime       @default(now())
@@ -222,26 +224,27 @@ model ScheduledTraining {
 }
 
 model WorkoutLog {
-  id               String        @id @default(cuid())
+  id               String            @id @default(cuid())
   dogId            String
-  dog              Dog           @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  dog              Dog               @relation(fields: [dogId], references: [id], onDelete: Cascade)
   goalId           String?
-  goal             TrainingGoal? @relation(fields: [goalId], references: [id], onDelete: SetNull)
-  authorId         String
-  author           User          @relation("LogAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  title            String        @db.VarChar(120)
-  discipline       String?       @db.VarChar(60)
-  status           WorkoutStatus @default(COMPLETED)
-  completedAt      DateTime      @default(now())
+  goal             TrainingGoal?     @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  authorId         String?
+  author           User?             @relation("LogAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  title            String            @db.VarChar(120)
+  discipline       String?           @db.VarChar(60)
+  status           WorkoutStatus     @default(COMPLETED)
+  completedAt      DateTime          @default(now())
   successRate      Int?
   rating           Int?
   focus            FocusLevel?
   repeatedMistakes MistakeLevel?
-  note             String?       @db.Text
-  videoUrl         String?       @db.VarChar(500)
-  skipReason       String?       @db.Text
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @default(now()) @updatedAt
+  note             String?           @db.Text
+  videoUrl         String?           @db.VarChar(500)
+  messages         TrainingMessage[]
+  skipReason       String?           @db.Text
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
 
   @@index([dogId, completedAt(sort: Desc)])
   @@map("workout_log")
@@ -286,4 +289,35 @@ model Invitation {
 
   @@index([trainerId])
   @@map("invitation")
+}
+
+// Private diary notes belong to the dog, so deleting its owner removes them.
+model DogNote {
+  id        String   @id @default(cuid())
+  dogId     String
+  dog       Dog      @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  text      String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([dogId])
+  @@map("dog_note")
+}
+
+// The workout log is the thread (#88, F-21). Deleting the owner removes the
+// entire thread; deleting a trainer only removes the link to its author.
+// Do not copy author names/emails into messages: resolve deleted authors via
+// presentAuthor so their identity cannot survive account deletion.
+model TrainingMessage {
+  id           String     @id @default(cuid())
+  workoutLogId String
+  workoutLog   WorkoutLog @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  authorId     String?
+  author       User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  text         String     @db.Text
+  createdAt    DateTime   @default(now())
+
+  @@index([workoutLogId, createdAt])
+  @@index([authorId])
+  @@map("training_message")
 }

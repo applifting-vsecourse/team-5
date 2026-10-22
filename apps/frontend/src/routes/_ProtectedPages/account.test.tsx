@@ -15,10 +15,17 @@ let mockResolvedTheme = "dark"
 
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => () => ({}),
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
 }))
 
 vi.mock("@/components/Seo", () => ({
   Seo: () => null,
+}))
+
+vi.mock("@/features/auth/components/DeleteAccountDialog", () => ({
+  DeleteAccountDialog: () => <button>Smazat účet</button>,
 }))
 
 vi.mock("@/features/auth/hooks/useSession", () => ({

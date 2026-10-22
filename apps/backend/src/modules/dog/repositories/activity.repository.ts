@@ -5,16 +5,23 @@ import {
   WorkoutLog,
   WorkoutStatus,
 } from '@/generated/prisma/client';
+import { ActivityWithMessages } from '@/modules/dog/domain/activity';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ActivityRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getActivitiesByDogId(dogId: string): Promise<WorkoutLog[]> {
+  async getActivitiesByDogId(dogId: string): Promise<ActivityWithMessages[]> {
     return this.prisma.workoutLog.findMany({
       where: { dogId },
       orderBy: { completedAt: 'desc' },
+      include: {
+        messages: {
+          include: { author: { select: { id: true, name: true } } },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+        },
+      },
     });
   }
 

@@ -93,6 +93,14 @@ describe("owner registration", () => {
     const { interaction } = await openPage("/")
     await interaction.click(await screen.findByRole("link", { name: "Zaregistrovat se" }))
     expect(await screen.findByRole("heading", { name: "Registrace" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /Zásady zpracování osobních údajů/ })).toHaveAttribute(
+      "href",
+      "/privacy",
+    )
+    expect(screen.getByRole("link", { name: /Zásady zpracování osobních údajů/ })).toHaveAttribute(
+      "target",
+      "_blank",
+    )
     expect(
       screen.queryByLabelText(/username|confirm password|pozvánka|karta/i),
     ).not.toBeInTheDocument()
