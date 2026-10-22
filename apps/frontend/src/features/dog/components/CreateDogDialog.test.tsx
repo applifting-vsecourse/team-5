@@ -5,11 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import type { Dog } from "@/features/dog/api/dogSchemas"
 
-import {
-  CreateDogDialog,
-  DEFAULT_DISCIPLINES,
-  getFirstUnusedColor,
-} from "./CreateDogDialog"
+import { CreateDogDialog, DEFAULT_DISCIPLINES, getFirstUnusedColor } from "./CreateDogDialog"
 
 const aDog = (color: number): Dog => ({
   id: `d-${color}`,
@@ -182,7 +178,9 @@ describe("CreateDogDialog", () => {
     // Remove custom discipline via X button
     const removeAgilityBtn = screen.getByRole("button", { name: /odebrat disciplínu agility/i })
     await user.click(removeAgilityBtn)
-    expect(screen.queryByRole("button", { name: /odebrat disciplínu agility/i })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /odebrat disciplínu agility/i }),
+    ).not.toBeInTheDocument()
   })
 
   it("handles photo upload, live preview, and photo removal", async () => {

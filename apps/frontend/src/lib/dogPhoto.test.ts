@@ -39,7 +39,9 @@ describe("dogPhoto", () => {
     it("keeps absolute http/https/blob/data URLs as-is", () => {
       expect(resolvePhotoUrl("https://example.com/rex.webp")).toBe("https://example.com/rex.webp")
       expect(resolvePhotoUrl("http://example.com/rex.webp")).toBe("http://example.com/rex.webp")
-      expect(resolvePhotoUrl("blob:http://localhost:3050/123")).toBe("blob:http://localhost:3050/123")
+      expect(resolvePhotoUrl("blob:http://localhost:3050/123")).toBe(
+        "blob:http://localhost:3050/123",
+      )
       expect(resolvePhotoUrl("data:image/webp;base64,...")).toBe("data:image/webp;base64,...")
     })
 

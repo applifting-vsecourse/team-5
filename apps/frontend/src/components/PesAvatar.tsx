@@ -36,7 +36,7 @@ export function PesAvatar({ name, color, size = "md", photoUrl, className }: Pes
         role="img"
         aria-label={`Avatar psa ${name}`}
         className={cn(
-          "flex shrink-0 items-center justify-center rounded-full overflow-hidden select-none ring-2 ring-offset-1 ring-offset-background",
+          "flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-offset-1 ring-offset-background select-none",
           ringClass,
           sizeClass,
           className,
@@ -45,7 +45,7 @@ export function PesAvatar({ name, color, size = "md", photoUrl, className }: Pes
         <img
           src={resolvedUrl}
           alt={name}
-          className="size-full object-cover rounded-full"
+          className="size-full rounded-full object-cover"
           onError={() => setErroredPhotoUrl(photoUrl ?? null)}
         />
       </div>

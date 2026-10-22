@@ -1,9 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react"
+import { useEffect, useRef, useState, type FormEvent } from "react"
 import { Camera, Check, Plus, Trash2, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -17,11 +12,12 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { validateDogPhoto } from "@/lib/dogPhoto"
 import { cn } from "@/lib/utils"
 
 import { updateDogInputSchema, type Dog } from "@/features/dog/api/dogSchemas"
 import { useUpdateDog } from "@/features/dog/hooks/useUpdateDog"
-import { validateDogPhoto } from "@/lib/dogPhoto"
+
 import { DEFAULT_DISCIPLINES, DOG_COLORS } from "./CreateDogDialog"
 import { PesAvatar } from "./PesAvatar"
 
@@ -179,7 +175,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isPending}
-              className="group relative cursor-pointer rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="group relative cursor-pointer rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden"
               aria-label="Vybrat fotku psa"
             >
               <PesAvatar
@@ -293,7 +289,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
                   onClick={() => setColor(c.value)}
                   disabled={isPending}
                   className={cn(
-                    "flex size-11 items-center justify-center rounded-full transition-transform focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95",
+                    "flex size-11 items-center justify-center rounded-full transition-transform focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden active:scale-95",
                     c.className,
                     isSelected
                       ? "scale-105 ring-2 ring-foreground ring-offset-2"
@@ -311,9 +307,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
           <Label>Sporty a disciplíny (volitelné)</Label>
           <div className="flex flex-wrap gap-2">
             {DEFAULT_DISCIPLINES.map((disc) => {
-              const isSelected = disciplines.some(
-                (d) => d.toLowerCase() === disc.toLowerCase(),
-              )
+              const isSelected = disciplines.some((d) => d.toLowerCase() === disc.toLowerCase())
               return (
                 <button
                   key={disc}
@@ -323,7 +317,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
                   onClick={() => handleToggleDefaultDiscipline(disc)}
                   disabled={isPending}
                   className={cn(
-                    "inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    "inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden",
                     isSelected
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground",
@@ -349,7 +343,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
                     aria-label={`Odebrat disciplínu ${disc}`}
                     onClick={() => handleRemoveDiscipline(disc)}
                     disabled={isPending}
-                    className="relative ml-1 inline-flex size-6 items-center justify-center rounded-full text-primary-foreground hover:bg-black/20 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2"
+                    className="relative ml-1 inline-flex size-6 items-center justify-center rounded-full text-primary-foreground after:absolute after:-inset-2 hover:bg-black/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                   >
                     <X className="size-3.5" />
                   </button>
@@ -423,12 +417,7 @@ type EditDogDialogProps = {
   onSuccess?: (dog: Dog) => void
 }
 
-export function EditDogDialog({
-  dog,
-  isOpen,
-  onOpenChange,
-  onSuccess,
-}: EditDogDialogProps) {
+export function EditDogDialog({ dog, isOpen, onOpenChange, onSuccess }: EditDogDialogProps) {
   return (
     <Dialog
       open={isOpen}

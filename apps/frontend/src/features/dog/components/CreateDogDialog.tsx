@@ -21,11 +21,12 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { validateDogPhoto } from "@/lib/dogPhoto"
 import { cn } from "@/lib/utils"
 
 import { createDogInputSchema, type Dog } from "@/features/dog/api/dogSchemas"
 import { useCreateDog } from "@/features/dog/hooks/useCreateDog"
-import { validateDogPhoto } from "@/lib/dogPhoto"
+
 import { PesAvatar } from "./PesAvatar"
 
 export const DOG_COLORS = [
@@ -260,7 +261,7 @@ export function CreateDogDialog({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isPending}
-                  className="group relative cursor-pointer rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="group relative cursor-pointer rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden"
                   aria-label="Vybrat fotku psa"
                 >
                   <PesAvatar
@@ -374,7 +375,7 @@ export function CreateDogDialog({
                       onClick={() => setColor(c.value)}
                       disabled={isPending}
                       className={cn(
-                        "flex size-11 items-center justify-center rounded-full transition-transform focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-95",
+                        "flex size-11 items-center justify-center rounded-full transition-transform focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden active:scale-95",
                         c.className,
                         isSelected
                           ? "scale-105 ring-2 ring-foreground ring-offset-2"
@@ -392,9 +393,7 @@ export function CreateDogDialog({
               <Label>Sporty a disciplíny (volitelné)</Label>
               <div className="flex flex-wrap gap-2">
                 {DEFAULT_DISCIPLINES.map((disc) => {
-                  const isSelected = disciplines.some(
-                    (d) => d.toLowerCase() === disc.toLowerCase(),
-                  )
+                  const isSelected = disciplines.some((d) => d.toLowerCase() === disc.toLowerCase())
                   return (
                     <button
                       key={disc}
@@ -404,7 +403,7 @@ export function CreateDogDialog({
                       onClick={() => handleToggleDefaultDiscipline(disc)}
                       disabled={isPending}
                       className={cn(
-                        "inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        "inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden",
                         isSelected
                           ? "border-primary bg-primary text-primary-foreground"
                           : "border-border bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground",
@@ -430,7 +429,7 @@ export function CreateDogDialog({
                         aria-label={`Odebrat disciplínu ${disc}`}
                         onClick={() => handleRemoveDiscipline(disc)}
                         disabled={isPending}
-                        className="relative ml-1 inline-flex size-6 items-center justify-center rounded-full text-primary-foreground hover:bg-black/20 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2"
+                        className="relative ml-1 inline-flex size-6 items-center justify-center rounded-full text-primary-foreground after:absolute after:-inset-2 hover:bg-black/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                       >
                         <X className="size-3.5" />
                       </button>

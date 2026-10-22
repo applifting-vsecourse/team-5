@@ -1,11 +1,6 @@
 export const ALLOWED_PHOTO_EXTENSIONS = [".jpg", ".jpeg", ".png", ".heic"]
 
-export const ALLOWED_PHOTO_MIME_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/heic",
-  "image/heif",
-]
+export const ALLOWED_PHOTO_MIME_TYPES = ["image/jpeg", "image/png", "image/heic", "image/heif"]
 
 export const MAX_PHOTO_BYTES = 10 * 1024 * 1024 // 10 MB
 
