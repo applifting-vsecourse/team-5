@@ -203,6 +203,28 @@ Hopefully you won't need to use this command and the following part, unless you 
 
 Keep in mind that there are 2 better auth configurations, one in the src/shared/auth/providers/better-auth.provider.ts (the complete config that is being used in the whole app) and one in the src/shared/auth/config/better-auth.config.ts (this config is being used by the CLI command above). You need to add the necessary changes to the better-auth config file to generate new database schema changes.
 
+### Access to dogs, plans and records (#85)
+
+The rules are enforced in the API, in one place: `DogAccessService`. Services never
+decide on their own who may see a dog.
+
+| | owner | trainer with a share | anyone else |
+| --- | --- | --- | --- |
+| read the dog | yes | yes | 404 |
+| goals, plan blocks, trainings (read and edit) | yes | yes | 404 |
+| read activity records | yes | yes | 404 |
+| edit the dog, log a workout, private notes (#70) | yes | 403 | 404 |
+
+A dog the user may not see is reported as missing (404), never as forbidden, so the
+API does not reveal that it exists. A trainer who can see the dog but may not do
+something gets 403. Access is read from the `dog_share` rows on every request, so when
+a share is removed (ending the collaboration, #61) the trainer loses access at once.
+
+New features pick the rule with `getAccessibleDog` (owner or trainer) or `getOwnedDog`
+(owner only). Writing into a record's thread (#80) belongs to the first group, private
+notes (#70) to the second. `pnpm backend test:auth:postgres` runs every rule against a
+real database (`test/dog-access.postgres.test.mjs`).
+
 ### Email Service
 
 Emails are sent via [Resend](https://resend.com). Templates are authored as React components using [react-email](https://react.email) and live in `src/core/email/templates/`.
