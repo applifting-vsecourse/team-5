@@ -1,4 +1,9 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
+import { TrainingStatus } from '@/generated/prisma/client';
+import {
+  fromCalendarDate,
+  todayInAppZone,
+} from '@/modules/dog/domain/calendar-date';
 import { BetterAuth } from '@/shared/auth/providers/better-auth.provider';
 import { Config } from '@/shared/config/config.service';
 import { createUser } from './create-user';
@@ -249,6 +254,96 @@ export const seedDogData = async (
       ],
     });
   }
+
+  // 4. Seed PlanBlocks (exercises / tasks) for Rex's goals
+  const rexGoalBlocks = [
+    // Goal 1: Spolehlivá chůze u nohy
+    {
+      id: 'block-1-1',
+      goalId: 'goal-1',
+      position: 0,
+      title: 'Přiřazení k noze na pamlsek',
+      instruction:
+        'Ze základní pozice navést psa obloukem za zády k levé noze. Odměna okamžitě po dosednutí u nohy z levé ruky.',
+      criterion:
+        'Pes usedne paralelně k noze do 2 sekund bez dotyku psovoda, oční kontakt.',
+    },
+    {
+      id: 'block-1-2',
+      goalId: 'goal-1',
+      position: 1,
+      title: 'Chůze 10 kroků v přímém směru',
+      instruction:
+        'Vykročit levou nohou se zvukovým povelem „K noze“. Udržovat rytmus a odměňovat po každých 3–5 krocích.',
+      criterion:
+        'Pes nepředbíhá ramenem koleno psovoda a soustředí se po celou trasu 10 kroků.',
+    },
+    {
+      id: 'block-1-3',
+      goalId: 'goal-1',
+      position: 2,
+      title: 'Obrat za pochodu o 90° vlevo',
+      instruction:
+        'Při obratu vlevo jemně zpomalit tělem, navést psa do zkráceného oblouku a udržet jeho rameno u kolena.',
+      criterion:
+        'Pes neztrácí pozici u nohy ani při náhlém obratu do úhlu 90 stupňů.',
+    },
+    // Goal 2: Start na povel
+    {
+      id: 'block-2-1',
+      goalId: 'goal-2',
+      position: 0,
+      title: 'Klid na startovní čáře v tahu',
+      instruction:
+        'Pes stojí v postroji na napnuté šňůře v klidu před psovodem. Psovod drží šňůru a čeká na uvolnění.',
+      criterion:
+        'Klidné čekání v tahu 10 sekund bez uskakování do stran či štěkání.',
+    },
+    {
+      id: 'block-2-2',
+      goalId: 'goal-2',
+      position: 1,
+      title: 'Explozivní vyběhnutí na povel GO',
+      instruction:
+        'Na povel „Připravit... GO!“ okamžitý přechod do plného sprintu na prvních 30 metrů.',
+      criterion:
+        'Okamžitá akcelerace do tahu do 1 sekundy od povelu bez ohlížení na psovoda.',
+    },
+    // Goal 3: Odložení za pohybu
+    {
+      id: 'block-3-1',
+      goalId: 'goal-3',
+      position: 0,
+      title: 'Povel Lehni za chůze',
+      instruction:
+        'Při chůzi u nohy dát povel „Lehni“. Pes ihned ulehá, psovod pokračuje plynulým krokem dalších 5 kroků.',
+      criterion:
+        'Okamžité zalehnutí bez zaváhání do 1 sekundy a bez nutnosti zastavení psovoda.',
+    },
+    {
+      id: 'block-3-2',
+      goalId: 'goal-3',
+      position: 1,
+      title: 'Odstup psovoda na 20 metrů a návrat',
+      instruction:
+        'Po odložení psovod odchází 20 m čelem od psa, vyčká 5 sekund a vrací se k pravému boku psa.',
+      criterion:
+        'Pes leží klidně bez posunutí těla či vstávání po celou dobu odchodu i návratu.',
+    },
+  ];
+
+  for (const block of rexGoalBlocks) {
+    await prisma.planBlock.upsert({
+      where: { id: block.id },
+      update: {
+        title: block.title,
+        instruction: block.instruction,
+        criterion: block.criterion,
+        position: block.position,
+      },
+      create: block,
+    });
+  }
 };
 
 export const seedClientData = async (
@@ -391,6 +486,243 @@ export const seedClientData = async (
         dogId: dog.id,
         trainerId,
       },
+    });
+  }
+
+  // Baryk's goal & blocks
+  const barykGoal = await prisma.trainingGoal.upsert({
+    where: { id: 'goal-baryk-1' },
+    update: {
+      dogId: baryk.id,
+      title: 'Překonání áčka v agility',
+      discipline: 'Agility',
+      principle:
+        'Plynulý náběh v plné rychlosti, bezpečný seběh s dotykem sestupné zóny 2on/2off.',
+      status: 'ACTIVE',
+      order: 1,
+    },
+    create: {
+      id: 'goal-baryk-1',
+      dogId: baryk.id,
+      createdById: jan.id,
+      title: 'Překonání áčka v agility',
+      discipline: 'Agility',
+      principle:
+        'Plynulý náběh v plné rychlosti, bezpečný seběh s dotykem sestupné zóny 2on/2off.',
+      status: 'ACTIVE',
+      order: 1,
+    },
+  });
+
+  const barykBlocks = [
+    {
+      id: 'block-baryk-1',
+      goalId: barykGoal.id,
+      position: 0,
+      title: 'Náběh na šikmou stěnu v plné rychlosti',
+      instruction:
+        'Vyslat psa na překážku ze vzdálenosti 5 metrů rovným náběhem.',
+      criterion: 'Přímá trajektorie bez zaváhání před náběhem na stěnu.',
+    },
+    {
+      id: 'block-baryk-2',
+      goalId: barykGoal.id,
+      position: 1,
+      title: 'Zastavení v sestupné zóně 2on/2off',
+      instruction:
+        'Pes seběhne stěnu a zastaví zadníma nohama na barevné zóně a předníma na zemi.',
+      criterion: 'Spolehlivé setrvání v zóně do zaznění uvolňovacího povelu.',
+    },
+  ];
+
+  for (const block of barykBlocks) {
+    await prisma.planBlock.upsert({
+      where: { id: block.id },
+      update: {
+        title: block.title,
+        instruction: block.instruction,
+        criterion: block.criterion,
+        position: block.position,
+      },
+      create: block,
+    });
+  }
+
+  // Trainer Marek's own dog: Argo
+  const argo = await prisma.dog.upsert({
+    where: { id: 'dog-argo-1' },
+    update: {
+      name: 'Argo',
+      breed: 'Belgický ovčák Malinois',
+      color: 5,
+      ownerId: trainerId,
+      disciplines: ['Poslušnost', 'Obrany'],
+    },
+    create: {
+      id: 'dog-argo-1',
+      name: 'Argo',
+      breed: 'Belgický ovčák Malinois',
+      color: 5,
+      ownerId: trainerId,
+      disciplines: ['Poslušnost', 'Obrany'],
+    },
+  });
+
+  const argoGoal = await prisma.trainingGoal.upsert({
+    where: { id: 'goal-argo-1' },
+    update: {
+      dogId: argo.id,
+      title: 'Vyštěkání v maketě',
+      discipline: 'Obrany',
+      principle:
+        'Přímý náběh do zástěny, intenzivní rytmické vyštěkání bez dotyku figuranta.',
+      status: 'ACTIVE',
+      order: 1,
+    },
+    create: {
+      id: 'goal-argo-1',
+      dogId: argo.id,
+      createdById: trainerId,
+      title: 'Vyštěkání v maketě',
+      discipline: 'Obrany',
+      principle:
+        'Přímý náběh do zástěny, intenzivní rytmické vyštěkání bez dotyku figuranta.',
+      status: 'ACTIVE',
+      order: 1,
+    },
+  });
+
+  const argoBlocks = [
+    {
+      id: 'block-argo-1',
+      goalId: argoGoal.id,
+      position: 0,
+      title: 'Náběh do zástěny na povel',
+      instruction: 'Vyslání psa do makety ze vzdálenosti 15 metrů.',
+      criterion: 'Přímočarý a rychlý náběh bez obíhání překážky.',
+    },
+    {
+      id: 'block-argo-2',
+      goalId: argoGoal.id,
+      position: 1,
+      title: 'Rytmické vyštěkání figuranta',
+      instruction:
+        'Pes vyštěkává figuranta v maketě z uctivé vzdálenosti 1 metru bez kontaktu.',
+      criterion: 'Nepřetržité a jisté vyštěkání po dobu minimálně 10 sekund.',
+    },
+  ];
+
+  for (const block of argoBlocks) {
+    await prisma.planBlock.upsert({
+      where: { id: block.id },
+      update: {
+        title: block.title,
+        instruction: block.instruction,
+        criterion: block.criterion,
+        position: block.position,
+      },
+      create: block,
+    });
+  }
+
+  // Week Calendar scheduled trainings
+  const todayStr = todayInAppZone();
+  const today = fromCalendarDate(todayStr);
+  const dayOfWeek = today.getUTCDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+  const monday = new Date(today);
+  monday.setUTCDate(today.getUTCDate() + diffToMonday);
+
+  const getWeekDay = (offsetDays: number): Date => {
+    const d = new Date(monday);
+    d.setUTCDate(monday.getUTCDate() + offsetDays);
+    return d;
+  };
+
+  const tuesday = getWeekDay(1);
+  const saturday = getWeekDay(5);
+  const sunday = getWeekDay(6);
+
+  const pastDate =
+    today.getTime() > tuesday.getTime()
+      ? tuesday
+      : today.getTime() > monday.getTime()
+        ? monday
+        : new Date(today.getTime() - 24 * 60 * 60 * 1000);
+
+  const plannedSaturday =
+    saturday.getTime() >= today.getTime()
+      ? saturday
+      : new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000);
+
+  const plannedSunday =
+    sunday.getTime() >= today.getTime()
+      ? sunday
+      : new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+  const scheduledTrainings = [
+    // 1. Rex on Today (PLANNED)
+    {
+      id: 'train-rex-1',
+      dogId: rex.id,
+      goalId: 'goal-1',
+      createdById: jan.id,
+      date: today,
+      status: TrainingStatus.PLANNED,
+    },
+    // 2. Rex earlier this week (COMPLETED)
+    {
+      id: 'train-rex-2',
+      dogId: rex.id,
+      goalId: 'goal-3',
+      createdById: jan.id,
+      date: pastDate,
+      status: TrainingStatus.COMPLETED,
+    },
+    // 3. Rex on Weekend (PLANNED)
+    {
+      id: 'train-rex-3',
+      dogId: rex.id,
+      goalId: 'goal-2',
+      createdById: jan.id,
+      date: plannedSaturday,
+      status: TrainingStatus.PLANNED,
+    },
+    // 4. Baryk on Weekend (PLANNED)
+    {
+      id: 'train-baryk-1',
+      dogId: baryk.id,
+      goalId: barykGoal.id,
+      createdById: jan.id,
+      date: plannedSunday,
+      status: TrainingStatus.PLANNED,
+    },
+    // 5. Trainer's Argo on Today (PLANNED)
+    {
+      id: 'train-argo-1',
+      dogId: argo.id,
+      goalId: argoGoal.id,
+      createdById: trainerId,
+      date: today,
+      status: TrainingStatus.PLANNED,
+    },
+  ];
+
+  await prisma.scheduledTraining.deleteMany({
+    where: {
+      goalId: { in: ['goal-1', 'goal-2', 'goal-3', barykGoal.id, argoGoal.id] },
+      id: { notIn: scheduledTrainings.map((s) => s.id) },
+    },
+  });
+
+  for (const st of scheduledTrainings) {
+    await prisma.scheduledTraining.upsert({
+      where: { id: st.id },
+      update: {
+        date: st.date,
+        status: st.status,
+      },
+      create: st,
     });
   }
 
