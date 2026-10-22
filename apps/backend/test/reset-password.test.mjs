@@ -64,6 +64,58 @@ function cookies(response) {
     .join('; ');
 }
 
+function getSession(auth, cookie) {
+  return auth.handler(
+    new Request('http://localhost:4050/api/auth/get-session', {
+      headers: cookie ? { Cookie: cookie } : {},
+    }),
+  );
+}
+
+test('stará session po resetu neplatí', async () => {
+  const { auth, post, signup, getSentEmail } = setup();
+  const registration = await signup();
+  assert.equal(registration.status, 200);
+
+  // User logs in on device A (session X)
+  const loginDeviceA = await post('sign-in/email', {
+    email: 'pavel@example.com',
+    password: 'password123',
+    rememberMe: true,
+  });
+  assert.equal(loginDeviceA.status, 200);
+  const oldSessionCookie = cookies(loginDeviceA);
+
+  // Old session X is active
+  const sessionBefore = await (await getSession(auth, oldSessionCookie)).json();
+  assert.equal(sessionBefore?.user?.email, 'pavel@example.com');
+
+  // Request password reset and reset password
+  await post('request-password-reset', { email: 'pavel@example.com' });
+  const token = getSentEmail().token;
+  assert.ok(token);
+
+  const resetRes = await post('reset-password', {
+    token,
+    newPassword: 'new-secure-password',
+  });
+  assert.equal(resetRes.status, 200);
+  const newSessionCookie = cookies(resetRes);
+  assert.ok(newSessionCookie);
+
+  // Old session X must now be revoked and return null
+  const oldSessionAfter = await (
+    await getSession(auth, oldSessionCookie)
+  ).json();
+  assert.equal(oldSessionAfter, null);
+
+  // New session must be valid
+  const newSessionAfter = await (
+    await getSession(auth, newSessionCookie)
+  ).json();
+  assert.equal(newSessionAfter?.user?.email, 'pavel@example.com');
+});
+
 test('verifies reset-password token validity', async () => {
   const { post, get, signup, getSentEmail } = setup();
   await signup();

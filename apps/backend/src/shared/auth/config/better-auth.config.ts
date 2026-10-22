@@ -42,6 +42,7 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
     maxPasswordLength: 128,
     autoSignIn: true,
     requireEmailVerification: false,
+    revokeSessionsOnPasswordReset: true,
   },
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
