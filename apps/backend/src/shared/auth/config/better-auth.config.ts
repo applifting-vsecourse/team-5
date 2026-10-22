@@ -1,10 +1,39 @@
-import { APIError, createAuthMiddleware } from 'better-auth/api';
+import {
+  APIError,
+  createAuthEndpoint,
+  createAuthMiddleware,
+} from 'better-auth/api';
+import { setSessionCookie } from 'better-auth/cookies';
 import { openAPI, username } from 'better-auth/plugins';
 import { BetterAuthOptions } from 'better-auth/types';
 import {
   RegistrationValidationError,
   validateRegistration,
 } from './registration-validation';
+
+const resetPasswordTokenVerifierPlugin = {
+  id: 'reset-password-token-verifier',
+  endpoints: {
+    verifyResetPasswordToken: createAuthEndpoint(
+      '/verify-reset-password-token',
+      { method: 'GET' },
+      async (ctx) => {
+        const token = ctx.query?.token;
+        if (!token || typeof token !== 'string') {
+          return ctx.json({ valid: false });
+        }
+        const verification =
+          await ctx.context.internalAdapter.findVerificationValue(
+            `reset-password:${token}`,
+          );
+        if (!verification || verification.expiresAt < new Date()) {
+          return ctx.json({ valid: false });
+        }
+        return ctx.json({ valid: true });
+      },
+    ),
+  },
+};
 
 export const betterAuthCoreConfig: BetterAuthOptions = {
   emailAndPassword: {
@@ -37,6 +66,20 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
         // Password verification and session/credential removal stay in BetterAuth.
         return;
       }
+      if (ctx.path === '/reset-password') {
+        const token = ctx.body?.token;
+        if (typeof token === 'string') {
+          const verification =
+            await ctx.context.internalAdapter.findVerificationValue(
+              `reset-password:${token}`,
+            );
+          if (verification && verification.expiresAt >= new Date()) {
+            (ctx.context as Record<string, unknown>).resetPasswordUserId =
+              verification.value;
+          }
+        }
+        return;
+      }
       if (ctx.path !== '/sign-up/email') return;
       try {
         const name = validateRegistration(ctx.body ?? {});
@@ -49,6 +92,23 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
           });
         }
         throw error;
+      }
+    }),
+    after: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === '/reset-password') {
+        const userId = (ctx.context as Record<string, unknown>)
+          .resetPasswordUserId;
+        if (typeof userId === 'string') {
+          const user = await ctx.context.internalAdapter.findUserById(userId);
+          if (user) {
+            const session = await ctx.context.internalAdapter.createSession(
+              userId,
+              false,
+            );
+            await setSessionCookie(ctx, { session, user }, false);
+            return ctx.json({ status: true, session, user });
+          }
+        }
       }
     }),
   },
@@ -80,5 +140,5 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
       },
     },
   },
-  plugins: [openAPI(), username()],
+  plugins: [openAPI(), username(), resetPasswordTokenVerifierPlugin],
 };
