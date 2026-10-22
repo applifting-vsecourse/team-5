@@ -1,3 +1,4 @@
+import { EmailDeliveryError } from '@/core/email/errors/email-delivery.error';
 import { EmailService } from '@/core/email/interfaces/email-service.interface';
 import { renderEmail } from '@/core/email/render';
 import { ResetPassword } from '@/core/email/templates/reset-password';
@@ -6,7 +7,7 @@ import { PrismaService } from '@/core/prisma/prisma.service';
 import { betterAuthCoreConfig } from '@/shared/auth/config/better-auth.config';
 import { Config } from '@/shared/config/config.service';
 import { Inject, Provider } from '@nestjs/common';
-import { betterAuth } from 'better-auth';
+import { APIError, betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 
 const createAuth = (
@@ -16,6 +17,8 @@ const createAuth = (
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 ) =>
   betterAuth({
+    // If change (setup) affects database, must be in core config, in order to be able to run migrations
+    ...betterAuthCoreConfig,
     // Without this better-auth can only guess its own URL from the request,
     // which breaks callbacks and links built outside a request (e.g. the seed).
     baseURL: config.backendUrl,
@@ -23,18 +26,31 @@ const createAuth = (
       provider: 'postgresql',
     }),
     emailAndPassword: {
+      ...betterAuthCoreConfig.emailAndPassword,
       enabled: true,
       sendResetPassword: async ({ user, token }) => {
-        const passwordResetUrl = `${config.frontendUrl}/${config.frontendResetPasswordUrl}?token=${token}`;
-        const html = await renderEmail(ResetPassword, {
-          username: user.name,
-          url: passwordResetUrl,
-        });
-        await emailProvider.sendEmail(user.email, 'Password reset', html);
+        try {
+          const passwordResetUrl = `${config.frontendUrl}/${config.frontendResetPasswordUrl}?token=${token}`;
+          const html = await renderEmail(ResetPassword, {
+            username: user.name,
+            url: passwordResetUrl,
+          });
+          await emailProvider.sendEmail(user.email, 'Obnova hesla', html);
+        } catch (error) {
+          if (error instanceof EmailDeliveryError) {
+            throw new APIError('INTERNAL_SERVER_ERROR', {
+              message: 'Zkuste to znovu',
+              cause: error,
+            });
+          }
+          throw error;
+        }
       },
     },
     user: {
+      ...betterAuthCoreConfig.user,
       additionalFields: {
+        ...betterAuthCoreConfig.user?.additionalFields,
         role: {
           type: 'string',
           required: true,
@@ -45,18 +61,23 @@ const createAuth = (
     },
     trustedOrigins: [config.frontendUrl],
     emailVerification: {
+      ...betterAuthCoreConfig.emailVerification,
       sendVerificationEmail: async ({ user, url }) => {
-        const html = await renderEmail(VerifyEmail, { url });
-        await emailProvider.sendEmail(
-          user.email,
-          'Verify your email address',
-          html,
-        );
+        try {
+          const html = await renderEmail(VerifyEmail, { url });
+          await emailProvider.sendEmail(user.email, 'Ověření e-mailu', html);
+        } catch (error) {
+          if (error instanceof EmailDeliveryError) {
+            throw new APIError('INTERNAL_SERVER_ERROR', {
+              message: 'Zkuste to znovu',
+              cause: error,
+            });
+          }
+          throw error;
+        }
       },
       sendOnSignUp: true,
     },
-    // If change (setup) affects database, must be in core config, in order to be able to run migrations
-    ...betterAuthCoreConfig,
     plugins: [...(betterAuthCoreConfig.plugins ?? [])],
   });
 

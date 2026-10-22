@@ -19,35 +19,32 @@ export interface VerifyEmailProps {
 
 export const VerifyEmail = ({ url }: VerifyEmailProps): React.JSX.Element => (
   <Html>
-    <Head />
-    <Preview>Verify your TrainLoop email address</Preview>
     <Tailwind>
-      <Body className="bg-gray-50 font-sans py-10">
-        <Container className="bg-white rounded-lg mx-auto p-8 max-w-xl">
+      <Head />
+      <Preview>Ověřte svou e-mailovou adresu pro TrainLoop</Preview>
+      <Body className="bg-gray-50 font-sans py-10 px-4">
+        <Container className="bg-white rounded-lg mx-auto p-6 sm:p-8 max-w-xl w-full">
           <Heading className="text-2xl font-bold text-gray-900 m-0">
-            Welcome to TrainLoop
+            Vítejte v TrainLoop
           </Heading>
           <Text className="text-gray-700 text-base leading-6 mt-4">
-            Tap the button below to verify your email address and finish setting
-            up your account.
+            Klepnutím na tlačítko níže ověřte svou e-mailovou adresu a dokončete nastavení svého účtu.
           </Text>
           <Section className="text-center my-8">
             <Button
               href={url}
-              className="bg-yellow-400 text-gray-900 font-semibold rounded-md px-6 py-3"
+              className="bg-yellow-400 text-gray-900 font-semibold rounded-md px-6 py-3 text-center inline-block"
             >
-              Verify email
+              Ověřit e-mail
             </Button>
           </Section>
           <Text className="text-gray-600 text-sm leading-5">
-            If the button doesn&apos;t work, copy and paste this link into your
-            browser:
+            Pokud tlačítko nefunguje, zkopírujte a vložte následující odkaz do svého prohlížeče:
           </Text>
           <Text className="text-blue-600 text-sm break-all">{url}</Text>
           <Hr className="border-gray-200 my-6" />
           <Text className="text-gray-400 text-xs">
-            If you didn&apos;t create a TrainLoop account, you can safely ignore
-            this email.
+            Pokud jste si účet v TrainLoop nevytvořili, můžete tento e-mail bez obav ignorovat.
           </Text>
         </Container>
       </Body>
