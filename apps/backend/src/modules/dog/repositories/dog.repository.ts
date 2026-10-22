@@ -41,6 +41,17 @@ export class DogRepository {
     return dog ? mapPrismaDogToDomain(dog) : null;
   }
 
+  async getDogByIdWithAccess(id: string, userId: string): Promise<Dog | null> {
+    const dog = await this.prisma.dog.findFirst({
+      where: {
+        id,
+        isArchived: false,
+        OR: [{ ownerId: userId }, { shares: { some: { trainerId: userId } } }],
+      },
+    });
+    return dog ? mapPrismaDogToDomain(dog) : null;
+  }
+
   async createDog(createDogData: {
     name: string;
     breed?: string | null;

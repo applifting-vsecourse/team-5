@@ -26,7 +26,8 @@ export const Route = createFileRoute("/_ProtectedPages")({
 
 function Layout() {
   const { user } = useSession()
-  const isTrainer = user?.role === "trainer"
+  const isTrainer = user?.role === "trainer" || user?.role === "admin"
+
   return (
     <div className="flex min-h-svh flex-col">
       <Seo />
