@@ -1,10 +1,15 @@
+import { useState } from "react"
 import { Link } from "@tanstack/react-router"
-import { ChevronLeft } from "lucide-react"
+import { ChevronLeft, Pencil } from "lucide-react"
+
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 import type { Dog } from "@/features/dog/api/dogSchemas"
 
 import { DogActivitiesSection } from "./DogActivitiesSection"
 import { DogGoalsSection } from "./DogGoalsSection"
+import { EditDogDialog } from "./EditDogDialog"
 import { PesAvatar } from "./PesAvatar"
 
 type DogDetailViewProps = {
@@ -12,10 +17,7 @@ type DogDetailViewProps = {
 }
 
 export function DogDetailView({ dog }: DogDetailViewProps) {
-  const disciplinesText =
-    dog.disciplines && dog.disciplines.length > 0 ? dog.disciplines.join(", ") : undefined
-
-  const subtitle = [dog.breed, disciplinesText].filter(Boolean).join(" · ")
+  const [isEditOpen, setIsEditOpen] = useState(false)
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
@@ -32,19 +34,51 @@ export function DogDetailView({ dog }: DogDetailViewProps) {
       </nav>
 
       {/* Dog profile matching Figma node 51-386 */}
-      <header className="mb-8 flex items-center gap-4">
+      <header className="mb-8 flex items-start gap-4">
         {/* 56px PesAvatar */}
         <PesAvatar
           name={dog.name}
           color={dog.color}
           size="lg"
+          photoUrl={dog.photoUrl}
         />
 
-        <div className="min-w-0">
-          <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">{dog.name}</h1>
-          {subtitle && <p className="truncate text-sm text-muted-foreground">{subtitle}</p>}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">
+              {dog.name}
+            </h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Upravit psa"
+              className="min-h-11 min-w-11 shrink-0"
+              onClick={() => setIsEditOpen(true)}
+            >
+              <Pencil className="size-4" />
+            </Button>
+          </div>
+          {dog.breed && <p className="truncate text-sm text-muted-foreground">{dog.breed}</p>}
+          {dog.disciplines && dog.disciplines.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {dog.disciplines.map((discipline) => (
+                <Badge
+                  key={discipline}
+                  variant="secondary"
+                >
+                  {discipline}
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
       </header>
+
+      <EditDogDialog
+        dog={dog}
+        isOpen={isEditOpen}
+        onOpenChange={setIsEditOpen}
+      />
 
       {/* Sections: Aktivní cíle + Aktivity */}
       <div className="space-y-8">

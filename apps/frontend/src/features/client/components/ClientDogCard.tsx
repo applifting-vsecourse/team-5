@@ -32,6 +32,7 @@ export function ClientDogCard({ dog, className }: ClientDogCardProps) {
             name={dog.name}
             color={dog.color}
             size="md"
+            photoUrl={dog.photoUrl}
           />
 
           <div className="min-w-0 truncate">

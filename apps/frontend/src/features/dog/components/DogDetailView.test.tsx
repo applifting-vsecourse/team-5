@@ -37,6 +37,7 @@ const aDog: Dog = {
   name: "Baryk",
   breed: "Border kolie",
   color: 1,
+  photoUrl: null,
   ownerId: "u1",
   disciplines: ["Agility", "Canicross"],
   createdAt: new Date(),
@@ -56,17 +57,23 @@ const createWrapper = () => {
 }
 
 describe("DogDetailView", () => {
-  it("renders dog profile matching Figma node 51-386", () => {
+  it("renders dog profile matching Figma node 51-386 with badges and edit button", () => {
     render(<DogDetailView dog={aDog} />, { wrapper: createWrapper() })
 
     // Dog name and breed & disciplines
     expect(screen.getByRole("heading", { level: 1, name: "Baryk" })).toBeInTheDocument()
-    expect(screen.getByText("Border kolie · Agility, Canicross")).toBeInTheDocument()
+    expect(screen.getByText("Border kolie")).toBeInTheDocument()
+    expect(screen.getByText("Agility")).toBeInTheDocument()
+    expect(screen.getByText("Canicross")).toBeInTheDocument()
 
     // 56px PesAvatar
     const avatar = screen.getByRole("img", { name: "Avatar psa Baryk" })
     expect(avatar).toBeInTheDocument()
     expect(avatar).toHaveClass("size-14")
+
+    // Edit button exists
+    const editBtn = screen.getByRole("button", { name: /upravit psa/i })
+    expect(editBtn).toBeInTheDocument()
 
     // Back button
     const backLink = screen.getByRole("link", { name: /zpět na seznam psů/i })
@@ -81,6 +88,29 @@ describe("DogDetailView", () => {
       "href",
       "/dogs/$dogId/goals/new",
     )
+  })
+
+  it("opens edit dog dialog when edit button is clicked", async () => {
+    const user = userEvent.setup()
+    render(<DogDetailView dog={aDog} />, { wrapper: createWrapper() })
+
+    const editBtn = screen.getByRole("button", { name: /upravit psa/i })
+    await user.click(editBtn)
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Upravit psa" })).toBeInTheDocument()
+  })
+
+  it("renders dog photo when photoUrl is present", () => {
+    const dogWithPhoto: Dog = {
+      ...aDog,
+      photoUrl: "https://example.com/baryk.jpg",
+    }
+    render(<DogDetailView dog={dogWithPhoto} />, { wrapper: createWrapper() })
+
+    const img = screen.getByRole("img", { name: "Baryk" })
+    expect(img).toBeInTheDocument()
+    expect(img).toHaveAttribute("src", "https://example.com/baryk.jpg")
   })
 })
 

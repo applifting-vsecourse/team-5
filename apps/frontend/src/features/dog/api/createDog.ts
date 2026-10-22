@@ -13,5 +13,15 @@ export async function createDog(input: CreateDogInput): Promise<Dog> {
       },
     })
     .json()
-  return dogSchema.parse(json)
+
+  let dog = dogSchema.parse(json)
+
+  if (input.photo) {
+    const formData = new FormData()
+    formData.append("file", input.photo)
+    const photoJson = await api.post(`dogs/${dog.id}/photo`, { body: formData }).json()
+    dog = dogSchema.parse(photoJson)
+  }
+
+  return dog
 }
