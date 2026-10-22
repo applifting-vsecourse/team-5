@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils"
 
 import { createDogInputSchema, type Dog } from "@/features/dog/api/dogSchemas"
 import { useCreateDog } from "@/features/dog/hooks/useCreateDog"
-import { validateDogPhoto } from "@/features/dog/lib/dogPhoto"
+import { validateDogPhoto } from "@/lib/dogPhoto"
 import { PesAvatar } from "./PesAvatar"
 
 export const DOG_COLORS = [
@@ -430,7 +430,7 @@ export function CreateDogDialog({
                         aria-label={`Odebrat disciplínu ${disc}`}
                         onClick={() => handleRemoveDiscipline(disc)}
                         disabled={isPending}
-                        className="ml-1 inline-flex size-6 items-center justify-center rounded-full text-primary-foreground hover:bg-black/20 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                        className="relative ml-1 inline-flex size-6 items-center justify-center rounded-full text-primary-foreground hover:bg-black/20 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2"
                       >
                         <X className="size-3.5" />
                       </button>
@@ -441,6 +441,7 @@ export function CreateDogDialog({
 
               <div className="flex items-center gap-2 pt-1">
                 <Input
+                  aria-label="Název vlastní disciplíny"
                   placeholder="Vlastní disciplína..."
                   maxLength={40}
                   value={customDiscipline}
@@ -480,12 +481,14 @@ export function CreateDogDialog({
               variant="outline"
               onClick={() => handleOpenChange(false)}
               disabled={isPending}
+              className="min-h-11"
             >
               Zrušit
             </Button>
             <Button
               type="submit"
               disabled={isPending}
+              className="min-h-11"
             >
               {isPending ? "Ukládám..." : "Vytvořit psa"}
             </Button>

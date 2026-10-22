@@ -1,6 +1,7 @@
 import { useState } from "react"
 
 import { DOG_COLOR_CLASSES, DOG_RING_CLASSES } from "@/lib/dogColors"
+import { resolvePhotoUrl } from "@/lib/dogPhoto"
 import { cn } from "@/lib/utils"
 
 export { DOG_COLOR_CLASSES, DOG_RING_CLASSES }
@@ -25,9 +26,10 @@ export function PesAvatar({ name, color, size = "md", photoUrl, className }: Pes
 
   const initial = name.trim().charAt(0).toUpperCase() || "P"
   const sizeClass = SIZE_CLASSES[size] ?? SIZE_CLASSES.md
-  const isPhotoValid = Boolean(photoUrl && erroredPhotoUrl !== photoUrl)
+  const resolvedUrl = resolvePhotoUrl(photoUrl)
+  const isPhotoValid = Boolean(resolvedUrl && erroredPhotoUrl !== photoUrl)
 
-  if (photoUrl && isPhotoValid) {
+  if (resolvedUrl && isPhotoValid) {
     const ringClass = DOG_RING_CLASSES[color] ?? "ring-dog-1"
     return (
       <div
@@ -41,7 +43,7 @@ export function PesAvatar({ name, color, size = "md", photoUrl, className }: Pes
         )}
       >
         <img
-          src={photoUrl}
+          src={resolvedUrl}
           alt={name}
           className="size-full object-cover rounded-full"
           onError={() => setErroredPhotoUrl(photoUrl)}

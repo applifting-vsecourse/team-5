@@ -24,3 +24,18 @@ export function validateDogPhoto(file: File): string | null {
 
   return null
 }
+
+export function resolvePhotoUrl(photoUrl?: string | null): string | null {
+  if (!photoUrl) return null
+  if (
+    photoUrl.startsWith("http://") ||
+    photoUrl.startsWith("https://") ||
+    photoUrl.startsWith("blob:") ||
+    photoUrl.startsWith("data:")
+  ) {
+    return photoUrl
+  }
+  const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:4050/api"
+  const base = apiUrl.replace(/\/api\/?$/, "")
+  return `${base}${photoUrl.startsWith("/") ? "" : "/"}${photoUrl}`
+}

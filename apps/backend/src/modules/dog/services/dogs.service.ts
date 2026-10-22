@@ -12,7 +12,7 @@ import { DogPhotoService } from './dog-photo.service';
 export function sanitizeDisciplines(
   disciplines?: string[],
 ): string[] | undefined {
-  if (!disciplines) return undefined;
+  if (!disciplines || !Array.isArray(disciplines)) return undefined;
   const seen = new Set<string>();
   const result: string[] = [];
   for (const item of disciplines) {

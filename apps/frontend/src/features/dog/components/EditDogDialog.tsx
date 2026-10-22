@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils"
 
 import { updateDogInputSchema, type Dog } from "@/features/dog/api/dogSchemas"
 import { useUpdateDog } from "@/features/dog/hooks/useUpdateDog"
-import { validateDogPhoto } from "@/features/dog/lib/dogPhoto"
+import { validateDogPhoto } from "@/lib/dogPhoto"
 import { DEFAULT_DISCIPLINES, DOG_COLORS } from "./CreateDogDialog"
 import { PesAvatar } from "./PesAvatar"
 
@@ -349,7 +349,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
                     aria-label={`Odebrat disciplínu ${disc}`}
                     onClick={() => handleRemoveDiscipline(disc)}
                     disabled={isPending}
-                    className="ml-1 inline-flex size-6 items-center justify-center rounded-full text-primary-foreground hover:bg-black/20 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+                    className="relative ml-1 inline-flex size-6 items-center justify-center rounded-full text-primary-foreground hover:bg-black/20 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2"
                   >
                     <X className="size-3.5" />
                   </button>
@@ -360,6 +360,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
 
           <div className="flex items-center gap-2 pt-1">
             <Input
+              aria-label="Název vlastní disciplíny"
               placeholder="Vlastní disciplína..."
               maxLength={40}
               value={customDiscipline}
@@ -399,12 +400,14 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
           variant="outline"
           onClick={onClose}
           disabled={isPending}
+          className="min-h-11"
         >
           Zrušit
         </Button>
         <Button
           type="submit"
           disabled={isPending}
+          className="min-h-11"
         >
           {isPending ? "Ukládám..." : "Uložit změny"}
         </Button>

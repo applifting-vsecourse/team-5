@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
+  IsArray,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -50,6 +51,7 @@ export class UpdateDogDto {
     type: [String],
   })
   @IsOptional()
+  @IsArray()
   @Transform(({ value }) => {
     if (!Array.isArray(value)) return value;
     const seen = new Set<string>();
