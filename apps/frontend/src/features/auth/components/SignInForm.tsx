@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input"
 
 const schema = z.object({
   email: z.string().trim().min(1, "Email is required").email("Invalid email"),
-  password: z.string().trim().min(1, "Password is required"),
+  password: z.string().min(1, "Password is required"),
 })
 
 type FormValues = z.infer<typeof schema>
