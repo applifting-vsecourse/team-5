@@ -1,4 +1,5 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
+import { useEffect, useRef } from "react"
+import { createFileRoute, Outlet, redirect, useRouter } from "@tanstack/react-router"
 
 import { ROUTES } from "@/app/routes"
 import { BottomNav } from "@/components/BottomNav/BottomNav"
@@ -12,10 +13,12 @@ import { useSession } from "@/features/auth/hooks/useSession"
 import { encodeRedirectUri } from "@/features/auth/lib/redirect"
 
 export const Route = createFileRoute("/_ProtectedPages")({
-  loader: async ({ context, location }) => {
-    const session = await context.queryClient.ensureQueryData(authSessionQueryOptions())
-    if (session) return
-    context.queryClient.clear()
+  beforeLoad: async ({ context, location }) => {
+    const session = await context.queryClient.fetchQuery({
+      ...authSessionQueryOptions(),
+      staleTime: 0,
+    })
+    if (session) return { user: session.user }
     throw redirect({
       to: ROUTES.login,
       search: { from: encodeRedirectUri(location) },
@@ -26,10 +29,29 @@ export const Route = createFileRoute("/_ProtectedPages")({
 
 function Layout() {
   const { user } = useSession()
+  const router = useRouter()
+  const identity = user ? `${user.id}:${user.role ?? ""}` : null
+  const previousIdentity = useRef(identity)
+  useEffect(() => {
+    if (previousIdentity.current !== identity) {
+      if (identity) void router.invalidate()
+      else if (!router.state.isLoading) {
+        void router.navigate({
+          to: ROUTES.login,
+          search: { from: encodeRedirectUri(router.state.location) },
+          replace: true,
+        })
+      }
+    }
+    previousIdentity.current = identity
+  }, [identity, router])
   const isTrainer = user?.role === "trainer" || user?.role === "admin"
-
+  if (!user) return null
   return (
-    <div className="flex min-h-svh flex-col">
+    <div
+      key={user.id}
+      className="flex min-h-svh flex-col"
+    >
       <Seo />
       <Header
         className="hidden md:block"

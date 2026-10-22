@@ -3,7 +3,9 @@ import { render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
-import { getLandingRedirect, LandingPage, Route } from "./index"
+import { LandingPage } from "@/app/LandingPage"
+
+import { getLandingRedirect, Route } from "./index"
 
 const mockNavigate = vi.fn()
 

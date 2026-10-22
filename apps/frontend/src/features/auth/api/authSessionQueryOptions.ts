@@ -3,6 +3,7 @@ import { queryOptions } from "@tanstack/react-query"
 import { authKeys } from "@/lib/auth-keys"
 
 import { authClient } from "@/features/auth/lib/auth-client"
+import { clearPrivateQueries } from "@/features/auth/lib/clear-private-queries"
 
 export type SessionUser = {
   id: string
@@ -19,9 +20,14 @@ export type Session = {
 export const authSessionQueryOptions = () =>
   queryOptions({
     queryKey: authKeys.session(),
-    queryFn: async (): Promise<Session> => {
-      const { data, error } = await authClient.getSession()
+    queryFn: async ({ client, signal }): Promise<Session> => {
+      const previous = client.getQueryData<Session>(authKeys.session())
+      const { data, error } = await authClient.getSession({ fetchOptions: { signal } })
+      signal.throwIfAborted()
       if (error) throw new Error(error.message ?? "Failed to load session")
+      if (!data?.user || previous?.user.id !== data.user.id) {
+        await clearPrivateQueries(client)
+      }
       if (!data?.user) return null
 
       const user = data.user as typeof data.user & {

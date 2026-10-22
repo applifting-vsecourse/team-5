@@ -176,10 +176,7 @@ Database ownership determines the deletion scope:
   retaining a name/email snapshot. Clients can still read these messages in an
   activity's detail; refreshing the data also updates an already open detail.
 
-The client connection/share/invitation schema and migration are copied unchanged
-from `feature/81-clients-list` (`20261021141115_add_clients_and_invitations`), so
-this branch can test deletion before that feature is merged without creating a
-second competing schema. `DogNote` and `TrainingMessage` supply the minimal
+The client connection/share/invitation schema and migration come from the clients list (#81, `20261021141115_add_clients_and_invitations`). `DogNote` and `TrainingMessage` supply the minimal
 persistence needed for #88; editing notes and composing messages remain the
 separate diary/thread features. A message thread belongs to a workout log, as in
 the sitemap, and must not belong to a client connection (deleting that connection
@@ -190,6 +187,10 @@ must not erase the client's history).
 graphs in an isolated migrated PostgreSQL database. CI runs both. Tests cover
 wrong/missing passwords, unauthorized requests, callback bypasses, all-session
 revocation, cross-account isolation, owner cascades and trainer anonymization.
+
+`test:auth` also checks login error privacy, persistent session cookies and logout
+revocation. The frontend always requests `rememberMe: true`; BetterAuth manages
+the cookie lifetime and invalidation. No auth tokens are stored in local storage.
 
 In this application, [**better-auth**](https://www.npmjs.com/package/better-auth) is utilized as the authentication module. It is designed to be easily extended with additional features or plugins, such as social login providers, multi-factor authentication, and more. Whenever database changes related to authentication are required, the following command should be run:
 
