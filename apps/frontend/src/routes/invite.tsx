@@ -14,9 +14,18 @@ import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOpt
 import { accountHome } from "@/features/auth/lib/account-home"
 import { useAcceptInvitation, verifyInvitation } from "@/features/client/api/invitationApi"
 
+const inviteSearchSchema = z.object({
+  code: z.string().optional(),
+})
+
+type InviteSearch = {
+  code?: string
+}
+
 export const Route = createFileRoute("/invite")({
+  validateSearch: (search: Record<string, unknown>): InviteSearch =>
+    inviteSearchSchema.parse(search),
   component: InvitePage,
-  validateSearch: z.object({ code: z.string().optional() }),
 })
 
 function InvitePage() {
