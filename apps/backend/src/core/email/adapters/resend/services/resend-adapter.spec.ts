@@ -1,3 +1,4 @@
+import { EmailDeliveryError } from '@/core/email/errors/email-delivery.error';
 import { ResendAdapter } from './resend-adapter';
 
 const mockSend = jest.fn();
@@ -36,7 +37,7 @@ describe('ResendAdapter', () => {
     });
   });
 
-  it('should throw "Zkuste to znovu" when resend returns an error', async () => {
+  it('should throw EmailDeliveryError when resend returns an error', async () => {
     mockSend.mockResolvedValueOnce({
       data: null,
       error: { message: 'Domain not verified' },
@@ -44,14 +45,21 @@ describe('ResendAdapter', () => {
 
     await expect(
       adapter.sendEmail('client@example.com', 'Předmět', '<p>Ahoj</p>'),
-    ).rejects.toThrow('Zkuste to znovu');
+    ).rejects.toThrow(EmailDeliveryError);
   });
 
-  it('should throw "Zkuste to znovu" on network failure', async () => {
-    mockSend.mockRejectedValueOnce(new Error('Network error'));
+  it('should throw EmailDeliveryError on network failure and retain cause', async () => {
+    const networkError = new Error('Network error');
+    mockSend.mockRejectedValueOnce(networkError);
 
-    await expect(
-      adapter.sendEmail('client@example.com', 'Předmět', '<p>Ahoj</p>'),
-    ).rejects.toThrow('Zkuste to znovu');
+    let thrownError: unknown;
+    try {
+      await adapter.sendEmail('client@example.com', 'Předmět', '<p>Ahoj</p>');
+    } catch (err) {
+      thrownError = err;
+    }
+
+    expect(thrownError).toBeInstanceOf(EmailDeliveryError);
+    expect((thrownError as EmailDeliveryError).cause).toBe(networkError);
   });
 });

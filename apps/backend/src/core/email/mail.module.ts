@@ -8,7 +8,8 @@ import { EmailModule } from './email.module';
 /**
  * Picks an email adapter based on env:
  *   RESEND_API_KEY set           → Resend
- *   otherwise                    → SMTP (e.g. Mailpit on localhost:1025)
+ *   SMTP_HOST set (≠ console)    → SMTP (e.g. Mailpit on localhost:1025)
+ *   otherwise                    → ConsoleMailerAdapter (logs to stdout, dev fallback)
  *
  * Import this module whenever you need to inject `'EmailService'`.
  * The single shared `EmailService` instance is provided here so every
@@ -26,17 +27,17 @@ import { EmailModule } from './email.module';
             from: config.emailFrom,
           });
         }
-        if (config.smtpHost === 'console') {
-          return ConsoleMailerAdapterFactory.create();
+        if (config.smtpHost && config.smtpHost !== 'console') {
+          return SMTPAdapterFactory.create({
+            host: config.smtpHost,
+            port: config.smtpPort || 1025,
+            secure: config.smtpSecure ?? false,
+            from: config.emailFrom,
+            user: config.smtpUsername,
+            pass: config.smtpPassword,
+          });
         }
-        return SMTPAdapterFactory.create({
-          host: config.smtpHost || 'localhost',
-          port: config.smtpPort || 1025,
-          secure: config.smtpSecure ?? false,
-          from: config.emailFrom,
-          user: config.smtpUsername,
-          pass: config.smtpPassword,
-        });
+        return ConsoleMailerAdapterFactory.create();
       },
       inject: [Config],
     }),

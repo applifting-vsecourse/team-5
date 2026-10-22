@@ -1,4 +1,5 @@
 import { ResendConfig } from '@/core/email/adapters/resend/interfaces/resend-config.interface';
+import { EmailDeliveryError } from '@/core/email/errors/email-delivery.error';
 import { EmailService } from '@/core/email/interfaces/email-service.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import { Resend } from 'resend';
@@ -23,17 +24,22 @@ export class ResendAdapter implements EmailService {
 
       if (error) {
         this.logger.error(`Resend delivery failed: ${error.message}`, error);
-        throw new Error('Zkuste to znovu');
+        throw new EmailDeliveryError(
+          `Resend delivery failed: ${error.message}`,
+        );
       }
     } catch (error) {
-      if ((error as Error).message === 'Zkuste to znovu') {
+      if (error instanceof EmailDeliveryError) {
         throw error;
       }
       this.logger.error(
         `Resend delivery failed: ${(error as Error).message}`,
         (error as Error).stack,
       );
-      throw new Error('Zkuste to znovu', { cause: error });
+      throw new EmailDeliveryError(
+        `Resend delivery failed: ${(error as Error).message}`,
+        { cause: error },
+      );
     }
   }
 }

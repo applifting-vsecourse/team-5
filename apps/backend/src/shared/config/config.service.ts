@@ -78,7 +78,7 @@ export class Config {
   @IsNotEmpty()
   readonly emailFrom!: string;
 
-  @Env('SMTP_HOST', { expose: true, defaultValue: 'localhost' })
+  @Env('SMTP_HOST', { expose: true })
   @IsOptional()
   readonly smtpHost?: string;
 

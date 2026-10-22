@@ -1,4 +1,5 @@
 import { SMTPConfig } from '@/core/email/adapters/smtp/interfaces/smtp-config.interface';
+import { EmailDeliveryError } from '@/core/email/errors/email-delivery.error';
 import { EmailService } from '@/core/email/interfaces/email-service.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
@@ -36,7 +37,10 @@ export class SMTPAdapter implements EmailService {
         `SMTP delivery failed: ${(error as Error).message}`,
         (error as Error).stack,
       );
-      throw new Error('Zkuste to znovu', { cause: error });
+      throw new EmailDeliveryError(
+        `SMTP delivery failed: ${(error as Error).message}`,
+        { cause: error },
+      );
     }
   }
 }

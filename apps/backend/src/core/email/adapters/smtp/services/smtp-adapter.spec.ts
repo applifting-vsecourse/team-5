@@ -1,3 +1,4 @@
+import { EmailDeliveryError } from '@/core/email/errors/email-delivery.error';
 import * as nodemailer from 'nodemailer';
 import { SMTPAdapter } from './smtp-adapter';
 
@@ -72,17 +73,28 @@ describe('SMTPAdapter', () => {
     });
   });
 
-  it('should throw "Zkuste to znovu" when sendMail fails', async () => {
+  it('should throw EmailDeliveryError when sendMail fails and retain cause', async () => {
     const adapter = new SMTPAdapter({
       host: 'localhost',
       port: 1025,
       secure: false,
       from: 'TrainLoop <onboarding@resend.dev>',
     });
-    mockSendMail.mockRejectedValueOnce(new Error('Connection refused'));
+    const connectionError = new Error('Connection refused');
+    mockSendMail.mockRejectedValueOnce(connectionError);
 
-    await expect(
-      adapter.sendEmail('test@example.com', 'Test předmět', '<p>Obsah</p>'),
-    ).rejects.toThrow('Zkuste to znovu');
+    let thrownError: unknown;
+    try {
+      await adapter.sendEmail(
+        'test@example.com',
+        'Test předmět',
+        '<p>Obsah</p>',
+      );
+    } catch (err) {
+      thrownError = err;
+    }
+
+    expect(thrownError).toBeInstanceOf(EmailDeliveryError);
+    expect((thrownError as EmailDeliveryError).cause).toBe(connectionError);
   });
 });
