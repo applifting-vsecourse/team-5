@@ -107,11 +107,89 @@ export class ClientRepository {
     return invitations.map((inv) => ({
       id: inv.id,
       code: inv.code,
+      email: inv.email,
       trainerId: inv.trainerId,
       expiresAt: inv.expiresAt,
       usedAt: inv.usedAt,
       createdAt: inv.createdAt,
     }));
+  }
+
+  async createInvitation(params: {
+    trainerId: string;
+    email?: string | null;
+    code: string;
+    expiresAt: Date;
+  }): Promise<Invitation> {
+    const inv = await this.prisma.invitation.create({
+      data: {
+        trainerId: params.trainerId,
+        email: params.email ?? null,
+        code: params.code,
+        expiresAt: params.expiresAt,
+      },
+    });
+
+    return {
+      id: inv.id,
+      code: inv.code,
+      email: inv.email,
+      trainerId: inv.trainerId,
+      expiresAt: inv.expiresAt,
+      usedAt: inv.usedAt,
+      createdAt: inv.createdAt,
+    };
+  }
+
+  async findInvitationByCode(
+    code: string,
+  ): Promise<(Invitation & { trainer: { id: string; name: string } }) | null> {
+    const inv = await this.prisma.invitation.findUnique({
+      where: { code },
+      include: {
+        trainer: {
+          select: { id: true, name: true },
+        },
+      },
+    });
+
+    if (!inv) {
+      return null;
+    }
+
+    return {
+      id: inv.id,
+      code: inv.code,
+      email: inv.email,
+      trainerId: inv.trainerId,
+      expiresAt: inv.expiresAt,
+      usedAt: inv.usedAt,
+      createdAt: inv.createdAt,
+      trainer: inv.trainer,
+    };
+  }
+
+  async acceptInvitation(
+    invitationId: string,
+    trainerId: string,
+    clientId: string,
+  ): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.clientConnection.upsert({
+        where: {
+          trainerId_clientId: { trainerId, clientId },
+        },
+        create: {
+          trainerId,
+          clientId,
+        },
+        update: {},
+      }),
+      this.prisma.invitation.update({
+        where: { id: invitationId },
+        data: { usedAt: new Date() },
+      }),
+    ]);
   }
 
   async cancelInvitation(

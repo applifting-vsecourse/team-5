@@ -43,6 +43,7 @@ vi.mock("@tanstack/react-router", async () => {
 vi.mock("@/lib/api-client", () => ({
   api: {
     get: vi.fn(),
+    post: vi.fn(),
     delete: vi.fn(),
   },
 }))
@@ -194,11 +195,51 @@ describe("ClientList", () => {
     await user.click(inviteBtn)
 
     expect(screen.getByRole("dialog")).toBeInTheDocument()
-    expect(
-      screen.getByText(
-        "Předání 6místného kódu nebo odkazu klientovi na lekci připravujeme v rámci user story #58.",
-      ),
-    ).toBeInTheDocument()
+    expect(screen.getByText("Pozvat klienta e-mailem")).toBeInTheDocument()
+  })
+
+  it("sends email invitation when email is submitted in dialog", async () => {
+    const user = userEvent.setup()
+    vi.mocked(api.get).mockImplementation((url: unknown) => {
+      const urlStr = String(url)
+      if (urlStr === "clients") {
+        return { json: () => Promise.resolve(mockClients) } as ReturnType<typeof api.get>
+      }
+      if (urlStr === "clients/invitations") {
+        return { json: () => Promise.resolve([]) } as ReturnType<typeof api.get>
+      }
+      throw new Error(`Unexpected url: ${urlStr}`)
+    })
+    vi.mocked(api.post).mockImplementation((url: unknown) => {
+      const urlStr = String(url)
+      if (urlStr === "clients/invitations") {
+        return {
+          json: () =>
+            Promise.resolve({
+              id: "inv-created",
+              code: "NEW123",
+              email: "novy@example.com",
+              expiresAt: new Date(Date.now() + 100000).toISOString(),
+              createdAt: new Date().toISOString(),
+            }),
+        } as unknown as ReturnType<typeof api.post>
+      }
+      throw new Error(`Unexpected url: ${urlStr}`)
+    })
+
+    render(<ClientList />, { wrapper: createWrapper() })
+
+    const inviteBtn = await screen.findByRole("button", { name: "Pozvat klienta" })
+    await user.click(inviteBtn)
+
+    const emailInput = screen.getByLabelText("E-mail klienta")
+    await user.type(emailInput, "novy@example.com")
+
+    const submitBtn = screen.getByRole("button", { name: /odeslat pozvánku/i })
+    await user.click(submitBtn)
+
+    expect(await screen.findByText("Pozvánka odeslána")).toBeInTheDocument()
+    expect(screen.getByText("NEW123")).toBeInTheDocument()
   })
 
   it("opens invite dialog when Pozvěte prvního klienta in empty state is clicked", async () => {

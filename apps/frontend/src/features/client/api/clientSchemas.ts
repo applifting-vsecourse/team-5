@@ -22,6 +22,7 @@ export const clientsSchema = z.array(clientSchema)
 export const invitationSchema = z.object({
   id: z.string(),
   code: z.string(),
+  email: z.string().nullable().optional(),
   expiresAt: z.coerce.date(),
   createdAt: z.coerce.date(),
 })

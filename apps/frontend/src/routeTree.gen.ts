@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtectedPagesRouteImport } from './routes/_ProtectedPages'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as InviteRouteImport } from './routes/invite'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -39,6 +40,11 @@ const ProtectedPagesRoute = ProtectedPagesRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteRoute = InviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -120,6 +126,7 @@ const ProtectedPagesDogsDogIdGoalsNewRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_ProtectedPages': typeof ProtectedPagesRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
+  '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/forgot-password'
+    | '/invite'
     | '/login'
     | '/privacy'
     | '/reset-password'
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/forgot-password'
+    | '/invite'
     | '/login'
     | '/privacy'
     | '/reset-password'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_ProtectedPages'
     | '/forgot-password'
+    | '/invite'
     | '/login'
     | '/privacy'
     | '/reset-password'
@@ -233,6 +245,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProtectedPagesRoute: typeof ProtectedPagesRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  InviteRoute: typeof InviteRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -260,6 +273,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite': {
+      id: '/invite'
+      path: '/invite'
+      fullPath: '/invite'
+      preLoaderRoute: typeof InviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -409,6 +429,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtectedPagesRoute: ProtectedPagesRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  InviteRoute: InviteRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,

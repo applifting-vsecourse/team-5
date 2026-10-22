@@ -135,4 +135,80 @@ describe('ClientRepository (Authorization & Multi-Tenancy)', () => {
       where: { id: 'inv-1', trainerId: 'trainer-1', usedAt: null },
     });
   });
+
+  it('creates an invitation with email and expiration', async () => {
+    const prisma = mock<PrismaService>();
+    const createdDate = new Date();
+    const expiresDate = new Date(Date.now() + 100000);
+    const invitationDelegate = {
+      create: jest.fn().mockResolvedValue({
+        id: 'inv-1',
+        code: 'K7M2PQ',
+        email: 'client@example.com',
+        trainerId: 'trainer-1',
+        expiresAt: expiresDate,
+        usedAt: null,
+        createdAt: createdDate,
+      }),
+    };
+
+    // @ts-expect-error mock delegate
+    prisma.invitation = invitationDelegate;
+
+    const repository = new ClientRepository(prisma);
+    const result = await repository.createInvitation({
+      trainerId: 'trainer-1',
+      email: 'client@example.com',
+      code: 'K7M2PQ',
+      expiresAt: expiresDate,
+    });
+
+    expect(result.id).toBe('inv-1');
+    expect(result.email).toBe('client@example.com');
+    expect(invitationDelegate.create).toHaveBeenCalledWith({
+      data: {
+        trainerId: 'trainer-1',
+        email: 'client@example.com',
+        code: 'K7M2PQ',
+        expiresAt: expiresDate,
+      },
+    });
+  });
+
+  it('accepts invitation in transaction', async () => {
+    const prisma = mock<PrismaService>();
+    const clientConnectionDelegate = {
+      upsert: jest.fn().mockReturnValue('upsert-query'),
+    };
+    const invitationDelegate = {
+      update: jest.fn().mockReturnValue('update-query'),
+    };
+    // @ts-expect-error mock delegates
+    prisma.clientConnection = clientConnectionDelegate;
+    // @ts-expect-error mock delegates
+    prisma.invitation = invitationDelegate;
+    prisma.$transaction.mockResolvedValue([]);
+
+    const repository = new ClientRepository(prisma);
+    await repository.acceptInvitation('inv-1', 'trainer-1', 'client-1');
+
+    expect(clientConnectionDelegate.upsert).toHaveBeenCalledWith({
+      where: {
+        trainerId_clientId: { trainerId: 'trainer-1', clientId: 'client-1' },
+      },
+      create: {
+        trainerId: 'trainer-1',
+        clientId: 'client-1',
+      },
+      update: {},
+    });
+    expect(invitationDelegate.update).toHaveBeenCalledWith({
+      where: { id: 'inv-1' },
+      data: { usedAt: expect.any(Date) },
+    });
+    expect(prisma.$transaction).toHaveBeenCalledWith([
+      'upsert-query',
+      'update-query',
+    ]);
+  });
 });
