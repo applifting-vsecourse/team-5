@@ -4,4 +4,3 @@ export class EmailDeliveryError extends Error {
     this.name = 'EmailDeliveryError';
   }
 }
-
