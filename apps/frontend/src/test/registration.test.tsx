@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/react-router"
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react"
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -92,7 +92,7 @@ describe("owner registration", () => {
   it("opens registration from the landing page and validates each required field", async () => {
     const { interaction } = await openPage("/")
     await interaction.click(await screen.findByRole("link", { name: "Zaregistrovat se" }))
-    expect(await screen.findByRole("heading", { name: "Registrace psovoda" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Registrace" })).toBeInTheDocument()
     expect(
       screen.queryByLabelText(/username|confirm password|pozvánka|karta/i),
     ).not.toBeInTheDocument()
@@ -111,7 +111,9 @@ describe("owner registration", () => {
     await interaction.type(await screen.findByLabelText("Jméno"), "   ")
     await interaction.type(screen.getByLabelText("E-mail"), "invalid")
     await interaction.type(screen.getByLabelText("Heslo"), "1234567")
-    await interaction.click(screen.getByRole("checkbox"))
+    await interaction.click(
+      screen.getByRole("checkbox", { name: "Souhlasím se zpracováním osobních údajů." }),
+    )
     await interaction.click(screen.getByRole("button", { name: "Zaregistrovat se" }))
     expect(await screen.findByText("Zadejte platný e-mail.")).toBeInTheDocument()
     expect(screen.getByLabelText("Jméno")).toHaveAttribute("aria-invalid", "true")
@@ -124,7 +126,9 @@ describe("owner registration", () => {
     const { interaction } = await openPage()
     await screen.findByLabelText("Jméno")
     await fillForm(interaction)
-    expect(screen.getByRole("checkbox")).not.toBeChecked()
+    expect(
+      screen.getByRole("checkbox", { name: "Souhlasím se zpracováním osobních údajů." }),
+    ).not.toBeChecked()
     await interaction.click(screen.getByRole("button", { name: "Zaregistrovat se" }))
     expect(
       await screen.findByText("Pro registraci je nutný souhlas se zpracováním osobních údajů."),
@@ -141,17 +145,24 @@ describe("owner registration", () => {
     })
     await screen.findByLabelText("Jméno")
     await fillForm(interaction, " space password ")
-    await interaction.click(screen.getByRole("checkbox"))
+    await interaction.click(
+      screen.getByRole("checkbox", { name: "Souhlasím se zpracováním osobních údajů." }),
+    )
     await interaction.click(screen.getByRole("button", { name: "Zaregistrovat se" }))
     expect(await screen.findByRole("heading", { name: "Psi" })).toBeInTheDocument()
     expect(await screen.findByText("Přidejte prvního psa")).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/dogs")
     expect(queryClient.getQueryData(authKeys.session())).toMatchObject({ user })
+    expect(
+      within(screen.getByRole("navigation", { name: "Spodní navigace" })).queryByRole("link", {
+        name: "Klienti",
+      }),
+    ).not.toBeInTheDocument()
     expect(auth.signUp).toHaveBeenCalledExactlyOnceWith({
       name: "Jana Nováková",
       email: "jana@example.com",
       password: " space password ",
-      fetchOptions: { body: { privacyConsent: true } },
+      fetchOptions: { body: { privacyConsent: true, isTrainer: false } },
     })
   })
 
@@ -163,7 +174,9 @@ describe("owner registration", () => {
     const { interaction, router } = await openPage()
     await screen.findByLabelText("Jméno")
     await fillForm(interaction)
-    await interaction.click(screen.getByRole("checkbox"))
+    await interaction.click(
+      screen.getByRole("checkbox", { name: "Souhlasím se zpracováním osobních údajů." }),
+    )
     await interaction.click(screen.getByRole("button", { name: "Zaregistrovat se" }))
     expect(await screen.findByText("Účet s tímto e-mailem už existuje.")).toBeInTheDocument()
     expect(screen.getByLabelText("E-mail")).toHaveAttribute("aria-invalid", "true")
@@ -178,7 +191,9 @@ describe("owner registration", () => {
     const { interaction } = await openPage()
     await screen.findByLabelText("Jméno")
     await fillForm(interaction)
-    await interaction.click(screen.getByRole("checkbox"))
+    await interaction.click(
+      screen.getByRole("checkbox", { name: "Souhlasím se zpracováním osobních údajů." }),
+    )
     await interaction.click(screen.getByRole("button", { name: "Zaregistrovat se" }))
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Registrace se nezdařila. Zkuste to prosím znovu.",
@@ -199,7 +214,9 @@ describe("owner registration", () => {
     const { interaction } = await openPage()
     await screen.findByLabelText("Jméno")
     await fillForm(interaction)
-    await interaction.click(screen.getByRole("checkbox"))
+    await interaction.click(
+      screen.getByRole("checkbox", { name: "Souhlasím se zpracováním osobních údajů." }),
+    )
     await interaction.click(screen.getByRole("button", { name: "Zaregistrovat se" }))
     expect(await screen.findByRole("button", { name: "Registruji…" })).toBeDisabled()
     expect(screen.getByLabelText("E-mail")).toBeDisabled()
@@ -220,7 +237,7 @@ describe("owner registration", () => {
     await interaction.click(await screen.findByRole("button", { name: "Mám kód od trenéra" }))
     await interaction.type(screen.getByLabelText("Kód pozvánky"), "ABC123")
     await interaction.click(screen.getByRole("button", { name: "Pokračovat k registraci" }))
-    await screen.findByRole("heading", { name: "Registrace psovoda" })
+    await screen.findByRole("heading", { name: "Registrace" })
     expect(router.state.location.search).toMatchObject({ code: "ABC123" })
   })
 
@@ -248,5 +265,103 @@ describe("owner registration", () => {
       await router.navigate({ to: "/dogs/$dogId/goals/new", params: { dogId: dog.id } })
     })
     expect(await screen.findByLabelText("Název cíle")).toBeInTheDocument()
+  })
+})
+
+describe("trainer registration", () => {
+  const trainer = { ...user, role: "trainer" }
+
+  it("defaults to an owner account and lets a trainer register into Clients", async () => {
+    const { interaction, router, queryClient } = await openPage()
+    const trainerCheckbox = await screen.findByRole("checkbox", { name: "Jsem trenér" })
+    expect(trainerCheckbox).not.toBeChecked()
+    await interaction.click(trainerCheckbox)
+    await fillForm(interaction)
+    await interaction.click(
+      screen.getByRole("checkbox", { name: "Souhlasím se zpracováním osobních údajů." }),
+    )
+    auth.signUp.mockImplementation(() => {
+      auth.getSession.mockResolvedValue({ data: { user: trainer }, error: null })
+      return Promise.resolve({ data: { user: trainer }, error: null })
+    })
+    await interaction.click(screen.getByRole("button", { name: "Zaregistrovat se" }))
+    expect(await screen.findByRole("heading", { name: "Vaši klienti" })).toBeInTheDocument()
+    expect(screen.getByText("Pozvěte prvního klienta")).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe("/clients")
+    expect(queryClient.getQueryData(authKeys.session())).toMatchObject({ user: trainer })
+    expect(auth.signUp).toHaveBeenCalledExactlyOnceWith({
+      name: "Jana Nováková",
+      email: "jana@example.com",
+      password: "password123",
+      fetchOptions: { body: { privacyConsent: true, isTrainer: true } },
+    })
+    const nav = screen.getByRole("navigation", { name: "Spodní navigace" })
+    expect(within(nav).getByRole("link", { name: "Klienti" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    )
+    await interaction.click(within(nav).getByRole("link", { name: "Psi" }))
+    await screen.findByRole("heading", { name: "Psi" })
+    await interaction.click(within(nav).getByRole("link", { name: "Klienti" }))
+    expect(await screen.findByText("Pozvěte prvního klienta")).toBeInTheDocument()
+  })
+
+  it("requires the same valid fields and explicit consent for trainers", async () => {
+    const { interaction } = await openPage()
+    await interaction.click(await screen.findByRole("checkbox", { name: "Jsem trenér" }))
+    await interaction.type(screen.getByLabelText("Jméno"), "   ")
+    await interaction.type(screen.getByLabelText("E-mail"), "invalid")
+    await interaction.type(screen.getByLabelText("Heslo"), "1234567")
+    await interaction.click(screen.getByRole("button", { name: "Zaregistrovat se" }))
+    expect(await screen.findByText("Vyplňte jméno.")).toBeInTheDocument()
+    expect(screen.getByText("Zadejte platný e-mail.")).toBeInTheDocument()
+    expect(screen.getByText("Heslo musí mít alespoň 8 znaků.")).toBeInTheDocument()
+    expect(
+      screen.getByText("Pro registraci je nutný souhlas se zpracováním osobních údajů."),
+    ).toBeInTheDocument()
+    expect(auth.signUp).not.toHaveBeenCalled()
+  })
+
+  it("preserves the trainer choice and offers login for an existing email", async () => {
+    auth.signUp.mockResolvedValue({
+      data: null,
+      error: { code: "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL" },
+    })
+    const { interaction } = await openPage()
+    await interaction.click(await screen.findByRole("checkbox", { name: "Jsem trenér" }))
+    await fillForm(interaction)
+    await interaction.click(
+      screen.getByRole("checkbox", { name: "Souhlasím se zpracováním osobních údajů." }),
+    )
+    await interaction.click(screen.getByRole("button", { name: "Zaregistrovat se" }))
+    expect(await screen.findByText("Účet s tímto e-mailem už existuje.")).toBeInTheDocument()
+    expect(screen.getByRole("checkbox", { name: "Jsem trenér" })).toBeChecked()
+    expect(screen.getAllByRole("link", { name: "Přihlásit se" })[0]).toHaveAttribute(
+      "href",
+      "/login",
+    )
+  })
+
+  it("uses the stored session role when returning to registration", async () => {
+    auth.getSession.mockResolvedValue({ data: { user: trainer }, error: null })
+    const { router } = await openPage()
+    expect(await screen.findByText("Pozvěte prvního klienta")).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe("/clients")
+  })
+
+  it("does not let owners open Clients by URL", async () => {
+    auth.getSession.mockResolvedValue({ data: { user }, error: null })
+    const { router } = await openPage("/clients")
+    expect(await screen.findByRole("heading", { name: "Psi" })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe("/dogs")
+    expect(screen.queryByRole("link", { name: "Klienti" })).not.toBeInTheDocument()
+    expect(screen.queryByText("Pozvěte prvního klienta")).not.toBeInTheDocument()
+  })
+
+  it("does not let anonymous visitors open Clients", async () => {
+    const { router } = await openPage("/clients")
+    await waitFor(() => expect(router.state.location.pathname).toBe("/login"))
+    expect(screen.queryByRole("navigation", { name: "Spodní navigace" })).not.toBeInTheDocument()
+    expect(screen.queryByText("Pozvěte prvního klienta")).not.toBeInTheDocument()
   })
 })

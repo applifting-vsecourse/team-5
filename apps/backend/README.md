@@ -61,7 +61,7 @@ This project uses PostgreSQL running in Docker Compose for both development and 
 pnpm backend docker:up
 ```
 
-   It listens on host port **5433** so it can't clash with a Postgres you already run locally. Credentials for development are `quacker` / `quacker` / `quacker`.
+It listens on host port **5433** so it can't clash with a Postgres you already run locally. Credentials for development are `quacker` / `quacker` / `quacker`.
 
 2. Browse the data:
 
@@ -141,6 +141,17 @@ $ pnpm backend test:cov
 
 ### Better Auth
 
+Registration defaults to a dog owner (`role: user`). Selecting **Jsem trenér**
+sends `isTrainer: true`; the signup hook stores `role: trainer`. Both account types
+require the same name, email, password and privacy consent. `role` remains
+server-owned and cannot be changed through the profile update API.
+
+After building the backend, `pnpm backend test:auth` tests both registration paths
+through BetterAuth's HTTP handler with an in-memory database. To verify persisted
+roles with the Prisma adapter, apply migrations to an isolated PostgreSQL test
+database, set `AUTH_TEST_DATABASE_URL` to its connection URL and run
+`pnpm backend test:auth:postgres`. The test removes only the accounts it creates.
+
 In this application, [**better-auth**](https://www.npmjs.com/package/better-auth) is utilized as the authentication module. It is designed to be easily extended with additional features or plugins, such as social login providers, multi-factor authentication, and more. Whenever database changes related to authentication are required, the following command should be run:
 
 ```bash
@@ -151,8 +162,6 @@ $ pnpm backend auth:generate
 Hopefully you won't need to use this command and the following part, unless you want to change how the auth works/add more features to it (better ask us if you're trying to/need to for your project):
 
 Keep in mind that there are 2 better auth configurations, one in the src/shared/auth/providers/better-auth.provider.ts (the complete config that is being used in the whole app) and one in the src/shared/auth/config/better-auth.config.ts (this config is being used by the CLI command above). You need to add the necessary changes to the better-auth config file to generate new database schema changes.
-
-
 
 ### Email Service
 

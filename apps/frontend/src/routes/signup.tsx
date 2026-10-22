@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router"
 import { z } from "zod"
 
@@ -9,6 +10,7 @@ import { Seo } from "@/components/Seo"
 import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
 import { SignUpForm } from "@/features/auth/components/SignUpForm"
 import { useSignUp, type SignUpInput } from "@/features/auth/hooks/useSignUp"
+import { accountHome } from "@/features/auth/lib/account-home"
 import { RegistrationError, registrationError } from "@/features/auth/lib/registration-errors"
 
 export const Route = createFileRoute("/signup")({
@@ -17,20 +19,23 @@ export const Route = createFileRoute("/signup")({
   loader: async ({ context }) => {
     const session = await context.queryClient.ensureQueryData(authSessionQueryOptions())
     if (!session) return
-    throw redirect({ to: ROUTES.dogs })
+    throw redirect({ to: accountHome(session.user) })
   },
 })
 
 function SignUpPage() {
   const navigate = useNavigate()
   const signUp = useSignUp()
+  const queryClient = useQueryClient()
   const [error, setError] = useState<RegistrationError | null>(null)
 
   const handleSubmit = async (values: SignUpInput) => {
     setError(null)
     try {
       await signUp.mutateAsync(values)
-      await navigate({ to: ROUTES.dogs })
+      const session = await queryClient.ensureQueryData(authSessionQueryOptions())
+      if (!session) throw registrationError()
+      await navigate({ to: accountHome(session.user) })
     } catch (error) {
       setError(error instanceof RegistrationError ? error : registrationError())
     }
@@ -40,8 +45,8 @@ function SignUpPage() {
     <>
       <Seo title="Registrace" />
       <AuthLayout
-        title="Registrace psovoda"
-        description="Založte si účet zdarma. Pozvánku od trenéra nepotřebujete."
+        title="Registrace"
+        description="Založte si účet psovoda nebo trenéra zdarma. Pozvánku nepotřebujete."
         footer={
           <>
             Už máte účet?{" "}

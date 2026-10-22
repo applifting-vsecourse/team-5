@@ -14,6 +14,7 @@ import { Route as ProtectedPagesRouteImport } from './routes/_ProtectedPages'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ProtectedPagesAccountRouteImport } from './routes/_ProtectedPages/account'
+import { Route as ProtectedPagesClientsRouteImport } from './routes/_ProtectedPages/clients'
 import { Route as ProtectedPagesDashboardRouteImport } from './routes/_ProtectedPages/dashboard'
 import { Route as ProtectedPagesWeekRouteImport } from './routes/_ProtectedPages/week'
 import { Route as ProtectedPagesClientsIndexRouteImport } from './routes/_ProtectedPages/clients.index'
@@ -47,6 +48,11 @@ const ProtectedPagesAccountRoute = ProtectedPagesAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => ProtectedPagesRoute,
 } as any)
+const ProtectedPagesClientsRoute = ProtectedPagesClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => ProtectedPagesRoute,
+} as any)
 const ProtectedPagesDashboardRoute = ProtectedPagesDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -59,15 +65,15 @@ const ProtectedPagesWeekRoute = ProtectedPagesWeekRouteImport.update({
 } as any)
 const ProtectedPagesClientsIndexRoute =
   ProtectedPagesClientsIndexRouteImport.update({
-    id: '/clients/',
-    path: '/clients/',
-    getParentRoute: () => ProtectedPagesRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => ProtectedPagesClientsRoute,
   } as any)
 const ProtectedPagesClientsClientIdRoute =
   ProtectedPagesClientsClientIdRouteImport.update({
-    id: '/clients/$clientId',
-    path: '/clients/$clientId',
-    getParentRoute: () => ProtectedPagesRoute,
+    id: '/$clientId',
+    path: '/$clientId',
+    getParentRoute: () => ProtectedPagesClientsRoute,
   } as any)
 const ProtectedPagesDogsIndexRoute = ProtectedPagesDogsIndexRouteImport.update({
   id: '/dogs/',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/account': typeof ProtectedPagesAccountRoute
+  '/clients': typeof ProtectedPagesClientsRouteWithChildren
   '/dashboard': typeof ProtectedPagesDashboardRoute
   '/week': typeof ProtectedPagesWeekRoute
   '/clients/$clientId': typeof ProtectedPagesClientsClientIdRoute
@@ -128,6 +135,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/_ProtectedPages/account': typeof ProtectedPagesAccountRoute
+  '/_ProtectedPages/clients': typeof ProtectedPagesClientsRouteWithChildren
   '/_ProtectedPages/dashboard': typeof ProtectedPagesDashboardRoute
   '/_ProtectedPages/week': typeof ProtectedPagesWeekRoute
   '/_ProtectedPages/clients/$clientId': typeof ProtectedPagesClientsClientIdRoute
@@ -144,6 +152,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/account'
+    | '/clients'
     | '/dashboard'
     | '/week'
     | '/clients/$clientId'
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/_ProtectedPages/account'
+    | '/_ProtectedPages/clients'
     | '/_ProtectedPages/dashboard'
     | '/_ProtectedPages/week'
     | '/_ProtectedPages/clients/$clientId'
@@ -227,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPagesAccountRouteImport
       parentRoute: typeof ProtectedPagesRoute
     }
+    '/_ProtectedPages/clients': {
+      id: '/_ProtectedPages/clients'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof ProtectedPagesClientsRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
     '/_ProtectedPages/dashboard': {
       id: '/_ProtectedPages/dashboard'
       path: '/dashboard'
@@ -243,17 +260,17 @@ declare module '@tanstack/react-router' {
     }
     '/_ProtectedPages/clients/': {
       id: '/_ProtectedPages/clients/'
-      path: '/clients'
+      path: '/'
       fullPath: '/clients/'
       preLoaderRoute: typeof ProtectedPagesClientsIndexRouteImport
-      parentRoute: typeof ProtectedPagesRoute
+      parentRoute: typeof ProtectedPagesClientsRoute
     }
     '/_ProtectedPages/clients/$clientId': {
       id: '/_ProtectedPages/clients/$clientId'
-      path: '/clients/$clientId'
+      path: '/$clientId'
       fullPath: '/clients/$clientId'
       preLoaderRoute: typeof ProtectedPagesClientsClientIdRouteImport
-      parentRoute: typeof ProtectedPagesRoute
+      parentRoute: typeof ProtectedPagesClientsRoute
     }
     '/_ProtectedPages/dogs/': {
       id: '/_ProtectedPages/dogs/'
@@ -286,12 +303,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ProtectedPagesRouteChildren {
-  ProtectedPagesAccountRoute: typeof ProtectedPagesAccountRoute
-  ProtectedPagesDashboardRoute: typeof ProtectedPagesDashboardRoute
-  ProtectedPagesWeekRoute: typeof ProtectedPagesWeekRoute
+interface ProtectedPagesClientsRouteChildren {
   ProtectedPagesClientsClientIdRoute: typeof ProtectedPagesClientsClientIdRoute
   ProtectedPagesClientsIndexRoute: typeof ProtectedPagesClientsIndexRoute
+}
+
+const ProtectedPagesClientsRouteChildren: ProtectedPagesClientsRouteChildren = {
+  ProtectedPagesClientsClientIdRoute: ProtectedPagesClientsClientIdRoute,
+  ProtectedPagesClientsIndexRoute: ProtectedPagesClientsIndexRoute,
+}
+
+const ProtectedPagesClientsRouteWithChildren =
+  ProtectedPagesClientsRoute._addFileChildren(
+    ProtectedPagesClientsRouteChildren,
+  )
+
+interface ProtectedPagesRouteChildren {
+  ProtectedPagesAccountRoute: typeof ProtectedPagesAccountRoute
+  ProtectedPagesClientsRoute: typeof ProtectedPagesClientsRouteWithChildren
+  ProtectedPagesDashboardRoute: typeof ProtectedPagesDashboardRoute
+  ProtectedPagesWeekRoute: typeof ProtectedPagesWeekRoute
   ProtectedPagesDogsIndexRoute: typeof ProtectedPagesDogsIndexRoute
   ProtectedPagesDogsDogIdIndexRoute: typeof ProtectedPagesDogsDogIdIndexRoute
   ProtectedPagesDogsDogIdGoalsGoalIdRoute: typeof ProtectedPagesDogsDogIdGoalsGoalIdRoute
@@ -300,10 +331,9 @@ interface ProtectedPagesRouteChildren {
 
 const ProtectedPagesRouteChildren: ProtectedPagesRouteChildren = {
   ProtectedPagesAccountRoute: ProtectedPagesAccountRoute,
+  ProtectedPagesClientsRoute: ProtectedPagesClientsRouteWithChildren,
   ProtectedPagesDashboardRoute: ProtectedPagesDashboardRoute,
   ProtectedPagesWeekRoute: ProtectedPagesWeekRoute,
-  ProtectedPagesClientsClientIdRoute: ProtectedPagesClientsClientIdRoute,
-  ProtectedPagesClientsIndexRoute: ProtectedPagesClientsIndexRoute,
   ProtectedPagesDogsIndexRoute: ProtectedPagesDogsIndexRoute,
   ProtectedPagesDogsDogIdIndexRoute: ProtectedPagesDogsDogIdIndexRoute,
   ProtectedPagesDogsDogIdGoalsGoalIdRoute:
