@@ -22,7 +22,7 @@ export type PesAvatarProps = {
 }
 
 export function PesAvatar({ name, color, size = "md", photoUrl, className }: PesAvatarProps) {
-  const [erroredPhotoUrl, setErroredPhotoUrl] = useState<string | null>(null)
+  const [erroredPhotoUrl, setErroredPhotoUrl] = useState<string | null | undefined>(null)
 
   const initial = name.trim().charAt(0).toUpperCase() || "P"
   const sizeClass = SIZE_CLASSES[size] ?? SIZE_CLASSES.md
@@ -46,7 +46,7 @@ export function PesAvatar({ name, color, size = "md", photoUrl, className }: Pes
           src={resolvedUrl}
           alt={name}
           className="size-full object-cover rounded-full"
-          onError={() => setErroredPhotoUrl(photoUrl)}
+          onError={() => setErroredPhotoUrl(photoUrl ?? null)}
         />
       </div>
     )
