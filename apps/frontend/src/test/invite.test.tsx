@@ -142,6 +142,35 @@ describe("invite page (/invite)", () => {
     expect(loginLink).toBeInTheDocument()
   })
 
+  it("prioritizes login when invitation email belongs to an existing user", async () => {
+    vi.mocked(api.get).mockImplementation((url: unknown) => {
+      const urlStr = String(url)
+      if (urlStr.includes("invitations/EXIST1")) {
+        return {
+          json: () =>
+            Promise.resolve({
+              valid: true,
+              code: "EXIST1",
+              trainerName: "Veronika Trenérka",
+              email: "eva.novotna@email.cz",
+              isExistingUser: true,
+            }),
+        } as unknown as ReturnType<typeof api.get>
+      }
+      throw new Error(`Unexpected url: ${urlStr}`)
+    })
+
+    await openPage("/invite?code=EXIST1")
+
+    expect(await screen.findByText(/K e-mailu/i)).toBeInTheDocument()
+    expect(screen.getByText("eva.novotna@email.cz")).toBeInTheDocument()
+
+    const loginBtn = screen.getByRole("link", { name: "Přihlásit se a propojit účet" })
+    expect(loginBtn).toBeInTheDocument()
+    expect(loginBtn.getAttribute("href")).toContain("/login")
+    expect(loginBtn.getAttribute("href")).toContain("EXIST1")
+  })
+
   it("allows logged-in client to accept invitation and connect account", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
     vi.mocked(api.get).mockImplementation((url: unknown) => {

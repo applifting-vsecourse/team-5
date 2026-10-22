@@ -141,9 +141,22 @@ export class ClientRepository {
     };
   }
 
-  async findInvitationByCode(
-    code: string,
-  ): Promise<(Invitation & { trainer: { id: string; name: string } }) | null> {
+  async findUserByEmail(
+    email: string,
+  ): Promise<{ id: string; name: string } | null> {
+    return this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, name: true },
+    });
+  }
+
+  async findInvitationByCode(code: string): Promise<
+    | (Invitation & {
+        trainer: { id: string; name: string };
+        isExistingUser: boolean;
+      })
+    | null
+  > {
     const inv = await this.prisma.invitation.findUnique({
       where: { code },
       include: {
@@ -157,6 +170,15 @@ export class ClientRepository {
       return null;
     }
 
+    let isExistingUser = false;
+    if (inv.email) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: inv.email },
+        select: { id: true },
+      });
+      isExistingUser = Boolean(existingUser);
+    }
+
     return {
       id: inv.id,
       code: inv.code,
@@ -166,6 +188,7 @@ export class ClientRepository {
       usedAt: inv.usedAt,
       createdAt: inv.createdAt,
       trainer: inv.trainer,
+      isExistingUser,
     };
   }
 

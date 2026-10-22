@@ -16,8 +16,11 @@ const auth = vi.hoisted(() => ({
   signIn: vi.fn(),
   signOut: vi.fn(),
 }))
-const dogApi = vi.hoisted(() => ({ get: vi.fn() }))
-vi.mock("@/lib/api-client", () => ({ api: { get: dogApi.get } }))
+const dogApi = vi.hoisted(() => ({
+  get: vi.fn(),
+  post: vi.fn().mockReturnValue({ json: () => Promise.resolve({ success: true }) }),
+}))
+vi.mock("@/lib/api-client", () => ({ api: { get: dogApi.get, post: dogApi.post } }))
 vi.mock("@/features/auth/lib/auth-client", () => ({
   authClient: {
     signUp: { email: auth.signUp },
@@ -414,5 +417,19 @@ describe("login and logout", () => {
     )
     expect(router.state.location.pathname).toBe("/account")
     expect(screen.getByRole("button", { name: "Odhlásit se" })).toBeEnabled()
+  })
+
+  it("automatically accepts invitation code and links account on sign in", async () => {
+    const { interaction, router } = await openPage("/login?code=EXIST1")
+    acceptLogin()
+    await screen.findByRole("dialog")
+    await fillForm(interaction)
+    await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
+
+    expect(dogApi.post).toHaveBeenCalledWith("invitations/accept", {
+      json: { code: "EXIST1" },
+    })
+    expect(await screen.findByRole("heading", { name: "Týden" })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe("/week")
   })
 })

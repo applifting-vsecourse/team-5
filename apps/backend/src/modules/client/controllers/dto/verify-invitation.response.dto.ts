@@ -12,5 +12,9 @@ export class VerifyInvitationResponseDto {
 
   @ApiPropertyOptional({ type: String, nullable: true })
   email?: string | null;
-}
 
+  @ApiProperty({
+    description: 'Whether an account with this email already exists',
+  })
+  isExistingUser!: boolean;
+}

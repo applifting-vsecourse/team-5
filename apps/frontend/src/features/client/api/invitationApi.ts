@@ -11,6 +11,7 @@ export const verifyInvitationSchema = z.object({
   code: z.string(),
   trainerName: z.string(),
   email: z.string().nullable().optional(),
+  isExistingUser: z.boolean().default(false),
 })
 
 export type VerifyInvitationResponse = z.infer<typeof verifyInvitationSchema>
@@ -38,4 +39,3 @@ export function useAcceptInvitation() {
     },
   })
 }
-

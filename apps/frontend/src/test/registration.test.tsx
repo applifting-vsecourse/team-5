@@ -241,10 +241,26 @@ describe("owner registration", () => {
   })
 
   it("keeps the trainer invitation code when opening registration from the landing page", async () => {
+    dogApi.get.mockImplementation((path: string) => {
+      if (path.includes("invitations/ABC123")) {
+        return {
+          json: () =>
+            Promise.resolve({
+              valid: true,
+              code: "ABC123",
+              trainerName: "Trenér",
+              isExistingUser: false,
+            }),
+        }
+      }
+      return { json: () => Promise.resolve([]) }
+    })
     const { interaction, router } = await openPage("/")
     await interaction.click(await screen.findByRole("button", { name: "Mám kód od trenéra" }))
     await interaction.type(screen.getByLabelText("Kód pozvánky"), "ABC123")
-    await interaction.click(screen.getByRole("button", { name: "Pokračovat k registraci" }))
+    await interaction.click(screen.getByRole("button", { name: "Pokračovat" }))
+    const registerLink = await screen.findByRole("link", { name: /zaregistrovat se jako psovod/i })
+    await interaction.click(registerLink)
     await screen.findByRole("heading", { name: "Registrace" })
     expect(router.state.location.search).toMatchObject({ code: "ABC123" })
   })

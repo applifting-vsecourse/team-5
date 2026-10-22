@@ -208,28 +208,77 @@ function InvitePage() {
           ) : null}
 
           {session?.user ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Jste přihlášeni jako <strong>{session.user.name}</strong> ({session.user.email}).
-              </p>
-              <Button
-                onClick={handleAccept}
-                disabled={acceptMutation.isPending}
-                className="w-full"
-                size="lg"
-              >
-                {acceptMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                    Propojuji…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 size-4" />
-                    Přijmout pozvánku a propojit účet
-                  </>
-                )}
-              </Button>
+            session.user.role === "trainer" ? (
+              <Alert>
+                <AlertCircle className="size-4" />
+                <AlertTitle>Přihlášen jako trenér</AlertTitle>
+                <AlertDescription>
+                  Jste aktuálně přihlášeni jako trenér ({session.user.email}). Pozvánku může
+                  přijmout pouze psovod (klient). Odhlaste se a přihlaste se prosím jako klient.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Jste přihlášeni jako <strong>{session.user.name}</strong> ({session.user.email}).
+                </p>
+                <Button
+                  onClick={handleAccept}
+                  disabled={acceptMutation.isPending}
+                  className="w-full"
+                  size="lg"
+                >
+                  {acceptMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 size-4 animate-spin" />
+                      Propojuji…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 size-4" />
+                      Přijmout pozvánku a propojit účet
+                    </>
+                  )}
+                </Button>
+              </div>
+            )
+          ) : invitation.isExistingUser ? (
+            <div className="space-y-4">
+              <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+                K e-mailu <strong className="text-foreground">{invitation.email}</strong> již
+                existuje účet v TrainLoopu. Přihlaste se ke svému účtu a pozvánka od trenéra se
+                automaticky propojí.
+              </div>
+              <div className="space-y-2">
+                <Button
+                  asChild
+                  className="w-full"
+                  size="lg"
+                >
+                  <Link
+                    to={ROUTES.login}
+                    search={{
+                      from: `/invite?code=${invitation.code}`,
+                      code: invitation.code,
+                    }}
+                  >
+                    Přihlásit se a propojit účet
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="w-full text-xs text-muted-foreground"
+                  size="sm"
+                >
+                  <Link
+                    to={ROUTES.signup}
+                    search={{ code: invitation.code }}
+                  >
+                    Chcete se zaregistrovat s jiným e-mailem?
+                  </Link>
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -256,7 +305,10 @@ function InvitePage() {
               >
                 <Link
                   to={ROUTES.login}
-                  search={{ from: `/invite?code=${invitation.code}` }}
+                  search={{
+                    from: `/invite?code=${invitation.code}`,
+                    code: invitation.code,
+                  }}
                 >
                   Už mám účet → Přihlásit se
                 </Link>

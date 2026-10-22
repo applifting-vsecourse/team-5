@@ -242,6 +242,52 @@ describe("ClientList", () => {
     expect(screen.getByText("NEW123")).toBeInTheDocument()
   })
 
+  it("generates invitation code without email when 'vygenerovat pouze kód' is clicked", async () => {
+    const user = userEvent.setup()
+    vi.mocked(api.get).mockImplementation((url: unknown) => {
+      const urlStr = String(url)
+      if (urlStr === "clients") {
+        return { json: () => Promise.resolve(mockClients) } as ReturnType<typeof api.get>
+      }
+      if (urlStr === "clients/invitations") {
+        return { json: () => Promise.resolve([]) } as ReturnType<typeof api.get>
+      }
+      throw new Error(`Unexpected url: ${urlStr}`)
+    })
+    vi.mocked(api.post).mockImplementation((url: unknown) => {
+      const urlStr = String(url)
+      if (urlStr === "clients/invitations") {
+        return {
+          json: () =>
+            Promise.resolve({
+              id: "inv-code-only",
+              code: "CODE99",
+              email: null,
+              expiresAt: new Date(Date.now() + 100000).toISOString(),
+              createdAt: new Date().toISOString(),
+            }),
+        } as unknown as ReturnType<typeof api.post>
+      }
+      throw new Error(`Unexpected url: ${urlStr}`)
+    })
+
+    render(<ClientList />, { wrapper: createWrapper() })
+
+    const inviteBtn = await screen.findByRole("button", { name: "Pozvat klienta" })
+    await user.click(inviteBtn)
+
+    const generateOnlyBtn = screen.getByRole("button", {
+      name: /vygenerovat pouze kód/i,
+    })
+    await user.click(generateOnlyBtn)
+
+    expect(await screen.findByText("Kód pozvánky vygenerován")).toBeInTheDocument()
+    expect(screen.getByText("CODE99")).toBeInTheDocument()
+    expect(vi.mocked(api.post)).toHaveBeenCalledWith("clients/invitations", {
+      json: {},
+    })
+  })
+
   it("opens invite dialog when Pozvěte prvního klienta in empty state is clicked", async () => {
     const user = userEvent.setup()
     vi.mocked(api.get).mockImplementation((url: unknown) => {

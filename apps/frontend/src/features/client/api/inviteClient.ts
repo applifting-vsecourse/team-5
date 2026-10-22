@@ -10,21 +10,24 @@ export function useInviteClient() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (email: string): Promise<Invitation> => {
+    mutationFn: async (email?: string): Promise<Invitation> => {
       const response = await api
         .post("clients/invitations", {
-          json: { email },
+          json: email ? { email } : {},
         })
         .json()
       return invitationSchema.parse(response)
     },
-    onSuccess: () => {
-      toast.success("Pozvánka byla úspěšně odeslána")
+    onSuccess: (_, email) => {
+      if (email) {
+        toast.success("Pozvánka byla úspěšně odeslána")
+      } else {
+        toast.success("Kód pozvánky byl úspěšně vygenerován")
+      }
       void queryClient.invalidateQueries({ queryKey: clientKeys.invitations() })
     },
     onError: () => {
-      toast.error("Odeslání pozvánky se nezdařilo")
+      toast.error("Vytvoření pozvánky se nezdařilo")
     },
   })
 }
-

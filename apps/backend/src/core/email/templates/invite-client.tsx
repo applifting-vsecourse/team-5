@@ -17,12 +17,14 @@ export interface InviteClientProps {
   trainerName: string;
   code: string;
   url: string;
+  isExistingUser?: boolean;
 }
 
 export const InviteClient = ({
   trainerName,
   code,
   url,
+  isExistingUser = false,
 }: InviteClientProps): React.JSX.Element => (
   <Html>
     <Tailwind>
@@ -34,7 +36,15 @@ export const InviteClient = ({
             Pozvánka do TrainLoopu
           </Heading>
           <Text className="text-gray-700 text-base leading-6 mt-4">
-            Dobrý den, trenér <strong>{trainerName}</strong> vás zve ke spolupráci v aplikaci TrainLoop.
+            {isExistingUser ? (
+              <>
+                Dobrý den, trenér <strong>{trainerName}</strong> vás zve ke spolupráci v aplikaci TrainLoop. Protože již máte vytvořený účet, stačí se přihlásit a pozvánku potvrdit.
+              </>
+            ) : (
+              <>
+                Dobrý den, trenér <strong>{trainerName}</strong> vás zve ke spolupráci v aplikaci TrainLoop.
+              </>
+            )}
           </Text>
           <Text className="text-gray-700 text-base leading-6">
             Díky TrainLoopu budete mít tréninkový plán a deník svého psa na jednom místě přímo propojený s vaším trenérem.
@@ -44,7 +54,7 @@ export const InviteClient = ({
               href={url}
               className="bg-yellow-400 text-gray-900 font-semibold rounded-md px-6 py-3 text-center inline-block"
             >
-              Přijmout pozvánku
+              {isExistingUser ? 'Přihlásit se a přijmout pozvánku' : 'Přijmout pozvánku'}
             </Button>
           </Section>
           <Section className="bg-gray-100 rounded-md p-4 text-center my-6">

@@ -6,6 +6,7 @@ import { AccountPage } from "./account"
 
 const mockMutate = vi.fn()
 const mockSetTheme = vi.fn()
+const mockNavigate = vi.fn()
 let mockUser: { name: string; email: string; role?: string } | null = {
   name: "Jan Novák",
   email: "jan.novak@example.com",
@@ -18,6 +19,7 @@ vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>
   ),
+  useNavigate: () => mockNavigate,
 }))
 
 vi.mock("@/components/Seo", () => ({
@@ -130,5 +132,43 @@ describe("AccountPage", () => {
 
     expect(screen.queryByText("Jan Novák")).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: /odhlásit se/i })).not.toBeInTheDocument()
+  })
+
+  it("shows 'Mám kód od trenéra' for dog owners and navigates to /invite with code", async () => {
+    const user = userEvent.setup()
+    mockUser = {
+      name: "Jan Psovod",
+      email: "psovod@example.com",
+      role: "user",
+    }
+    render(<AccountPage />)
+
+    const codeButton = screen.getByRole("button", { name: /mám kód od trenéra/i })
+    expect(codeButton).toBeInTheDocument()
+
+    await user.click(codeButton)
+    expect(screen.getByRole("heading", { name: /mám kód od trenéra/i })).toBeInTheDocument()
+
+    const input = screen.getByLabelText(/kód pozvánky/i)
+    await user.type(input, "K7M2PQ")
+
+    const submitBtn = screen.getByRole("button", { name: /pokračovat/i })
+    await user.click(submitBtn)
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: "/invite",
+      search: { code: "K7M2PQ" },
+    })
+  })
+
+  it("does not show 'Mám kód od trenéra' for trainers", () => {
+    mockUser = {
+      name: "Eva Trenérka",
+      email: "trenerka@example.com",
+      role: "trainer",
+    }
+    render(<AccountPage />)
+
+    expect(screen.queryByRole("button", { name: /mám kód od trenéra/i })).not.toBeInTheDocument()
   })
 })

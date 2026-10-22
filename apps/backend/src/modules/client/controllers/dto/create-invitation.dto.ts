@@ -1,17 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsEmail, IsNotEmpty } from 'class-validator';
+import { IsEmail, IsOptional } from 'class-validator';
 
 export class CreateInvitationDto {
   @ApiProperty({
     example: 'klient@example.com',
-    description: 'E-mailová adresa klienta',
+    description: 'E-mailová adresa klienta (volitelná)',
+    required: false,
   })
-  @IsNotEmpty({ message: 'E-mail je povinný.' })
+  @IsOptional()
   @IsEmail({}, { message: 'Zadejte platnou e-mailovou adresu.' })
   @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
+    typeof value === 'string' && value.trim()
+      ? value.trim().toLowerCase()
+      : undefined,
   )
-  email!: string;
+  email?: string;
 }
-

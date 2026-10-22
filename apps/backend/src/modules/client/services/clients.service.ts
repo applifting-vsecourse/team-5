@@ -50,7 +50,7 @@ export class ClientsService {
 
   async createInvitation(
     trainer: Identity,
-    email: string,
+    email?: string,
   ): Promise<Invitation> {
     // Generate code with collision check
     let code = generateInvitationCode();
@@ -68,19 +68,24 @@ export class ClientsService {
       expiresAt,
     });
 
-    const trainerDisplayName = trainer.name || 'Váš trenér';
-    const inviteUrl = `${this.config.frontendUrl}/invite?code=${code}`;
-    const emailHtml = await renderEmail(InviteClient, {
-      trainerName: trainerDisplayName,
-      code,
-      url: inviteUrl,
-    });
+    if (email) {
+      const trainerDisplayName = trainer.name || 'Váš trenér';
+      const existingUser = await this.clientRepository.findUserByEmail(email);
+      const isExistingUser = Boolean(existingUser);
+      const inviteUrl = `${this.config.frontendUrl}/invite?code=${code}`;
+      const emailHtml = await renderEmail(InviteClient, {
+        trainerName: trainerDisplayName,
+        code,
+        url: inviteUrl,
+        isExistingUser,
+      });
 
-    await this.emailService.sendEmail(
-      email,
-      `Pozvánka do TrainLoopu od trenéra ${trainerDisplayName}`,
-      emailHtml,
-    );
+      await this.emailService.sendEmail(
+        email,
+        `Pozvánka do TrainLoopu od trenéra ${trainerDisplayName}`,
+        emailHtml,
+      );
+    }
 
     return invitation;
   }
@@ -90,6 +95,7 @@ export class ClientsService {
     code: string;
     trainerName: string;
     email?: string | null;
+    isExistingUser: boolean;
   }> {
     const inv = await this.clientRepository.findInvitationByCode(code);
     if (!inv) {
@@ -109,6 +115,7 @@ export class ClientsService {
       code: inv.code,
       trainerName: inv.trainer.name,
       email: inv.email,
+      isExistingUser: inv.isExistingUser,
     };
   }
 

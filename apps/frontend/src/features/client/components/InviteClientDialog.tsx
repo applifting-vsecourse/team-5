@@ -51,6 +51,16 @@ export function InviteClientDialog({ isOpen, onOpenChange }: InviteClientDialogP
     }
   }
 
+  const handleGenerateOnlyCode = async () => {
+    setErrorMessage(null)
+    try {
+      const inv = await inviteMutation.mutateAsync(undefined)
+      setCreatedInvitation(inv)
+    } catch {
+      setErrorMessage("Vygenerování kódu se nezdařilo. Zkuste to prosím znovu.")
+    }
+  }
+
   const handleInviteAnother = () => {
     setEmail("")
     setCreatedInvitation(null)
@@ -69,10 +79,18 @@ export function InviteClientDialog({ isOpen, onOpenChange }: InviteClientDialogP
               <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <CheckCircle2 className="size-6 text-green-600" />
               </div>
-              <DialogTitle className="text-center">Pozvánka odeslána</DialogTitle>
+              <DialogTitle className="text-center">
+                {createdInvitation.email ? "Pozvánka odeslána" : "Kód pozvánky vygenerován"}
+              </DialogTitle>
               <DialogDescription className="text-center">
-                Pozvánka byla úspěšně odeslána na e-mail{" "}
-                <strong className="text-foreground">{createdInvitation.email ?? email}</strong>.
+                {createdInvitation.email ? (
+                  <>
+                    Pozvánka byla úspěšně odeslána na e-mail{" "}
+                    <strong className="text-foreground">{createdInvitation.email}</strong>.
+                  </>
+                ) : (
+                  "Předejte tento 6místný kód svému klientovi na lekci nebo osobně."
+                )}
               </DialogDescription>
             </DialogHeader>
 
@@ -84,8 +102,8 @@ export function InviteClientDialog({ isOpen, onOpenChange }: InviteClientDialogP
                 {createdInvitation.code}
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Klient může kliknout na odkaz v e-mailu nebo zadat tento kód na úvodní stránce.
-                Platnost je 14 dní.
+                Klient může kliknout na odkaz v e-mailu nebo zadat tento kód na úvodní stránce či ve
+                svém účtu. Platnost je 14 dní.
               </p>
             </div>
 
@@ -110,8 +128,8 @@ export function InviteClientDialog({ isOpen, onOpenChange }: InviteClientDialogP
             <DialogHeader>
               <DialogTitle>Pozvat klienta e-mailem</DialogTitle>
               <DialogDescription>
-                Zadejte e-mail klienta. Odešleme mu pozvánku s odkazem a kódem pro registraci a
-                propojení s vaším profilem.
+                Zadejte e-mail klienta pro odeslání pozvánky s odkazem, nebo si jen vygenerujte kód
+                pro předání na lekci.
               </DialogDescription>
             </DialogHeader>
 
@@ -131,10 +149,22 @@ export function InviteClientDialog({ isOpen, onOpenChange }: InviteClientDialogP
                     placeholder="klient@email.cz"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    required
                     disabled={inviteMutation.isPending}
                   />
                 </div>
+              </div>
+
+              <div className="text-center">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                  onClick={handleGenerateOnlyCode}
+                  disabled={inviteMutation.isPending}
+                >
+                  Nebo vygenerovat pouze kód (bez e-mailu)
+                </Button>
               </div>
             </div>
 

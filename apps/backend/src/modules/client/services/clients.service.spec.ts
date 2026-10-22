@@ -146,6 +146,33 @@ describe('ClientsService', () => {
     );
   });
 
+  it('creates an invitation without sending email when email is omitted', async () => {
+    const trainer: Identity = {
+      id: 'trainer-1',
+      name: 'Veronika Trenérka',
+      email: 'veronika@trainloop.cz',
+      role: 'trainer',
+    };
+
+    repository.findInvitationByCode.mockResolvedValue(null);
+    repository.createInvitation.mockImplementation(async (params) => ({
+      id: 'inv-code-only',
+      code: params.code,
+      email: params.email,
+      trainerId: params.trainerId,
+      expiresAt: params.expiresAt,
+      createdAt: new Date(),
+    }));
+
+    const result = await service.createInvitation(trainer);
+
+    expect(result.id).toBe('inv-code-only');
+    expect(result.email).toBeUndefined();
+    expect(result.code).toHaveLength(6);
+    expect(repository.createInvitation).toHaveBeenCalled();
+    expect(emailService.sendEmail).not.toHaveBeenCalled();
+  });
+
   it('verifies a valid invitation code', async () => {
     repository.findInvitationByCode.mockResolvedValue({
       id: 'inv-1',
@@ -158,12 +185,14 @@ describe('ClientsService', () => {
         id: 'trainer-1',
         name: 'Veronika',
       },
+      isExistingUser: false,
     });
 
     const result = await service.verifyInvitation('K7M2PQ');
     expect(result.valid).toBe(true);
     expect(result.trainerName).toBe('Veronika');
     expect(result.email).toBe('klient@example.com');
+    expect(result.isExistingUser).toBe(false);
   });
 
   it('rejects expired invitation on verification', async () => {
@@ -178,6 +207,7 @@ describe('ClientsService', () => {
         id: 'trainer-1',
         name: 'Veronika',
       },
+      isExistingUser: false,
     });
 
     await expect(service.verifyInvitation('EXPRD1')).rejects.toThrow(
@@ -204,6 +234,7 @@ describe('ClientsService', () => {
         id: 'trainer-1',
         name: 'Veronika',
       },
+      isExistingUser: true,
     });
 
     await service.acceptInvitation('K7M2PQ', clientUser);
@@ -233,6 +264,7 @@ describe('ClientsService', () => {
         id: 'trainer-1',
         name: 'Veronika',
       },
+      isExistingUser: true,
     });
 
     await expect(
