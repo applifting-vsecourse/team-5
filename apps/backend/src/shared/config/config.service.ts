@@ -82,11 +82,11 @@ export class Config {
   @IsOptional()
   readonly smtpHost?: string;
 
-  @Env('SMTP_SECURE', { expose: true, defaultValue: true })
+  @Env('SMTP_SECURE', { expose: true, defaultValue: false })
   @IsBoolean()
   readonly smtpSecure!: boolean;
 
-  @Env('SMTP_PORT', { expose: true, defaultValue: 465 })
+  @Env('SMTP_PORT', { expose: true, defaultValue: 1025 })
   readonly smtpPort!: number;
 
   @Env('SMTP_USERNAME', { expose: true })
