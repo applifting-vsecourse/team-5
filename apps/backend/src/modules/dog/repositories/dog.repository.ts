@@ -117,4 +117,16 @@ export class DogRepository {
     });
     return mapPrismaDogToDomain(dog);
   }
+
+  async deleteDog(id: string, ownerId: string): Promise<Dog | null> {
+    const existing = await this.prisma.dog.findFirst({
+      where: { id, ownerId, isArchived: false },
+    });
+    if (!existing) return null;
+
+    const dog = await this.prisma.dog.delete({
+      where: { id },
+    });
+    return mapPrismaDogToDomain(dog);
+  }
 }

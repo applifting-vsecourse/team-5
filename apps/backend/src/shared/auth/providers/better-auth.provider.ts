@@ -4,6 +4,7 @@ import { renderEmail } from '@/core/email/render';
 import { ResetPassword } from '@/core/email/templates/reset-password';
 import { VerifyEmail } from '@/core/email/templates/verify-email';
 import { PrismaService } from '@/core/prisma/prisma.service';
+import { deleteDogPhotoFiles } from '@/modules/dog/services/dog-photo.service';
 import { betterAuthCoreConfig } from '@/shared/auth/config/better-auth.config';
 import { Config } from '@/shared/config/config.service';
 import { Inject, Provider } from '@nestjs/common';
@@ -56,6 +57,34 @@ const createAuth = (
           required: true,
           defaultValue: 'user',
           input: false,
+        },
+      },
+    },
+    databaseHooks: {
+      ...betterAuthCoreConfig.databaseHooks,
+      user: {
+        ...betterAuthCoreConfig.databaseHooks?.user,
+        delete: {
+          before: async (user, ctx) => {
+            if (betterAuthCoreConfig.databaseHooks?.user?.delete?.before) {
+              await betterAuthCoreConfig.databaseHooks.user.delete.before(
+                user,
+                ctx,
+              );
+            }
+            try {
+              const dogs = await prismaService.dog.findMany({
+                where: { ownerId: user.id, photoUrl: { not: null } },
+                select: { photoUrl: true },
+              });
+              await deleteDogPhotoFiles(dogs.map((d) => d.photoUrl));
+            } catch (err) {
+              console.error(
+                'Chyba při mazání fotek psů při smazání účtu:',
+                err,
+              );
+            }
+          },
         },
       },
     },

@@ -9,7 +9,7 @@ const sharp = require('sharp');
 
 jest.mock('heic-convert', () => {
   return jest.fn().mockImplementation(async () => {
-    // Return a dummy 1x1 jpeg buffer
+    // Return a dummy 10x10 jpeg buffer
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const s = require('sharp');
     return await s({
@@ -25,6 +25,20 @@ jest.mock('heic-convert', () => {
   });
 });
 
+const createHeicBuffer = (width = 100, height = 100): Buffer => {
+  const buf = Buffer.alloc(48);
+  buf.writeUInt32BE(24, 0);
+  buf.write('ftyp', 4, 'ascii');
+  buf.write('heic', 8, 'ascii');
+  // Write an ispe box: 4 bytes size (20), 4 bytes 'ispe', 4 bytes version+flags (0), 4 bytes width, 4 bytes height
+  buf.writeUInt32BE(20, 24);
+  buf.write('ispe', 28, 'ascii');
+  buf.writeUInt32BE(0, 32);
+  buf.writeUInt32BE(width, 36);
+  buf.writeUInt32BE(height, 40);
+  return buf;
+};
+
 describe('DogPhotoService', () => {
   let service: DogPhotoService;
   const createdFiles: string[] = [];
@@ -34,7 +48,6 @@ describe('DogPhotoService', () => {
   });
 
   afterAll(async () => {
-    // Clean up any files created during tests
     for (const file of createdFiles) {
       try {
         if (fs.existsSync(file)) {
@@ -75,9 +88,9 @@ describe('DogPhotoService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('rejects unsupported file formats', async () => {
+  it('rejects unsupported file formats by mime or extension', async () => {
     const pdfFile = {
-      buffer: Buffer.from('fake-pdf-content'),
+      buffer: Buffer.from('fake-pdf-content-longer-than-twelve-bytes'),
       size: 100,
       mimetype: 'application/pdf',
       originalname: 'document.pdf',
@@ -88,7 +101,61 @@ describe('DogPhotoService', () => {
     );
   });
 
-  it('processes and saves a valid JPEG image as 500x500 WebP', async () => {
+  it('rejects files with allowed extension but invalid magic bytes (fake jpg)', async () => {
+    const fakeJpg = {
+      buffer: Buffer.from(
+        'this is just plain text content masquerading as a jpeg',
+      ),
+      size: 50,
+      mimetype: 'image/jpeg',
+      originalname: 'malicious.jpg',
+    } as Express.Multer.File;
+
+    await expect(service.processAndSavePhoto('dog-1', fakeJpg)).rejects.toThrow(
+      'Nepodporovaný formát souboru. Povolené formáty jsou JPG, PNG a HEIC/HEIF.',
+    );
+  });
+
+  it('rejects files where detected format contradicts file extension/mime', async () => {
+    const pngBuffer = await sharp({
+      create: {
+        width: 10,
+        height: 10,
+        channels: 4,
+        background: { r: 0, g: 0, b: 255, alpha: 1 },
+      },
+    })
+      .png()
+      .toBuffer();
+
+    const mismatchedFile = {
+      buffer: pngBuffer,
+      size: pngBuffer.length,
+      mimetype: 'image/jpeg',
+      originalname: 'photo.jpg',
+    } as Express.Multer.File;
+
+    await expect(
+      service.processAndSavePhoto('dog-1', mismatchedFile),
+    ).rejects.toThrow('Obsah souboru neodpovídá deklarovanému typu obrázku.');
+  });
+
+  it('rejects HEIC file exceeding maximum pixel dimensions', async () => {
+    // 10000 x 10000 = 100 MP > 50 MP limit
+    const hugeHeic = createHeicBuffer(10000, 10000);
+    const file = {
+      buffer: hugeHeic,
+      size: hugeHeic.length,
+      mimetype: 'image/heic',
+      originalname: 'huge.heic',
+    } as Express.Multer.File;
+
+    await expect(service.processAndSavePhoto('dog-1', file)).rejects.toThrow(
+      'Rozměry obrázku překračují maximální povolený limit.',
+    );
+  });
+
+  it('processes and saves a valid JPEG image as 500x500 WebP with an unguessable UUID filename', async () => {
     const inputBuffer = await sharp({
       create: {
         width: 100,
@@ -109,7 +176,11 @@ describe('DogPhotoService', () => {
 
     const photoUrl = await service.processAndSavePhoto('dog-1', file);
 
-    expect(photoUrl).toMatch(/^\/uploads\/dogs\/dog-1-\d+\.webp$/);
+    // Should use an unguessable UUID and not expose the dogId in filename
+    expect(photoUrl).toMatch(
+      /^\/uploads\/dogs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/,
+    );
+    expect(photoUrl).not.toContain('dog-1');
 
     const filename = path.basename(photoUrl);
     const diskPath = path.join(getDogUploadsDir(), filename);
@@ -123,17 +194,20 @@ describe('DogPhotoService', () => {
     expect(metadata.height).toBe(500);
   });
 
-  it('processes and converts a HEIC file', async () => {
+  it('processes and converts a valid HEIC file with UUID filename', async () => {
+    const heicBuffer = createHeicBuffer(200, 200);
     const file = {
-      buffer: Buffer.from('mock-heic-data'),
-      size: 50,
+      buffer: heicBuffer,
+      size: heicBuffer.length,
       mimetype: 'image/heic',
       originalname: 'photo.heic',
     } as Express.Multer.File;
 
     const photoUrl = await service.processAndSavePhoto('dog-2', file);
 
-    expect(photoUrl).toMatch(/^\/uploads\/dogs\/dog-2-\d+\.webp$/);
+    expect(photoUrl).toMatch(
+      /^\/uploads\/dogs\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/,
+    );
 
     const filename = path.basename(photoUrl);
     const diskPath = path.join(getDogUploadsDir(), filename);
@@ -158,6 +232,27 @@ describe('DogPhotoService', () => {
     await service.deletePhotoFile('/uploads/dogs/test-to-delete.webp');
 
     expect(fs.existsSync(testFile)).toBe(false);
+  });
+
+  it('deletes multiple photo files via deleteDogPhotos', async () => {
+    const dogsDir = getDogUploadsDir();
+    await fs.promises.mkdir(dogsDir, { recursive: true });
+    const testFile1 = path.join(dogsDir, 'batch-del-1.webp');
+    const testFile2 = path.join(dogsDir, 'batch-del-2.webp');
+    await fs.promises.writeFile(testFile1, 'dummy1');
+    await fs.promises.writeFile(testFile2, 'dummy2');
+
+    expect(fs.existsSync(testFile1)).toBe(true);
+    expect(fs.existsSync(testFile2)).toBe(true);
+
+    await service.deleteDogPhotos([
+      '/uploads/dogs/batch-del-1.webp',
+      null,
+      '/uploads/dogs/batch-del-2.webp',
+    ]);
+
+    expect(fs.existsSync(testFile1)).toBe(false);
+    expect(fs.existsSync(testFile2)).toBe(false);
   });
 
   it('safely handles deletePhotoFile with null, undefined, or missing file', async () => {

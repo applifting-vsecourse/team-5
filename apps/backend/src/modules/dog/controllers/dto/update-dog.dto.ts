@@ -1,3 +1,4 @@
+import { sanitizeDisciplines } from '@/modules/dog/services/dogs.service';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
@@ -52,21 +53,7 @@ export class UpdateDogDto {
   })
   @IsOptional()
   @IsArray()
-  @Transform(({ value }) => {
-    if (!Array.isArray(value)) return value;
-    const seen = new Set<string>();
-    const result: string[] = [];
-    for (const item of value) {
-      if (typeof item === 'string') {
-        const trimmed = item.trim();
-        if (trimmed.length > 0 && !seen.has(trimmed)) {
-          seen.add(trimmed);
-          result.push(trimmed);
-        }
-      }
-    }
-    return result;
-  })
+  @Transform(({ value }) => sanitizeDisciplines(value))
   @IsString({ each: true })
   @MaxLength(40, {
     each: true,

@@ -91,6 +91,32 @@ describe('DogsService', () => {
     });
   });
 
+  it('creates a dog with case-insensitively deduplicated disciplines', async () => {
+    const created = aDog({
+      id: 'd2',
+      name: 'Alík',
+      disciplines: ['Canicross'],
+    });
+    const repository = mock<DogRepository>();
+    const photoService = mock<DogPhotoService>();
+    repository.createDog.mockResolvedValue(created);
+
+    const service = new DogsService(repository, photoService);
+    const user = { id: 'u1' } as Identity;
+
+    await service.createDog(user, {
+      name: 'Alík',
+      color: 2,
+      disciplines: ['Canicross', 'canicross', '  CANICROSS  '],
+    });
+
+    expect(repository.createDog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        disciplines: ['Canicross'],
+      }),
+    );
+  });
+
   it('creates a dog without a breed if not provided', async () => {
     const created = aDog({ id: 'd3', name: 'Baryk', breed: null, color: 3 });
     const repository = mock<DogRepository>();
@@ -225,6 +251,36 @@ describe('DogsService', () => {
         NotFoundException,
       );
     });
+
+    it('cleans up newly saved photo file when DB update fails', async () => {
+      const existingDog = aDog({
+        id: 'd1',
+        ownerId: 'u1',
+        photoUrl: '/uploads/dogs/old.webp',
+      });
+      const repository = mock<DogRepository>();
+      const photoService = mock<DogPhotoService>();
+
+      repository.getDogById.mockResolvedValue(existingDog);
+      photoService.processAndSavePhoto.mockResolvedValue(
+        '/uploads/dogs/new.webp',
+      );
+      repository.updatePhoto.mockRejectedValue(new Error('DB failure'));
+
+      const service = new DogsService(repository, photoService);
+      const user = { id: 'u1' } as Identity;
+      const file = { buffer: Buffer.from('img') } as Express.Multer.File;
+
+      await expect(service.uploadPhoto(user, 'd1', file)).rejects.toThrow(
+        'DB failure',
+      );
+      expect(photoService.deletePhotoFile).toHaveBeenCalledWith(
+        '/uploads/dogs/new.webp',
+      );
+      expect(photoService.deletePhotoFile).not.toHaveBeenCalledWith(
+        '/uploads/dogs/old.webp',
+      );
+    });
   });
 
   describe('deletePhoto', () => {
@@ -268,6 +324,45 @@ describe('DogsService', () => {
       const user = { id: 'u1' } as Identity;
 
       await expect(service.deletePhoto(user, 'd99')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('deleteDog', () => {
+    it('deletes photo file and removes dog from repository', async () => {
+      const existingDog = aDog({
+        id: 'd1',
+        ownerId: 'u1',
+        photoUrl: '/uploads/dogs/d1-photo.webp',
+      });
+      const repository = mock<DogRepository>();
+      const photoService = mock<DogPhotoService>();
+
+      repository.getDogById.mockResolvedValue(existingDog);
+      repository.deleteDog.mockResolvedValue(existingDog);
+
+      const service = new DogsService(repository, photoService);
+      const user = { id: 'u1' } as Identity;
+
+      const result = await service.deleteDog(user, 'd1');
+
+      expect(result).toEqual(existingDog);
+      expect(photoService.deletePhotoFile).toHaveBeenCalledWith(
+        '/uploads/dogs/d1-photo.webp',
+      );
+      expect(repository.deleteDog).toHaveBeenCalledWith('d1', 'u1');
+    });
+
+    it('throws NotFoundException when dog to delete is not found', async () => {
+      const repository = mock<DogRepository>();
+      const photoService = mock<DogPhotoService>();
+      repository.getDogById.mockResolvedValue(null);
+
+      const service = new DogsService(repository, photoService);
+      const user = { id: 'u1' } as Identity;
+
+      await expect(service.deleteDog(user, 'd99')).rejects.toThrow(
         NotFoundException,
       );
     });

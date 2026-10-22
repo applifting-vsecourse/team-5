@@ -3,9 +3,10 @@ import * as path from 'path';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { toNodeHandler } from 'better-auth/node';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import * as express from 'express';
 import { AppModule } from './app.module';
+import { getUploadsDir } from './modules/dog/services/dog-photo.service';
 import { BetterAuth } from './shared/auth/providers/better-auth.provider';
 import { Config } from './shared/config/config.service';
 
@@ -36,9 +37,7 @@ async function main(): Promise<void> {
   appInstance.use(express.json());
 
   // Static files for uploads (dog photos, etc.)
-  const uploadsDir = fs.existsSync(path.join(process.cwd(), 'apps/backend'))
-    ? path.join(process.cwd(), 'apps/backend', 'uploads')
-    : path.join(process.cwd(), 'uploads');
+  const uploadsDir = getUploadsDir();
   fs.mkdirSync(path.join(uploadsDir, 'dogs'), { recursive: true });
   app.use('/uploads', express.static(uploadsDir));
   app.use('/api/uploads', express.static(uploadsDir));

@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "0.1.0",
-  "description": "Quacker backend — NestJS + Prisma + Postgres teaching template",
+  "description": "Quacker backend \u2014 NestJS + Prisma + Postgres teaching template",
   "private": true,
   "license": "MIT",
   "engines": {

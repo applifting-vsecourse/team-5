@@ -224,7 +224,6 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
             ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/png,image/heic,.jpg,.jpeg,.png,.heic"
-            capture="environment"
             className="sr-only"
             onChange={handlePhotoChange}
             disabled={isPending}
