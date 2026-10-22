@@ -15,21 +15,58 @@ export const seedDatabase = async (
   const existingUsers = await prisma.user.count();
   if (existingUsers > 0) {
     console.log(
-      `Database already has ${existingUsers} user(s) — ensuring dog seed data.`,
+      `Database already has ${existingUsers} user(s) — ensuring trainer, clients, and dog seed data.`,
     );
-    const existingDuck = await prisma.user.findFirst({
-      where: { email: 'caffeinatedduck@example.com' },
+    let existingTrainer = await prisma.user.findFirst({
+      where: {
+        email: {
+          in: ['trener@trainloop.cz', 'caffeinatedduck@example.com'],
+        },
+      },
     });
-    if (existingDuck) {
-      if (existingDuck.role !== 'trainer') {
-        await prisma.user.update({
-          where: { id: existingDuck.id },
-          data: { role: 'trainer' },
-        });
-      }
-      await seedDogData(prisma, existingDuck.id);
-      await seedClientData(prisma, auth, existingDuck.id);
+
+    if (!existingTrainer) {
+      existingTrainer = await prisma.user.findFirst({
+        where: { role: 'trainer' },
+      });
     }
+
+    if (!existingTrainer) {
+      console.log('No trainer user found, creating trener@trainloop.cz');
+      existingTrainer = await createUser(prisma, auth, {
+        email: 'trener@trainloop.cz',
+        password: 'password1',
+        name: 'Marek Trenér',
+        username: 'trener',
+        role: 'trainer',
+      });
+    } else if (existingTrainer.role !== 'trainer') {
+      await prisma.user.update({
+        where: { id: existingTrainer.id },
+        data: { role: 'trainer' },
+      });
+    }
+
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email: {
+          in: ['eva.novotna@email.cz', 'deepduckthoughts@example.com'],
+        },
+      },
+    });
+
+    if (!existingUser) {
+      console.log('Creating standard user eva.novotna@email.cz');
+      await createUser(prisma, auth, {
+        email: 'eva.novotna@email.cz',
+        password: 'password2',
+        name: 'Eva Novotná',
+        username: 'evanow',
+      });
+    }
+
+    await seedDogData(prisma, existingTrainer.id);
+    await seedClientData(prisma, auth, existingTrainer.id);
     return;
   }
 
@@ -55,23 +92,23 @@ export const seedDatabase = async (
 
   console.log('Creating example users');
 
-  const caffeinatedDuck = await createUser(prisma, auth, {
-    email: 'caffeinatedduck@example.com',
+  const trainer = await createUser(prisma, auth, {
+    email: 'trener@trainloop.cz',
     password: 'password1',
-    name: 'Caffeinated Duck',
-    username: 'CaffeinatedDuck',
+    name: 'Marek Trenér',
+    username: 'trener',
     role: 'trainer',
   });
 
   await createUser(prisma, auth, {
-    email: 'deepduckthoughts@example.com',
+    email: 'eva.novotna@email.cz',
     password: 'password2',
-    name: 'Deep Duck Thoughts',
-    username: 'DeepDuckThoughts',
+    name: 'Eva Novotná',
+    username: 'evanow',
   });
 
-  await seedDogData(prisma, caffeinatedDuck.id);
-  await seedClientData(prisma, auth, caffeinatedDuck.id);
+  await seedDogData(prisma, trainer.id);
+  await seedClientData(prisma, auth, trainer.id);
 };
 
 export const seedDogData = async (
