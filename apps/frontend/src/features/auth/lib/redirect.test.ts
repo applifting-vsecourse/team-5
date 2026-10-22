@@ -23,7 +23,6 @@ describe("login return destinations", () => {
     expect(decodeRedirectUri(encodeURIComponent("/dogs?view=all#notes"))).toBe(
       "/dogs?view=all#notes",
     )
-    expect(decodeRedirectUri(encodeURIComponent("/invite?code=K7M2PQ"))).toBe("/invite?code=K7M2PQ")
     expect(decodeRedirectUri(encodeURIComponent("/invite?code=K7M2PQ"))).toBe(
       "/invite?code=K7M2PQ",
     )
