@@ -1,3 +1,4 @@
+import { Dog } from '@/modules/dog/domain/dog';
 import { Goal } from '@/modules/dog/domain/goal';
 import {
   ScheduledTraining,
@@ -71,7 +72,11 @@ const setup = (): {
   );
   dogAccessService.getAccessibleDog.mockImplementation((user, dogId) =>
     user.id === 'u1' && dogId === 'd1'
-      ? Promise.resolve({ id: 'd1', name: 'Rex', ownerId: 'u1' } as any)
+      ? Promise.resolve({
+          id: 'd1',
+          name: 'Rex',
+          ownerId: 'u1',
+        } as unknown as Dog)
       : Promise.reject(new NotFoundException()),
   );
   const service = new TrainingsService(
