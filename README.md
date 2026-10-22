@@ -33,14 +33,14 @@ The ports are deliberately odd — 3050, 4050, and Postgres on 5433 rather than 
 
 ### Seeded users
 
-| Email                      | Password        | Role / Note                          |
-| -------------------------- | --------------- | ------------------------------------ |
-| `trener@trainloop.cz`      | `password1`     | Trenér (Marek Trenér)                |
-| `jan.novak@seznam.cz`      | `password1`     | Klient (Jan Novák, psi Rex & Baryk)  |
-| `petra.svobodova@email.cz` | `password1`     | Klientka (Petra Svobodová, pes Alík) |
-| `tomas.dvorak@gmail.com`   | `password1`     | Klient (Tomáš Dvořák, pes Lucky)     |
-| `eva.novotna@email.cz`     | `password2`     | Psovod (Eva Novotná)                 |
-| `admin@example.com`        | `adminpassword` | Administrátor                        |
+| Email                      | Password        | Role / Note                             |
+| -------------------------- | --------------- | --------------------------------------- |
+| `trener@trainloop.cz`      | `password1`     | Trenér (Marek Trenér, vlastní pes Argo) |
+| `jan.novak@seznam.cz`      | `password1`     | Klient (Jan Novák, psi Rex & Baryk)     |
+| `petra.svobodova@email.cz` | `password1`     | Klientka (Petra Svobodová, pes Alík)    |
+| `tomas.dvorak@gmail.com`   | `password1`     | Klient (Tomáš Dvořák, pes Lucky)        |
+| `eva.novotna@email.cz`     | `password2`     | Psovod (Eva Novotná)                    |
+| `admin@example.com`        | `adminpassword` | Administrátor                           |
 
 Verification/reset emails are printed to the backend terminal (console mailer) unless you configure Resend or SMTP in `apps/backend/.env`.
 
