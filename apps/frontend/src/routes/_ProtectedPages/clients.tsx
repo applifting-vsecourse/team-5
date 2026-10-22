@@ -1,25 +1,18 @@
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 
 import { ROUTES } from "@/app/routes"
-import { Seo } from "@/components/Seo"
 
 import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
+
+// Clients are a trainer area (the API enforces the same roles). Owners and
+// anonymous visitors cannot open any /clients page by URL.
+const CLIENT_ROLES = ["trainer", "admin"]
 
 export const Route = createFileRoute("/_ProtectedPages/clients")({
   beforeLoad: async ({ context }) => {
     const session = await context.queryClient.ensureQueryData(authSessionQueryOptions())
     if (!session) throw redirect({ to: ROUTES.login })
-    if (session.user.role !== "trainer") throw redirect({ to: ROUTES.dogs })
+    if (!CLIENT_ROLES.includes(session.user.role ?? "")) throw redirect({ to: ROUTES.dogs })
   },
-  component: ClientsPage,
+  component: Outlet,
 })
-
-function ClientsPage() {
-  return (
-    <section className="mx-auto w-full max-w-2xl px-4 py-8">
-      <Seo title="Klienti" />
-      <h1 className="text-2xl font-semibold tracking-tight">Klienti</h1>
-      <p className="mt-4 text-muted-foreground">Pozvěte prvního klienta</p>
-    </section>
-  )
-}
