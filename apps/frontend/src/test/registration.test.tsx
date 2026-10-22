@@ -285,7 +285,7 @@ describe("trainer registration", () => {
       return Promise.resolve({ data: { user: trainer }, error: null })
     })
     await interaction.click(screen.getByRole("button", { name: "Zaregistrovat se" }))
-    expect(await screen.findByRole("heading", { name: "Klienti" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Vaši klienti" })).toBeInTheDocument()
     expect(screen.getByText("Pozvěte prvního klienta")).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/clients")
     expect(queryClient.getQueryData(authKeys.session())).toMatchObject({ user: trainer })

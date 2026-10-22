@@ -12,7 +12,7 @@ export class DogsService {
   }
 
   async getDogById(user: Identity, id: string): Promise<Dog> {
-    const dog = await this.dogRepository.getDogById(id, user.id);
+    const dog = await this.dogRepository.getDogByIdWithAccess(id, user.id);
     if (!dog) {
       throw new NotFoundException(`Dog with ID ${id} not found`);
     }

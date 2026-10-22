@@ -45,7 +45,7 @@ function Layout() {
     }
     previousIdentity.current = identity
   }, [identity, router])
-  const isTrainer = user?.role === "trainer"
+  const isTrainer = user?.role === "trainer" || user?.role === "admin"
   if (!user) return null
   return (
     <div

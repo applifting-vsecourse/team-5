@@ -262,7 +262,7 @@ describe("login and logout", () => {
 
   it.each([
     ["user", "Týden", "/week"],
-    ["trainer", "Klienti", "/clients"],
+    ["trainer", "Vaši klienti", "/clients"],
   ])(
     "logs in a %s with a persistent session and the correct destination",
     async (role, heading, path) => {
@@ -322,7 +322,7 @@ describe("login and logout", () => {
   it("redirects an already signed-in trainer from login to Clients", async () => {
     auth.getSession.mockResolvedValue({ data: { user: { ...user, role: "trainer" } }, error: null })
     const { router } = await openPage()
-    expect(await screen.findByRole("heading", { name: "Klienti" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Vaši klienti" })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/clients")
   })
 
