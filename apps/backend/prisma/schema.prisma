@@ -18,6 +18,7 @@ datasource db {
 enum UserRole {
   user
   admin
+  trainer
 
   @@map("user_role")
 }
@@ -84,6 +85,10 @@ model User {
   createdGoals       TrainingGoal[]      @relation("GoalCreator")
   workoutLogs        WorkoutLog[]        @relation("LogAuthor")
   scheduledTrainings ScheduledTraining[] @relation("TrainingScheduler")
+  trainerConnections ClientConnection[]  @relation("TrainerClients")
+  clientConnections  ClientConnection[]  @relation("ClientTrainers")
+  sharedDogs         DogShare[]          @relation("TrainerSharedDogs")
+  invitations        Invitation[]        @relation("TrainerInvitations")
   role               UserRole            @default(user)
 
   username        String? @db.VarChar(50)
@@ -106,6 +111,7 @@ model Dog {
   goals       TrainingGoal[]
   workoutLogs WorkoutLog[]
   trainings   ScheduledTraining[]
+  shares      DogShare[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @default(now()) @updatedAt
 
@@ -239,4 +245,45 @@ model WorkoutLog {
 
   @@index([dogId, completedAt(sort: Desc)])
   @@map("workout_log")
+}
+
+model ClientConnection {
+  id        String   @id @default(cuid())
+  trainerId String
+  trainer   User     @relation("TrainerClients", fields: [trainerId], references: [id], onDelete: Cascade)
+  clientId  String
+  client    User     @relation("ClientTrainers", fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([trainerId, clientId])
+  @@index([trainerId])
+  @@index([clientId])
+  @@map("client_connection")
+}
+
+model DogShare {
+  id        String   @id @default(cuid())
+  dogId     String
+  dog       Dog      @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  trainerId String
+  trainer   User     @relation("TrainerSharedDogs", fields: [trainerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([dogId, trainerId])
+  @@index([trainerId])
+  @@index([dogId])
+  @@map("dog_share")
+}
+
+model Invitation {
+  id        String    @id @default(cuid())
+  code      String    @unique @db.VarChar(6)
+  trainerId String
+  trainer   User      @relation("TrainerInvitations", fields: [trainerId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([trainerId])
+  @@map("invitation")
 }

@@ -77,21 +77,21 @@ describe('DogsService', () => {
     });
   });
 
-  it('returns a dog by ID when it belongs to user', async () => {
+  it('returns a dog by ID when it belongs to user or is shared with user', async () => {
     const dog = aDog({ id: 'd1' });
     const repository = mock<DogRepository>();
-    repository.getDogById.mockResolvedValue(dog);
+    repository.getDogByIdWithAccess.mockResolvedValue(dog);
 
     const service = new DogsService(repository);
     const user = { id: 'u1' } as Identity;
 
     await expect(service.getDogById(user, 'd1')).resolves.toEqual(dog);
-    expect(repository.getDogById).toHaveBeenCalledWith('d1', 'u1');
+    expect(repository.getDogByIdWithAccess).toHaveBeenCalledWith('d1', 'u1');
   });
 
-  it('throws NotFoundException when dog by ID is not found', async () => {
+  it('throws NotFoundException when dog by ID is not found or not accessible', async () => {
     const repository = mock<DogRepository>();
-    repository.getDogById.mockResolvedValue(null);
+    repository.getDogByIdWithAccess.mockResolvedValue(null);
 
     const service = new DogsService(repository);
     const user = { id: 'u1' } as Identity;

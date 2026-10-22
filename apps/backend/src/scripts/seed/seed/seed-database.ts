@@ -21,7 +21,14 @@ export const seedDatabase = async (
       where: { email: 'caffeinatedduck@example.com' },
     });
     if (existingDuck) {
+      if (existingDuck.role !== 'trainer') {
+        await prisma.user.update({
+          where: { id: existingDuck.id },
+          data: { role: 'trainer' },
+        });
+      }
       await seedDogData(prisma, existingDuck.id);
+      await seedClientData(prisma, auth, existingDuck.id);
     }
     return;
   }
@@ -53,6 +60,7 @@ export const seedDatabase = async (
     password: 'password1',
     name: 'Caffeinated Duck',
     username: 'CaffeinatedDuck',
+    role: 'trainer',
   });
 
   await createUser(prisma, auth, {
@@ -63,6 +71,7 @@ export const seedDatabase = async (
   });
 
   await seedDogData(prisma, caffeinatedDuck.id);
+  await seedClientData(prisma, auth, caffeinatedDuck.id);
 };
 
 export const seedDogData = async (
@@ -203,4 +212,161 @@ export const seedDogData = async (
       ],
     });
   }
+};
+
+export const seedClientData = async (
+  prisma: PrismaService,
+  auth: BetterAuth,
+  trainerId: string,
+): Promise<void> => {
+  console.log('Seeding clients for trainer', trainerId);
+
+  // 1. Client Jan Novák
+  let jan = await prisma.user.findFirst({
+    where: { email: 'jan.novak@seznam.cz' },
+  });
+  if (!jan) {
+    jan = await createUser(prisma, auth, {
+      email: 'jan.novak@seznam.cz',
+      password: 'password1',
+      name: 'Jan Novák',
+      username: 'jannovak',
+    });
+  }
+
+  // 2. Client Petra Svobodová
+  let petra = await prisma.user.findFirst({
+    where: { email: 'petra.svobodova@email.cz' },
+  });
+  if (!petra) {
+    petra = await createUser(prisma, auth, {
+      email: 'petra.svobodova@email.cz',
+      password: 'password1',
+      name: 'Petra Svobodová',
+      username: 'petrasvobodova',
+    });
+  }
+
+  // 3. Client Tomáš Dvořák
+  let tomas = await prisma.user.findFirst({
+    where: { email: 'tomas.dvorak@gmail.com' },
+  });
+  if (!tomas) {
+    tomas = await createUser(prisma, auth, {
+      email: 'tomas.dvorak@gmail.com',
+      password: 'password1',
+      name: 'Tomáš Dvořák',
+      username: 'tomasdvorak',
+    });
+  }
+
+  // Connect clients to trainer
+  for (const client of [jan, petra, tomas]) {
+    await prisma.clientConnection.upsert({
+      where: {
+        trainerId_clientId: {
+          trainerId,
+          clientId: client.id,
+        },
+      },
+      update: {},
+      create: {
+        trainerId,
+        clientId: client.id,
+      },
+    });
+  }
+
+  // Dogs for Jan: Rex and Baryk
+  const rex = await prisma.dog.upsert({
+    where: { id: 'dog-rex-1' },
+    update: {
+      ownerId: jan.id,
+    },
+    create: {
+      id: 'dog-rex-1',
+      name: 'Rex',
+      breed: 'Border kolie',
+      color: 1,
+      ownerId: jan.id,
+      disciplines: ['Poslušnost', 'Canicross'],
+    },
+  });
+
+  const baryk = await prisma.dog.upsert({
+    where: { id: 'dog-baryk-1' },
+    update: {
+      ownerId: jan.id,
+    },
+    create: {
+      id: 'dog-baryk-1',
+      name: 'Baryk',
+      breed: 'Německý ovčák',
+      color: 3,
+      ownerId: jan.id,
+      disciplines: ['Poslušnost', 'Agility'],
+    },
+  });
+
+  // Dog for Petra: Alík
+  const alik = await prisma.dog.upsert({
+    where: { id: 'dog-alik-1' },
+    update: {
+      ownerId: petra.id,
+    },
+    create: {
+      id: 'dog-alik-1',
+      name: 'Alík',
+      breed: 'Kříženec',
+      color: 2,
+      ownerId: petra.id,
+      disciplines: ['Nosework'],
+    },
+  });
+
+  // Dog for Tomáš: Lucky
+  const lucky = await prisma.dog.upsert({
+    where: { id: 'dog-lucky-1' },
+    update: {
+      ownerId: tomas.id,
+    },
+    create: {
+      id: 'dog-lucky-1',
+      name: 'Lucky',
+      breed: 'Ohař',
+      color: 4,
+      ownerId: tomas.id,
+      disciplines: ['Canicross'],
+    },
+  });
+
+  // Share dogs with trainer
+  for (const dog of [rex, baryk, alik, lucky]) {
+    await prisma.dogShare.upsert({
+      where: {
+        dogId_trainerId: {
+          dogId: dog.id,
+          trainerId,
+        },
+      },
+      update: {},
+      create: {
+        dogId: dog.id,
+        trainerId,
+      },
+    });
+  }
+
+  // Unused invitation
+  const inviteCode = 'K7M2PQ';
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  await prisma.invitation.upsert({
+    where: { code: inviteCode },
+    update: { expiresAt },
+    create: {
+      code: inviteCode,
+      trainerId,
+      expiresAt,
+    },
+  });
 };
