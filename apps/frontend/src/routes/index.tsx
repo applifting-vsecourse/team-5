@@ -1,64 +1,197 @@
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { useState } from "react"
+import { createFileRoute, isRedirect, Link, redirect, useNavigate } from "@tanstack/react-router"
+import { Check, PawPrint, Users } from "lucide-react"
 
 import { ROUTES } from "@/app/routes"
 import { Header } from "@/components/Header/Header"
 import { Seo } from "@/components/Seo"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
-import { HeaderMenu } from "@/features/auth/components/HeaderMenu"
-import { useSession } from "@/features/auth/hooks/useSession"
+import { authSessionQueryOptions, type Session } from "@/features/auth/api/authSessionQueryOptions"
+
+const TRAINER_BENEFITS = [
+  "Zadání mezi lekcemi máte písemně u psa klienta",
+  "Klienta připojíte kódem, který mu dáte na lekci",
+  "Vidíte jen své klienty a jejich psy",
+] as const
+
+const HANDLER_BENEFITS = [
+  "V týdnu vidíte, co máte kdy cvičit",
+  "Trénink projdete cvik po cviku s kritériem",
+  "Po tréninku zapíšete, jak to šlo, trenér to uvidí",
+] as const
+
+export function getLandingRedirect(session: Session): string | null {
+  if (!session?.user) return null
+  return session.user.role === "trainer" ? ROUTES.clients : ROUTES.week
+}
 
 export const Route = createFileRoute("/")({
+  beforeLoad: async ({ context }) => {
+    try {
+      const session = await context.queryClient.ensureQueryData(authSessionQueryOptions())
+      const redirectTarget = getLandingRedirect(session)
+      if (redirectTarget) {
+        throw redirect({ to: redirectTarget })
+      }
+    } catch (error) {
+      if (isRedirect(error)) {
+        throw error
+      }
+      // Při síťové chybě nezobrazovat error boundary na veřejné úvodní stránce
+    }
+  },
   component: LandingPage,
 })
 
-function LandingPage() {
-  const { user } = useSession()
+export function LandingPage() {
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
+  const [inviteCode, setInviteCode] = useState("")
+  const navigate = useNavigate()
+
+  const handleInviteSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const trimmedCode = inviteCode.trim()
+    if (!trimmedCode) return
+    setIsInviteDialogOpen(false)
+    void navigate({
+      to: ROUTES.signup,
+      search: { code: trimmedCode },
+    })
+  }
 
   return (
-    <>
+    <div className="flex min-h-svh flex-col bg-background">
       <Seo title="TrainLoop" />
-      <Header userMenu={<HeaderMenu />} />
-      <main className="min-h-svh">
-        <section className="mx-auto w-full max-w-2xl px-4 pt-16 pb-12 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-balance sm:text-5xl">TrainLoop</h1>
-          <p className="mx-auto mt-4 max-w-md text-lg text-pretty text-muted-foreground">
-            Platforma pro trenéry a psovody.
-          </p>
+      <Header nav={null} />
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            {user ? (
-              <div className="flex flex-col items-center gap-3">
-                <p className="text-sm text-muted-foreground">
-                  Přihlášen jako <span className="font-medium text-foreground">{user.name}</span>
-                </p>
-                <Button
-                  asChild
-                  size="lg"
+      <main className="flex-1">
+        <div className="mx-auto flex w-full max-w-md flex-col gap-8 px-4 py-6 sm:max-w-xl sm:py-10">
+          {/* Úvod */}
+          <section className="flex flex-col gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              Zadání z lekce, které klient nezapomene
+            </h1>
+            <p className="text-base leading-normal text-muted-foreground">
+              Trenér zapíše cíl a cviky s instrukcí a kritériem. Psovod je má v telefonu u psa,
+              odcvičí je a zapíše, jak to šlo.
+            </p>
+          </section>
+
+          {/* Akce */}
+          <section className="flex flex-col gap-2">
+            <Button
+              asChild
+              className="min-h-11 w-full"
+            >
+              <Link to={ROUTES.signup}>Zaregistrovat se</Link>
+            </Button>
+            <Button
+              variant="outline"
+              className="min-h-11 w-full"
+              onClick={() => setIsInviteDialogOpen(true)}
+            >
+              Mám kód od trenéra
+            </Button>
+            <Button
+              asChild
+              variant="ghost"
+              className="min-h-11 w-full"
+            >
+              <Link to={ROUTES.login}>Přihlásit se</Link>
+            </Button>
+          </section>
+
+          {/* Pro trenéra */}
+          <section className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <Users className="size-6 text-foreground" />
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">Pro trenéra</h2>
+            </div>
+            <ul className="flex flex-col gap-3">
+              {TRAINER_BENEFITS.map((text) => (
+                <li
+                  key={text}
+                  className="flex items-start gap-2.5"
                 >
-                  <Link to={ROUTES.dashboard}>Přejít do aplikace</Link>
-                </Button>
-              </div>
-            ) : (
-              <>
-                <Button
-                  asChild
-                  size="lg"
+                  <Check className="mt-0.5 size-5 shrink-0 text-foreground" />
+                  <span className="text-base leading-normal text-foreground">{text}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Pro psovoda */}
+          <section className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <PawPrint className="size-6 text-foreground" />
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">Pro psovoda</h2>
+            </div>
+            <ul className="flex flex-col gap-3">
+              {HANDLER_BENEFITS.map((text) => (
+                <li
+                  key={text}
+                  className="flex items-start gap-2.5"
                 >
-                  <Link to={ROUTES.signup}>Vytvořit účet</Link>
-                </Button>
-                <Button
-                  asChild
-                  size="lg"
-                  variant="outline"
-                >
-                  <Link to={ROUTES.login}>Přihlásit se</Link>
-                </Button>
-              </>
-            )}
-          </div>
-        </section>
+                  <Check className="mt-0.5 size-5 shrink-0 text-foreground" />
+                  <span className="text-base leading-normal text-foreground">{text}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
       </main>
-    </>
+
+      <Dialog
+        open={isInviteDialogOpen}
+        onOpenChange={setIsInviteDialogOpen}
+      >
+        <DialogContent className="sm:max-w-md">
+          <form
+            onSubmit={handleInviteSubmit}
+            className="space-y-4"
+          >
+            <DialogHeader>
+              <DialogTitle>Mám kód od trenéra</DialogTitle>
+              <DialogDescription>
+                Zadejte kód pozvánky, který jste obdrželi od trenéra na lekci.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-2">
+              <Label htmlFor="invite-code">Kód pozvánky</Label>
+              <Input
+                id="invite-code"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                placeholder="např. KOD123"
+                required
+              />
+            </div>
+
+            <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsInviteDialogOpen(false)}
+              >
+                Zrušit
+              </Button>
+              <Button type="submit">Pokračovat k registraci</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }

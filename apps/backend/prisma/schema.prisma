@@ -72,23 +72,24 @@ model Verification {
 }
 
 model User {
-  id                 String             @id
+  id                 String              @id
   name               String
   email              String
   emailVerified      Boolean
-  image              String?            @db.Text
+  image              String?             @db.Text
   createdAt          DateTime
   updatedAt          DateTime
   sessions           Session[]
   accounts           Account[]
   dogs               Dog[]
-  createdGoals       TrainingGoal[]     @relation("GoalCreator")
-  workoutLogs        WorkoutLog[]       @relation("LogAuthor")
-  trainerConnections ClientConnection[] @relation("TrainerClients")
-  clientConnections  ClientConnection[] @relation("ClientTrainers")
-  sharedDogs         DogShare[]         @relation("TrainerSharedDogs")
-  invitations        Invitation[]       @relation("TrainerInvitations")
-  role               UserRole           @default(user)
+  createdGoals       TrainingGoal[]      @relation("GoalCreator")
+  workoutLogs        WorkoutLog[]        @relation("LogAuthor")
+  scheduledTrainings ScheduledTraining[] @relation("TrainingScheduler")
+  trainerConnections ClientConnection[]  @relation("TrainerClients")
+  clientConnections  ClientConnection[]  @relation("ClientTrainers")
+  sharedDogs         DogShare[]          @relation("TrainerSharedDogs")
+  invitations        Invitation[]        @relation("TrainerInvitations")
+  role               UserRole            @default(user)
 
   username        String? @db.VarChar(50)
   displayUsername String? @db.VarChar(50)
@@ -99,19 +100,20 @@ model User {
 }
 
 model Dog {
-  id          String         @id @default(cuid())
-  name        String         @db.VarChar(40)
-  breed       String?        @db.VarChar(100)
+  id          String              @id @default(cuid())
+  name        String              @db.VarChar(40)
+  breed       String?             @db.VarChar(100)
   color       Int
   ownerId     String
-  owner       User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  isArchived  Boolean        @default(false)
-  disciplines String[]       @default([])
+  owner       User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  isArchived  Boolean             @default(false)
+  disciplines String[]            @default([])
   goals       TrainingGoal[]
   workoutLogs WorkoutLog[]
+  trainings   ScheduledTraining[]
   shares      DogShare[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @default(now()) @updatedAt
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @default(now()) @updatedAt
 
   @@index([ownerId])
   @@map("dog")
@@ -150,23 +152,73 @@ enum MistakeLevel {
 }
 
 model TrainingGoal {
-  id          String       @id @default(cuid())
+  id          String              @id @default(cuid())
   dogId       String
-  dog         Dog          @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  dog         Dog                 @relation(fields: [dogId], references: [id], onDelete: Cascade)
   createdById String
-  createdBy   User         @relation("GoalCreator", fields: [createdById], references: [id], onDelete: Cascade)
-  title       String       @db.VarChar(100)
-  discipline  String?      @db.VarChar(60)
-  principle   String?      @db.Text
-  status      GoalStatus   @default(ACTIVE)
-  order       Int          @default(0)
+  createdBy   User                @relation("GoalCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  title       String              @db.VarChar(100)
+  discipline  String?             @db.VarChar(60)
+  principle   String?             @db.Text
+  status      GoalStatus          @default(ACTIVE)
+  order       Int                 @default(0)
   workoutLogs WorkoutLog[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @default(now()) @updatedAt
+  blocks      PlanBlock[]
+  trainings   ScheduledTraining[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @default(now()) @updatedAt
 
   @@index([dogId, status])
   @@index([dogId, order])
   @@map("training_goal")
+}
+
+// One step of a goal's plan, shown top to bottom by position (#63).
+// Sequences (#64) and sub-steps (#67) will build on this model.
+model PlanBlock {
+  id          String       @id @default(cuid())
+  goalId      String
+  goal        TrainingGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  position    Int
+  title       String       @db.VarChar(100)
+  instruction String?      @db.Text
+  criterion   String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+
+  @@index([goalId, position])
+  @@map("plan_block")
+}
+
+enum TrainingStatus {
+  PLANNED
+  COMPLETED
+  SKIPPED
+
+  @@map("training_status")
+}
+
+// A goal's training put on one concrete day (#71). It shows in the owner's
+// week (#72) and is later moved (#74), skipped (#75) or completed (#77).
+// A goal has at most one PLANNED training at a time (enforced in
+// ScheduledTrainingRepository under a lock on the goal row); another day for
+// the same training is a move, not a second plan (duplication is #103).
+model ScheduledTraining {
+  id          String         @id @default(cuid())
+  goalId      String
+  goal        TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  dogId       String
+  dog         Dog            @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User           @relation("TrainingScheduler", fields: [createdById], references: [id], onDelete: Cascade)
+  date        DateTime       @db.Date
+  status      TrainingStatus @default(PLANNED)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @default(now()) @updatedAt
+
+  @@index([dogId, date])
+  @@index([goalId, status])
+  @@map("scheduled_training")
 }
 
 model WorkoutLog {

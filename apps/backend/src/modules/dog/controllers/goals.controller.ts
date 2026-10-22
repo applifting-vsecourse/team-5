@@ -1,7 +1,7 @@
-import { GoalStatus } from '@/generated/prisma/client';
 import {
   CreateGoalDto,
   GoalResponseDto,
+  ListGoalsQueryDto,
   UpdateGoalDto,
 } from '@/modules/dog/controllers/dto/goal.dto';
 import { GoalsService } from '@/modules/dog/services/goals.service';
@@ -26,7 +26,6 @@ import {
 import {
   ApiCookieAuth,
   ApiOperation,
-  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -47,34 +46,28 @@ export class GoalsController {
 
   @Get('dogs/:dogId/goals')
   @ApiOperation({ summary: 'List all goals of a dog' })
-  @ApiQuery({ name: 'status', enum: GoalStatus, required: false })
   @ApiResponse({ status: 200, type: [GoalResponseDto] })
+  @ApiResponse({ status: 400, description: 'Invalid status filter' })
   @ApiResponse({ status: 401, description: 'Not signed in' })
   @ApiResponse({ status: 404, description: 'Dog not found' })
   async listByDog(
     @User() user: Identity,
     @Param('dogId') dogId: string,
-    @Query('status') status?: GoalStatus,
+    @Query() query: ListGoalsQueryDto,
   ): Promise<GoalResponseDto[]> {
-    const goals = await this.goalsService.getGoalsByDogId(user, dogId, status);
-    return goals.map((g) => ({
-      id: g.id,
-      dogId: g.dogId,
-      createdById: g.createdById,
-      title: g.title,
-      discipline: g.discipline,
-      principle: g.principle,
-      status: g.status,
-      order: g.order,
-      createdAt: g.createdAt,
-      updatedAt: g.updatedAt,
-    }));
+    const goals = await this.goalsService.getGoalsByDogId(
+      user,
+      dogId,
+      query.status,
+    );
+    return goals.map((goal) => GoalResponseDto.fromDomain(goal));
   }
 
   @Post('dogs/:dogId/goals')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new training goal for a dog' })
   @ApiResponse({ status: 201, type: GoalResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid goal data' })
   @ApiResponse({ status: 401, description: 'Not signed in' })
   @ApiResponse({ status: 404, description: 'Dog not found' })
   async create(
@@ -82,24 +75,27 @@ export class GoalsController {
     @Param('dogId') dogId: string,
     @Body() body: CreateGoalDto,
   ): Promise<GoalResponseDto> {
-    const g = await this.goalsService.createGoal(user, dogId, body);
-    return {
-      id: g.id,
-      dogId: g.dogId,
-      createdById: g.createdById,
-      title: g.title,
-      discipline: g.discipline,
-      principle: g.principle,
-      status: g.status,
-      order: g.order,
-      createdAt: g.createdAt,
-      updatedAt: g.updatedAt,
-    };
+    const goal = await this.goalsService.createGoal(user, dogId, body);
+    return GoalResponseDto.fromDomain(goal);
+  }
+
+  @Get('goals/:goalId')
+  @ApiOperation({ summary: 'Get a training goal' })
+  @ApiResponse({ status: 200, type: GoalResponseDto })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
+  @ApiResponse({ status: 404, description: 'Goal not found' })
+  async get(
+    @User() user: Identity,
+    @Param('goalId') goalId: string,
+  ): Promise<GoalResponseDto> {
+    const goal = await this.goalsService.getGoal(user, goalId);
+    return GoalResponseDto.fromDomain(goal);
   }
 
   @Patch('goals/:goalId')
   @ApiOperation({ summary: 'Update a training goal' })
   @ApiResponse({ status: 200, type: GoalResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid goal data' })
   @ApiResponse({ status: 401, description: 'Not signed in' })
   @ApiResponse({ status: 404, description: 'Goal not found' })
   async update(
@@ -107,19 +103,8 @@ export class GoalsController {
     @Param('goalId') goalId: string,
     @Body() body: UpdateGoalDto,
   ): Promise<GoalResponseDto> {
-    const g = await this.goalsService.updateGoal(user, goalId, body);
-    return {
-      id: g.id,
-      dogId: g.dogId,
-      createdById: g.createdById,
-      title: g.title,
-      discipline: g.discipline,
-      principle: g.principle,
-      status: g.status,
-      order: g.order,
-      createdAt: g.createdAt,
-      updatedAt: g.updatedAt,
-    };
+    const goal = await this.goalsService.updateGoal(user, goalId, body);
+    return GoalResponseDto.fromDomain(goal);
   }
 
   @Delete('goals/:goalId')
@@ -131,18 +116,7 @@ export class GoalsController {
     @User() user: Identity,
     @Param('goalId') goalId: string,
   ): Promise<GoalResponseDto> {
-    const g = await this.goalsService.deleteGoal(user, goalId);
-    return {
-      id: g.id,
-      dogId: g.dogId,
-      createdById: g.createdById,
-      title: g.title,
-      discipline: g.discipline,
-      principle: g.principle,
-      status: g.status,
-      order: g.order,
-      createdAt: g.createdAt,
-      updatedAt: g.updatedAt,
-    };
+    const goal = await this.goalsService.deleteGoal(user, goalId);
+    return GoalResponseDto.fromDomain(goal);
   }
 }
