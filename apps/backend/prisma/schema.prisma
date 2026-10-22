@@ -105,6 +105,7 @@ model Dog {
   name        String              @db.VarChar(40)
   breed       String?             @db.VarChar(100)
   color       Int
+  photoUrl    String?             @db.VarChar(500)
   ownerId     String
   owner       User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   isArchived  Boolean             @default(false)

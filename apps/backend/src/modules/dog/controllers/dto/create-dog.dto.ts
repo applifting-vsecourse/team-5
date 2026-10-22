@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import {
   IsInt,
   IsNotEmpty,
@@ -47,6 +48,25 @@ export class CreateDogDto {
     type: [String],
   })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (!Array.isArray(value)) return value;
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const item of value) {
+      if (typeof item === 'string') {
+        const trimmed = item.trim();
+        if (trimmed.length > 0 && !seen.has(trimmed)) {
+          seen.add(trimmed);
+          result.push(trimmed);
+        }
+      }
+    }
+    return result;
+  })
   @IsString({ each: true })
+  @MaxLength(40, {
+    each: true,
+    message: 'Disciplína může mít maximálně 40 znaků',
+  })
   disciplines?: string[];
 }

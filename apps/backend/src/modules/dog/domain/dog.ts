@@ -3,6 +3,7 @@ export type Dog = {
   name: string;
   breed?: string | null;
   color: number;
+  photoUrl?: string | null;
   ownerId: string;
   isArchived: boolean;
   disciplines?: string[];

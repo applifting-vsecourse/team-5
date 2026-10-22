@@ -1,3 +1,4 @@
+import 'multer';
 import { DogsService } from '@/modules/dog/services/dogs.service';
 import { User } from '@/shared/auth/decorators/user.decorator';
 import { Identity } from '@/shared/auth/domain/identity';
@@ -5,17 +6,23 @@ import { AuthenticatedUserGuard } from '@/shared/auth/guards/authenticated-user.
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Param,
   Patch,
   Post,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBody,
+  ApiConsumes,
   ApiCookieAuth,
   ApiOperation,
   ApiResponse,
@@ -90,6 +97,51 @@ export class DogsController {
     @Body() body: UpdateDogDto,
   ): Promise<DogResponseDto> {
     const dog = await this.dogsService.updateDog(user, id, body);
+    return DogResponseDto.fromDomain(dog);
+  }
+
+  @Post(':id/photo')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload dog profile photo' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, type: DogResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid image format or size' })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
+  @ApiResponse({ status: 404, description: 'Dog not found' })
+  async uploadPhoto(
+    @User() user: Identity,
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<DogResponseDto> {
+    const dog = await this.dogsService.uploadPhoto(user, id, file);
+    return DogResponseDto.fromDomain(dog);
+  }
+
+  @Delete(':id/photo')
+  @ApiOperation({ summary: 'Delete dog profile photo' })
+  @ApiResponse({ status: 200, type: DogResponseDto })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
+  @ApiResponse({ status: 404, description: 'Dog not found' })
+  async deletePhoto(
+    @User() user: Identity,
+    @Param('id') id: string,
+  ): Promise<DogResponseDto> {
+    const dog = await this.dogsService.deletePhoto(user, id);
     return DogResponseDto.fromDomain(dog);
   }
 }

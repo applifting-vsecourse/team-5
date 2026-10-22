@@ -16,6 +16,9 @@ export class ClientDogResponseDto {
 
   @ApiPropertyOptional({ type: [String] })
   disciplines?: string[];
+
+  @ApiPropertyOptional({ nullable: true })
+  photoUrl?: string | null;
 }
 
 export class ClientResponseDto {
@@ -45,6 +48,7 @@ export class ClientResponseDto {
         color: dog.color,
         breed: dog.breed ?? null,
         disciplines: dog.disciplines ?? [],
+        photoUrl: dog.photoUrl ?? null,
       })),
       createdAt: client.createdAt,
     };

@@ -46,3 +46,7 @@ junit.xml
 
 # Prisma client — generated into src by `prisma generate`
 src/generated/
+
+# Uploads
+/uploads
+uploads

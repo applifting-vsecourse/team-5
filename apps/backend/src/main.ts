@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { toNodeHandler } from 'better-auth/node';
@@ -32,6 +34,14 @@ async function main(): Promise<void> {
   // Express 5 (via NestJS 11) requires named wildcards — a bare `*` throws.
   appInstance.all('/api/auth/*splat', toNodeHandler(betterAuth));
   appInstance.use(express.json());
+
+  // Static files for uploads (dog photos, etc.)
+  const uploadsDir = fs.existsSync(path.join(process.cwd(), 'apps/backend'))
+    ? path.join(process.cwd(), 'apps/backend', 'uploads')
+    : path.join(process.cwd(), 'uploads');
+  fs.mkdirSync(path.join(uploadsDir, 'dogs'), { recursive: true });
+  app.use('/uploads', express.static(uploadsDir));
+  app.use('/api/uploads', express.static(uploadsDir));
 
   // Configure API prefix for all routes
   app.setGlobalPrefix('api');
