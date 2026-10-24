@@ -21,21 +21,23 @@ export async function verifyInvitation(code: string): Promise<VerifyInvitationRe
   return verifyInvitationSchema.parse(response)
 }
 
+export type AcceptInvitationParams = {
+  code: string
+  dogIds: string[]
+}
+
 export function useAcceptInvitation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (code: string) => {
+    mutationFn: async ({ code, dogIds }: AcceptInvitationParams) => {
       await api.post("invitations/accept", {
-        json: { code },
+        json: { code, dogIds },
       })
     },
     onSuccess: () => {
       toast.success("Pozvánka byla úspěšně přijata")
       void queryClient.invalidateQueries({ queryKey: clientKeys.all })
-    },
-    onError: () => {
-      toast.error("Přijetí pozvánky se nezdařilo")
     },
   })
 }

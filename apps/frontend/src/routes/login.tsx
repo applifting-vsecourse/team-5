@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router"
 import { X } from "lucide-react"
-import { toast } from "sonner"
 import { z } from "zod"
 
 import { LandingPage } from "@/app/LandingPage"
@@ -23,7 +22,6 @@ import { useSignIn } from "@/features/auth/hooks/useSignIn"
 import { loginHome } from "@/features/auth/lib/account-home"
 import { decodeRedirectUri } from "@/features/auth/lib/redirect"
 import { SIGN_IN_FAILED_MESSAGE, SignInError } from "@/features/auth/lib/sign-in-error"
-import { useAcceptInvitation } from "@/features/client/api/invitationApi"
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -46,7 +44,6 @@ function LoginPage() {
   const { from, code } = Route.useSearch()
   const navigate = useNavigate()
   const signIn = useSignIn()
-  const acceptInvitationMutation = useAcceptInvitation()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const effectiveCode =
@@ -67,19 +64,8 @@ function LoginPage() {
     try {
       const session = await signIn.mutateAsync(values)
       if (effectiveCode) {
-        if (session.user.role === "trainer") {
-          await navigate({ to: ROUTES.invite, search: { code: effectiveCode }, replace: true })
-          return
-        }
-        try {
-          await acceptInvitationMutation.mutateAsync(effectiveCode)
-          toast.success("Pozvánka byla úspěšně přijata!")
-          await navigate({ href: loginHome(session.user), replace: true })
-          return
-        } catch {
-          await navigate({ to: ROUTES.invite, search: { code: effectiveCode }, replace: true })
-          return
-        }
+        await navigate({ to: ROUTES.invite, search: { code: effectiveCode }, replace: true })
+        return
       }
       await navigate({ href: decodeRedirectUri(from) ?? loginHome(session.user), replace: true })
     } catch (error) {

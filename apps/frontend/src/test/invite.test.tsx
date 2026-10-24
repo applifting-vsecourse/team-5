@@ -165,13 +165,13 @@ describe("invite page (/invite)", () => {
     expect(await screen.findByText(/K e-mailu/i)).toBeInTheDocument()
     expect(screen.getByText("eva.novotna@email.cz")).toBeInTheDocument()
 
-    const loginBtn = screen.getByRole("link", { name: "Přihlásit se a propojit účet" })
+    const loginBtn = screen.getByRole("link", { name: "Přihlásit se a pokračovat k propojení" })
     expect(loginBtn).toBeInTheDocument()
     expect(loginBtn.getAttribute("href")).toContain("/login")
     expect(loginBtn.getAttribute("href")).toContain("EXIST1")
   })
 
-  it("allows logged-in client to accept invitation and connect account", async () => {
+  it("allows logged-in client to accept invitation with selected dogs", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
     vi.mocked(api.get).mockImplementation((url: unknown) => {
       const urlStr = String(url)
@@ -184,6 +184,23 @@ describe("invite page (/invite)", () => {
               trainerName: "Veronika Trenérka",
               email: "pavel@example.com",
             }),
+        } as unknown as ReturnType<typeof api.get>
+      }
+      if (urlStr === "dogs" || urlStr.endsWith("/dogs")) {
+        return {
+          json: () =>
+            Promise.resolve([
+              {
+                id: "dog-1",
+                name: "Blesk",
+                breed: "Border kolie",
+                color: 1,
+                disciplines: [],
+                ownerId: "client-1",
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+            ]),
         } as unknown as ReturnType<typeof api.get>
       }
       throw new Error(`Unexpected url: ${urlStr}`)
@@ -200,6 +217,7 @@ describe("invite page (/invite)", () => {
 
     const { interaction } = await openPage("/invite?code=K7M2PQ")
 
+    expect(await screen.findByText("Blesk")).toBeInTheDocument()
     const acceptBtn = await screen.findByRole("button", {
       name: "Přijmout pozvánku a propojit účet",
     })
@@ -208,8 +226,38 @@ describe("invite page (/invite)", () => {
     await interaction.click(acceptBtn)
 
     expect(vi.mocked(api.post)).toHaveBeenCalledWith("invitations/accept", {
-      json: { code: "K7M2PQ" },
+      json: { code: "K7M2PQ", dogIds: ["dog-1"] },
     })
     expect(await screen.findByText("Propojení úspěšné!")).toBeInTheDocument()
+  })
+
+  it("prompts logged-in client to create a dog if they have none", async () => {
+    auth.getSession.mockResolvedValue({ data: { user }, error: null })
+    vi.mocked(api.get).mockImplementation((url: unknown) => {
+      const urlStr = String(url)
+      if (urlStr.includes("invitations/K7M2PQ")) {
+        return {
+          json: () =>
+            Promise.resolve({
+              valid: true,
+              code: "K7M2PQ",
+              trainerName: "Veronika Trenérka",
+              email: "pavel@example.com",
+            }),
+        } as unknown as ReturnType<typeof api.get>
+      }
+      if (urlStr === "dogs" || urlStr.endsWith("/dogs")) {
+        return {
+          json: () => Promise.resolve([]),
+        } as unknown as ReturnType<typeof api.get>
+      }
+      throw new Error(`Unexpected url: ${urlStr}`)
+    })
+
+    await openPage("/invite?code=K7M2PQ")
+
+    expect(await screen.findByText(/Zatím nemáte v účtu žádného psa/i)).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Založit psa" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Přijmout pozvánku a propojit účet" })).toBeDisabled()
   })
 })

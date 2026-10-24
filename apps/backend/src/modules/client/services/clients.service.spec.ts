@@ -35,6 +35,9 @@ describe('ClientsService', () => {
 
   beforeEach(() => {
     repository = mock<ClientRepository>();
+    repository.countRecentInvitationsByTrainer.mockResolvedValue(0);
+    repository.countRecentInvitationsToEmail.mockResolvedValue(0);
+    repository.findUserDogs.mockResolvedValue([{ id: 'dog-1' }]);
     emailService = mock<EmailService>();
     config = {
       frontendUrl: 'https://trainloop.cz',
@@ -211,11 +214,11 @@ describe('ClientsService', () => {
     });
 
     await expect(service.verifyInvitation('EXPRD1')).rejects.toThrow(
-      BadRequestException,
+      NotFoundException,
     );
   });
 
-  it('accepts an invitation and connects client to trainer', async () => {
+  it('accepts an invitation with dogs and connects client to trainer', async () => {
     const clientUser: Identity = {
       id: 'client-99',
       name: 'Pavel Klient',
@@ -237,26 +240,53 @@ describe('ClientsService', () => {
       isExistingUser: true,
     });
 
-    await service.acceptInvitation('K7M2PQ', clientUser);
+    await service.acceptInvitation('K7M2PQ', ['dog-1'], clientUser);
     expect(repository.acceptInvitation).toHaveBeenCalledWith(
       'inv-1',
       'trainer-1',
       'client-99',
+      ['dog-1'],
     );
   });
 
-  it('prevents trainer from accepting their own invitation', async () => {
+  it('prevents trainer from accepting invitations', async () => {
     const trainerUser: Identity = {
-      id: 'trainer-1',
-      name: 'Veronika',
-      email: 'veronika@trainloop.cz',
+      id: 'trainer-2',
+      name: 'Iný Trenér',
+      email: 'iny@trainloop.cz',
       role: 'trainer',
+    };
+
+    await expect(
+      service.acceptInvitation('K7M2PQ', ['dog-1'], trainerUser),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('prevents accepting without selecting at least one dog', async () => {
+    const clientUser: Identity = {
+      id: 'client-99',
+      name: 'Pavel Klient',
+      email: 'pavel@example.com',
+      role: 'user',
+    };
+
+    await expect(
+      service.acceptInvitation('K7M2PQ', [], clientUser),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('prevents accepting an invitation addressed to a different email', async () => {
+    const clientUser: Identity = {
+      id: 'client-99',
+      name: 'Pavel Klient',
+      email: 'pavel.different@example.com',
+      role: 'user',
     };
 
     repository.findInvitationByCode.mockResolvedValue({
       id: 'inv-1',
       code: 'K7M2PQ',
-      email: 'pavel@example.com',
+      email: 'pavel.original@example.com',
       trainerId: 'trainer-1',
       expiresAt: new Date(Date.now() + 100000),
       createdAt: new Date(),
@@ -268,7 +298,33 @@ describe('ClientsService', () => {
     });
 
     await expect(
-      service.acceptInvitation('K7M2PQ', trainerUser),
+      service.acceptInvitation('K7M2PQ', ['dog-1'], clientUser),
     ).rejects.toThrow(BadRequestException);
+  });
+
+  it('deletes invitation and throws BadGatewayException if email delivery fails', async () => {
+    const trainer: Identity = {
+      id: 'trainer-1',
+      name: 'Veronika',
+      email: 'veronika@trainloop.cz',
+      role: 'trainer',
+    };
+
+    repository.createInvitation.mockResolvedValue({
+      id: 'inv-failed',
+      code: 'FAIL01',
+      email: 'error@example.com',
+      trainerId: 'trainer-1',
+      expiresAt: new Date(),
+      createdAt: new Date(),
+    });
+
+    emailService.sendEmail.mockRejectedValue(new Error('SMTP down'));
+
+    await expect(
+      service.createInvitation(trainer, 'error@example.com'),
+    ).rejects.toThrow();
+
+    expect(repository.deleteInvitation).toHaveBeenCalledWith('inv-failed');
   });
 });

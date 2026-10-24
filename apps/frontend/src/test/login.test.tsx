@@ -419,17 +419,16 @@ describe("login and logout", () => {
     expect(screen.getByRole("button", { name: "Odhlásit se" })).toBeEnabled()
   })
 
-  it("automatically accepts invitation code and links account on sign in", async () => {
+  it("redirects to invite page when invitation code is provided on sign in", async () => {
     const { interaction, router } = await openPage("/login?code=EXIST1")
     acceptLogin()
     await screen.findByRole("dialog")
     await fillForm(interaction)
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
 
-    expect(dogApi.post).toHaveBeenCalledWith("invitations/accept", {
-      json: { code: "EXIST1" },
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/invite")
     })
-    expect(await screen.findByRole("heading", { name: "Týden" })).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe("/week")
+    expect(router.state.location.search).toMatchObject({ code: "EXIST1" })
   })
 })

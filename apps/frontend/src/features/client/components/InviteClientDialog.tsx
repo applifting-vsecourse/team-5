@@ -103,7 +103,7 @@ export function InviteClientDialog({ isOpen, onOpenChange }: InviteClientDialogP
               </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 Klient může kliknout na odkaz v e-mailu nebo zadat tento kód na úvodní stránce či ve
-                svém účtu. Platnost je 14 dní.
+                svém účtu. Platnost je 7 dní.
               </p>
             </div>
 

@@ -6,6 +6,7 @@ import { ConfigModule } from '@applifting-io/nestjs-decorated-config';
 import { Module } from '@nestjs/common';
 import { ClientsController } from './controllers/clients.controller';
 import { InvitationsController } from './controllers/invitations.controller';
+import { InvitationRateLimitGuard } from './guards/invitation-rate-limit.guard';
 import { ClientRepository } from './repositories/client.repository';
 import { ClientsService } from './services/clients.service';
 
@@ -17,7 +18,7 @@ import { ClientsService } from './services/clients.service';
     ConfigModule.forRootAsync(Config, { validate: true }),
   ],
   controllers: [ClientsController, InvitationsController],
-  providers: [ClientsService, ClientRepository],
+  providers: [ClientsService, ClientRepository, InvitationRateLimitGuard],
   exports: [ClientsService, ClientRepository],
 })
 export class ClientModule {}

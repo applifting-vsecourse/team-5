@@ -1,6 +1,6 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
 import { Client, Invitation } from '@/modules/client/domain/client';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ClientRepository {
@@ -192,13 +192,78 @@ export class ClientRepository {
     };
   }
 
+  async findUserDogs(
+    userId: string,
+    dogIds: string[],
+  ): Promise<Array<{ id: string }>> {
+    return this.prisma.dog.findMany({
+      where: {
+        id: { in: dogIds },
+        ownerId: userId,
+        isArchived: false,
+      },
+      select: { id: true },
+    });
+  }
+
+  async countRecentInvitationsByTrainer(
+    trainerId: string,
+    since: Date,
+  ): Promise<number> {
+    return this.prisma.invitation.count({
+      where: {
+        trainerId,
+        createdAt: { gte: since },
+      },
+    });
+  }
+
+  async countRecentInvitationsToEmail(
+    trainerId: string,
+    email: string,
+    since: Date,
+  ): Promise<number> {
+    return this.prisma.invitation.count({
+      where: {
+        trainerId,
+        email,
+        createdAt: { gte: since },
+      },
+    });
+  }
+
+  async deleteInvitation(invitationId: string): Promise<void> {
+    await this.prisma.invitation.delete({
+      where: { id: invitationId },
+    });
+  }
+
   async acceptInvitation(
     invitationId: string,
     trainerId: string,
     clientId: string,
+    dogIds: string[],
   ): Promise<void> {
-    await this.prisma.$transaction([
-      this.prisma.clientConnection.upsert({
+    await this.prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const updated = await tx.invitation.updateMany({
+        where: {
+          id: invitationId,
+          usedAt: null,
+          expiresAt: { gt: now },
+        },
+        data: {
+          usedAt: now,
+        },
+      });
+
+      if (updated.count === 0) {
+        throw new BadRequestException(
+          'Tato pozvánka již byla použita nebo vypršela',
+        );
+      }
+
+      await tx.clientConnection.upsert({
         where: {
           trainerId_clientId: { trainerId, clientId },
         },
@@ -207,12 +272,21 @@ export class ClientRepository {
           clientId,
         },
         update: {},
-      }),
-      this.prisma.invitation.update({
-        where: { id: invitationId },
-        data: { usedAt: new Date() },
-      }),
-    ]);
+      });
+
+      for (const dogId of dogIds) {
+        await tx.dogShare.upsert({
+          where: {
+            dogId_trainerId: { dogId, trainerId },
+          },
+          create: {
+            dogId,
+            trainerId,
+          },
+          update: {},
+        });
+      }
+    });
   }
 
   async cancelInvitation(

@@ -1,5 +1,6 @@
 import { AcceptInvitationDto } from '@/modules/client/controllers/dto/accept-invitation.dto';
 import { VerifyInvitationResponseDto } from '@/modules/client/controllers/dto/verify-invitation.response.dto';
+import { InvitationRateLimitGuard } from '@/modules/client/guards/invitation-rate-limit.guard';
 import { ClientsService } from '@/modules/client/services/clients.service';
 import { User } from '@/shared/auth/decorators/user.decorator';
 import { Identity } from '@/shared/auth/domain/identity';
@@ -38,6 +39,7 @@ export class InvitationsController {
   constructor(private readonly clientsService: ClientsService) {}
 
   @Get(':code')
+  @UseGuards(InvitationRateLimitGuard)
   @ApiOperation({ summary: 'Verify an invitation code' })
   @ApiParam({
     name: 'code',
@@ -46,10 +48,9 @@ export class InvitationsController {
   })
   @ApiResponse({ status: 200, type: VerifyInvitationResponseDto })
   @ApiResponse({
-    status: 400,
-    description: 'Invitation expired or already used',
+    status: 404,
+    description: 'Invitation not found or expired',
   })
-  @ApiResponse({ status: 404, description: 'Invitation not found' })
   async verifyInvitation(
     @Param('code') code: string,
   ): Promise<VerifyInvitationResponseDto> {
@@ -65,15 +66,15 @@ export class InvitationsController {
   @ApiResponse({ status: 200, description: 'Invitation accepted successfully' })
   @ApiResponse({
     status: 400,
-    description: 'Invalid, expired, or self-invitation',
+    description: 'Invalid, expired, self-invitation, or wrong role/email',
   })
   @ApiResponse({ status: 401, description: 'Not signed in' })
-  @ApiResponse({ status: 404, description: 'Invitation not found' })
+  @ApiResponse({ status: 404, description: 'Invitation not found or expired' })
   async acceptInvitation(
     @User() user: Identity,
     @Body() dto: AcceptInvitationDto,
   ): Promise<{ success: boolean }> {
-    await this.clientsService.acceptInvitation(dto.code, user);
+    await this.clientsService.acceptInvitation(dto.code, dto.dogIds, user);
     return { success: true };
   }
 }

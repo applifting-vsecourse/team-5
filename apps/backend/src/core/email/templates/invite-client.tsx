@@ -71,7 +71,7 @@ export const InviteClient = ({
           <Text className="text-blue-600 text-sm break-all">{url}</Text>
           <Hr className="border-gray-200 my-6" />
           <Text className="text-gray-400 text-xs">
-            Pozvánka je platná po dobu 14 dní. Pokud jste tuto pozvánku nečekali, můžete tento e-mail bez obav ignorovat.
+            Pozvánka je platná po dobu 7 dní. Pokud jste tuto pozvánku nečekali, můžete tento e-mail bez obav ignorovat.
           </Text>
         </Container>
       </Body>

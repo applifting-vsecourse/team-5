@@ -12,7 +12,6 @@ import { SignUpForm } from "@/features/auth/components/SignUpForm"
 import { useSignUp, type SignUpInput } from "@/features/auth/hooks/useSignUp"
 import { accountHome } from "@/features/auth/lib/account-home"
 import { RegistrationError, registrationError } from "@/features/auth/lib/registration-errors"
-import { useAcceptInvitation } from "@/features/client/api/invitationApi"
 
 export const Route = createFileRoute("/signup")({
   component: SignUpPage,
@@ -31,7 +30,6 @@ function SignUpPage() {
   const { code, email } = Route.useSearch()
   const navigate = useNavigate()
   const signUp = useSignUp()
-  const acceptInvitationMutation = useAcceptInvitation()
   const queryClient = useQueryClient()
   const [error, setError] = useState<RegistrationError | null>(null)
 
@@ -43,11 +41,8 @@ function SignUpPage() {
       if (!session) throw registrationError()
 
       if (code) {
-        try {
-          await acceptInvitationMutation.mutateAsync(code)
-        } catch {
-          // If auto-accept fails (e.g. invalid code), user is still registered
-        }
+        await navigate({ to: ROUTES.invite, search: { code } })
+        return
       }
 
       await navigate({ to: accountHome(session.user) })
