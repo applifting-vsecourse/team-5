@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { ProgressCircle } from "@/components/ui/progress-circle"
 import { Skeleton } from "@/components/ui/skeleton"
 
 import type { DogActivity } from "@/features/dog/api/dogSchemas"
@@ -229,13 +230,26 @@ export function DogActivitiesSection({
                 </div>
 
                 {isCompleted && (
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      {item.successRate !== undefined && (
+                        <span className="inline-flex items-center rounded-sm border border-border/60 bg-secondary/70 px-1.5 py-0.5 font-mono text-xs font-semibold text-foreground">
+                          Úspěšnost: {item.successRate} %
+                        </span>
+                      )}
+                      {item.rating !== undefined && (
+                        <span className="inline-flex items-center rounded-sm border border-border/60 bg-secondary/70 px-1.5 py-0.5 font-mono text-xs font-medium text-muted-foreground">
+                          Hodnocení: {item.rating}/5
+                        </span>
+                      )}
+                    </div>
                     {item.successRate !== undefined && (
-                      <span className="font-semibold text-foreground">
-                        Úspěšnost: {item.successRate} %
-                      </span>
+                      <ProgressCircle
+                        value={item.successRate}
+                        size="sm"
+                        showValue
+                      />
                     )}
-                    {item.rating !== undefined && <span>Hodnocení: {item.rating}/5</span>}
                   </div>
                 )}
 
@@ -280,19 +294,26 @@ export function DogActivitiesSection({
 
               <div className="space-y-4 py-2">
                 {selectedActivity.status === "completed" && (
-                  <div className="flex items-center gap-4 rounded-lg bg-secondary/50 p-3">
+                  <div className="flex items-center justify-between gap-4 rounded-lg bg-secondary/50 p-4">
                     {selectedActivity.successRate !== undefined && (
-                      <div>
-                        <div className="text-xs text-muted-foreground">Úspěšnost</div>
-                        <div className="text-lg font-bold text-foreground">
-                          {selectedActivity.successRate} %
+                      <div className="flex items-center gap-3">
+                        <ProgressCircle
+                          value={selectedActivity.successRate}
+                          size="md"
+                          showValue
+                        />
+                        <div>
+                          <div className="text-xs text-muted-foreground">Úspěšnost</div>
+                          <div className="font-mono text-lg font-bold text-foreground">
+                            {selectedActivity.successRate} %
+                          </div>
                         </div>
                       </div>
                     )}
                     {selectedActivity.rating !== undefined && (
                       <div>
                         <div className="text-xs text-muted-foreground">Hodnocení</div>
-                        <div className="text-lg font-bold text-foreground">
+                        <div className="font-mono text-lg font-bold text-foreground">
                           {selectedActivity.rating} / 5
                         </div>
                       </div>

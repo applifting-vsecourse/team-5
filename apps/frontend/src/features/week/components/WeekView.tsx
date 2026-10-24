@@ -1,10 +1,11 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ProgressBar } from "@/components/ui/progress-bar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
@@ -21,6 +22,8 @@ import { dogColorClass } from "@/lib/dogColors"
 import { cn } from "@/lib/utils"
 
 import { weekTrainingsQueryOptions, type WeekTraining } from "@/features/week/api/weekQueryOptions"
+
+import { WeekPickerDialog } from "./WeekPickerDialog"
 
 const STATUS_LABELS: Record<WeekTraining["status"], string> = {
   PLANNED: "Naplánováno",
@@ -51,7 +54,10 @@ function WeekTrainingCard({ training }: { training: WeekTraining }) {
         </h3>
         <Badge
           variant={training.status === "PLANNED" ? "secondary" : "outline"}
-          className="shrink-0"
+          className={cn(
+            "shrink-0 font-mono text-[11px] font-semibold tracking-wider uppercase",
+            training.status === "COMPLETED" && "border-primary/40 bg-primary/10 text-primary",
+          )}
         >
           {STATUS_LABELS[training.status]}
         </Badge>
@@ -99,11 +105,15 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
   const [selectedDay, setSelectedDay] = useState<CalendarDate>(
     days.includes(today) ? today : weekStart,
   )
+  const [isWeekPickerOpen, setIsWeekPickerOpen] = useState(false)
   const weekQuery = useQuery(weekTrainingsQueryOptions(weekStart))
 
   const trainings = weekQuery.data ?? []
   const trainingsOf = (day: CalendarDate) => trainings.filter((training) => training.date === day)
   const selectedTrainings = trainingsOf(selectedDay)
+
+  const completedCount = trainings.filter((t) => t.status === "COMPLETED").length
+  const totalCount = trainings.length
 
   return (
     <div className="flex flex-col gap-6">
@@ -121,12 +131,22 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
           >
             <ChevronLeft className="size-5" />
           </Button>
-          <p
-            className="flex-1 text-center text-lg font-semibold tracking-tight text-foreground"
-            aria-live="polite"
+
+          <button
+            type="button"
+            onClick={() => setIsWeekPickerOpen(true)}
+            className="group flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1 text-center transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
+            aria-label={`Vybrat týden, aktuálně ${formatWeekRange(weekStart)}`}
           >
-            {formatWeekRange(weekStart)}
-          </p>
+            <span
+              className="text-lg font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary"
+              aria-live="polite"
+            >
+              {formatWeekRange(weekStart)}
+            </span>
+            <Calendar className="size-4 text-muted-foreground transition-colors group-hover:text-primary" />
+          </button>
+
           <Button
             type="button"
             variant="ghost"
@@ -148,6 +168,21 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
             Dnes
           </Button>
         </div>
+
+        {totalCount > 0 && (
+          <div className="mt-3 flex flex-col gap-1.5 rounded-lg border border-border bg-card p-3">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Týdenní postup</span>
+              <span className="font-medium text-foreground">
+                {completedCount} z {totalCount} odcvičeno
+              </span>
+            </div>
+            <ProgressBar
+              value={completedCount}
+              max={totalCount}
+            />
+          </div>
+        )}
       </header>
 
       <ToggleGroup
@@ -170,12 +205,16 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
                 dogColors.length > 0 ? `, tréninků: ${trainingsOf(day).length}` : ""
               }`}
               className={cn(
-                "flex h-auto min-h-16 min-w-11 flex-col gap-1 rounded-md px-0 py-2 data-[state=on]:bg-secondary data-[state=on]:text-secondary-foreground",
+                "flex h-auto min-h-16 min-w-11 flex-col gap-1 rounded-md px-0 py-2 transition-all duration-150 select-none",
+                "hover:bg-accent/40 active:scale-95",
+                "data-[state=on]:bg-secondary data-[state=on]:text-secondary-foreground data-[state=on]:shadow-2xs",
                 day === today && "font-semibold text-primary",
               )}
             >
-              <span className="text-xs">{formatWeekdayShort(day)}</span>
-              <span className="text-base">{formatDayOfMonth(day)}</span>
+              <span className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+                {formatWeekdayShort(day)}
+              </span>
+              <span className="text-base font-bold">{formatDayOfMonth(day)}</span>
               {/* One dot per dog that trains that day (#72). */}
               <span
                 aria-hidden="true"
@@ -184,7 +223,10 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
                 {dogColors.map((color) => (
                   <span
                     key={color}
-                    className={cn("size-2 rounded-full", dogColorClass(color))}
+                    className={cn(
+                      "size-2 rounded-full shadow-2xs ring-1 ring-background",
+                      dogColorClass(color),
+                    )}
                   />
                 ))}
               </span>
@@ -225,21 +267,29 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
           </div>
         ) : trainings.length === 0 ? (
           // Nothing in the whole week: say what to do next (#72).
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-8 text-center sm:p-12">
+            <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+              <Calendar className="size-6" />
+            </div>
+            <p className="max-w-md text-sm text-muted-foreground">
               Na tento týden nemáte nic naplánováno. Založte psovi cíl a naplánujte trénink, nebo
               počkejte, až vám ho zadá trenér.
             </p>
             <Button
               asChild
               variant="outline"
-              className="min-h-11"
+              className="mt-4 min-h-11"
             >
               <Link to="/dogs">Přejít na psy</Link>
             </Button>
           </div>
         ) : selectedTrainings.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Na tento den nemáte nic naplánováno.</p>
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-6 text-center">
+            <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+              <Calendar className="size-5" />
+            </div>
+            <p className="text-sm text-muted-foreground">Na tento den nemáte nic naplánováno.</p>
+          </div>
         ) : (
           <ul className="flex flex-col gap-2">
             {selectedTrainings.map((training) => (
@@ -251,6 +301,14 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
           </ul>
         )}
       </section>
+
+      {/* Month Calendar Week Picker Dialog */}
+      <WeekPickerDialog
+        isOpen={isWeekPickerOpen}
+        onOpenChange={setIsWeekPickerOpen}
+        selectedWeek={weekStart}
+        onSelectWeek={onWeekChange}
+      />
     </div>
   )
 }

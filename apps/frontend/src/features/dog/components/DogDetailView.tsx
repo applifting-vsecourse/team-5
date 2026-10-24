@@ -4,13 +4,14 @@ import { ChevronLeft, Pencil } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 import type { Dog } from "@/features/dog/api/dogSchemas"
 
 import { DogActivitiesSection } from "./DogActivitiesSection"
 import { DogGoalsSection } from "./DogGoalsSection"
 import { EditDogDialog } from "./EditDogDialog"
-import { PesAvatar } from "./PesAvatar"
+import { DOG_COLOR_CLASSES, PesAvatar } from "./PesAvatar"
 
 type DogDetailViewProps = {
   dog: Dog
@@ -61,6 +62,13 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
             <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">
               {dog.name}
             </h1>
+            <span
+              aria-hidden="true"
+              className={cn(
+                "size-3.5 shrink-0 rounded-full shadow-2xs ring-2 ring-background",
+                DOG_COLOR_CLASSES[dog.color] ?? "bg-dog-1",
+              )}
+            />
             {isOwner && (
               <Button
                 variant="ghost"
@@ -74,6 +82,7 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
             )}
           </div>
           {dog.breed && <p className="truncate text-sm text-muted-foreground">{dog.breed}</p>}
+
           {dog.disciplines && dog.disciplines.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {dog.disciplines.map((discipline) => (
