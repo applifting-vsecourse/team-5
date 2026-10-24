@@ -5,14 +5,6 @@ import { Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { ProgressBar } from "@/components/ui/progress-bar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -45,47 +37,35 @@ const exerciseCount = (count: number): string => {
   return `${count} cviků`
 }
 
-function WeekTrainingCard({
-  training,
-  onClick,
-}: {
-  training: WeekTraining
-  onClick?: () => void
-}) {
+function WeekTrainingCard({ training }: { training: WeekTraining }) {
   const titles = training.exercises.map((exercise) => exercise.title)
 
   return (
-    <li className="group relative overflow-hidden rounded-lg border border-border bg-card transition-all duration-150 hover:border-foreground/30 active:scale-[0.99]">
+    <li className="relative overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4">
       {/* The dog's colour tells the dogs apart, as in the day strip above. */}
       <span
         aria-hidden="true"
         className={cn("absolute inset-y-0 left-0 w-1", dogColorClass(training.dog.color))}
       />
-      <button
-        type="button"
-        onClick={onClick}
-        className="w-full py-3 pr-3 pl-4 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <h3 className="text-base font-medium text-foreground transition-colors group-hover:text-primary">
-            {training.dog.name} · {training.goal.title}
-          </h3>
-          <Badge
-            variant={training.status === "PLANNED" ? "secondary" : "outline"}
-            className={cn(
-              "shrink-0 font-mono text-[11px] font-semibold tracking-wider uppercase",
-              training.status === "COMPLETED" && "border-primary/40 bg-primary/10 text-primary",
-            )}
-          >
-            {STATUS_LABELS[training.status]}
-          </Badge>
-        </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {titles.length === 0
-            ? "Plán zatím nemá žádný cvik."
-            : `${exerciseCount(titles.length)} · ${titles.join(", ")}`}
-        </p>
-      </button>
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-base font-medium text-foreground">
+          {training.dog.name} · {training.goal.title}
+        </h3>
+        <Badge
+          variant={training.status === "PLANNED" ? "secondary" : "outline"}
+          className={cn(
+            "shrink-0 font-mono text-[11px] font-semibold tracking-wider uppercase",
+            training.status === "COMPLETED" && "border-primary/40 bg-primary/10 text-primary",
+          )}
+        >
+          {STATUS_LABELS[training.status]}
+        </Badge>
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {titles.length === 0
+          ? "Plán zatím nemá žádný cvik."
+          : `${exerciseCount(titles.length)} · ${titles.join(", ")}`}
+      </p>
     </li>
   )
 }
@@ -103,7 +83,6 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
   const [selectedDay, setSelectedDay] = useState<CalendarDate>(
     days.includes(today) ? today : weekStart,
   )
-  const [selectedTraining, setSelectedTraining] = useState<WeekTraining | null>(null)
   const [isWeekPickerOpen, setIsWeekPickerOpen] = useState(false)
   const weekQuery = useQuery(weekTrainingsQueryOptions(weekStart))
 
@@ -295,108 +274,11 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
               <WeekTrainingCard
                 key={training.id}
                 training={training}
-                onClick={() => setSelectedTraining(training)}
               />
             ))}
           </ul>
         )}
       </section>
-
-      {/* Workout Session / Training Preview Dialog */}
-      <Dialog
-        open={selectedTraining !== null}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) setSelectedTraining(null)
-        }}
-      >
-        <DialogContent className="sm:max-w-md">
-          {selectedTraining && (
-            <>
-              <DialogHeader>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      "size-3 rounded-full ring-2 ring-background",
-                      dogColorClass(selectedTraining.dog.color),
-                    )}
-                    aria-hidden="true"
-                  />
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {selectedTraining.dog.name}
-                  </span>
-                  <Badge
-                    variant={selectedTraining.status === "PLANNED" ? "secondary" : "outline"}
-                    className={cn(
-                      "ml-auto font-mono text-[11px] font-semibold tracking-wider uppercase",
-                      selectedTraining.status === "COMPLETED" &&
-                        "border-primary/40 bg-primary/10 text-primary",
-                    )}
-                  >
-                    {STATUS_LABELS[selectedTraining.status]}
-                  </Badge>
-                </div>
-                <DialogTitle className="mt-1 text-xl font-bold tracking-tight">
-                  {selectedTraining.goal.title}
-                </DialogTitle>
-                <DialogDescription>
-                  Trénink naplánovaný na {formatDayLong(selectedTraining.date)}.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-3 py-2">
-                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Cviky v tréninku ({selectedTraining.exercises.length})
-                </div>
-                {selectedTraining.exercises.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Tento plán zatím nemá žádný cvik.</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {selectedTraining.exercises.map((exercise, idx) => (
-                      <li
-                        key={exercise.id}
-                        className="flex items-start gap-3 rounded-lg border border-border bg-card p-3 shadow-2xs"
-                      >
-                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-xs font-bold text-secondary-foreground">
-                          {idx + 1}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <span className="block font-medium text-foreground">{exercise.title}</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="min-h-11"
-                  onClick={() => setSelectedTraining(null)}
-                >
-                  Zavřít
-                </Button>
-                <Button
-                  type="button"
-                  asChild
-                  className="min-h-11"
-                >
-                  <Link
-                    to="/dogs/$dogId/goals/$goalId"
-                    params={{
-                      dogId: selectedTraining.dog.id,
-                      goalId: selectedTraining.goal.id,
-                    }}
-                  >
-                    Otevřít plán cíle
-                  </Link>
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Month Calendar Week Picker Dialog */}
       <WeekPickerDialog
