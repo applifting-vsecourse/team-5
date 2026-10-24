@@ -88,25 +88,17 @@ function PlanBlockItem({
         isDragging && "z-20 opacity-60 shadow-lg ring-2 ring-primary/40",
       )}
     >
-      {/* Agility Track Station Marker & Course Trail */}
+      {/* Agility Track Station Marker & Drag Handle */}
       <div
         {...dragHandleProps}
-        className="relative flex cursor-grab touch-none flex-col items-center select-none active:cursor-grabbing"
-        title="Přetáhněte pro změnu pořadí na trati"
+        className="flex cursor-grab touch-none flex-col items-center select-none active:cursor-grabbing"
+        title="Přetáhněte pro změnu pořadí"
         aria-label={`Přetáhnout cvik ${block.title}`}
       >
-        {/* Upper agility track connector line */}
-        {!isFirst && (
-          <div
-            aria-hidden="true"
-            className="absolute -top-3.5 left-1/2 h-3.5 w-0 -translate-x-1/2 border-l-2 border-dashed border-primary/35"
-          />
-        )}
-
         {/* Agility Course Station Checkpoint */}
         <span
           aria-hidden="true"
-          className="relative mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-xs font-bold text-secondary-foreground shadow-2xs ring-2 ring-primary/25"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-xs font-bold text-secondary-foreground shadow-2xs ring-2 ring-primary/25"
         >
           {number}
         </span>
@@ -115,14 +107,6 @@ function PlanBlockItem({
           aria-hidden="true"
           className="mt-1 size-3.5 text-muted-foreground/45 transition-colors hover:text-foreground"
         />
-
-        {/* Lower agility track connector line */}
-        {!isLast && (
-          <div
-            aria-hidden="true"
-            className="absolute -bottom-3.5 left-1/2 h-3.5 w-0 -translate-x-1/2 border-l-2 border-dashed border-primary/35"
-          />
-        )}
       </div>
 
       {/* Clicking the block opens it for editing (#65). */}
