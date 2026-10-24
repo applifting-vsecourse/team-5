@@ -33,5 +33,6 @@ describe("useScheduleTraining", () => {
 
     expect(invalidate).toHaveBeenCalledWith({ queryKey: dogKeys.goalTrainings("g1") })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: weekKeys.all })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: dogKeys.plannedTrainings("d1") })
   })
 })
