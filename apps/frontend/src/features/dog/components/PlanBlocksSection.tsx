@@ -1,4 +1,21 @@
-import { useState } from "react"
+import { useState, type CSSProperties, type HTMLAttributes } from "react"
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import { useQuery } from "@tanstack/react-query"
 import { ChevronDown, ChevronUp, GripVertical, Pencil, Plus, Trash2 } from "lucide-react"
 
@@ -14,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 
 import type { PlanBlock } from "@/features/dog/api/dogSchemas"
 import { goalBlocksQueryOptions } from "@/features/dog/api/dogsQueryOptions"
@@ -34,6 +52,10 @@ type PlanBlockItemProps = {
   onEdit: () => void
   onMove: (direction: -1 | 1) => void
   onDelete: () => void
+  dragHandleProps?: HTMLAttributes<HTMLDivElement>
+  isDragging?: boolean
+  style?: CSSProperties
+  setNodeRef?: (node: HTMLElement | null) => void
 }
 
 function PlanBlockItem({
@@ -45,6 +67,10 @@ function PlanBlockItem({
   onEdit,
   onMove,
   onDelete,
+  dragHandleProps,
+  isDragging,
+  style,
+  setNodeRef,
 }: PlanBlockItemProps) {
   const handleMoveWithHaptic = (direction: -1 | 1) => {
     if ("vibrate" in navigator && typeof navigator.vibrate === "function") {
@@ -54,8 +80,21 @@ function PlanBlockItem({
   }
 
   return (
-    <li className="flex gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-foreground/20">
-      <div className="flex flex-col items-center gap-1 pt-1">
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex gap-3 rounded-lg border border-border bg-card p-3 transition-shadow duration-150",
+        isDragging && "opacity-60 ring-2 ring-primary/40 shadow-lg z-20",
+      )}
+    >
+      {/* Drag handle with grip indicator */}
+      <div
+        {...dragHandleProps}
+        className="flex cursor-grab flex-col items-center gap-1 pt-1 select-none touch-none active:cursor-grabbing"
+        title="Přetáhněte pro změnu pořadí"
+        aria-label={`Přetáhnout cvik ${block.title}`}
+      >
         <span
           aria-hidden="true"
           className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground"
@@ -64,7 +103,7 @@ function PlanBlockItem({
         </span>
         <GripVertical
           aria-hidden="true"
-          className="size-3.5 text-muted-foreground/40"
+          className="size-4 text-muted-foreground/50 transition-colors hover:text-foreground"
         />
       </div>
 
@@ -90,7 +129,7 @@ function PlanBlockItem({
         ) : null}
       </button>
 
-      {/* Arrows instead of drag and drop, so the order can be changed on a phone too. */}
+      {/* Buttons for accessibility and mobile arrow navigation */}
       <div className="grid shrink-0 grid-cols-2 content-start gap-1">
         <Button
           type="button"
@@ -139,6 +178,27 @@ function PlanBlockItem({
   )
 }
 
+function SortablePlanBlockItem(props: Omit<PlanBlockItemProps, "dragHandleProps" | "isDragging" | "style" | "setNodeRef">) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: props.block.id,
+  })
+
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <PlanBlockItem
+      {...props}
+      setNodeRef={setNodeRef}
+      style={style}
+      dragHandleProps={{ ...attributes, ...listeners }}
+      isDragging={isDragging}
+    />
+  )
+}
+
 export function PlanBlocksSection({ goalId }: { goalId: string }) {
   const [dialogMode, setDialogMode] = useState<ExerciseDialogMode | null>(null)
   const [blockToDelete, setBlockToDelete] = useState<PlanBlock | null>(null)
@@ -150,6 +210,17 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
   const reorderBlocks = useReorderPlanBlocks(goalId)
 
   const blocks = blocksQuery.data ?? []
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  )
 
   const handleSave = async (exercise: NewExercise) => {
     try {
@@ -172,6 +243,22 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
     const [moved] = reordered.splice(index, 1)
     if (!moved) return
     reordered.splice(target, 0, moved)
+    reorderBlocks.mutate(reordered)
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = blocks.findIndex((b) => b.id === active.id)
+    const newIndex = blocks.findIndex((b) => b.id === over.id)
+    if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return
+
+    if ("vibrate" in navigator && typeof navigator.vibrate === "function") {
+      navigator.vibrate(20)
+    }
+
+    const reordered = arrayMove(blocks, oldIndex, newIndex)
     reorderBlocks.mutate(reordered)
   }
 
@@ -221,21 +308,32 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
           Plán zatím nemá žádný cvik. Přidejte první krok, který se bude doma cvičit.
         </p>
       ) : (
-        <ol className="flex flex-col gap-2">
-          {blocks.map((block, index) => (
-            <PlanBlockItem
-              key={block.id}
-              block={block}
-              number={index + 1}
-              isFirst={index === 0}
-              isLast={index === blocks.length - 1}
-              isReordering={reorderBlocks.isPending}
-              onEdit={() => setDialogMode({ kind: "edit", block })}
-              onMove={(direction) => handleMove(index, direction)}
-              onDelete={() => setBlockToDelete(block)}
-            />
-          ))}
-        </ol>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={blocks.map((b) => b.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ol className="flex flex-col gap-2">
+              {blocks.map((block, index) => (
+                <SortablePlanBlockItem
+                  key={block.id}
+                  block={block}
+                  number={index + 1}
+                  isFirst={index === 0}
+                  isLast={index === blocks.length - 1}
+                  isReordering={reorderBlocks.isPending}
+                  onEdit={() => setDialogMode({ kind: "edit", block })}
+                  onMove={(direction) => handleMove(index, direction)}
+                  onDelete={() => setBlockToDelete(block)}
+                />
+              ))}
+            </ol>
+          </SortableContext>
+        </DndContext>
       )}
 
       <Button

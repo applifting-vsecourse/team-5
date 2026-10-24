@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { ChevronLeft, ChevronRight, Play } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -23,8 +23,6 @@ import { cn } from "@/lib/utils"
 
 import { weekTrainingsQueryOptions, type WeekTraining } from "@/features/week/api/weekQueryOptions"
 
-import { FieldTrainingDrawer } from "./FieldTrainingDrawer"
-
 const STATUS_LABELS: Record<WeekTraining["status"], string> = {
   PLANNED: "Naplánováno",
   COMPLETED: "Odcvičeno",
@@ -38,13 +36,7 @@ const exerciseCount = (count: number): string => {
   return `${count} cviků`
 }
 
-function WeekTrainingCard({
-  training,
-  onOpenFieldMode,
-}: {
-  training: WeekTraining
-  onOpenFieldMode?: (training: WeekTraining) => void
-}) {
+function WeekTrainingCard({ training }: { training: WeekTraining }) {
   const titles = training.exercises.map((exercise) => exercise.title)
 
   return (
@@ -70,21 +62,6 @@ function WeekTrainingCard({
           ? "Plán zatím nemá žádný cvik."
           : `${exerciseCount(titles.length)} · ${titles.join(", ")}`}
       </p>
-
-      {onOpenFieldMode && (
-        <div className="mt-3 flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 gap-1.5 text-xs font-medium"
-            onClick={() => onOpenFieldMode(training)}
-          >
-            <Play className="size-3.5 fill-current" />
-            Režim na cvičišti
-          </Button>
-        </div>
-      )}
     </li>
   )
 }
@@ -102,7 +79,6 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
   const [selectedDay, setSelectedDay] = useState<CalendarDate>(
     days.includes(today) ? today : weekStart,
   )
-  const [activeFieldTraining, setActiveFieldTraining] = useState<WeekTraining | null>(null)
   const weekQuery = useQuery(weekTrainingsQueryOptions(weekStart))
 
   const trainings = weekQuery.data ?? []
@@ -268,20 +244,11 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
               <WeekTrainingCard
                 key={training.id}
                 training={training}
-                onOpenFieldMode={setActiveFieldTraining}
               />
             ))}
           </ul>
         )}
       </section>
-
-      <FieldTrainingDrawer
-        training={activeFieldTraining}
-        isOpen={Boolean(activeFieldTraining)}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) setActiveFieldTraining(null)
-        }}
-      />
     </div>
   )
 }
