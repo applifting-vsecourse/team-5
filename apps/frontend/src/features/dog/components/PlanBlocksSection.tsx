@@ -127,7 +127,11 @@ function PlanBlockItem({
         ) : null}
         {/* The criterion stays visible without opening the block (#63). */}
         {block.criterion ? (
-          <span className="block text-sm text-foreground">Kritérium: {block.criterion}</span>
+          <span className="mt-1 block text-left">
+            <span className="inline-block rounded-md border border-border/60 bg-secondary/80 px-2 py-0.5 font-mono text-xs font-semibold text-secondary-foreground">
+              Kritérium: {block.criterion}
+            </span>
+          </span>
         ) : null}
       </button>
 
