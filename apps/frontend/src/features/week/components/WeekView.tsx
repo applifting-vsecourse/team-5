@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { CalendarClock, ChevronLeft, ChevronRight } from "lucide-react"
+import { CalendarClock, ChevronLeft, ChevronRight, SkipForward, Undo2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils"
 
 import { weekTrainingsQueryOptions, type WeekTraining } from "@/features/week/api/weekQueryOptions"
 import { MoveTrainingDialog } from "@/features/week/components/MoveTrainingDialog"
+import { SkipTrainingDialog } from "@/features/week/components/SkipTrainingDialog"
+import { useUndoSkip } from "@/features/week/hooks/useSkipTraining"
 
 const STATUS_LABELS: Record<WeekTraining["status"], string> = {
   PLANNED: "Naplánováno",
@@ -36,10 +38,38 @@ const exerciseCount = (count: number): string => {
   return `${count} cviků`
 }
 
-function WeekTrainingCard({ training }: { training: WeekTraining }) {
+// A skip can be taken back until the training's week is over (#75).
+function UndoSkipButton({ training, heading }: { training: WeekTraining; heading: string }) {
+  const undoSkip = useUndoSkip(training.id)
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="min-h-11"
+      aria-label={`Vrátit přeskočení tréninku ${heading}`}
+      disabled={undoSkip.isPending}
+      onClick={() => undoSkip.mutate()}
+    >
+      <Undo2 className="size-4" />
+      Vrátit
+    </Button>
+  )
+}
+
+type WeekTrainingCardProps = {
+  training: WeekTraining
+  today: CalendarDate
+}
+
+function WeekTrainingCard({ training, today }: WeekTrainingCardProps) {
   const [isMoveOpen, setIsMoveOpen] = useState(false)
+  const [isSkipOpen, setIsSkipOpen] = useState(false)
   const titles = training.exercises.map((exercise) => exercise.title)
   const isPlanned = training.status === "PLANNED"
+  const canUndoSkip =
+    training.status === "SKIPPED" && startOfWeekOf(training.date) >= startOfWeekOf(today)
   const heading = `${training.dog.name} · ${training.goal.title}`
 
   return (
@@ -92,13 +122,37 @@ function WeekTrainingCard({ training }: { training: WeekTraining }) {
               <CalendarClock className="size-4" />
               Přesunout
             </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-11"
+              aria-label={`Přeskočit trénink ${heading}`}
+              onClick={() => setIsSkipOpen(true)}
+            >
+              <SkipForward className="size-4" />
+              Přeskočit
+            </Button>
           </div>
           <MoveTrainingDialog
             training={training}
             isOpen={isMoveOpen}
             onOpenChange={setIsMoveOpen}
           />
+          <SkipTrainingDialog
+            training={training}
+            isOpen={isSkipOpen}
+            onOpenChange={setIsSkipOpen}
+          />
         </>
+      ) : null}
+      {canUndoSkip ? (
+        <div className="mt-3 flex gap-2">
+          <UndoSkipButton
+            training={training}
+            heading={heading}
+          />
+        </div>
       ) : null}
     </li>
   )
@@ -264,6 +318,7 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
               <WeekTrainingCard
                 key={training.id}
                 training={training}
+                today={today}
               />
             ))}
           </ul>

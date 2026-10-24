@@ -5,11 +5,13 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { moveTraining } from "@/features/week/api/moveTraining"
+import { skipTraining, undoSkip } from "@/features/week/api/skipTraining"
 import { weekKeys, type WeekTraining } from "@/features/week/api/weekQueryOptions"
 
 import { WeekView } from "./WeekView"
 
 vi.mock("@/features/week/api/moveTraining", () => ({ moveTraining: vi.fn() }))
+vi.mock("@/features/week/api/skipTraining", () => ({ skipTraining: vi.fn(), undoSkip: vi.fn() }))
 
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof Router>("@tanstack/react-router")
@@ -219,6 +221,74 @@ describe("WeekView", () => {
       await user.click(screen.getByRole("button", { name: "Přesunout na čtvrtek 22. 10." }))
 
       expect(screen.getByRole("dialog", { name: "Přesunout trénink" })).toBeInTheDocument()
+    })
+  })
+
+  describe("skipping a training (#75)", () => {
+    const skipped = {
+      id: "t1",
+      goalId: "g1",
+      dogId: "d1",
+      date: "2026-10-21",
+      status: "SKIPPED" as const,
+    }
+
+    beforeEach(() => {
+      vi.mocked(skipTraining).mockReset()
+      vi.mocked(undoSkip).mockReset()
+    })
+
+    it("skips a planned training after confirmation", async () => {
+      const user = userEvent.setup()
+      vi.mocked(skipTraining).mockResolvedValue(skipped)
+      renderWeek([aTraining({ status: "PLANNED" })])
+
+      await user.click(screen.getByRole("button", { name: /^Přeskočit trénink/ }))
+      const dialog = screen.getByRole("alertdialog", { name: "Přeskočit trénink?" })
+      expect(dialog).toHaveTextContent("plán cíle se neposune")
+
+      await user.click(within(dialog).getByRole("button", { name: "Přeskočit" }))
+
+      expect(skipTraining).toHaveBeenCalledWith("t1")
+    })
+
+    it("does not skip when the user keeps the training", async () => {
+      const user = userEvent.setup()
+      renderWeek([aTraining({ status: "PLANNED" })])
+
+      await user.click(screen.getByRole("button", { name: /^Přeskočit trénink/ }))
+      await user.click(screen.getByRole("button", { name: "Ponechat" }))
+
+      expect(skipTraining).not.toHaveBeenCalled()
+      expect(screen.queryByRole("alertdialog")).toBeNull()
+    })
+
+    it("keeps a skipped training in the week and lets the user take the skip back", async () => {
+      const user = userEvent.setup()
+      vi.mocked(undoSkip).mockResolvedValue({ ...skipped, status: "PLANNED" })
+      renderWeek([aTraining({ status: "SKIPPED" })])
+
+      expect(screen.getByText("Přeskočeno")).toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: /^Přeskočit trénink/ })).toBeNull()
+
+      await user.click(
+        screen.getByRole("button", { name: "Vrátit přeskočení tréninku Rex · Chůze u nohy" }),
+      )
+
+      expect(undoSkip).toHaveBeenCalledWith("t1")
+    })
+
+    it("does not offer to take back a skip from a past week", () => {
+      renderWeek([aTraining({ date: "2026-10-14", status: "SKIPPED" })], "2026-10-12")
+
+      expect(screen.queryByRole("button", { name: /^Vrátit přeskočení/ })).toBeNull()
+    })
+
+    it("offers no action on a completed training", () => {
+      renderWeek([aTraining({ status: "COMPLETED" })])
+
+      expect(screen.queryByRole("button", { name: /^Přeskočit trénink/ })).toBeNull()
+      expect(screen.queryByRole("button", { name: /^Vrátit přeskočení/ })).toBeNull()
     })
   })
 })

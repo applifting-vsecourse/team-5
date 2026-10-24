@@ -33,6 +33,7 @@ describe('TrainingsController', () => {
         note: 'Skvělý trénink',
         videoUrl: null,
         skipReason: null,
+        scheduledTrainingId: 't1',
         createdAt: new Date('2026-10-22T10:00:00Z'),
         updatedAt: new Date('2026-10-22T10:00:00Z'),
       };

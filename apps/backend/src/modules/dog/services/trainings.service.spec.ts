@@ -234,6 +234,7 @@ describe('TrainingsService', () => {
       note: 'Super výkon.',
       videoUrl: null,
       skipReason: null,
+      scheduledTrainingId: 't1',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -437,6 +438,164 @@ describe('TrainingsService', () => {
         service.moveTraining(owner, 'nope', '2026-10-29', now),
       ).rejects.toThrow(NotFoundException);
     });
+  });
+
+  describe('skipTraining (#75)', () => {
+    it('skips a planned training and logs it for Activities', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      const skipped = aTraining({ status: 'SKIPPED' });
+      repository.skipPlannedTraining.mockResolvedValue(skipped);
+
+      await expect(service.skipTraining(owner, 't1')).resolves.toEqual(skipped);
+      expect(repository.skipPlannedTraining).toHaveBeenCalledWith('t1', 'u1');
+    });
+
+    it.each(['COMPLETED', 'SKIPPED'] as const)(
+      'does not skip a %s training',
+      async (status) => {
+        const { service, repository } = setup();
+        repository.getTrainingById.mockResolvedValue(
+          aTrainingDetail({ status }),
+        );
+
+        await expect(service.skipTraining(owner, 't1')).rejects.toThrow(
+          ConflictException,
+        );
+        expect(repository.skipPlannedTraining).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refuses a training completed while the skip was on its way', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      repository.skipPlannedTraining.mockResolvedValue(null);
+
+      await expect(service.skipTraining(owner, 't1')).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('lets only the owner skip it (a trainer with a share gets 403)', async () => {
+      const { service, repository, dogAccessService } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      dogAccessService.getOwnedDog.mockRejectedValue(new ForbiddenException());
+
+      await expect(
+        service.skipTraining({ id: 'u9' } as Identity, 't1'),
+      ).rejects.toThrow(ForbiddenException);
+      expect(repository.skipPlannedTraining).not.toHaveBeenCalled();
+    });
+
+    it("reports another user's training as not found", async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+
+      await expect(service.skipTraining(stranger, 't1')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('undoSkip (#75)', () => {
+    const skippedOn = (date: string): ScheduledTrainingDetail =>
+      aTrainingDetail({
+        status: 'SKIPPED',
+        date: new Date(`${date}T00:00:00.000Z`),
+      });
+
+    it('plans the training again within its week', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-19'));
+      const restored = aTraining({ date: new Date('2026-10-19T00:00:00Z') });
+      repository.restoreSkippedTraining.mockResolvedValue(restored);
+
+      await expect(service.undoSkip(owner, 't1', now)).resolves.toEqual(
+        restored,
+      );
+      expect(repository.restoreSkippedTraining).toHaveBeenCalledWith(
+        't1',
+        'g1',
+      );
+    });
+
+    it('takes back a skip of a training in a later week', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-27'));
+      repository.restoreSkippedTraining.mockResolvedValue(aTraining());
+
+      await service.undoSkip(owner, 't1', now);
+
+      expect(repository.restoreSkippedTraining).toHaveBeenCalled();
+    });
+
+    it("refuses once the training's week is over", async () => {
+      const { service, repository } = setup();
+      // Sunday of the previous week.
+      repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-18'));
+
+      await expect(service.undoSkip(owner, 't1', now)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(repository.restoreSkippedTraining).not.toHaveBeenCalled();
+    });
+
+    it('counts the week in Czech time: Sunday night yes, Monday after midnight no', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-19'));
+      repository.restoreSkippedTraining.mockResolvedValue(aTraining());
+
+      // Sunday 25 Oct, 22:30 in Prague (still summer time, UTC+2)...
+      await expect(
+        service.undoSkip(owner, 't1', new Date('2026-10-25T20:30:00Z')),
+      ).resolves.toBeDefined();
+      // ...and Monday 26 Oct, 00:30 in Prague (winter time, UTC+1).
+      await expect(
+        service.undoSkip(owner, 't1', new Date('2026-10-25T23:30:00Z')),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('refuses when the goal has been planned again meanwhile', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-22'));
+      repository.restoreSkippedTraining.mockResolvedValue('goal-has-plan');
+
+      await expect(service.undoSkip(owner, 't1', now)).rejects.toThrow(
+        'The goal already has a planned training',
+      );
+    });
+
+    it('refuses a training that is not skipped', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+
+      await expect(service.undoSkip(owner, 't1', now)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(repository.restoreSkippedTraining).not.toHaveBeenCalled();
+    });
+
+    it('lets only the owner undo it', async () => {
+      const { service, repository, dogAccessService } = setup();
+      repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-22'));
+      dogAccessService.getOwnedDog.mockRejectedValue(new ForbiddenException());
+
+      await expect(
+        service.undoSkip({ id: 'u9' } as Identity, 't1', now),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  it('does not complete a skipped training (#75)', async () => {
+    const { service, repository } = setup();
+    repository.getTrainingById.mockResolvedValue(
+      aTrainingDetail({ status: 'SKIPPED' }),
+    );
+
+    await expect(service.completeTraining(owner, 't1', {})).rejects.toThrow(
+      ConflictException,
+    );
+    expect(repository.completeTraining).not.toHaveBeenCalled();
   });
 
   describe('getPlannedDogTrainings (#74)', () => {
