@@ -107,7 +107,7 @@ export function WeekPickerDialog({
           {["Po", "Út", "St", "Čt", "Pá", "So", "Ne"].map((dayName) => (
             <span
               key={dayName}
-              className="py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+              className="py-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
             >
               {dayName}
             </span>

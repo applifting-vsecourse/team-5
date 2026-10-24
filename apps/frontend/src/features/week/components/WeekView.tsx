@@ -22,6 +22,7 @@ import { dogColorClass } from "@/lib/dogColors"
 import { cn } from "@/lib/utils"
 
 import { weekTrainingsQueryOptions, type WeekTraining } from "@/features/week/api/weekQueryOptions"
+
 import { WeekPickerDialog } from "./WeekPickerDialog"
 
 const STATUS_LABELS: Record<WeekTraining["status"], string> = {
@@ -189,7 +190,7 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
                 day === today && "font-semibold text-primary",
               )}
             >
-              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              <span className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
                 {formatWeekdayShort(day)}
               </span>
               <span className="text-base font-bold">{formatDayOfMonth(day)}</span>

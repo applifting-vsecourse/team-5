@@ -66,12 +66,6 @@ describe("calendarDate", () => {
   it("formats month and year and computes all weeks covering a month", () => {
     expect(formatMonthYear(new Date(2026, 9, 1))).toBe("Říjen 2026")
     const weeks = getMonthWeeks(new Date(2026, 9, 1))
-    expect(weeks).toEqual([
-      "2026-09-28",
-      "2026-10-05",
-      "2026-10-12",
-      "2026-10-19",
-      "2026-10-26",
-    ])
+    expect(weeks).toEqual(["2026-09-28", "2026-10-05", "2026-10-12", "2026-10-19", "2026-10-26"])
   })
 })
