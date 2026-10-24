@@ -149,7 +149,12 @@ export class DogPhotoService {
     const mime = (file.mimetype || '').toLowerCase();
     const ext = path.extname(file.originalname || '').toLowerCase();
 
-    const isAllowedMime = ALLOWED_DOG_PHOTO_MIMES.includes(mime);
+    // Some phones send HEIC/JPEG files without a MIME type. The extension and
+    // detected file bytes are still required; generic MIME is only a fallback.
+    const isAllowedMime =
+      ALLOWED_DOG_PHOTO_MIMES.includes(mime) ||
+      mime === '' ||
+      mime === 'application/octet-stream';
     const isAllowedExt = ALLOWED_DOG_PHOTO_EXTS.includes(ext);
     const detectedFormat = detectImageFormat(file.buffer);
 
@@ -159,15 +164,19 @@ export class DogPhotoService {
       );
     }
 
+    const formats = {
+      jpeg: { extensions: ['.jpg', '.jpeg'], mimes: ['image/jpeg'] },
+      png: { extensions: ['.png'], mimes: ['image/png'] },
+      heic: {
+        extensions: ['.heic', '.heif'],
+        mimes: ['image/heic', 'image/heif'],
+      },
+    };
+    const format = formats[detectedFormat];
+    const hasSpecificMime = mime !== '' && mime !== 'application/octet-stream';
     if (
-      (detectedFormat === 'jpeg' &&
-        !mime.includes('jpeg') &&
-        !['.jpg', '.jpeg'].includes(ext)) ||
-      (detectedFormat === 'png' && !mime.includes('png') && ext !== '.png') ||
-      (detectedFormat === 'heic' &&
-        !mime.includes('heic') &&
-        !mime.includes('heif') &&
-        !['.heic', '.heif'].includes(ext))
+      !format.extensions.includes(ext) ||
+      (hasSpecificMime && !format.mimes.includes(mime))
     ) {
       throw new BadRequestException(
         'Obsah souboru neodpovídá deklarovanému typu obrázku.',

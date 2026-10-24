@@ -24,7 +24,7 @@ export function useScheduleTraining(goalId: string) {
       const isAlreadyPlanned = error instanceof HTTPError && error.response.status === 409
       toast.error(
         isAlreadyPlanned
-          ? "Trénink už je naplánovaný. Na jiný den ho přesunete v Týdnu."
+          ? "Na tento den už má cíl trénink. Pro další trénink vyberte jiný den."
           : "Trénink se nepodařilo naplánovat. Zkuste to prosím znovu.",
       )
       if (isAlreadyPlanned) {

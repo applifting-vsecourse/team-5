@@ -47,7 +47,13 @@ function WeekTrainingCard({ training }: { training: WeekTraining }) {
       />
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base font-medium text-foreground">
-          {training.dog.name} · {training.goal.title}
+          <Link
+            to="/dogs/$dogId/goals/$goalId"
+            params={{ dogId: training.dog.id, goalId: training.goal.id }}
+            className="inline-flex min-h-11 items-center underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {training.dog.name} · {training.goal.title}
+          </Link>
         </h3>
         <Badge
           variant={training.status === "PLANNED" ? "secondary" : "outline"}
@@ -88,6 +94,9 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
     <div className="flex flex-col gap-6">
       <header className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Týden</h1>
+        <p className="text-sm text-muted-foreground">
+          Jednotlivé tréninky vašich psů. Na jednom cíli můžete pracovat v několika dnech.
+        </p>
         {/* Week switching (#73): arrows a week back and forth, "Dnes" back to this week. */}
         <div className="flex items-center gap-1">
           <Button

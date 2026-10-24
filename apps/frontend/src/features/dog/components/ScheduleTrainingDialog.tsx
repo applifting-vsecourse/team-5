@@ -27,15 +27,18 @@ import {
 type DayPickerProps = {
   isPending: boolean
   onSchedule: (date: CalendarDate) => Promise<void>
+  plannedDates?: CalendarDate[]
 }
 
 // Lives inside the dialog content, which mounts on every opening, so the
 // picker always starts again from today.
-function DayPicker({ isPending, onSchedule }: DayPickerProps) {
+function DayPicker({ isPending, onSchedule, plannedDates = [] }: DayPickerProps) {
   const today = todayCalendarDate()
   const currentWeek = startOfWeekOf(today)
   const [weekStart, setWeekStart] = useState(currentWeek)
-  const [selected, setSelected] = useState<CalendarDate>(today)
+  const [selected, setSelected] = useState<CalendarDate | undefined>(
+    plannedDates.includes(today) ? undefined : today,
+  )
 
   return (
     <>
@@ -73,7 +76,7 @@ function DayPicker({ isPending, onSchedule }: DayPickerProps) {
 
         <ToggleGroup
           type="single"
-          value={selected}
+          value={selected ?? ""}
           onValueChange={(value) => {
             // Radix sends "" when the selected day is clicked again; keep it.
             if (value) setSelected(value)
@@ -86,7 +89,7 @@ function DayPicker({ isPending, onSchedule }: DayPickerProps) {
             <ToggleGroupItem
               key={day}
               value={day}
-              disabled={day < today}
+              disabled={isPending || day < today || plannedDates.includes(day)}
               aria-label={formatDayLong(day)}
               className="flex h-auto min-h-14 min-w-11 flex-col gap-0 rounded-md border border-transparent px-0 py-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[today=true]:border-border"
               data-today={day === today}
@@ -98,7 +101,7 @@ function DayPicker({ isPending, onSchedule }: DayPickerProps) {
         </ToggleGroup>
 
         <p className="text-sm text-muted-foreground">
-          Den v minulosti vybrat nejde. Na jiný den trénink později přesunete.
+          Minulé dny a dny, na které už má tento cíl naplánovaný trénink, nelze vybrat.
         </p>
       </div>
 
@@ -106,11 +109,11 @@ function DayPicker({ isPending, onSchedule }: DayPickerProps) {
         <Button
           type="button"
           className="min-h-11 w-full"
-          disabled={isPending}
-          onClick={() => void onSchedule(selected)}
+          disabled={isPending || !selected || plannedDates.includes(selected)}
+          onClick={() => selected && void onSchedule(selected)}
         >
           {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-          Naplánovat na {formatDayAccusative(selected)}
+          {selected ? `Naplánovat na ${formatDayAccusative(selected)}` : "Vyberte den tréninku"}
         </Button>
       </DialogFooter>
     </>
@@ -130,6 +133,7 @@ export function ScheduleTrainingDialog({
   onOpenChange,
   isPending,
   onSchedule,
+  plannedDates,
 }: ScheduleTrainingDialogProps) {
   return (
     <Dialog
@@ -140,12 +144,13 @@ export function ScheduleTrainingDialog({
         <DialogHeader>
           <DialogTitle>Kdy má {dogName} cvičit?</DialogTitle>
           <DialogDescription>
-            Vyberte jeden den. Trénink se objeví v Týdnu ve vybraný den.
+            Vyberte den nového tréninku. Ostatní tréninky k tomuto cíli zůstanou naplánované.
           </DialogDescription>
         </DialogHeader>
         <DayPicker
           isPending={isPending}
           onSchedule={onSchedule}
+          plannedDates={plannedDates}
         />
       </DialogContent>
     </Dialog>

@@ -46,6 +46,27 @@ describe("ScheduleTrainingDialog", () => {
     expect(screen.getByRole("button", { name: "Předchozí týden" })).toBeDisabled()
   })
 
+  it("disables existing sessions but allows another day for the same goal", async () => {
+    const user = userEvent.setup()
+    const onSchedule = vi.fn().mockResolvedValue(undefined)
+    render(
+      <ScheduleTrainingDialog
+        dogName="Rex"
+        isOpen
+        onOpenChange={vi.fn()}
+        isPending={false}
+        onSchedule={onSchedule}
+        plannedDates={["2026-10-21", "2026-10-23"]}
+      />,
+    )
+    expect(screen.getByRole("radio", { name: "středa 21. 10." })).toBeDisabled()
+    expect(screen.getByRole("radio", { name: "pátek 23. 10." })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Vyberte den tréninku" })).toBeDisabled()
+    await user.click(screen.getByRole("radio", { name: "čtvrtek 22. 10." }))
+    await user.click(screen.getByRole("button", { name: "Naplánovat na čtvrtek 22. 10." }))
+    expect(onSchedule).toHaveBeenCalledWith("2026-10-22")
+  })
+
   it("plans the chosen day, also in a later week", async () => {
     const user = userEvent.setup()
     const { onSchedule } = renderDialog()
