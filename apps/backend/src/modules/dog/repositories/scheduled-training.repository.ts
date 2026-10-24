@@ -118,6 +118,43 @@ export class ScheduledTrainingRepository {
     });
   }
 
+  // Returns null when the training is no longer planned. The status check is
+  // part of the update itself, so a training completed in the meantime
+  // (e.g. on another device) is never moved.
+  async movePlannedTraining(
+    id: string,
+    date: Date,
+  ): Promise<ScheduledTraining | null> {
+    const { count } = await this.prisma.scheduledTraining.updateMany({
+      where: { id, status: TrainingStatus.PLANNED },
+      data: { date },
+    });
+    if (count === 0) return null;
+    return this.prisma.scheduledTraining.findUnique({ where: { id } });
+  }
+
+  // A dog's trainings still to be done, for its Activities (#74): the owner
+  // and a trainer with a share see the day each one is planned for.
+  async getPlannedTrainingsByDogId(dogId: string): Promise<WeekTraining[]> {
+    return this.prisma.scheduledTraining.findMany({
+      where: { dogId, status: TrainingStatus.PLANNED },
+      include: {
+        dog: { select: { id: true, name: true, color: true } },
+        goal: {
+          select: {
+            id: true,
+            title: true,
+            blocks: {
+              select: { id: true, title: true },
+              orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+            },
+          },
+        },
+      },
+      orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
+    });
+  }
+
   async completeTraining(
     trainingId: string,
     authorId: string,

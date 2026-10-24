@@ -106,6 +106,17 @@ export class ScheduleTrainingDto {
   date!: string;
 }
 
+export class MoveTrainingDto {
+  @ApiProperty({
+    description: 'The new day of the training as a calendar date',
+    example: '2026-10-29',
+    format: 'date',
+  })
+  @Matches(CALENDAR_DATE_PATTERN, { message: 'date must be YYYY-MM-DD' })
+  @IsDateString({ strict: true })
+  date!: string;
+}
+
 export class TrainingResponseDto {
   @ApiProperty()
   id!: string;

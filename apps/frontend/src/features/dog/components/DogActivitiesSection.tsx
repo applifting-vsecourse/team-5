@@ -17,6 +17,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import type { DogActivity } from "@/features/dog/api/dogSchemas"
 import { dogActivitiesQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 
+import { PlannedTrainingsList } from "./PlannedTrainingsList"
+
 const DEFAULT_ACTIVITIES: DogActivity[] = [
   {
     id: "act-1",
@@ -164,6 +166,13 @@ export function DogActivitiesSection({
           </div>
         )}
       </div>
+
+      {dogId ? (
+        <PlannedTrainingsList
+          dogId={dogId}
+          dogName={dogName}
+        />
+      ) : null}
 
       {activitiesQuery.isError && !initialActivities ? (
         <div

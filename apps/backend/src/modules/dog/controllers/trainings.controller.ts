@@ -1,6 +1,7 @@
 import { ActivityResponseDto } from '@/modules/dog/controllers/dto/activity.dto';
 import {
   CompleteTrainingDto,
+  MoveTrainingDto,
   ScheduleTrainingDto,
   TrainingDetailResponseDto,
   TrainingResponseDto,
@@ -18,6 +19,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -79,6 +81,51 @@ export class TrainingsController {
   ): Promise<TrainingDetailResponseDto> {
     const training = await this.trainingsService.getTraining(user, trainingId);
     return TrainingDetailResponseDto.fromDomain(training);
+  }
+
+  @Patch('trainings/:trainingId')
+  @ApiOperation({ summary: 'Move a planned training to another day' })
+  @ApiResponse({ status: 200, type: TrainingResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid date or a past day' })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
+  @ApiResponse({
+    status: 403,
+    description: 'Only the dog owner can move the training',
+  })
+  @ApiResponse({ status: 404, description: 'Training not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'The training is completed or skipped',
+  })
+  async move(
+    @User() user: Identity,
+    @Param('trainingId') trainingId: string,
+    @Body() body: MoveTrainingDto,
+  ): Promise<TrainingResponseDto> {
+    const training = await this.trainingsService.moveTraining(
+      user,
+      trainingId,
+      body.date,
+    );
+    return TrainingResponseDto.fromDomain(training);
+  }
+
+  @Get('dogs/:dogId/trainings')
+  @ApiOperation({ summary: "The dog's planned trainings" })
+  @ApiResponse({ status: 200, type: [WeekTrainingResponseDto] })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
+  @ApiResponse({ status: 404, description: 'Dog not found' })
+  async listPlannedByDog(
+    @User() user: Identity,
+    @Param('dogId') dogId: string,
+  ): Promise<WeekTrainingResponseDto[]> {
+    const trainings = await this.trainingsService.getPlannedDogTrainings(
+      user,
+      dogId,
+    );
+    return trainings.map((training) =>
+      WeekTrainingResponseDto.fromDomain(training),
+    );
   }
 
   @Post('trainings/:trainingId/complete')
