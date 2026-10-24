@@ -11,23 +11,25 @@ type PlannedTrainingsListProps = {
   dogName: string
 }
 
-// Days the dog's trainings are planned for (#74). Part of Activities, so a
-// trainer sees right away when the owner moves a training to another day.
+// Days the dog's trainings are planned for (#74), next to its Activities, so
+// a trainer sees right away when the owner moves a training to another day.
 export function PlannedTrainingsList({ dogId, dogName }: PlannedTrainingsListProps) {
   const plannedQuery = useQuery(dogPlannedTrainingsQueryOptions(dogId))
 
   return (
-    <div
-      className="space-y-2"
+    <section
+      className="space-y-4"
       aria-labelledby="planned-trainings-heading"
-      role="group"
     >
-      <h3
-        id="planned-trainings-heading"
-        className="text-xs tracking-widest text-muted-foreground uppercase"
-      >
-        Naplánováno
-      </h3>
+      <div>
+        <h2
+          id="planned-trainings-heading"
+          className="text-lg font-semibold tracking-tight text-foreground"
+        >
+          Naplánováno
+        </h2>
+        <p className="text-xs text-muted-foreground">Tréninky, které psa čekají</p>
+      </div>
 
       {plannedQuery.isLoading ? (
         <Skeleton className="h-12 w-full rounded-lg" />
@@ -65,6 +67,6 @@ export function PlannedTrainingsList({ dogId, dogName }: PlannedTrainingsListPro
           ))}
         </ul>
       )}
-    </div>
+    </section>
   )
 }

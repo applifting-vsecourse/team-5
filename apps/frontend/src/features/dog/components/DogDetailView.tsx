@@ -11,6 +11,7 @@ import { DogActivitiesSection } from "./DogActivitiesSection"
 import { DogGoalsSection } from "./DogGoalsSection"
 import { EditDogDialog } from "./EditDogDialog"
 import { PesAvatar } from "./PesAvatar"
+import { PlannedTrainingsList } from "./PlannedTrainingsList"
 
 type DogDetailViewProps = {
   dog: Dog
@@ -97,15 +98,21 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
         />
       )}
 
-      {/* Sections: Aktivní cíle + Aktivity */}
+      {/* Sections: Aktivní cíle + Naplánováno + Aktivity (latest, the rest
+          on the history page) */}
       <div className="space-y-8">
         <DogGoalsSection
+          dogId={dog.id}
+          dogName={dog.name}
+        />
+        <PlannedTrainingsList
           dogId={dog.id}
           dogName={dog.name}
         />
         <DogActivitiesSection
           dogId={dog.id}
           dogName={dog.name}
+          isCompact
         />
       </div>
     </div>
