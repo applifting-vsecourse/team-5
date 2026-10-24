@@ -84,27 +84,45 @@ function PlanBlockItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex gap-3 rounded-lg border border-border bg-card p-3 transition-shadow duration-150",
-        isDragging && "opacity-60 ring-2 ring-primary/40 shadow-lg z-20",
+        "relative flex gap-3 rounded-lg border border-border bg-card p-3 transition-shadow duration-150",
+        isDragging && "z-20 opacity-60 shadow-lg ring-2 ring-primary/40",
       )}
     >
-      {/* Drag handle with grip indicator */}
+      {/* Agility Track Station Marker & Course Trail */}
       <div
         {...dragHandleProps}
-        className="flex cursor-grab flex-col items-center gap-1 pt-1 select-none touch-none active:cursor-grabbing"
-        title="Přetáhněte pro změnu pořadí"
+        className="relative flex cursor-grab touch-none flex-col items-center select-none active:cursor-grabbing"
+        title="Přetáhněte pro změnu pořadí na trati"
         aria-label={`Přetáhnout cvik ${block.title}`}
       >
+        {/* Upper agility track connector line */}
+        {!isFirst && (
+          <div
+            aria-hidden="true"
+            className="absolute -top-3.5 left-1/2 h-3.5 w-0 -translate-x-1/2 border-l-2 border-dashed border-primary/35"
+          />
+        )}
+
+        {/* Agility Course Station Checkpoint */}
         <span
           aria-hidden="true"
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground"
+          className="relative mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-xs font-bold text-secondary-foreground shadow-2xs ring-2 ring-primary/25"
         >
           {number}
         </span>
+
         <GripVertical
           aria-hidden="true"
-          className="size-4 text-muted-foreground/50 transition-colors hover:text-foreground"
+          className="mt-1 size-3.5 text-muted-foreground/45 transition-colors hover:text-foreground"
         />
+
+        {/* Lower agility track connector line */}
+        {!isLast && (
+          <div
+            aria-hidden="true"
+            className="absolute -bottom-3.5 left-1/2 h-3.5 w-0 -translate-x-1/2 border-l-2 border-dashed border-primary/35"
+          />
+        )}
       </div>
 
       {/* Clicking the block opens it for editing (#65). */}
@@ -178,7 +196,9 @@ function PlanBlockItem({
   )
 }
 
-function SortablePlanBlockItem(props: Omit<PlanBlockItemProps, "dragHandleProps" | "isDragging" | "style" | "setNodeRef">) {
+function SortablePlanBlockItem(
+  props: Omit<PlanBlockItemProps, "dragHandleProps" | "isDragging" | "style" | "setNodeRef">,
+) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: props.block.id,
   })

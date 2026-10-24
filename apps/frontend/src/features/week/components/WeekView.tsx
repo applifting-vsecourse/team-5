@@ -47,9 +47,20 @@ function WeekTrainingCard({ training }: { training: WeekTraining }) {
         className={cn("absolute inset-y-0 left-0 w-1", dogColorClass(training.dog.color))}
       />
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-medium text-foreground">
-          {training.dog.name} · {training.goal.title}
-        </h3>
+        <div className="min-w-0">
+          <h3 className="text-base font-medium text-foreground">
+            {training.dog.name} · {training.goal.title}
+          </h3>
+          <div className="mt-1 flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="inline-flex items-center gap-1 rounded-full border border-border/80 bg-secondary/50 px-2 py-0.5 text-[11px] font-medium text-secondary-foreground select-none"
+            >
+              <span className={cn("size-1.5 rounded-full", dogColorClass(training.dog.color))} />
+              <span className="font-mono text-[10px]">Známka #{training.dog.color}</span>
+            </span>
+          </div>
+        </div>
         <Badge
           variant={training.status === "PLANNED" ? "secondary" : "outline"}
           className="shrink-0"

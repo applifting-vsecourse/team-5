@@ -50,7 +50,16 @@ export function DogCard({ dog, className }: DogCardProps) {
           </div>
         </div>
 
-        <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+        <div className="flex shrink-0 items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="hidden items-center gap-1.5 rounded-full border border-border bg-secondary/60 px-2.5 py-0.5 text-xs font-medium text-secondary-foreground select-none sm:inline-flex"
+          >
+            <span className={cn("size-2 rounded-full", colorClass)} />
+            <span className="font-mono text-[11px]">Známka #{dog.color}</span>
+          </span>
+          <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+        </div>
       </Link>
     </Card>
   )

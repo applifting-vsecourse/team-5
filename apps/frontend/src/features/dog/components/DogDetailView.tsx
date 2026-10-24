@@ -4,13 +4,14 @@ import { ChevronLeft, Pencil } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 import type { Dog } from "@/features/dog/api/dogSchemas"
 
 import { DogActivitiesSection } from "./DogActivitiesSection"
 import { DogGoalsSection } from "./DogGoalsSection"
 import { EditDogDialog } from "./EditDogDialog"
-import { PesAvatar } from "./PesAvatar"
+import { DOG_COLOR_CLASSES, PesAvatar } from "./PesAvatar"
 
 type DogDetailViewProps = {
   dog: Dog
@@ -74,6 +75,26 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
             )}
           </div>
           {dog.breed && <p className="truncate text-sm text-muted-foreground">{dog.breed}</p>}
+
+          <div className="mt-2 flex items-center gap-2">
+            <span
+              aria-label={`Identifikační známka psa barva ${dog.color}`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-0.5 text-xs font-medium text-foreground shadow-2xs select-none"
+            >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "size-2.5 rounded-full shadow-xs ring-1 ring-background",
+                  DOG_COLOR_CLASSES[dog.color] ?? "bg-dog-1",
+                )}
+              />
+              <span className="font-medium text-muted-foreground">Identifikační známka</span>
+              <span className="font-mono text-[11px] font-semibold text-foreground">
+                #{dog.color}
+              </span>
+            </span>
+          </div>
+
           {dog.disciplines && dog.disciplines.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {dog.disciplines.map((discipline) => (
