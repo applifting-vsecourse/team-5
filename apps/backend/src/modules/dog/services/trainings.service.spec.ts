@@ -1,6 +1,11 @@
+import { Dog } from '@/modules/dog/domain/dog';
 import { Goal } from '@/modules/dog/domain/goal';
-import { ScheduledTraining } from '@/modules/dog/domain/scheduled-training';
+import {
+  ScheduledTraining,
+  ScheduledTrainingDetail,
+} from '@/modules/dog/domain/scheduled-training';
 import { ScheduledTrainingRepository } from '@/modules/dog/repositories/scheduled-training.repository';
+import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { GoalsService } from '@/modules/dog/services/goals.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import {
@@ -25,6 +30,27 @@ const aTraining = (
   ...overrides,
 });
 
+const aTrainingDetail = (
+  overrides: Partial<ScheduledTrainingDetail> = {},
+): ScheduledTrainingDetail => ({
+  ...aTraining(),
+  dog: { id: 'd1', name: 'Rex', color: 1 },
+  goal: {
+    id: 'g1',
+    title: 'Chůze u nohy',
+    blocks: [
+      {
+        id: 'b1',
+        position: 1,
+        title: 'Sedni u nohy',
+        instruction: 'Sedni rovně u levé nohy.',
+        criterion: '3x za sebou.',
+      },
+    ],
+  },
+  ...overrides,
+});
+
 const owner = { id: 'u1' } as Identity;
 const stranger = { id: 'u2' } as Identity;
 // Wednesday 21 Oct 2026, 10:00 in Prague.
@@ -33,17 +59,32 @@ const now = new Date('2026-10-21T08:00:00Z');
 const setup = (): {
   service: TrainingsService;
   repository: MockProxy<ScheduledTrainingRepository>;
+  dogAccessService: MockProxy<DogAccessService>;
 } => {
   const repository = mock<ScheduledTrainingRepository>();
   const goalsService = mock<GoalsService>();
+  const dogAccessService = mock<DogAccessService>();
   // The owner sees goal g1 of dog d1; anyone else gets 404.
   goalsService.getGoal.mockImplementation((user, goalId) =>
     user.id === 'u1' && goalId === 'g1'
       ? Promise.resolve({ id: 'g1', dogId: 'd1' } as Goal)
       : Promise.reject(new NotFoundException()),
   );
-  const service = new TrainingsService(repository, goalsService);
-  return { service, repository };
+  dogAccessService.getAccessibleDog.mockImplementation((user, dogId) =>
+    user.id === 'u1' && dogId === 'd1'
+      ? Promise.resolve({
+          id: 'd1',
+          name: 'Rex',
+          ownerId: 'u1',
+        } as unknown as Dog)
+      : Promise.reject(new NotFoundException()),
+  );
+  const service = new TrainingsService(
+    repository,
+    goalsService,
+    dogAccessService,
+  );
+  return { service, repository, dogAccessService };
 };
 
 describe('TrainingsService', () => {
@@ -134,6 +175,35 @@ describe('TrainingsService', () => {
         NotFoundException,
       );
       expect(repository.getTrainingsByGoalId).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getTraining', () => {
+    it('returns the training detail when the user has access to the dog', async () => {
+      const { service, repository } = setup();
+      const detail = aTrainingDetail();
+      repository.getTrainingById.mockResolvedValue(detail);
+
+      await expect(service.getTraining(owner, 't1')).resolves.toEqual(detail);
+      expect(repository.getTrainingById).toHaveBeenCalledWith('t1');
+    });
+
+    it('throws NotFoundException when the training does not exist', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(null);
+
+      await expect(service.getTraining(owner, 'missing')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('throws NotFoundException when user has no access to the dog', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+
+      await expect(service.getTraining(stranger, 't1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
