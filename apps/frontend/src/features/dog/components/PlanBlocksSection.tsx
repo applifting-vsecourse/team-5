@@ -313,7 +313,9 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
         </div>
       ) : blocks.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-6 text-center">
-          <ListOrdered className="mb-2 size-8 text-muted-foreground/35" />
+          <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+            <ListOrdered className="size-5" />
+          </div>
           <p className="text-sm text-muted-foreground">
             Plán zatím nemá žádný cvik. Přidejte první krok, který se bude doma cvičit.
           </p>

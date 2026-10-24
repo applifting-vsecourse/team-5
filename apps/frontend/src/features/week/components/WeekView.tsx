@@ -267,7 +267,9 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
         ) : trainings.length === 0 ? (
           // Nothing in the whole week: say what to do next (#72).
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-8 text-center sm:p-12">
-            <Calendar className="mb-3 size-10 text-muted-foreground/35" />
+            <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+              <Calendar className="size-6" />
+            </div>
             <p className="max-w-md text-sm text-muted-foreground">
               Na tento týden nemáte nic naplánováno. Založte psovi cíl a naplánujte trénink, nebo
               počkejte, až vám ho zadá trenér.
@@ -282,7 +284,9 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
           </div>
         ) : selectedTrainings.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-6 text-center">
-            <Calendar className="mb-2 size-8 text-muted-foreground/30" />
+            <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+              <Calendar className="size-5" />
+            </div>
             <p className="text-sm text-muted-foreground">Na tento den nemáte nic naplánováno.</p>
           </div>
         ) : (
