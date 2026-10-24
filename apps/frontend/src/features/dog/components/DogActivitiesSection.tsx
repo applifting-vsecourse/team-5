@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import { Calendar, ChevronLeft, ChevronRight, FileText } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -16,8 +17,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 import type { DogActivity } from "@/features/dog/api/dogSchemas"
 import { dogActivitiesQueryOptions } from "@/features/dog/api/dogsQueryOptions"
-
-import { PlannedTrainingsList } from "./PlannedTrainingsList"
 
 const DEFAULT_ACTIVITIES: DogActivity[] = [
   {
@@ -78,6 +77,9 @@ type DogActivitiesSectionProps = {
   dogId?: string
   dogName: string
   activities?: DogActivity[]
+  // On the dog's page: only the latest records and a link to the full
+  // history, which has its own page.
+  isCompact?: boolean
 }
 
 function formatActivityDate(date?: Date | string, fallback?: string): string {
@@ -96,6 +98,7 @@ export function DogActivitiesSection({
   dogId,
   dogName,
   activities: initialActivities,
+  isCompact = false,
 }: DogActivitiesSectionProps) {
   const [page, setPage] = useState(1)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
@@ -113,7 +116,8 @@ export function DogActivitiesSection({
     (activity) => activity.id === selectedActivityId,
   )
 
-  const totalPages = Math.ceil(effectiveActivities.length / ITEMS_PER_PAGE) || 1
+  // The compact list is always the first page, without paging.
+  const totalPages = isCompact ? 1 : Math.ceil(effectiveActivities.length / ITEMS_PER_PAGE) || 1
   const startIndex = (page - 1) * ITEMS_PER_PAGE
   const currentItems = effectiveActivities.slice(startIndex, startIndex + ITEMS_PER_PAGE)
 
@@ -133,8 +137,21 @@ export function DogActivitiesSection({
           >
             Aktivity
           </h2>
-          <p className="text-xs text-muted-foreground">Záznamy tréninků od nejnovějšího</p>
+          <p className="text-xs text-muted-foreground">
+            {isCompact ? "Poslední záznamy tréninků" : "Záznamy tréninků od nejnovějšího"}
+          </p>
         </div>
+
+        {isCompact && dogId && effectiveActivities.length > 0 && (
+          <Link
+            to="/dogs/$dogId/activities"
+            params={{ dogId }}
+            className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Celá historie
+            <ChevronRight className="size-4" />
+          </Link>
+        )}
 
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
@@ -166,13 +183,6 @@ export function DogActivitiesSection({
           </div>
         )}
       </div>
-
-      {dogId ? (
-        <PlannedTrainingsList
-          dogId={dogId}
-          dogName={dogName}
-        />
-      ) : null}
 
       {activitiesQuery.isError && !initialActivities ? (
         <div
@@ -237,20 +247,8 @@ export function DogActivitiesSection({
                   </Badge>
                 </div>
 
-                {isCompleted && (
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    {item.successRate !== undefined && (
-                      <span className="font-semibold text-foreground">
-                        Úspěšnost: {item.successRate} %
-                      </span>
-                    )}
-                    {item.rating !== undefined && <span>Hodnocení: {item.rating}/5</span>}
-                  </div>
-                )}
-
-                {item.note && (
-                  <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{item.note}</p>
-                )}
+                {/* Only the header in the list; results, the note and the
+                    messages are in the detail. */}
               </Card>
             )
           })}
