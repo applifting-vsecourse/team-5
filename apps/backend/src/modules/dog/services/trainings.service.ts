@@ -1,6 +1,8 @@
 import { TrainingStatus, WorkoutLog } from '@/generated/prisma/client';
 import {
   fromCalendarDate,
+  lastDayOfWeek,
+  toCalendarDate,
   todayInAppZone,
 } from '@/modules/dog/domain/calendar-date';
 import {
@@ -74,6 +76,10 @@ export class TrainingsService {
     if (training.status === TrainingStatus.COMPLETED) {
       throw new ConflictException('This training is already completed');
     }
+    // A skipped training already has its record (#75); take the skip back first.
+    if (training.status === TrainingStatus.SKIPPED) {
+      throw new ConflictException('This training is skipped');
+    }
 
     return this.scheduledTrainingRepository.completeTraining(
       trainingId,
@@ -91,19 +97,7 @@ export class TrainingsService {
     date: string,
     now: Date = new Date(),
   ): Promise<ScheduledTraining> {
-    const training =
-      await this.scheduledTrainingRepository.getTrainingById(trainingId);
-    if (!training) {
-      throw new NotFoundException(`Training with ID ${trainingId} not found`);
-    }
-    try {
-      await this.dogAccessService.getOwnedDog(user, training.dogId);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException(`Training with ID ${trainingId} not found`);
-      }
-      throw error;
-    }
+    const training = await this.getOwnedTraining(user, trainingId);
 
     if (date < todayInAppZone(now)) {
       throw new BadRequestException('A training cannot be moved to the past');
@@ -120,6 +114,80 @@ export class TrainingsService {
       throw new ConflictException('Only a planned training can be moved');
     }
     return moved;
+  }
+
+  // Skips a planned training (#75). The training stays in the week marked as
+  // skipped and the dog's Activities get a "skipped" record. The plan itself
+  // does not move on: the goal's exercises stay as they are.
+  async skipTraining(
+    user: Identity,
+    trainingId: string,
+  ): Promise<ScheduledTraining> {
+    const training = await this.getOwnedTraining(user, trainingId);
+    const skipped =
+      training.status === TrainingStatus.PLANNED
+        ? await this.scheduledTrainingRepository.skipPlannedTraining(
+            trainingId,
+            user.id,
+          )
+        : null;
+    if (!skipped) {
+      throw new ConflictException('Only a planned training can be skipped');
+    }
+    return skipped;
+  }
+
+  // Takes a skip back (#75) until the training's week is over: from the
+  // Monday after it, the skip stays.
+  async undoSkip(
+    user: Identity,
+    trainingId: string,
+    now: Date = new Date(),
+  ): Promise<ScheduledTraining> {
+    const training = await this.getOwnedTraining(user, trainingId);
+    if (training.status !== TrainingStatus.SKIPPED) {
+      throw new ConflictException('This training is not skipped');
+    }
+    if (todayInAppZone(now) > lastDayOfWeek(toCalendarDate(training.date))) {
+      throw new ConflictException(
+        "The skip can only be undone until the training's week is over",
+      );
+    }
+
+    const result =
+      await this.scheduledTrainingRepository.restoreSkippedTraining(
+        trainingId,
+        training.goalId,
+      );
+    if (result === 'goal-has-plan') {
+      throw new ConflictException('The goal already has a planned training');
+    }
+    if (result === 'not-skipped') {
+      throw new ConflictException('This training is not skipped');
+    }
+    return result;
+  }
+
+  // The training, when the user owns its dog: a trainer with a share gets 403,
+  // anyone else the same 404 as for a training that does not exist.
+  private async getOwnedTraining(
+    user: Identity,
+    trainingId: string,
+  ): Promise<ScheduledTrainingDetail> {
+    const training =
+      await this.scheduledTrainingRepository.getTrainingById(trainingId);
+    if (!training) {
+      throw new NotFoundException(`Training with ID ${trainingId} not found`);
+    }
+    try {
+      await this.dogAccessService.getOwnedDog(user, training.dogId);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`Training with ID ${trainingId} not found`);
+      }
+      throw error;
+    }
+    return training;
   }
 
   // Planned trainings of one dog (#74), for everyone who sees the dog.
