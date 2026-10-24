@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from "lucide-react"
+import { ChevronDown, ChevronUp, GripVertical, Pencil, Plus, Trash2 } from "lucide-react"
 
 import {
   AlertDialog,
@@ -46,14 +46,27 @@ function PlanBlockItem({
   onMove,
   onDelete,
 }: PlanBlockItemProps) {
+  const handleMoveWithHaptic = (direction: -1 | 1) => {
+    if ("vibrate" in navigator && typeof navigator.vibrate === "function") {
+      navigator.vibrate(15)
+    }
+    onMove(direction)
+  }
+
   return (
-    <li className="flex gap-3 rounded-lg border border-border bg-card p-3">
-      <span
-        aria-hidden="true"
-        className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-secondary-foreground"
-      >
-        {number}
-      </span>
+    <li className="flex gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-foreground/20">
+      <div className="flex flex-col items-center gap-1 pt-1">
+        <span
+          aria-hidden="true"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-semibold text-secondary-foreground"
+        >
+          {number}
+        </span>
+        <GripVertical
+          aria-hidden="true"
+          className="size-3.5 text-muted-foreground/40"
+        />
+      </div>
 
       {/* Clicking the block opens it for editing (#65). */}
       <button
@@ -86,7 +99,7 @@ function PlanBlockItem({
           className="size-11"
           aria-label={`Posunout cvik ${block.title} nahoru`}
           disabled={isFirst || isReordering}
-          onClick={() => onMove(-1)}
+          onClick={() => handleMoveWithHaptic(-1)}
         >
           <ChevronUp className="size-5" />
         </Button>
@@ -107,7 +120,7 @@ function PlanBlockItem({
           className="size-11"
           aria-label={`Posunout cvik ${block.title} dolů`}
           disabled={isLast || isReordering}
-          onClick={() => onMove(1)}
+          onClick={() => handleMoveWithHaptic(1)}
         >
           <ChevronDown className="size-5" />
         </Button>

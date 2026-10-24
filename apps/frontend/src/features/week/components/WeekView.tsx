@@ -1,10 +1,11 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Play } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { ProgressBar } from "@/components/ui/progress-bar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
@@ -22,6 +23,8 @@ import { cn } from "@/lib/utils"
 
 import { weekTrainingsQueryOptions, type WeekTraining } from "@/features/week/api/weekQueryOptions"
 
+import { FieldTrainingDrawer } from "./FieldTrainingDrawer"
+
 const STATUS_LABELS: Record<WeekTraining["status"], string> = {
   PLANNED: "Naplánováno",
   COMPLETED: "Odcvičeno",
@@ -35,7 +38,13 @@ const exerciseCount = (count: number): string => {
   return `${count} cviků`
 }
 
-function WeekTrainingCard({ training }: { training: WeekTraining }) {
+function WeekTrainingCard({
+  training,
+  onOpenFieldMode,
+}: {
+  training: WeekTraining
+  onOpenFieldMode?: (training: WeekTraining) => void
+}) {
   const titles = training.exercises.map((exercise) => exercise.title)
 
   return (
@@ -61,6 +70,21 @@ function WeekTrainingCard({ training }: { training: WeekTraining }) {
           ? "Plán zatím nemá žádný cvik."
           : `${exerciseCount(titles.length)} · ${titles.join(", ")}`}
       </p>
+
+      {onOpenFieldMode && (
+        <div className="mt-3 flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs font-medium"
+            onClick={() => onOpenFieldMode(training)}
+          >
+            <Play className="size-3.5 fill-current" />
+            Režim na cvičišti
+          </Button>
+        </div>
+      )}
     </li>
   )
 }
@@ -78,11 +102,15 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
   const [selectedDay, setSelectedDay] = useState<CalendarDate>(
     days.includes(today) ? today : weekStart,
   )
+  const [activeFieldTraining, setActiveFieldTraining] = useState<WeekTraining | null>(null)
   const weekQuery = useQuery(weekTrainingsQueryOptions(weekStart))
 
   const trainings = weekQuery.data ?? []
   const trainingsOf = (day: CalendarDate) => trainings.filter((training) => training.date === day)
   const selectedTrainings = trainingsOf(selectedDay)
+
+  const completedCount = trainings.filter((t) => t.status === "COMPLETED").length
+  const totalCount = trainings.length
 
   return (
     <div className="flex flex-col gap-6">
@@ -127,6 +155,21 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
             Dnes
           </Button>
         </div>
+
+        {totalCount > 0 && (
+          <div className="mt-3 flex flex-col gap-1.5 rounded-lg border border-border bg-card p-3">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Týdenní postup</span>
+              <span className="font-medium text-foreground">
+                {completedCount} z {totalCount} odcvičeno
+              </span>
+            </div>
+            <ProgressBar
+              value={completedCount}
+              max={totalCount}
+            />
+          </div>
+        )}
       </header>
 
       <ToggleGroup
@@ -225,11 +268,20 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
               <WeekTrainingCard
                 key={training.id}
                 training={training}
+                onOpenFieldMode={setActiveFieldTraining}
               />
             ))}
           </ul>
         )}
       </section>
+
+      <FieldTrainingDrawer
+        training={activeFieldTraining}
+        isOpen={Boolean(activeFieldTraining)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setActiveFieldTraining(null)
+        }}
+      />
     </div>
   )
 }
