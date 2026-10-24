@@ -126,4 +126,18 @@ describe("WeekView", () => {
     expect(screen.getByText(/Na tento týden nemáte nic naplánováno/)).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Přejít na psy" })).toHaveAttribute("href", "/dogs")
   })
+
+  it("opens week picker dialog on clicking week range and allows selecting a specific week", async () => {
+    const user = userEvent.setup()
+    const { onWeekChange } = renderWeek([])
+
+    await user.click(screen.getByRole("button", { name: /^Vybrat týden/ }))
+    expect(screen.getByRole("heading", { name: "Vybrat týden" })).toBeInTheDocument()
+
+    // Click on week row for 5.–11. října
+    const weekBtn = screen.getByRole("button", { name: /Týden 5\.–11\. října/ })
+    await user.click(weekBtn)
+
+    expect(onWeekChange).toHaveBeenCalledWith("2026-10-05")
+  })
 })

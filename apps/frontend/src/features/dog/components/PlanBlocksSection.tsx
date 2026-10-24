@@ -17,7 +17,7 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { useQuery } from "@tanstack/react-query"
-import { ChevronDown, ChevronUp, GripVertical, Pencil, Plus, Trash2 } from "lucide-react"
+import { ChevronDown, ChevronUp, GripVertical, ListOrdered, Pencil, Plus, Trash2 } from "lucide-react"
 
 import {
   AlertDialog,
@@ -84,7 +84,7 @@ function PlanBlockItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "relative flex gap-3 rounded-lg border border-border bg-card p-3 transition-shadow duration-150",
+        "relative flex gap-3 rounded-lg border border-border bg-card p-3 transition-all duration-150 active:scale-[0.995]",
         isDragging && "z-20 opacity-60 shadow-lg ring-2 ring-primary/40",
       )}
     >
@@ -312,9 +312,12 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
           </Button>
         </div>
       ) : blocks.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Plán zatím nemá žádný cvik. Přidejte první krok, který se bude doma cvičit.
-        </p>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-6 text-center">
+          <ListOrdered className="mb-2 size-8 text-muted-foreground/35" />
+          <p className="text-sm text-muted-foreground">
+            Plán zatím nemá žádný cvik. Přidejte první krok, který se bude doma cvičit.
+          </p>
+        </div>
       ) : (
         <DndContext
           sensors={sensors}

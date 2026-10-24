@@ -5,8 +5,10 @@ import {
   daysOfWeek,
   formatDayAccusative,
   formatDayLong,
+  formatMonthYear,
   formatWeekdayShort,
   formatWeekRange,
+  getMonthWeeks,
   isCalendarDate,
   startOfWeekOf,
 } from "./calendarDate"
@@ -59,5 +61,17 @@ describe("calendarDate", () => {
     expect(formatDayAccusative("2026-10-22")).toBe("čtvrtek 22. 10.")
     expect(formatDayAccusative("2026-10-24")).toBe("sobotu 24. 10.")
     expect(formatDayAccusative("2026-10-25")).toBe("neděli 25. 10.")
+  })
+
+  it("formats month and year and computes all weeks covering a month", () => {
+    expect(formatMonthYear(new Date(2026, 9, 1))).toBe("Říjen 2026")
+    const weeks = getMonthWeeks(new Date(2026, 9, 1))
+    expect(weeks).toEqual([
+      "2026-09-28",
+      "2026-10-05",
+      "2026-10-12",
+      "2026-10-19",
+      "2026-10-26",
+    ])
   })
 })
