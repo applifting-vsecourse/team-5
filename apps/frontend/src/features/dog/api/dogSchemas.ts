@@ -125,6 +125,17 @@ export const trainingSchema = z.object({
 export const trainingsSchema = z.array(trainingSchema)
 
 export type Training = z.infer<typeof trainingSchema>
+
+// A dog's training still to be done, shown in its Activities (#74).
+export const plannedTrainingSchema = z.object({
+  id: z.string(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  goal: z.object({ id: z.string(), title: z.string() }),
+})
+
+export const plannedTrainingsSchema = z.array(plannedTrainingSchema)
+
+export type PlannedTraining = z.infer<typeof plannedTrainingSchema>
 export type ExerciseFormValues = z.infer<typeof exerciseFormSchema>
 
 export const dogActivitySchema = z.object({

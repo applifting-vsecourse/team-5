@@ -1,11 +1,17 @@
+import { Dog } from '@/modules/dog/domain/dog';
 import { Goal } from '@/modules/dog/domain/goal';
-import { ScheduledTraining } from '@/modules/dog/domain/scheduled-training';
+import {
+  ScheduledTraining,
+  ScheduledTrainingDetail,
+} from '@/modules/dog/domain/scheduled-training';
 import { ScheduledTrainingRepository } from '@/modules/dog/repositories/scheduled-training.repository';
+import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { GoalsService } from '@/modules/dog/services/goals.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 import { mock, MockProxy } from 'jest-mock-extended';
@@ -25,6 +31,27 @@ const aTraining = (
   ...overrides,
 });
 
+const aTrainingDetail = (
+  overrides: Partial<ScheduledTrainingDetail> = {},
+): ScheduledTrainingDetail => ({
+  ...aTraining(),
+  dog: { id: 'd1', name: 'Rex', color: 1 },
+  goal: {
+    id: 'g1',
+    title: 'Chůze u nohy',
+    blocks: [
+      {
+        id: 'b1',
+        position: 1,
+        title: 'Sedni u nohy',
+        instruction: 'Sedni rovně u levé nohy.',
+        criterion: '3x za sebou.',
+      },
+    ],
+  },
+  ...overrides,
+});
+
 const owner = { id: 'u1' } as Identity;
 const stranger = { id: 'u2' } as Identity;
 // Wednesday 21 Oct 2026, 10:00 in Prague.
@@ -33,17 +60,41 @@ const now = new Date('2026-10-21T08:00:00Z');
 const setup = (): {
   service: TrainingsService;
   repository: MockProxy<ScheduledTrainingRepository>;
+  dogAccessService: MockProxy<DogAccessService>;
 } => {
   const repository = mock<ScheduledTrainingRepository>();
   const goalsService = mock<GoalsService>();
+  const dogAccessService = mock<DogAccessService>();
   // The owner sees goal g1 of dog d1; anyone else gets 404.
   goalsService.getGoal.mockImplementation((user, goalId) =>
     user.id === 'u1' && goalId === 'g1'
       ? Promise.resolve({ id: 'g1', dogId: 'd1' } as Goal)
       : Promise.reject(new NotFoundException()),
   );
-  const service = new TrainingsService(repository, goalsService);
-  return { service, repository };
+  dogAccessService.getAccessibleDog.mockImplementation((user, dogId) =>
+    user.id === 'u1' && dogId === 'd1'
+      ? Promise.resolve({
+          id: 'd1',
+          name: 'Rex',
+          ownerId: 'u1',
+        } as unknown as Dog)
+      : Promise.reject(new NotFoundException()),
+  );
+  dogAccessService.getOwnedDog.mockImplementation((user, dogId) =>
+    user.id === 'u1' && dogId === 'd1'
+      ? Promise.resolve({
+          id: 'd1',
+          name: 'Rex',
+          ownerId: 'u1',
+        } as unknown as Dog)
+      : Promise.reject(new NotFoundException()),
+  );
+  const service = new TrainingsService(
+    repository,
+    goalsService,
+    dogAccessService,
+  );
+  return { service, repository, dogAccessService };
 };
 
 describe('TrainingsService', () => {
@@ -137,6 +188,148 @@ describe('TrainingsService', () => {
     });
   });
 
+  describe('getTraining', () => {
+    it('returns the training detail when the user has access to the dog', async () => {
+      const { service, repository } = setup();
+      const detail = aTrainingDetail();
+      repository.getTrainingById.mockResolvedValue(detail);
+
+      await expect(service.getTraining(owner, 't1')).resolves.toEqual(detail);
+      expect(repository.getTrainingById).toHaveBeenCalledWith('t1');
+    });
+
+    it('throws NotFoundException when the training does not exist', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(null);
+
+      await expect(service.getTraining(owner, 'missing')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('throws NotFoundException when user has no access to the dog', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+
+      await expect(service.getTraining(stranger, 't1')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('completeTraining', () => {
+    const fakeLog = {
+      id: 'log1',
+      dogId: 'd1',
+      goalId: 'g1',
+      authorId: 'u1',
+      title: 'Chůze u nohy',
+      discipline: 'Poslušnost',
+      status: 'COMPLETED' as const,
+      completedAt: new Date(),
+      successRate: 70,
+      rating: null,
+      focus: 'YES' as const,
+      repeatedMistakes: 'NO' as const,
+      note: 'Super výkon.',
+      videoUrl: null,
+      skipReason: null,
+      scheduledTrainingId: 't1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('completes the training and returns the created workout log', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      repository.completeTraining.mockResolvedValue(fakeLog);
+
+      const dto = {
+        successRate: 70,
+        focus: 'YES' as const,
+        repeatedMistakes: 'NO' as const,
+        note: 'Super výkon.',
+      };
+
+      await expect(service.completeTraining(owner, 't1', dto)).resolves.toEqual(
+        fakeLog,
+      );
+
+      expect(repository.completeTraining).toHaveBeenCalledWith(
+        't1',
+        owner.id,
+        dto,
+      );
+    });
+
+    it('throws NotFoundException if training does not exist', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(null);
+
+      await expect(
+        service.completeTraining(owner, 'missing', {}),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(repository.completeTraining).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException if user has no access to the dog', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+
+      await expect(
+        service.completeTraining(stranger, 't1', {}),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(repository.completeTraining).not.toHaveBeenCalled();
+    });
+
+    it('throws ForbiddenException if user is not the dog owner', async () => {
+      const { service, repository, dogAccessService } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      dogAccessService.getOwnedDog.mockRejectedValue(new ForbiddenException());
+
+      await expect(service.completeTraining(owner, 't1', {})).rejects.toThrow(
+        ForbiddenException,
+      );
+
+      expect(repository.completeTraining).not.toHaveBeenCalled();
+    });
+
+    it('throws ConflictException if training is already completed', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(
+        aTrainingDetail({ status: 'COMPLETED' }),
+      );
+
+      await expect(service.completeTraining(owner, 't1', {})).rejects.toThrow(
+        ConflictException,
+      );
+
+      expect(repository.completeTraining).not.toHaveBeenCalled();
+    });
+
+    it('answers 409 to a second submit that loses the race', async () => {
+      const { service, repository } = setup();
+      // Both requests read the training as planned...
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      // ...but only the first one completes it.
+      repository.completeTraining.mockResolvedValueOnce(fakeLog);
+      repository.completeTraining.mockResolvedValueOnce(null);
+
+      const [first, second] = await Promise.allSettled([
+        service.completeTraining(owner, 't1', {}),
+        service.completeTraining(owner, 't1', {}),
+      ]);
+
+      expect(first).toEqual({ status: 'fulfilled', value: fakeLog });
+      expect(second.status).toBe('rejected');
+      expect((second as PromiseRejectedResult).reason).toBeInstanceOf(
+        ConflictException,
+      );
+    });
+  });
+
   describe('getWeekTrainings', () => {
     it("asks only for the signed-in owner's trainings in the range", async () => {
       const { service, repository } = setup();
@@ -170,6 +363,293 @@ describe('TrainingsService', () => {
         BadRequestException,
       );
       expect(repository.getOwnerTrainingsBetween).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('moveTraining (#74)', () => {
+    it('moves a planned training to a day in another week', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      const moved = aTraining({ date: new Date('2026-10-29T00:00:00.000Z') });
+      repository.movePlannedTraining.mockResolvedValue(moved);
+
+      await expect(
+        service.moveTraining(owner, 't1', '2026-10-29', now),
+      ).resolves.toEqual(moved);
+      expect(repository.movePlannedTraining).toHaveBeenCalledWith(
+        't1',
+        'g1',
+        new Date('2026-10-29T00:00:00.000Z'),
+      );
+    });
+
+    // A goal is practised on many days, but at most once a day.
+    it('refuses a day the goal already has another planned training on', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      repository.movePlannedTraining.mockResolvedValue('day-taken');
+
+      await expect(
+        service.moveTraining(owner, 't1', '2026-10-29', now),
+      ).rejects.toThrow('This goal already has a planned training on this day');
+    });
+
+    it('moves a missed training to today', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(
+        aTrainingDetail({ date: new Date('2026-10-19T00:00:00.000Z') }),
+      );
+      repository.movePlannedTraining.mockResolvedValue(aTraining());
+
+      await service.moveTraining(owner, 't1', '2026-10-21', now);
+
+      expect(repository.movePlannedTraining).toHaveBeenCalled();
+    });
+
+    it('refuses a day in the past', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+
+      await expect(
+        service.moveTraining(owner, 't1', '2026-10-20', now),
+      ).rejects.toThrow(BadRequestException);
+      expect(repository.movePlannedTraining).not.toHaveBeenCalled();
+    });
+
+    it.each(['COMPLETED', 'SKIPPED'] as const)(
+      'does not move a %s training',
+      async (status) => {
+        const { service, repository } = setup();
+        repository.getTrainingById.mockResolvedValue(
+          aTrainingDetail({ status }),
+        );
+
+        await expect(
+          service.moveTraining(owner, 't1', '2026-10-29', now),
+        ).rejects.toThrow(ConflictException);
+        expect(repository.movePlannedTraining).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refuses a training completed while the move was on its way', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      repository.movePlannedTraining.mockResolvedValue(null);
+
+      await expect(
+        service.moveTraining(owner, 't1', '2026-10-29', now),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('lets only the owner move it (a trainer with a share gets 403)', async () => {
+      const { service, repository, dogAccessService } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      dogAccessService.getOwnedDog.mockRejectedValue(new ForbiddenException());
+
+      await expect(
+        service.moveTraining({ id: 'u9' } as Identity, 't1', '2026-10-29', now),
+      ).rejects.toThrow(ForbiddenException);
+      expect(repository.movePlannedTraining).not.toHaveBeenCalled();
+    });
+
+    it("reports another user's training as not found", async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+
+      await expect(
+        service.moveTraining(stranger, 't1', '2026-10-29', now),
+      ).rejects.toThrow('Training with ID t1 not found');
+      expect(repository.movePlannedTraining).not.toHaveBeenCalled();
+    });
+
+    it('reports a missing training as not found', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(null);
+
+      await expect(
+        service.moveTraining(owner, 'nope', '2026-10-29', now),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('skipTraining (#75)', () => {
+    it('skips a planned training and logs it for Activities', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      const skipped = aTraining({ status: 'SKIPPED' });
+      repository.skipPlannedTraining.mockResolvedValue(skipped);
+
+      await expect(service.skipTraining(owner, 't1')).resolves.toEqual(skipped);
+      expect(repository.skipPlannedTraining).toHaveBeenCalledWith('t1', 'u1');
+    });
+
+    it.each(['COMPLETED', 'SKIPPED'] as const)(
+      'does not skip a %s training',
+      async (status) => {
+        const { service, repository } = setup();
+        repository.getTrainingById.mockResolvedValue(
+          aTrainingDetail({ status }),
+        );
+
+        await expect(service.skipTraining(owner, 't1')).rejects.toThrow(
+          ConflictException,
+        );
+        expect(repository.skipPlannedTraining).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refuses a training completed while the skip was on its way', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      repository.skipPlannedTraining.mockResolvedValue(null);
+
+      await expect(service.skipTraining(owner, 't1')).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('lets only the owner skip it (a trainer with a share gets 403)', async () => {
+      const { service, repository, dogAccessService } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      dogAccessService.getOwnedDog.mockRejectedValue(new ForbiddenException());
+
+      await expect(
+        service.skipTraining({ id: 'u9' } as Identity, 't1'),
+      ).rejects.toThrow(ForbiddenException);
+      expect(repository.skipPlannedTraining).not.toHaveBeenCalled();
+    });
+
+    it("reports another user's training as not found", async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+
+      await expect(service.skipTraining(stranger, 't1')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('undoSkip (#75)', () => {
+    const skippedOn = (date: string): ScheduledTrainingDetail =>
+      aTrainingDetail({
+        status: 'SKIPPED',
+        date: new Date(`${date}T00:00:00.000Z`),
+      });
+
+    it('plans the training again within its week', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-19'));
+      const restored = aTraining({ date: new Date('2026-10-19T00:00:00Z') });
+      repository.restoreSkippedTraining.mockResolvedValue(restored);
+
+      await expect(service.undoSkip(owner, 't1', now)).resolves.toEqual(
+        restored,
+      );
+      expect(repository.restoreSkippedTraining).toHaveBeenCalledWith(
+        't1',
+        'g1',
+        new Date('2026-10-19T00:00:00Z'),
+      );
+    });
+
+    it('takes back a skip of a training in a later week', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-27'));
+      repository.restoreSkippedTraining.mockResolvedValue(aTraining());
+
+      await service.undoSkip(owner, 't1', now);
+
+      expect(repository.restoreSkippedTraining).toHaveBeenCalled();
+    });
+
+    it("refuses once the training's week is over", async () => {
+      const { service, repository } = setup();
+      // Sunday of the previous week.
+      repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-18'));
+
+      await expect(service.undoSkip(owner, 't1', now)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(repository.restoreSkippedTraining).not.toHaveBeenCalled();
+    });
+
+    it('counts the week in Czech time: Sunday night yes, Monday after midnight no', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-19'));
+      repository.restoreSkippedTraining.mockResolvedValue(aTraining());
+
+      // Sunday 25 Oct, 21:30 in Prague (winter time since that night, UTC+1)...
+      await expect(
+        service.undoSkip(owner, 't1', new Date('2026-10-25T20:30:00Z')),
+      ).resolves.toBeDefined();
+      // ...and Monday 26 Oct, 00:30 in Prague (winter time, UTC+1).
+      await expect(
+        service.undoSkip(owner, 't1', new Date('2026-10-25T23:30:00Z')),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    // Other days of the goal do not matter: a goal has many trainings (PO).
+    it('refuses when the goal has been planned on the same day meanwhile', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-22'));
+      repository.restoreSkippedTraining.mockResolvedValue('day-taken');
+
+      await expect(service.undoSkip(owner, 't1', now)).rejects.toThrow(
+        'This goal already has a planned training on this day',
+      );
+    });
+
+    it('refuses a training that is not skipped', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+
+      await expect(service.undoSkip(owner, 't1', now)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(repository.restoreSkippedTraining).not.toHaveBeenCalled();
+    });
+
+    it('lets only the owner undo it', async () => {
+      const { service, repository, dogAccessService } = setup();
+      repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-22'));
+      dogAccessService.getOwnedDog.mockRejectedValue(new ForbiddenException());
+
+      await expect(
+        service.undoSkip({ id: 'u9' } as Identity, 't1', now),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  it('does not complete a skipped training (#75)', async () => {
+    const { service, repository } = setup();
+    repository.getTrainingById.mockResolvedValue(
+      aTrainingDetail({ status: 'SKIPPED' }),
+    );
+
+    await expect(service.completeTraining(owner, 't1', {})).rejects.toThrow(
+      ConflictException,
+    );
+    expect(repository.completeTraining).not.toHaveBeenCalled();
+  });
+
+  describe('getPlannedDogTrainings (#74)', () => {
+    it("lists the dog's planned trainings to someone who sees the dog", async () => {
+      const { service, repository } = setup();
+      repository.getPlannedTrainingsByDogId.mockResolvedValue([]);
+
+      await expect(
+        service.getPlannedDogTrainings(owner, 'd1'),
+      ).resolves.toEqual([]);
+      expect(repository.getPlannedTrainingsByDogId).toHaveBeenCalledWith('d1');
+    });
+
+    it('does not list trainings of a dog the user cannot see', async () => {
+      const { service, repository } = setup();
+
+      await expect(
+        service.getPlannedDogTrainings(stranger, 'd1'),
+      ).rejects.toThrow(NotFoundException);
+      expect(repository.getPlannedTrainingsByDogId).not.toHaveBeenCalled();
     });
   });
 });

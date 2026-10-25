@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { CalendarClock, ChevronLeft, ChevronRight, SkipForward, Undo2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,9 @@ import { dogColorClass } from "@/lib/dogColors"
 import { cn } from "@/lib/utils"
 
 import { weekTrainingsQueryOptions, type WeekTraining } from "@/features/week/api/weekQueryOptions"
+import { MoveTrainingDialog } from "@/features/week/components/MoveTrainingDialog"
+import { SkipTrainingDialog } from "@/features/week/components/SkipTrainingDialog"
+import { useUndoSkip } from "@/features/week/hooks/useSkipTraining"
 
 const STATUS_LABELS: Record<WeekTraining["status"], string> = {
   PLANNED: "Naplánováno",
@@ -35,11 +38,42 @@ const exerciseCount = (count: number): string => {
   return `${count} cviků`
 }
 
-function WeekTrainingCard({ training }: { training: WeekTraining }) {
-  const titles = training.exercises.map((exercise) => exercise.title)
+// A skip can be taken back until the training's week is over (#75).
+function UndoSkipButton({ training, heading }: { training: WeekTraining; heading: string }) {
+  const undoSkip = useUndoSkip(training.id)
 
   return (
-    <li className="relative overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4">
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="min-h-11"
+      aria-label={`Vrátit přeskočení tréninku ${heading}`}
+      disabled={undoSkip.isPending}
+      onClick={() => undoSkip.mutate()}
+    >
+      <Undo2 className="size-4" />
+      Vrátit
+    </Button>
+  )
+}
+
+type WeekTrainingCardProps = {
+  training: WeekTraining
+  today: CalendarDate
+}
+
+function WeekTrainingCard({ training, today }: WeekTrainingCardProps) {
+  const [isMoveOpen, setIsMoveOpen] = useState(false)
+  const [isSkipOpen, setIsSkipOpen] = useState(false)
+  const titles = training.exercises.map((exercise) => exercise.title)
+  const isPlanned = training.status === "PLANNED"
+  const canUndoSkip =
+    training.status === "SKIPPED" && startOfWeekOf(training.date) >= startOfWeekOf(today)
+  const heading = `${training.dog.name} · ${training.goal.title}`
+
+  return (
+    <li className="relative overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4 transition-colors has-[a:hover]:border-foreground/30">
       {/* The dog's colour tells the dogs apart, as in the day strip above. */}
       <span
         aria-hidden="true"
@@ -47,16 +81,23 @@ function WeekTrainingCard({ training }: { training: WeekTraining }) {
       />
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base font-medium text-foreground">
-          <Link
-            to="/dogs/$dogId/goals/$goalId"
-            params={{ dogId: training.dog.id, goalId: training.goal.id }}
-            className="inline-flex min-h-11 items-center underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {training.dog.name} · {training.goal.title}
-          </Link>
+          {isPlanned ? (
+            // The link covers the whole card (::after), so the card still opens
+            // the walkthrough (#76); the actions below sit on top of it.
+            <Link
+              to="/trainings/$trainingId"
+              params={{ trainingId: training.id }}
+              className="outline-hidden transition-colors after:absolute after:inset-0 after:rounded-lg hover:text-primary focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
+              aria-label={`Trénink ${heading}`}
+            >
+              {heading}
+            </Link>
+          ) : (
+            heading
+          )}
         </h3>
         <Badge
-          variant={training.status === "PLANNED" ? "secondary" : "outline"}
+          variant={isPlanned ? "secondary" : "outline"}
           className="shrink-0"
         >
           {STATUS_LABELS[training.status]}
@@ -67,6 +108,52 @@ function WeekTrainingCard({ training }: { training: WeekTraining }) {
           ? "Plán zatím nemá žádný cvik."
           : `${exerciseCount(titles.length)} · ${titles.join(", ")}`}
       </p>
+      {isPlanned ? (
+        <>
+          <div className="relative mt-3 flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-11"
+              aria-label={`Přesunout trénink ${heading}`}
+              onClick={() => setIsMoveOpen(true)}
+            >
+              <CalendarClock className="size-4" />
+              Přesunout
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-11"
+              aria-label={`Přeskočit trénink ${heading}`}
+              onClick={() => setIsSkipOpen(true)}
+            >
+              <SkipForward className="size-4" />
+              Přeskočit
+            </Button>
+          </div>
+          <MoveTrainingDialog
+            training={training}
+            isOpen={isMoveOpen}
+            onOpenChange={setIsMoveOpen}
+          />
+          <SkipTrainingDialog
+            training={training}
+            isOpen={isSkipOpen}
+            onOpenChange={setIsSkipOpen}
+          />
+        </>
+      ) : null}
+      {canUndoSkip ? (
+        <div className="mt-3 flex gap-2">
+          <UndoSkipButton
+            training={training}
+            heading={heading}
+          />
+        </div>
+      ) : null}
     </li>
   )
 }
@@ -234,6 +321,7 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
               <WeekTrainingCard
                 key={training.id}
                 training={training}
+                today={today}
               />
             ))}
           </ul>

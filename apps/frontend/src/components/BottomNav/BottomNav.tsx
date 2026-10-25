@@ -40,6 +40,12 @@ export function BottomNav({ isTrainer = false, accountMenu }: BottomNavProps) {
   const location = useLocation()
   const currentPath = location.pathname
 
+  // The walkthrough (#76) has its own fixed bottom navigation buttons;
+  // hide the tab bar so it does not cover them on phones.
+  if (currentPath.startsWith("/trainings")) {
+    return null
+  }
+
   const items = NAV_ITEMS.filter((item) => item.to !== "/clients" || isTrainer)
 
   return (
