@@ -18,7 +18,9 @@ export function ThemeSwitcher() {
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Toggle theme"
+          // 44 px, a touch target on a phone (#89).
+          className="size-11"
+          aria-label="Přepnout vzhled"
         >
           <Sun className="size-4 dark:hidden" />
           <Moon className="hidden size-4 dark:block" />
@@ -26,13 +28,13 @@ export function ThemeSwitcher() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => setTheme("light")}>
-          <Sun className="size-4" /> Light
+          <Sun className="size-4" /> Světlý
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("dark")}>
-          <Moon className="size-4" /> Dark
+          <Moon className="size-4" /> Tmavý
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("system")}>
-          <Monitor className="size-4" /> System
+          <Monitor className="size-4" /> Podle systému
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
