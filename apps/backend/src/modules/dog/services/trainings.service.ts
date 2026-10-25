@@ -81,11 +81,16 @@ export class TrainingsService {
       throw new ConflictException('This training is skipped');
     }
 
-    return this.scheduledTrainingRepository.completeTraining(
+    const log = await this.scheduledTrainingRepository.completeTraining(
       trainingId,
       user.id,
       data,
     );
+    // Completed meanwhile, e.g. a second submit of the same form.
+    if (!log) {
+      throw new ConflictException('This training is already completed');
+    }
+    return log;
   }
 
   // Moves a planned training to another day (#74), in any week. Like the
@@ -107,11 +112,17 @@ export class TrainingsService {
       training.status === TrainingStatus.PLANNED
         ? await this.scheduledTrainingRepository.movePlannedTraining(
             trainingId,
+            training.goalId,
             fromCalendarDate(date),
           )
         : null;
     if (!moved) {
       throw new ConflictException('Only a planned training can be moved');
+    }
+    if (moved === 'day-taken') {
+      throw new ConflictException(
+        'This goal already has a planned training on this day',
+      );
     }
     return moved;
   }

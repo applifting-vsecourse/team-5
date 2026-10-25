@@ -308,6 +308,26 @@ describe('TrainingsService', () => {
 
       expect(repository.completeTraining).not.toHaveBeenCalled();
     });
+
+    it('answers 409 to a second submit that loses the race', async () => {
+      const { service, repository } = setup();
+      // Both requests read the training as planned...
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      // ...but only the first one completes it.
+      repository.completeTraining.mockResolvedValueOnce(fakeLog);
+      repository.completeTraining.mockResolvedValueOnce(null);
+
+      const [first, second] = await Promise.allSettled([
+        service.completeTraining(owner, 't1', {}),
+        service.completeTraining(owner, 't1', {}),
+      ]);
+
+      expect(first).toEqual({ status: 'fulfilled', value: fakeLog });
+      expect(second.status).toBe('rejected');
+      expect((second as PromiseRejectedResult).reason).toBeInstanceOf(
+        ConflictException,
+      );
+    });
   });
 
   describe('getWeekTrainings', () => {
@@ -358,8 +378,20 @@ describe('TrainingsService', () => {
       ).resolves.toEqual(moved);
       expect(repository.movePlannedTraining).toHaveBeenCalledWith(
         't1',
+        'g1',
         new Date('2026-10-29T00:00:00.000Z'),
       );
+    });
+
+    // A goal is practised on many days, but at most once a day.
+    it('refuses a day the goal already has another planned training on', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      repository.movePlannedTraining.mockResolvedValue('day-taken');
+
+      await expect(
+        service.moveTraining(owner, 't1', '2026-10-29', now),
+      ).rejects.toThrow('This goal already has a planned training on this day');
     });
 
     it('moves a missed training to today', async () => {

@@ -86,10 +86,13 @@ export const seedDatabase = async (
 
   console.log('Creating superadmin user');
 
-  // Create a superadmin user. This should be delete in prod app
+  // Create a superadmin user. Fallback to default credentials if env vars are unset.
+  const adminEmail = config.superadminEmail || 'admin@example.com';
+  const adminPassword = config.superadminPassword || 'adminpassword';
+
   await createUser(prisma, auth, {
-    email: config.superadminEmail,
-    password: config.superadminPassword,
+    email: adminEmail,
+    password: adminPassword,
     name: 'Admin (Delete in Prod)',
     username: 'superadmin',
     role: 'admin',

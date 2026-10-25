@@ -11,7 +11,7 @@ import {
   ScheduledTrainingDetail,
   WeekTraining,
 } from '@/modules/dog/domain/scheduled-training';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ScheduledTrainingRepository {
@@ -120,17 +120,36 @@ export class ScheduledTrainingRepository {
 
   // Returns null when the training is no longer planned. The status check is
   // part of the update itself, so a training completed in the meantime
-  // (e.g. on another device) is never moved.
+  // (e.g. on another device) is never moved. A goal is practised on many
+  // days but at most once a day: 'day-taken' when it already has a planned
+  // training on the new day. The goal row is locked like when planning (#71),
+  // so a move and a new plan for the same day cannot both get through.
   async movePlannedTraining(
     id: string,
+    goalId: string,
     date: Date,
-  ): Promise<ScheduledTraining | null> {
-    const { count } = await this.prisma.scheduledTraining.updateMany({
-      where: { id, status: TrainingStatus.PLANNED },
-      data: { date },
+  ): Promise<ScheduledTraining | 'day-taken' | null> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "training_goal" WHERE "id" = ${goalId} FOR UPDATE`;
+
+      const sameDay = await tx.scheduledTraining.findFirst({
+        where: {
+          goalId,
+          date,
+          status: TrainingStatus.PLANNED,
+          id: { not: id },
+        },
+        select: { id: true },
+      });
+      if (sameDay) return 'day-taken';
+
+      const { count } = await tx.scheduledTraining.updateMany({
+        where: { id, status: TrainingStatus.PLANNED },
+        data: { date },
+      });
+      if (count === 0) return null;
+      return tx.scheduledTraining.findUnique({ where: { id } });
     });
-    if (count === 0) return null;
-    return this.prisma.scheduledTraining.findUnique({ where: { id } });
   }
 
   // Marks a planned training as skipped and writes a "skipped" record for the
@@ -229,9 +248,18 @@ export class ScheduledTrainingRepository {
       repeatedMistakes?: MistakeLevel | null;
       note?: string | null;
     },
-  ): Promise<WorkoutLog> {
+  ): Promise<WorkoutLog | null> {
     return this.prisma.$transaction(async (tx) => {
-      const training = await tx.scheduledTraining.findUnique({
+      // The status check is part of the UPDATE, so of two quick submits
+      // (double click, a retry on a weak signal) only one completes the
+      // training and writes a record. Null: it is no longer planned.
+      const { count } = await tx.scheduledTraining.updateMany({
+        where: { id: trainingId, status: TrainingStatus.PLANNED },
+        data: { status: TrainingStatus.COMPLETED },
+      });
+      if (count === 0) return null;
+
+      const training = await tx.scheduledTraining.findUniqueOrThrow({
         where: { id: trainingId },
         include: {
           goal: {
@@ -242,14 +270,6 @@ export class ScheduledTrainingRepository {
             },
           },
         },
-      });
-      if (!training) {
-        throw new NotFoundException(`Training with ID ${trainingId} not found`);
-      }
-
-      await tx.scheduledTraining.update({
-        where: { id: trainingId },
-        data: { status: TrainingStatus.COMPLETED },
       });
 
       return tx.workoutLog.create({
