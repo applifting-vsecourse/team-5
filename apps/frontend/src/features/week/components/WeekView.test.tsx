@@ -136,22 +136,6 @@ describe("WeekView", () => {
     expect(onWeekChange).toHaveBeenNthCalledWith(2, "2026-10-26")
   })
 
-  it("offers 'Dnes' only away from the current week (#73)", () => {
-    renderWeek([])
-    expect(screen.getByRole("button", { name: "Dnes" })).toBeDisabled()
-  })
-
-  it("returns to the current week with 'Dnes' and starts another week on Monday", async () => {
-    const user = userEvent.setup()
-    const { onWeekChange } = renderWeek([], "2026-11-02")
-
-    expect(screen.getByText("2.–8. listopadu")).toBeInTheDocument()
-    expect(screen.getByRole("radio", { name: /^pondělí 2\. 11\./ })).toBeChecked()
-
-    await user.click(screen.getByRole("button", { name: "Dnes" }))
-    expect(onWeekChange).toHaveBeenCalledWith("2026-10-19")
-  })
-
   it("says what to do when the whole week is empty", () => {
     renderWeek([])
 

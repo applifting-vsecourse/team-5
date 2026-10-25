@@ -25,6 +25,9 @@ COPY apps/backend ./apps/backend
 ARG CI_COMMIT_SHA
 ENV CI_COMMIT_SHA=$CI_COMMIT_SHA
 
+ARG RESEND_API_KEY
+ENV RESEND_API_KEY=$RESEND_API_KEY
+
 # Runs `prisma generate && nest build`.
 RUN pnpm --filter backend build
 
@@ -64,6 +67,9 @@ COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
 
 ARG CI_COMMIT_SHA
 ENV CI_COMMIT_SHA=$CI_COMMIT_SHA
+
+ARG RESEND_API_KEY
+ENV RESEND_API_KEY=$RESEND_API_KEY
 
 RUN mkdir -p /app/apps/backend/uploads && chown -R node:node /app/apps/backend/uploads
 
