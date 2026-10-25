@@ -147,6 +147,12 @@ describe('ClientsService', () => {
       expect.stringContaining('Veronika Trenérka'),
       '<html>Invite</html>',
     );
+    // A repeated invitation replaces the older ones to the same e-mail (#59).
+    expect(repository.expireOtherInvitationsToEmail).toHaveBeenCalledWith(
+      'trainer-1',
+      'klient@example.com',
+      'inv-new',
+    );
   });
 
   it('creates an invitation without sending email when email is omitted', async () => {
@@ -326,5 +332,7 @@ describe('ClientsService', () => {
     ).rejects.toThrow();
 
     expect(repository.deleteInvitation).toHaveBeenCalledWith('inv-failed');
+    // The e-mail never went out, so the older invitation keeps working.
+    expect(repository.expireOtherInvitationsToEmail).not.toHaveBeenCalled();
   });
 });

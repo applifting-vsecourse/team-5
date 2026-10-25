@@ -132,6 +132,13 @@ export class ClientsService {
           'Odeslání e-mailu se nezdařilo. Zkontrolujte e-mail a zkuste to znovu.',
         );
       }
+      // Only once the new e-mail is out: if sending fails, the older
+      // invitation keeps working.
+      await this.clientRepository.expireOtherInvitationsToEmail(
+        trainer.id,
+        email,
+        invitation.id,
+      );
     }
 
     return invitation;

@@ -136,6 +136,34 @@ describe('ClientRepository (Authorization & Multi-Tenancy)', () => {
     });
   });
 
+  it("expires only the trainer's other unused invitations to the same e-mail (#59)", async () => {
+    const prisma = mock<PrismaService>();
+    const invitationDelegate = {
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    };
+
+    // @ts-expect-error mock delegate
+    prisma.invitation = invitationDelegate;
+
+    const repository = new ClientRepository(prisma);
+    await repository.expireOtherInvitationsToEmail(
+      'trainer-1',
+      'klient@example.com',
+      'inv-new',
+    );
+
+    expect(invitationDelegate.updateMany).toHaveBeenCalledWith({
+      where: {
+        trainerId: 'trainer-1',
+        email: 'klient@example.com',
+        usedAt: null,
+        expiresAt: { gt: expect.any(Date) },
+        id: { not: 'inv-new' },
+      },
+      data: { expiresAt: expect.any(Date) },
+    });
+  });
+
   it('creates an invitation with email and expiration', async () => {
     const prisma = mock<PrismaService>();
     const createdDate = new Date();
