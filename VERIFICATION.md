@@ -29,6 +29,8 @@ The launcher was exercised with isolated databases and separate origins. Its pro
 
 ## Design verification limits
 
-The design review followed `DESIGN.md`, existing components, and the sitemap terminology. Component and route integration tests cover the changed flows. The linked Figma document was inaccessible, and no browser screenshot comparison was performed. The repository instructions use tests and type checks for verification.
+The initial design review followed `DESIGN.md`, existing components, and the sitemap terminology. Component and route integration tests cover the changed flows. The linked Figma document was inaccessible, and the initial 24 October verification did not include a browser screenshot comparison.
+
+At the user's request, a browser walkthrough on 25 October compared both builds as trainer and connected handler. It verified three additional dates for one goal after refresh, handler week visibility and the link back to the goal, direct profile-menu logout, the mobile account menu, and PNG upload/save/refresh in both builds. Screenshots and reproduction steps are in the [comparison guide](docs/staging-feedback/COMPARISON.md). The ordinary PNG issue did not reproduce on local main; the staging environment and real HEIC/HEIF files were not retested. The browser-tab title still says “Tvorba tréninku” and needs a terminology cleanup.
 
 Full command logs are in the sibling `.comparison` runtime directory, outside Git. See `FEEDBACK-BUILD.md` for startup, credentials, and the two-role demo steps.

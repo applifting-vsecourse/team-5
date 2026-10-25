@@ -1,6 +1,8 @@
 # Local staging feedback comparison
 
-Both copies start from GitHub `main` commit `e6732389cdf42430d79f5efc56c3ae64991edae7` (PR #142). The remote was fetched before creating the copies. The implementation is on the local branch `codex/staging-feedback`. Nothing is pushed or deployed. Existing work in `team-5` is independent of these copies.
+Both copies start from GitHub `main` commit `e6732389cdf42430d79f5efc56c3ae64991edae7` (PR #142). The remote was fetched before creating the copies. The implementation is on the separate branch `codex/staging-feedback`, prepared for review against `dev`. No deployment is part of this comparison. Existing work in `team-5` is independent of these copies.
+
+See the [illustrated comparison guide](docs/staging-feedback/COMPARISON.md) for before-and-after screenshots, the relationship to each feedback item, and browser verification limits.
 
 ## Start and stop
 
