@@ -65,7 +65,7 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
             <span
               aria-hidden="true"
               className={cn(
-                "size-3.5 shrink-0 rounded-full shadow-2xs ring-2 ring-background",
+                "size-3.5 shrink-0 rounded-full ring-2 ring-background",
                 DOG_COLOR_CLASSES[dog.color] ?? "bg-dog-1",
               )}
             />

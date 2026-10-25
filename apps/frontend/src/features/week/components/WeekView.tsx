@@ -5,7 +5,7 @@ import { Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ProgressBar } from "@/components/ui/progress-bar"
+import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
@@ -55,7 +55,7 @@ function WeekTrainingCard({ training }: { training: WeekTraining }) {
         <Badge
           variant={training.status === "PLANNED" ? "secondary" : "outline"}
           className={cn(
-            "shrink-0 font-mono text-[11px] font-semibold tracking-wider uppercase",
+            "shrink-0 font-mono text-xs font-semibold tracking-wider uppercase",
             training.status === "COMPLETED" && "border-primary/40 bg-primary/10 text-primary",
           )}
         >
@@ -132,20 +132,17 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
             <ChevronLeft className="size-5" />
           </Button>
 
-          <button
+          {/* The range opens a month calendar (standup feedback). */}
+          <Button
             type="button"
-            onClick={() => setIsWeekPickerOpen(true)}
-            className="group flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1 text-center transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
+            variant="ghost"
+            className="min-h-11 flex-1 gap-2 text-lg font-semibold tracking-tight"
             aria-label={`Vybrat týden, aktuálně ${formatWeekRange(weekStart)}`}
+            onClick={() => setIsWeekPickerOpen(true)}
           >
-            <span
-              className="text-lg font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary"
-              aria-live="polite"
-            >
-              {formatWeekRange(weekStart)}
-            </span>
-            <Calendar className="size-4 text-muted-foreground transition-colors group-hover:text-primary" />
-          </button>
+            <span aria-live="polite">{formatWeekRange(weekStart)}</span>
+            <Calendar className="size-4 text-muted-foreground" />
+          </Button>
 
           <Button
             type="button"
@@ -170,16 +167,16 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
         </div>
 
         {totalCount > 0 && (
-          <div className="mt-3 flex flex-col gap-1.5 rounded-lg border border-border bg-card p-3">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Týdenní postup</span>
+          <div className="flex flex-col gap-2 pt-2">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span id="week-progress-label">Týdenní postup</span>
               <span className="font-medium text-foreground">
                 {completedCount} z {totalCount} odcvičeno
               </span>
             </div>
-            <ProgressBar
-              value={completedCount}
-              max={totalCount}
+            <Progress
+              value={Math.round((completedCount / totalCount) * 100)}
+              aria-labelledby="week-progress-label"
             />
           </div>
         )}
@@ -207,11 +204,11 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
               className={cn(
                 "flex h-auto min-h-16 min-w-11 flex-col gap-1 rounded-md px-0 py-2 transition-all duration-150 select-none",
                 "hover:bg-accent/40 active:scale-95",
-                "data-[state=on]:bg-secondary data-[state=on]:text-secondary-foreground data-[state=on]:shadow-2xs",
+                "data-[state=on]:bg-secondary data-[state=on]:text-secondary-foreground",
                 day === today && "font-semibold text-primary",
               )}
             >
-              <span className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+              <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
                 {formatWeekdayShort(day)}
               </span>
               <span className="text-base font-bold">{formatDayOfMonth(day)}</span>
@@ -224,7 +221,7 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
                   <span
                     key={color}
                     className={cn(
-                      "size-2 rounded-full shadow-2xs ring-1 ring-background",
+                      "size-2 rounded-full ring-1 ring-background",
                       dogColorClass(color),
                     )}
                   />

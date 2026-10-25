@@ -106,7 +106,7 @@ function PlanBlockItem({
         {/* Agility Course Station Checkpoint */}
         <span
           aria-hidden="true"
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-xs font-bold text-secondary-foreground shadow-2xs ring-2 ring-primary/25"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-xs font-bold text-secondary-foreground ring-2 ring-primary/25"
         >
           {number}
         </span>

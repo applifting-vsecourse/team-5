@@ -148,13 +148,14 @@ describe("DogDetailView", () => {
 })
 
 describe("DogActivitiesSection", () => {
-  it("renders workout records with badges, rates and notes", () => {
+  it("lists workout records by their header only: date, title and status", () => {
     render(<DogActivitiesSection dogName="Baryk" />, { wrapper: createWrapper() })
 
     expect(screen.getByText("Poslušnost v parku")).toBeInTheDocument()
     expect(screen.getAllByText("Odcvičeno").length).toBeGreaterThan(0)
-    expect(screen.getByText("Úspěšnost: 95 %")).toBeInTheDocument()
-    expect(screen.getByText("Hodnocení: 5/5")).toBeInTheDocument()
+    // Results and notes are in the detail, not in the list.
+    expect(screen.queryByText(/Úspěšnost/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Soustředil se skvěle/)).not.toBeInTheDocument()
   })
 
   it("paginates activities page by page", async () => {
