@@ -1,5 +1,6 @@
 import {
   ScheduleTrainingDto,
+  TrainingDetailResponseDto,
   TrainingResponseDto,
   WeekQueryDto,
   WeekTrainingResponseDto,
@@ -61,6 +62,21 @@ export class TrainingsController {
     return trainings.map((training) =>
       WeekTrainingResponseDto.fromDomain(training),
     );
+  }
+
+  @Get('trainings/:trainingId')
+  @ApiOperation({
+    summary: 'Get details of a scheduled training for walkthrough',
+  })
+  @ApiResponse({ status: 200, type: TrainingDetailResponseDto })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
+  @ApiResponse({ status: 404, description: 'Training not found' })
+  async getTraining(
+    @User() user: Identity,
+    @Param('trainingId') trainingId: string,
+  ): Promise<TrainingDetailResponseDto> {
+    const training = await this.trainingsService.getTraining(user, trainingId);
+    return TrainingDetailResponseDto.fromDomain(training);
   }
 
   @Get('goals/:goalId/trainings')

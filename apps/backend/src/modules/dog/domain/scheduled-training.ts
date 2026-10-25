@@ -12,3 +12,25 @@ export type WeekTraining = ScheduledTraining & {
     blocks: { id: string; title: string }[];
   };
 };
+
+// Full detail for the walkthrough screen (#76): dog info, goal title, and
+// full exercise details (instruction, criterion, position) ordered by position.
+export type ScheduledTrainingDetail = ScheduledTraining & {
+  dog: {
+    id: string;
+    name: string;
+    color: number;
+    shares?: { id: string; trainerId: string }[];
+  };
+  goal: {
+    id: string;
+    title: string;
+    blocks: {
+      id: string;
+      position: number;
+      title: string;
+      instruction: string | null;
+      criterion: string | null;
+    }[];
+  };
+};

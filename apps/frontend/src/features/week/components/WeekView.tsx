@@ -41,15 +41,15 @@ const exerciseCount = (count: number): string => {
 function WeekTrainingCard({ training }: { training: WeekTraining }) {
   const titles = training.exercises.map((exercise) => exercise.title)
 
-  return (
-    <li className="relative overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4">
+  const cardContent = (
+    <>
       {/* The dog's colour tells the dogs apart, as in the day strip above. */}
       <span
         aria-hidden="true"
         className={cn("absolute inset-y-0 left-0 w-1", dogColorClass(training.dog.color))}
       />
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-medium text-foreground">
+        <h3 className="text-base font-medium text-foreground transition-colors group-hover:text-primary">
           {training.dog.name} · {training.goal.title}
         </h3>
         <Badge
@@ -67,6 +67,27 @@ function WeekTrainingCard({ training }: { training: WeekTraining }) {
           ? "Plán zatím nemá žádný cvik."
           : `${exerciseCount(titles.length)} · ${titles.join(", ")}`}
       </p>
+    </>
+  )
+
+  if (training.status === "PLANNED") {
+    return (
+      <li className="relative">
+        <Link
+          to="/trainings/$trainingId"
+          params={{ trainingId: training.id }}
+          className="group block overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4 outline-hidden transition-colors hover:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          aria-label={`Trénink ${training.dog.name} · ${training.goal.title}`}
+        >
+          {cardContent}
+        </Link>
+      </li>
+    )
+  }
+
+  return (
+    <li className="relative overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4">
+      {cardContent}
     </li>
   )
 }

@@ -12,9 +12,32 @@ vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof Router>("@tanstack/react-router")
   return {
     ...actual,
-    Link: ({ to, children }: { to?: string; children?: React.ReactNode }) => (
-      <a href={to ?? "#"}>{children}</a>
-    ),
+    Link: ({
+      to,
+      params,
+      children,
+      ...props
+    }: {
+      to?: string
+      params?: Record<string, string>
+      children?: React.ReactNode
+      [key: string]: unknown
+    }) => {
+      let href = to ?? "#"
+      if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+          href = href.replace(`$${key}`, value)
+        })
+      }
+      return (
+        <a
+          href={href}
+          {...props}
+        >
+          {children}
+        </a>
+      )
+    },
   }
 })
 
@@ -72,8 +95,12 @@ describe("WeekView", () => {
     expect(within(rex).getByRole("heading", { name: "Rex · Chůze u nohy" })).toBeInTheDocument()
     expect(within(rex).getByText("Odcvičeno")).toBeInTheDocument()
     expect(within(rex).getByText("2 cviky · Sedni u nohy, Krok vpřed")).toBeInTheDocument()
+    expect(within(rex).queryByRole("link")).not.toBeInTheDocument()
     expect(within(bella).getByText("Naplánováno")).toBeInTheDocument()
     expect(within(bella).getByText("1 cvik · Čuchej")).toBeInTheDocument()
+    expect(
+      within(bella).getByRole("link", { name: "Trénink Bella · Hledání pamlsků" }),
+    ).toHaveAttribute("href", "/trainings/t2")
   })
 
   it("marks the days that have a training", () => {

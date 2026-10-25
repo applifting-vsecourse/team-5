@@ -4,15 +4,18 @@ import {
 } from '@/modules/dog/domain/calendar-date';
 import {
   ScheduledTraining,
+  ScheduledTrainingDetail,
   WeekTraining,
 } from '@/modules/dog/domain/scheduled-training';
 import { ScheduledTrainingRepository } from '@/modules/dog/repositories/scheduled-training.repository';
+import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { GoalsService } from '@/modules/dog/services/goals.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -24,7 +27,32 @@ export class TrainingsService {
   constructor(
     private readonly scheduledTrainingRepository: ScheduledTrainingRepository,
     private readonly goalsService: GoalsService,
+    private readonly dogAccessService: DogAccessService,
   ) {}
+
+  // Details of a single scheduled training for walkthrough (#76).
+  // Throws 404 when missing or when the user has no access to the dog.
+  async getTraining(
+    user: Identity,
+    trainingId: string,
+  ): Promise<ScheduledTrainingDetail> {
+    const training =
+      await this.scheduledTrainingRepository.getTrainingById(trainingId);
+    if (!training) {
+      throw new NotFoundException(`Training with ID ${trainingId} not found`);
+    }
+
+    try {
+      await this.dogAccessService.getAccessibleDog(user, training.dogId);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`Training with ID ${trainingId} not found`);
+      }
+      throw error;
+    }
+
+    return training;
+  }
 
   // The owner's trainings between two days, both included (#72). The range is
   // capped so one request cannot pull a whole year.

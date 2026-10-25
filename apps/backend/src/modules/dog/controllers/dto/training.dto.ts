@@ -5,9 +5,10 @@ import {
 } from '@/modules/dog/domain/calendar-date';
 import {
   ScheduledTraining,
+  ScheduledTrainingDetail,
   WeekTraining,
 } from '@/modules/dog/domain/scheduled-training';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, Matches } from 'class-validator';
 
 export class WeekQueryDto {
@@ -118,6 +119,69 @@ export class TrainingResponseDto {
       date: toCalendarDate(training.date),
       status: training.status,
       createdAt: training.createdAt,
+    };
+  }
+}
+
+export class TrainingDetailExerciseDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  position!: number;
+
+  @ApiProperty()
+  title!: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  instruction!: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
+  criterion!: string | null;
+}
+
+export class TrainingDetailResponseDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty({ example: '2026-10-22', format: 'date' })
+  date!: string;
+
+  @ApiProperty({ enum: TrainingStatus })
+  status!: TrainingStatus;
+
+  @ApiProperty({ type: WeekTrainingDogDto })
+  dog!: WeekTrainingDogDto;
+
+  @ApiProperty({ type: WeekTrainingGoalDto })
+  goal!: WeekTrainingGoalDto;
+
+  @ApiProperty({ type: [TrainingDetailExerciseDto] })
+  exercises!: TrainingDetailExerciseDto[];
+
+  static fromDomain(
+    training: ScheduledTrainingDetail,
+  ): TrainingDetailResponseDto {
+    return {
+      id: training.id,
+      date: toCalendarDate(training.date),
+      status: training.status,
+      dog: {
+        id: training.dog.id,
+        name: training.dog.name,
+        color: training.dog.color,
+      },
+      goal: {
+        id: training.goal.id,
+        title: training.goal.title,
+      },
+      exercises: training.goal.blocks.map((block) => ({
+        id: block.id,
+        position: block.position,
+        title: block.title,
+        instruction: block.instruction,
+        criterion: block.criterion,
+      })),
     };
   }
 }
