@@ -1,4 +1,6 @@
 import {
+  ActivitiesQueryDto,
+  ActivityPageResponseDto,
   ActivityResponseDto,
   CreateActivityDto,
 } from '@/modules/dog/controllers/dto/activity.dto';
@@ -15,6 +17,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -41,19 +44,26 @@ export class ActivitiesController {
   constructor(private readonly activitiesService: ActivitiesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List all activities / workout logs of a dog' })
-  @ApiResponse({ status: 200, type: [ActivityResponseDto] })
+  @ApiOperation({
+    summary: "One page of a dog's activities / workout logs, newest first",
+  })
+  @ApiResponse({ status: 200, type: ActivityPageResponseDto })
   @ApiResponse({ status: 401, description: 'Not signed in' })
   @ApiResponse({ status: 404, description: 'Dog not found' })
   async listByDog(
     @User() user: Identity,
     @Param('dogId') dogId: string,
-  ): Promise<ActivityResponseDto[]> {
-    const activities = await this.activitiesService.getActivitiesByDogId(
+    @Query() query: ActivitiesQueryDto,
+  ): Promise<ActivityPageResponseDto> {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 20;
+    const { items, total } = await this.activitiesService.getActivitiesByDogId(
       user,
       dogId,
+      page,
+      pageSize,
     );
-    return activities.map((a) => ({
+    const presented = items.map((a) => ({
       id: a.id,
       dogId: a.dogId,
       authorId: a.authorId,
@@ -72,6 +82,7 @@ export class ActivitiesController {
       createdAt: a.createdAt,
       updatedAt: a.updatedAt,
     }));
+    return { items: presented, total, page, pageSize };
   }
 
   @Post()
