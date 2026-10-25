@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProtectedPagesRouteImport } from './routes/_ProtectedPages'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as InviteRouteImport } from './routes/invite'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -24,6 +25,9 @@ import { Route as ProtectedPagesClientsIndexRouteImport } from './routes/_Protec
 import { Route as ProtectedPagesClientsClientIdRouteImport } from './routes/_ProtectedPages/clients.$clientId'
 import { Route as ProtectedPagesDogsIndexRouteImport } from './routes/_ProtectedPages/dogs.index'
 import { Route as ProtectedPagesDogsDogIdIndexRouteImport } from './routes/_ProtectedPages/dogs.$dogId.index'
+import { Route as ProtectedPagesDogsDogIdActivitiesRouteImport } from './routes/_ProtectedPages/dogs.$dogId.activities'
+import { Route as ProtectedPagesTrainingsTrainingIdIndexRouteImport } from './routes/_ProtectedPages/trainings.$trainingId.index'
+import { Route as ProtectedPagesTrainingsTrainingIdFinishRouteImport } from './routes/_ProtectedPages/trainings.$trainingId.finish'
 import { Route as ProtectedPagesDogsDogIdGoalsGoalIdRouteImport } from './routes/_ProtectedPages/dogs.$dogId.goals.$goalId'
 import { Route as ProtectedPagesDogsDogIdGoalsNewRouteImport } from './routes/_ProtectedPages/dogs.$dogId.goals.new'
 
@@ -39,6 +43,11 @@ const ProtectedPagesRoute = ProtectedPagesRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteRoute = InviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -104,6 +113,24 @@ const ProtectedPagesDogsDogIdIndexRoute =
     path: '/dogs/$dogId/',
     getParentRoute: () => ProtectedPagesRoute,
   } as any)
+const ProtectedPagesDogsDogIdActivitiesRoute =
+  ProtectedPagesDogsDogIdActivitiesRouteImport.update({
+    id: '/dogs/$dogId/activities',
+    path: '/dogs/$dogId/activities',
+    getParentRoute: () => ProtectedPagesRoute,
+  } as any)
+const ProtectedPagesTrainingsTrainingIdIndexRoute =
+  ProtectedPagesTrainingsTrainingIdIndexRouteImport.update({
+    id: '/trainings/$trainingId/',
+    path: '/trainings/$trainingId/',
+    getParentRoute: () => ProtectedPagesRoute,
+  } as any)
+const ProtectedPagesTrainingsTrainingIdFinishRoute =
+  ProtectedPagesTrainingsTrainingIdFinishRouteImport.update({
+    id: '/trainings/$trainingId/finish',
+    path: '/trainings/$trainingId/finish',
+    getParentRoute: () => ProtectedPagesRoute,
+  } as any)
 const ProtectedPagesDogsDogIdGoalsGoalIdRoute =
   ProtectedPagesDogsDogIdGoalsGoalIdRouteImport.update({
     id: '/dogs/$dogId/goals/$goalId',
@@ -120,6 +147,7 @@ const ProtectedPagesDogsDogIdGoalsNewRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -131,13 +159,17 @@ export interface FileRoutesByFullPath {
   '/clients/$clientId': typeof ProtectedPagesClientsClientIdRoute
   '/clients/': typeof ProtectedPagesClientsIndexRoute
   '/dogs/': typeof ProtectedPagesDogsIndexRoute
+  '/dogs/$dogId/activities': typeof ProtectedPagesDogsDogIdActivitiesRoute
+  '/trainings/$trainingId/finish': typeof ProtectedPagesTrainingsTrainingIdFinishRoute
   '/dogs/$dogId/': typeof ProtectedPagesDogsDogIdIndexRoute
+  '/trainings/$trainingId/': typeof ProtectedPagesTrainingsTrainingIdIndexRoute
   '/dogs/$dogId/goals/$goalId': typeof ProtectedPagesDogsDogIdGoalsGoalIdRoute
   '/dogs/$dogId/goals/new': typeof ProtectedPagesDogsDogIdGoalsNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/forgot-password': typeof ForgotPasswordRoute
+  '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -148,7 +180,10 @@ export interface FileRoutesByTo {
   '/clients/$clientId': typeof ProtectedPagesClientsClientIdRoute
   '/clients': typeof ProtectedPagesClientsIndexRoute
   '/dogs': typeof ProtectedPagesDogsIndexRoute
+  '/dogs/$dogId/activities': typeof ProtectedPagesDogsDogIdActivitiesRoute
+  '/trainings/$trainingId/finish': typeof ProtectedPagesTrainingsTrainingIdFinishRoute
   '/dogs/$dogId': typeof ProtectedPagesDogsDogIdIndexRoute
+  '/trainings/$trainingId': typeof ProtectedPagesTrainingsTrainingIdIndexRoute
   '/dogs/$dogId/goals/$goalId': typeof ProtectedPagesDogsDogIdGoalsGoalIdRoute
   '/dogs/$dogId/goals/new': typeof ProtectedPagesDogsDogIdGoalsNewRoute
 }
@@ -157,6 +192,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_ProtectedPages': typeof ProtectedPagesRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
+  '/invite': typeof InviteRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -168,7 +204,10 @@ export interface FileRoutesById {
   '/_ProtectedPages/clients/$clientId': typeof ProtectedPagesClientsClientIdRoute
   '/_ProtectedPages/clients/': typeof ProtectedPagesClientsIndexRoute
   '/_ProtectedPages/dogs/': typeof ProtectedPagesDogsIndexRoute
+  '/_ProtectedPages/dogs/$dogId/activities': typeof ProtectedPagesDogsDogIdActivitiesRoute
+  '/_ProtectedPages/trainings/$trainingId/finish': typeof ProtectedPagesTrainingsTrainingIdFinishRoute
   '/_ProtectedPages/dogs/$dogId/': typeof ProtectedPagesDogsDogIdIndexRoute
+  '/_ProtectedPages/trainings/$trainingId/': typeof ProtectedPagesTrainingsTrainingIdIndexRoute
   '/_ProtectedPages/dogs/$dogId/goals/$goalId': typeof ProtectedPagesDogsDogIdGoalsGoalIdRoute
   '/_ProtectedPages/dogs/$dogId/goals/new': typeof ProtectedPagesDogsDogIdGoalsNewRoute
 }
@@ -177,6 +216,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/forgot-password'
+    | '/invite'
     | '/login'
     | '/privacy'
     | '/reset-password'
@@ -188,13 +228,17 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/clients/'
     | '/dogs/'
+    | '/dogs/$dogId/activities'
+    | '/trainings/$trainingId/finish'
     | '/dogs/$dogId/'
+    | '/trainings/$trainingId/'
     | '/dogs/$dogId/goals/$goalId'
     | '/dogs/$dogId/goals/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/forgot-password'
+    | '/invite'
     | '/login'
     | '/privacy'
     | '/reset-password'
@@ -205,7 +249,10 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/clients'
     | '/dogs'
+    | '/dogs/$dogId/activities'
+    | '/trainings/$trainingId/finish'
     | '/dogs/$dogId'
+    | '/trainings/$trainingId'
     | '/dogs/$dogId/goals/$goalId'
     | '/dogs/$dogId/goals/new'
   id:
@@ -213,6 +260,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_ProtectedPages'
     | '/forgot-password'
+    | '/invite'
     | '/login'
     | '/privacy'
     | '/reset-password'
@@ -224,7 +272,10 @@ export interface FileRouteTypes {
     | '/_ProtectedPages/clients/$clientId'
     | '/_ProtectedPages/clients/'
     | '/_ProtectedPages/dogs/'
+    | '/_ProtectedPages/dogs/$dogId/activities'
+    | '/_ProtectedPages/trainings/$trainingId/finish'
     | '/_ProtectedPages/dogs/$dogId/'
+    | '/_ProtectedPages/trainings/$trainingId/'
     | '/_ProtectedPages/dogs/$dogId/goals/$goalId'
     | '/_ProtectedPages/dogs/$dogId/goals/new'
   fileRoutesById: FileRoutesById
@@ -233,6 +284,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProtectedPagesRoute: typeof ProtectedPagesRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
+  InviteRoute: typeof InviteRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -260,6 +312,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite': {
+      id: '/invite'
+      path: '/invite'
+      fullPath: '/invite'
+      preLoaderRoute: typeof InviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -346,6 +405,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPagesDogsDogIdIndexRouteImport
       parentRoute: typeof ProtectedPagesRoute
     }
+    '/_ProtectedPages/dogs/$dogId/activities': {
+      id: '/_ProtectedPages/dogs/$dogId/activities'
+      path: '/dogs/$dogId/activities'
+      fullPath: '/dogs/$dogId/activities'
+      preLoaderRoute: typeof ProtectedPagesDogsDogIdActivitiesRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
+    '/_ProtectedPages/trainings/$trainingId/': {
+      id: '/_ProtectedPages/trainings/$trainingId/'
+      path: '/trainings/$trainingId'
+      fullPath: '/trainings/$trainingId/'
+      preLoaderRoute: typeof ProtectedPagesTrainingsTrainingIdIndexRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
+    '/_ProtectedPages/trainings/$trainingId/finish': {
+      id: '/_ProtectedPages/trainings/$trainingId/finish'
+      path: '/trainings/$trainingId/finish'
+      fullPath: '/trainings/$trainingId/finish'
+      preLoaderRoute: typeof ProtectedPagesTrainingsTrainingIdFinishRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
     '/_ProtectedPages/dogs/$dogId/goals/$goalId': {
       id: '/_ProtectedPages/dogs/$dogId/goals/$goalId'
       path: '/dogs/$dogId/goals/$goalId'
@@ -384,7 +464,10 @@ interface ProtectedPagesRouteChildren {
   ProtectedPagesDashboardRoute: typeof ProtectedPagesDashboardRoute
   ProtectedPagesWeekRoute: typeof ProtectedPagesWeekRoute
   ProtectedPagesDogsIndexRoute: typeof ProtectedPagesDogsIndexRoute
+  ProtectedPagesDogsDogIdActivitiesRoute: typeof ProtectedPagesDogsDogIdActivitiesRoute
+  ProtectedPagesTrainingsTrainingIdFinishRoute: typeof ProtectedPagesTrainingsTrainingIdFinishRoute
   ProtectedPagesDogsDogIdIndexRoute: typeof ProtectedPagesDogsDogIdIndexRoute
+  ProtectedPagesTrainingsTrainingIdIndexRoute: typeof ProtectedPagesTrainingsTrainingIdIndexRoute
   ProtectedPagesDogsDogIdGoalsGoalIdRoute: typeof ProtectedPagesDogsDogIdGoalsGoalIdRoute
   ProtectedPagesDogsDogIdGoalsNewRoute: typeof ProtectedPagesDogsDogIdGoalsNewRoute
 }
@@ -395,7 +478,13 @@ const ProtectedPagesRouteChildren: ProtectedPagesRouteChildren = {
   ProtectedPagesDashboardRoute: ProtectedPagesDashboardRoute,
   ProtectedPagesWeekRoute: ProtectedPagesWeekRoute,
   ProtectedPagesDogsIndexRoute: ProtectedPagesDogsIndexRoute,
+  ProtectedPagesDogsDogIdActivitiesRoute:
+    ProtectedPagesDogsDogIdActivitiesRoute,
+  ProtectedPagesTrainingsTrainingIdFinishRoute:
+    ProtectedPagesTrainingsTrainingIdFinishRoute,
   ProtectedPagesDogsDogIdIndexRoute: ProtectedPagesDogsDogIdIndexRoute,
+  ProtectedPagesTrainingsTrainingIdIndexRoute:
+    ProtectedPagesTrainingsTrainingIdIndexRoute,
   ProtectedPagesDogsDogIdGoalsGoalIdRoute:
     ProtectedPagesDogsDogIdGoalsGoalIdRoute,
   ProtectedPagesDogsDogIdGoalsNewRoute: ProtectedPagesDogsDogIdGoalsNewRoute,
@@ -409,6 +498,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtectedPagesRoute: ProtectedPagesRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
+  InviteRoute: InviteRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,

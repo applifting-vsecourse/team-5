@@ -54,14 +54,16 @@ function Layout() {
     >
       <Seo />
       <Header
-        className="hidden md:block"
         nav={<HeaderNav isTrainer={isTrainer} />}
         userMenu={<HeaderMenu />}
       />
       <main className="flex-1 pb-20 md:pb-8">
         <Outlet />
       </main>
-      <BottomNav isTrainer={isTrainer} />
+      <BottomNav
+        isTrainer={isTrainer}
+        accountMenu={<HeaderMenu isNavigation />}
+      />
     </div>
   )
 }

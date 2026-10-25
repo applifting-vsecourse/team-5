@@ -1,4 +1,4 @@
-export const ALLOWED_PHOTO_EXTENSIONS = [".jpg", ".jpeg", ".png", ".heic"]
+export const ALLOWED_PHOTO_EXTENSIONS = [".jpg", ".jpeg", ".png", ".heic", ".heif"]
 
 export const ALLOWED_PHOTO_MIME_TYPES = ["image/jpeg", "image/png", "image/heic", "image/heif"]
 
@@ -31,6 +31,9 @@ export function resolvePhotoUrl(photoUrl?: string | null): string | null {
     return photoUrl
   }
   const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://localhost:4050/api"
-  const base = apiUrl.replace(/\/api\/?$/, "")
-  return `${base}${photoUrl.startsWith("/") ? "" : "/"}${photoUrl}`
+  // Uploaded files are served under the API too. Keeping that prefix works
+  // with both a separate backend origin and a same-origin /api reverse proxy.
+  // Old stored /uploads URLs continue to work without a database migration.
+  const uploadPath = photoUrl.replace(/^\/?(?:api\/)?uploads\//, "uploads/")
+  return `${apiUrl.replace(/\/$/, "")}/${uploadPath.replace(/^\//, "")}`
 }

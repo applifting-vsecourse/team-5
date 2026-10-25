@@ -135,4 +135,112 @@ describe('ClientRepository (Authorization & Multi-Tenancy)', () => {
       where: { id: 'inv-1', trainerId: 'trainer-1', usedAt: null },
     });
   });
+
+  it('creates an invitation with email and expiration', async () => {
+    const prisma = mock<PrismaService>();
+    const createdDate = new Date();
+    const expiresDate = new Date(Date.now() + 100000);
+    const invitationDelegate = {
+      create: jest.fn().mockResolvedValue({
+        id: 'inv-1',
+        code: 'K7M2PQ',
+        email: 'client@example.com',
+        trainerId: 'trainer-1',
+        expiresAt: expiresDate,
+        usedAt: null,
+        createdAt: createdDate,
+      }),
+    };
+
+    // @ts-expect-error mock delegate
+    prisma.invitation = invitationDelegate;
+
+    const repository = new ClientRepository(prisma);
+    const result = await repository.createInvitation({
+      trainerId: 'trainer-1',
+      email: 'client@example.com',
+      code: 'K7M2PQ',
+      expiresAt: expiresDate,
+    });
+
+    expect(result.id).toBe('inv-1');
+    expect(result.email).toBe('client@example.com');
+    expect(invitationDelegate.create).toHaveBeenCalledWith({
+      data: {
+        trainerId: 'trainer-1',
+        email: 'client@example.com',
+        code: 'K7M2PQ',
+        expiresAt: expiresDate,
+      },
+    });
+  });
+
+  it('accepts invitation in transaction and creates dog shares', async () => {
+    const prisma = mock<PrismaService>();
+    const tx = {
+      invitation: {
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      clientConnection: {
+        upsert: jest.fn().mockResolvedValue({}),
+      },
+      dogShare: {
+        upsert: jest.fn().mockResolvedValue({}),
+      },
+    };
+    (prisma.$transaction as jest.Mock).mockImplementation(
+      async (cb: (txArg: typeof tx) => Promise<unknown>) => cb(tx),
+    );
+
+    const repository = new ClientRepository(prisma);
+    await repository.acceptInvitation('inv-1', 'trainer-1', 'client-1', [
+      'dog-1',
+    ]);
+
+    expect(tx.invitation.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'inv-1',
+        usedAt: null,
+        expiresAt: { gt: expect.any(Date) },
+      },
+      data: { usedAt: expect.any(Date) },
+    });
+    expect(tx.clientConnection.upsert).toHaveBeenCalledWith({
+      where: {
+        trainerId_clientId: { trainerId: 'trainer-1', clientId: 'client-1' },
+      },
+      create: {
+        trainerId: 'trainer-1',
+        clientId: 'client-1',
+      },
+      update: {},
+    });
+    expect(tx.dogShare.upsert).toHaveBeenCalledWith({
+      where: {
+        dogId_trainerId: { dogId: 'dog-1', trainerId: 'trainer-1' },
+      },
+      create: {
+        dogId: 'dog-1',
+        trainerId: 'trainer-1',
+      },
+      update: {},
+    });
+  });
+
+  it('throws BadRequestException if invitation was already used or expired concurrently', async () => {
+    const prisma = mock<PrismaService>();
+    const tx = {
+      invitation: {
+        updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      },
+    };
+    (prisma.$transaction as jest.Mock).mockImplementation(
+      async (cb: (txArg: typeof tx) => Promise<unknown>) => cb(tx),
+    );
+
+    const repository = new ClientRepository(prisma);
+    await expect(
+      repository.acceptInvitation('inv-1', 'trainer-1', 'client-1', ['dog-1']),
+    ).rejects.toThrow('Tato pozvánka již byla použita nebo vypršela');
+  });
 });

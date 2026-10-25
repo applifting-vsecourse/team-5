@@ -15,7 +15,10 @@ import { RegistrationError, registrationError } from "@/features/auth/lib/regist
 
 export const Route = createFileRoute("/signup")({
   component: SignUpPage,
-  validateSearch: z.object({ code: z.string().optional() }),
+  validateSearch: z.object({
+    code: z.string().optional(),
+    email: z.string().optional(),
+  }),
   loader: async ({ context }) => {
     const session = await context.queryClient.ensureQueryData(authSessionQueryOptions())
     if (!session) return
@@ -24,6 +27,7 @@ export const Route = createFileRoute("/signup")({
 })
 
 function SignUpPage() {
+  const { code, email } = Route.useSearch()
   const navigate = useNavigate()
   const signUp = useSignUp()
   const queryClient = useQueryClient()
@@ -35,6 +39,12 @@ function SignUpPage() {
       await signUp.mutateAsync(values)
       const session = await queryClient.ensureQueryData(authSessionQueryOptions())
       if (!session) throw registrationError()
+
+      if (code) {
+        await navigate({ to: ROUTES.invite, search: { code } })
+        return
+      }
+
       await navigate({ to: accountHome(session.user) })
     } catch (error) {
       setError(error instanceof RegistrationError ? error : registrationError())
@@ -46,12 +56,17 @@ function SignUpPage() {
       <Seo title="Registrace" />
       <AuthLayout
         title="Registrace"
-        description="Založte si účet psovoda nebo trenéra zdarma. Pozvánku nepotřebujete."
+        description={
+          code
+            ? "Dokončete registraci pro propojení se svým trenérem."
+            : "Založte si účet psovoda nebo trenéra zdarma. Pozvánku nepotřebujete."
+        }
         footer={
           <>
             Už máte účet?{" "}
             <Link
               to={ROUTES.login}
+              search={code ? { from: `/invite?code=${code}` } : undefined}
               className="font-medium text-foreground underline underline-offset-4"
             >
               Přihlásit se
@@ -62,6 +77,7 @@ function SignUpPage() {
         <SignUpForm
           isLoading={signUp.isPending}
           error={error}
+          defaultEmail={email}
           onSubmit={handleSubmit}
         />
       </AuthLayout>

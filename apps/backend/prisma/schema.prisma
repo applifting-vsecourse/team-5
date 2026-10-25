@@ -203,9 +203,8 @@ enum TrainingStatus {
 
 // A goal's training put on one concrete day (#71). It shows in the owner's
 // week (#72) and is later moved (#74), skipped (#75) or completed (#77).
-// A goal has at most one PLANNED training at a time (enforced in
-// ScheduledTrainingRepository under a lock on the goal row); another day for
-// the same training is a move, not a second plan (duplication is #103).
+// A goal has many independent dated sessions. ScheduledTrainingRepository
+// locks the goal row to prevent duplicate PLANNED sessions on the same day.
 model ScheduledTraining {
   id          String         @id @default(cuid())
   goalId      String
@@ -218,6 +217,7 @@ model ScheduledTraining {
   status      TrainingStatus @default(PLANNED)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @default(now()) @updatedAt
+  workoutLog  WorkoutLog?
 
   @@index([dogId, date])
   @@index([goalId, status])
@@ -225,27 +225,31 @@ model ScheduledTraining {
 }
 
 model WorkoutLog {
-  id               String            @id @default(cuid())
-  dogId            String
-  dog              Dog               @relation(fields: [dogId], references: [id], onDelete: Cascade)
-  goalId           String?
-  goal             TrainingGoal?     @relation(fields: [goalId], references: [id], onDelete: SetNull)
-  authorId         String?
-  author           User?             @relation("LogAuthor", fields: [authorId], references: [id], onDelete: SetNull)
-  title            String            @db.VarChar(120)
-  discipline       String?           @db.VarChar(60)
-  status           WorkoutStatus     @default(COMPLETED)
-  completedAt      DateTime          @default(now())
-  successRate      Int?
-  rating           Int?
-  focus            FocusLevel?
-  repeatedMistakes MistakeLevel?
-  note             String?           @db.Text
-  videoUrl         String?           @db.VarChar(500)
-  messages         TrainingMessage[]
-  skipReason       String?           @db.Text
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @default(now()) @updatedAt
+  id                  String             @id @default(cuid())
+  dogId               String
+  dog                 Dog                @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  goalId              String?
+  goal                TrainingGoal?      @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  authorId            String?
+  author              User?              @relation("LogAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  title               String             @db.VarChar(120)
+  discipline          String?            @db.VarChar(60)
+  status              WorkoutStatus      @default(COMPLETED)
+  completedAt         DateTime           @default(now())
+  successRate         Int?
+  rating              Int?
+  focus               FocusLevel?
+  repeatedMistakes    MistakeLevel?
+  note                String?            @db.Text
+  videoUrl            String?            @db.VarChar(500)
+  messages            TrainingMessage[]
+  // The planned training this record closes (#75): undoing a skip removes
+  // exactly this record. Null for records written without a plan.
+  scheduledTrainingId String?            @unique
+  scheduledTraining   ScheduledTraining? @relation(fields: [scheduledTrainingId], references: [id], onDelete: SetNull)
+  skipReason          String?            @db.Text
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @default(now()) @updatedAt
 
   @@index([dogId, completedAt(sort: Desc)])
   @@map("workout_log")
@@ -282,6 +286,7 @@ model DogShare {
 model Invitation {
   id        String    @id @default(cuid())
   code      String    @unique @db.VarChar(6)
+  email     String?   @db.VarChar(255)
   trainerId String
   trainer   User      @relation("TrainerInvitations", fields: [trainerId], references: [id], onDelete: Cascade)
   expiresAt DateTime

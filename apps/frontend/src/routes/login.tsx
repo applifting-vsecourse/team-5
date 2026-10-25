@@ -25,25 +25,48 @@ import { SIGN_IN_FAILED_MESSAGE, SignInError } from "@/features/auth/lib/sign-in
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
-  validateSearch: z.object({ from: z.string().optional() }),
-  loaderDeps: ({ search }) => ({ from: search.from }),
+  validateSearch: z.object({
+    from: z.string().optional(),
+    code: z.string().optional(),
+  }),
+  loaderDeps: ({ search }) => ({ from: search.from, code: search.code }),
   loader: async ({ context, deps }) => {
     const session = await context.queryClient.ensureQueryData(authSessionQueryOptions())
     if (!session) return
+    if (deps.code) {
+      throw redirect({ to: ROUTES.invite, search: { code: deps.code } })
+    }
     throw redirect({ href: decodeRedirectUri(deps.from) ?? loginHome(session.user) })
   },
 })
 
 function LoginPage() {
-  const { from } = Route.useSearch()
+  const { from, code } = Route.useSearch()
   const navigate = useNavigate()
   const signIn = useSignIn()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const effectiveCode =
+    code ??
+    (() => {
+      if (!from) return undefined
+      try {
+        const decoded = decodeURIComponent(from)
+        const match = /[?&]code=([A-Za-z0-9]+)/.exec(decoded)
+        return match ? match[1]?.toUpperCase() : undefined
+      } catch {
+        return undefined
+      }
+    })()
 
   const handleSubmit = async (values: { email: string; password: string }) => {
     setErrorMessage(null)
     try {
       const session = await signIn.mutateAsync(values)
+      if (effectiveCode) {
+        await navigate({ to: ROUTES.invite, search: { code: effectiveCode }, replace: true })
+        return
+      }
       await navigate({ href: decodeRedirectUri(from) ?? loginHome(session.user), replace: true })
     } catch (error) {
       setErrorMessage(error instanceof SignInError ? error.message : SIGN_IN_FAILED_MESSAGE)

@@ -309,7 +309,7 @@ export function CreateDogDialog({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/heic,.jpg,.jpeg,.png,.heic"
+                accept="image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif"
                 className="sr-only"
                 onChange={handlePhotoChange}
                 disabled={isPending}

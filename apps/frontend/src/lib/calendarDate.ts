@@ -1,4 +1,15 @@
-import { addDays, format, getDay, isSameMonth, isValid, parseISO, startOfWeek } from "date-fns"
+import {
+  addDays,
+  endOfMonth,
+  endOfWeek,
+  format,
+  getDay,
+  isSameMonth,
+  isValid,
+  parseISO,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns"
 import { cs } from "date-fns/locale"
 
 // Trainings are planned for a day, not a moment: the API speaks in plain
@@ -68,3 +79,25 @@ export const formatWeekdayShort = (calendarDate: CalendarDate): string => {
 
 export const formatDayOfMonth = (calendarDate: CalendarDate): string =>
   format(fromCalendarDate(calendarDate), "d")
+
+// "Říjen 2026"
+export const formatMonthYear = (date: Date): string => {
+  const formatted = format(date, "LLLL yyyy", { locale: cs })
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1)
+}
+
+// All weeks (Monday start dates) covering a given month
+export const getMonthWeeks = (monthDate: Date): CalendarDate[] => {
+  const mStart = startOfMonth(monthDate)
+  const mEnd = endOfMonth(monthDate)
+  const firstMonday = startOfWeek(mStart, { weekStartsOn: 1 })
+  const lastSunday = endOfWeek(mEnd, { weekStartsOn: 1 })
+
+  const weeks: CalendarDate[] = []
+  let cur = firstMonday
+  while (cur <= lastSunday) {
+    weeks.push(toCalendarDate(cur))
+    cur = addDays(cur, 7)
+  }
+  return weeks
+}
