@@ -118,6 +118,62 @@ export class ScheduledTrainingRepository {
     });
   }
 
+  // Returns null when the training is no longer planned. The status check is
+  // part of the update itself, so a training completed in the meantime
+  // (e.g. on another device) is never moved. A goal is practised on many
+  // days but at most once a day: 'day-taken' when it already has a planned
+  // training on the new day. The goal row is locked like when planning (#71),
+  // so a move and a new plan for the same day cannot both get through.
+  async movePlannedTraining(
+    id: string,
+    goalId: string,
+    date: Date,
+  ): Promise<ScheduledTraining | 'day-taken' | null> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "training_goal" WHERE "id" = ${goalId} FOR UPDATE`;
+
+      const sameDay = await tx.scheduledTraining.findFirst({
+        where: {
+          goalId,
+          date,
+          status: TrainingStatus.PLANNED,
+          id: { not: id },
+        },
+        select: { id: true },
+      });
+      if (sameDay) return 'day-taken';
+
+      const { count } = await tx.scheduledTraining.updateMany({
+        where: { id, status: TrainingStatus.PLANNED },
+        data: { date },
+      });
+      if (count === 0) return null;
+      return tx.scheduledTraining.findUnique({ where: { id } });
+    });
+  }
+
+  // A dog's trainings still to be done, for its Activities (#74): the owner
+  // and a trainer with a share see the day each one is planned for.
+  async getPlannedTrainingsByDogId(dogId: string): Promise<WeekTraining[]> {
+    return this.prisma.scheduledTraining.findMany({
+      where: { dogId, status: TrainingStatus.PLANNED },
+      include: {
+        dog: { select: { id: true, name: true, color: true } },
+        goal: {
+          select: {
+            id: true,
+            title: true,
+            blocks: {
+              select: { id: true, title: true },
+              orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+            },
+          },
+        },
+      },
+      orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
+    });
+  }
+
   async completeTraining(
     trainingId: string,
     authorId: string,

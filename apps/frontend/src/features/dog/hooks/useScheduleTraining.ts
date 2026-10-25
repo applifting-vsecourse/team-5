@@ -17,6 +17,8 @@ export function useScheduleTraining(goalId: string) {
       void queryClient.invalidateQueries({ queryKey: dogKeys.goalTrainings(goalId) })
       // The week shows goals and their exercises too (#72).
       void queryClient.invalidateQueries({ queryKey: weekKeys.all })
+      // Activities list the dog's planned days (#74).
+      void queryClient.invalidateQueries({ queryKey: dogKeys.plannedTrainings(training.dogId) })
       toast.success(`Trénink je naplánovaný na ${formatDayAccusative(training.date)}`)
     },
     onError: (error) => {

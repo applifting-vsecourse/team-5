@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { CalendarClock, ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,7 @@ import { dogColorClass } from "@/lib/dogColors"
 import { cn } from "@/lib/utils"
 
 import { weekTrainingsQueryOptions, type WeekTraining } from "@/features/week/api/weekQueryOptions"
+import { MoveTrainingDialog } from "@/features/week/components/MoveTrainingDialog"
 
 const STATUS_LABELS: Record<WeekTraining["status"], string> = {
   PLANNED: "Naplánováno",
@@ -36,21 +37,37 @@ const exerciseCount = (count: number): string => {
 }
 
 function WeekTrainingCard({ training }: { training: WeekTraining }) {
+  const [isMoveOpen, setIsMoveOpen] = useState(false)
   const titles = training.exercises.map((exercise) => exercise.title)
+  const isPlanned = training.status === "PLANNED"
+  const heading = `${training.dog.name} · ${training.goal.title}`
 
-  const cardContent = (
-    <>
+  return (
+    <li className="relative overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4 transition-colors has-[a:hover]:border-foreground/30">
       {/* The dog's colour tells the dogs apart, as in the day strip above. */}
       <span
         aria-hidden="true"
         className={cn("absolute inset-y-0 left-0 w-1", dogColorClass(training.dog.color))}
       />
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-medium text-foreground transition-colors group-hover:text-primary">
-          {training.dog.name} · {training.goal.title}
+        <h3 className="text-base font-medium text-foreground">
+          {isPlanned ? (
+            // The link covers the whole card (::after), so the card still opens
+            // the walkthrough (#76); the actions below sit on top of it.
+            <Link
+              to="/trainings/$trainingId"
+              params={{ trainingId: training.id }}
+              className="outline-hidden transition-colors after:absolute after:inset-0 after:rounded-lg hover:text-primary focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
+              aria-label={`Trénink ${heading}`}
+            >
+              {heading}
+            </Link>
+          ) : (
+            heading
+          )}
         </h3>
         <Badge
-          variant={training.status === "PLANNED" ? "secondary" : "outline"}
+          variant={isPlanned ? "secondary" : "outline"}
           className="shrink-0"
         >
           {STATUS_LABELS[training.status]}
@@ -61,27 +78,28 @@ function WeekTrainingCard({ training }: { training: WeekTraining }) {
           ? "Plán zatím nemá žádný cvik."
           : `${exerciseCount(titles.length)} · ${titles.join(", ")}`}
       </p>
-    </>
-  )
-
-  if (training.status === "PLANNED") {
-    return (
-      <li className="relative">
-        <Link
-          to="/trainings/$trainingId"
-          params={{ trainingId: training.id }}
-          className="group block overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4 outline-hidden transition-colors hover:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          aria-label={`Trénink ${training.dog.name} · ${training.goal.title}`}
-        >
-          {cardContent}
-        </Link>
-      </li>
-    )
-  }
-
-  return (
-    <li className="relative overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4">
-      {cardContent}
+      {isPlanned ? (
+        <>
+          <div className="relative mt-3 flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-11"
+              aria-label={`Přesunout trénink ${heading}`}
+              onClick={() => setIsMoveOpen(true)}
+            >
+              <CalendarClock className="size-4" />
+              Přesunout
+            </Button>
+          </div>
+          <MoveTrainingDialog
+            training={training}
+            isOpen={isMoveOpen}
+            onOpenChange={setIsMoveOpen}
+          />
+        </>
+      ) : null}
     </li>
   )
 }

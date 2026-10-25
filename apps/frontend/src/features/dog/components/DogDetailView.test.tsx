@@ -148,13 +148,41 @@ describe("DogDetailView", () => {
 })
 
 describe("DogActivitiesSection", () => {
-  it("renders workout records with badges, rates and notes", () => {
+  it("lists workout records by their header only: date, title and status", () => {
     render(<DogActivitiesSection dogName="Baryk" />, { wrapper: createWrapper() })
 
     expect(screen.getByText("Poslušnost v parku")).toBeInTheDocument()
     expect(screen.getAllByText("Odcvičeno").length).toBeGreaterThan(0)
-    expect(screen.getByText("Úspěšnost: 95 %")).toBeInTheDocument()
-    expect(screen.getByText("Hodnocení: 5/5")).toBeInTheDocument()
+    // Results and notes are in the detail, not in the list.
+    expect(screen.queryByText("Úspěšnost: 95 %")).not.toBeInTheDocument()
+    expect(screen.queryByText(/Soustředil se skvěle/)).not.toBeInTheDocument()
+  })
+
+  it("shows only the latest records on the dog's page, with a link to the history", () => {
+    const activities = Array.from({ length: 5 }, (_, index) => ({
+      id: `a${index}`,
+      title: `Trénink ${index + 1}`,
+      status: "completed" as const,
+      completedAt: new Date(2026, 9, 20 - index),
+    }))
+    render(
+      <DogActivitiesSection
+        dogId="d-123"
+        dogName="Baryk"
+        activities={activities}
+        isCompact
+      />,
+      { wrapper: createWrapper() },
+    )
+
+    expect(screen.getByText("Trénink 1")).toBeInTheDocument()
+    expect(screen.getByText("Trénink 3")).toBeInTheDocument()
+    expect(screen.queryByText("Trénink 4")).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /další stránka aktivit/i })).toBeNull()
+    expect(screen.getByRole("link", { name: /celá historie/i })).toHaveAttribute(
+      "href",
+      "/dogs/d-123/activities",
+    )
   })
 
   it("paginates activities page by page", async () => {

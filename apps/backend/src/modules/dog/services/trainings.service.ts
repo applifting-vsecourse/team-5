@@ -87,6 +87,61 @@ export class TrainingsService {
     return log;
   }
 
+  // Moves a planned training to another day (#74), in any week. Like the
+  // walkthrough's record (#77) it is the owner's own plan, so a trainer with a
+  // share gets 403. A completed or skipped training stays where it happened.
+  async moveTraining(
+    user: Identity,
+    trainingId: string,
+    date: string,
+    now: Date = new Date(),
+  ): Promise<ScheduledTraining> {
+    const training =
+      await this.scheduledTrainingRepository.getTrainingById(trainingId);
+    if (!training) {
+      throw new NotFoundException(`Training with ID ${trainingId} not found`);
+    }
+    try {
+      await this.dogAccessService.getOwnedDog(user, training.dogId);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`Training with ID ${trainingId} not found`);
+      }
+      throw error;
+    }
+
+    if (date < todayInAppZone(now)) {
+      throw new BadRequestException('A training cannot be moved to the past');
+    }
+
+    const moved =
+      training.status === TrainingStatus.PLANNED
+        ? await this.scheduledTrainingRepository.movePlannedTraining(
+            trainingId,
+            training.goalId,
+            fromCalendarDate(date),
+          )
+        : null;
+    if (!moved) {
+      throw new ConflictException('Only a planned training can be moved');
+    }
+    if (moved === 'day-taken') {
+      throw new ConflictException(
+        'This goal already has a planned training on this day',
+      );
+    }
+    return moved;
+  }
+
+  // Planned trainings of one dog (#74), for everyone who sees the dog.
+  async getPlannedDogTrainings(
+    user: Identity,
+    dogId: string,
+  ): Promise<WeekTraining[]> {
+    await this.dogAccessService.getAccessibleDog(user, dogId);
+    return this.scheduledTrainingRepository.getPlannedTrainingsByDogId(dogId);
+  }
+
   // The owner's trainings between two days, both included (#72). The range is
   // capped so one request cannot pull a whole year.
   async getWeekTrainings(
@@ -120,7 +175,7 @@ export class TrainingsService {
 
   // Puts the goal's training on one day (#71). A day in the past is refused,
   // and a goal that already has a planned training is refused with 409;
-  // changing its day will be a move (#74), not a second plan.
+  // changing its day is a move (#74), not a second plan.
   async scheduleTraining(
     user: Identity,
     goalId: string,

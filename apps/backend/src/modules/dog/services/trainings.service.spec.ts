@@ -364,4 +364,131 @@ describe('TrainingsService', () => {
       expect(repository.getOwnerTrainingsBetween).not.toHaveBeenCalled();
     });
   });
+
+  describe('moveTraining (#74)', () => {
+    it('moves a planned training to a day in another week', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      const moved = aTraining({ date: new Date('2026-10-29T00:00:00.000Z') });
+      repository.movePlannedTraining.mockResolvedValue(moved);
+
+      await expect(
+        service.moveTraining(owner, 't1', '2026-10-29', now),
+      ).resolves.toEqual(moved);
+      expect(repository.movePlannedTraining).toHaveBeenCalledWith(
+        't1',
+        'g1',
+        new Date('2026-10-29T00:00:00.000Z'),
+      );
+    });
+
+    // A goal is practised on many days, but at most once a day.
+    it('refuses a day the goal already has another planned training on', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      repository.movePlannedTraining.mockResolvedValue('day-taken');
+
+      await expect(
+        service.moveTraining(owner, 't1', '2026-10-29', now),
+      ).rejects.toThrow('This goal already has a planned training on this day');
+    });
+
+    it('moves a missed training to today', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(
+        aTrainingDetail({ date: new Date('2026-10-19T00:00:00.000Z') }),
+      );
+      repository.movePlannedTraining.mockResolvedValue(aTraining());
+
+      await service.moveTraining(owner, 't1', '2026-10-21', now);
+
+      expect(repository.movePlannedTraining).toHaveBeenCalled();
+    });
+
+    it('refuses a day in the past', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+
+      await expect(
+        service.moveTraining(owner, 't1', '2026-10-20', now),
+      ).rejects.toThrow(BadRequestException);
+      expect(repository.movePlannedTraining).not.toHaveBeenCalled();
+    });
+
+    it.each(['COMPLETED', 'SKIPPED'] as const)(
+      'does not move a %s training',
+      async (status) => {
+        const { service, repository } = setup();
+        repository.getTrainingById.mockResolvedValue(
+          aTrainingDetail({ status }),
+        );
+
+        await expect(
+          service.moveTraining(owner, 't1', '2026-10-29', now),
+        ).rejects.toThrow(ConflictException);
+        expect(repository.movePlannedTraining).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refuses a training completed while the move was on its way', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      repository.movePlannedTraining.mockResolvedValue(null);
+
+      await expect(
+        service.moveTraining(owner, 't1', '2026-10-29', now),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('lets only the owner move it (a trainer with a share gets 403)', async () => {
+      const { service, repository, dogAccessService } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      dogAccessService.getOwnedDog.mockRejectedValue(new ForbiddenException());
+
+      await expect(
+        service.moveTraining({ id: 'u9' } as Identity, 't1', '2026-10-29', now),
+      ).rejects.toThrow(ForbiddenException);
+      expect(repository.movePlannedTraining).not.toHaveBeenCalled();
+    });
+
+    it("reports another user's training as not found", async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+
+      await expect(
+        service.moveTraining(stranger, 't1', '2026-10-29', now),
+      ).rejects.toThrow('Training with ID t1 not found');
+      expect(repository.movePlannedTraining).not.toHaveBeenCalled();
+    });
+
+    it('reports a missing training as not found', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(null);
+
+      await expect(
+        service.moveTraining(owner, 'nope', '2026-10-29', now),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getPlannedDogTrainings (#74)', () => {
+    it("lists the dog's planned trainings to someone who sees the dog", async () => {
+      const { service, repository } = setup();
+      repository.getPlannedTrainingsByDogId.mockResolvedValue([]);
+
+      await expect(
+        service.getPlannedDogTrainings(owner, 'd1'),
+      ).resolves.toEqual([]);
+      expect(repository.getPlannedTrainingsByDogId).toHaveBeenCalledWith('d1');
+    });
+
+    it('does not list trainings of a dog the user cannot see', async () => {
+      const { service, repository } = setup();
+
+      await expect(
+        service.getPlannedDogTrainings(stranger, 'd1'),
+      ).rejects.toThrow(NotFoundException);
+      expect(repository.getPlannedTrainingsByDogId).not.toHaveBeenCalled();
+    });
+  });
 });
