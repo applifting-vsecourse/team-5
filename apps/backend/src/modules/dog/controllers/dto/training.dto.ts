@@ -1,4 +1,8 @@
-import { TrainingStatus } from '@/generated/prisma/client';
+import {
+  FocusLevel,
+  MistakeLevel,
+  TrainingStatus,
+} from '@/generated/prisma/client';
 import {
   CALENDAR_DATE_PATTERN,
   toCalendarDate,
@@ -9,7 +13,18 @@ import {
   WeekTraining,
 } from '@/modules/dog/domain/scheduled-training';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, Matches } from 'class-validator';
+import {
+  IsDateString,
+  IsDivisibleBy,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class WeekQueryDto {
   @ApiProperty({ example: '2026-10-19', format: 'date' })
@@ -92,6 +107,17 @@ export class ScheduleTrainingDto {
   date!: string;
 }
 
+export class MoveTrainingDto {
+  @ApiProperty({
+    description: 'The new day of the training as a calendar date',
+    example: '2026-10-29',
+    format: 'date',
+  })
+  @Matches(CALENDAR_DATE_PATTERN, { message: 'date must be YYYY-MM-DD' })
+  @IsDateString({ strict: true })
+  date!: string;
+}
+
 export class TrainingResponseDto {
   @ApiProperty()
   id!: string;
@@ -123,6 +149,20 @@ export class TrainingResponseDto {
   }
 }
 
+export class TrainingDetailDogDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ minimum: 1, maximum: 6 })
+  color!: number;
+
+  @ApiProperty({ example: false })
+  hasTrainer!: boolean;
+}
+
 export class TrainingDetailExerciseDto {
   @ApiProperty()
   id!: string;
@@ -150,8 +190,8 @@ export class TrainingDetailResponseDto {
   @ApiProperty({ enum: TrainingStatus })
   status!: TrainingStatus;
 
-  @ApiProperty({ type: WeekTrainingDogDto })
-  dog!: WeekTrainingDogDto;
+  @ApiProperty({ type: TrainingDetailDogDto })
+  dog!: TrainingDetailDogDto;
 
   @ApiProperty({ type: WeekTrainingGoalDto })
   goal!: WeekTrainingGoalDto;
@@ -170,6 +210,9 @@ export class TrainingDetailResponseDto {
         id: training.dog.id,
         name: training.dog.name,
         color: training.dog.color,
+        hasTrainer: Boolean(
+          training.dog.shares && training.dog.shares.length > 0,
+        ),
       },
       goal: {
         id: training.goal.id,
@@ -184,4 +227,44 @@ export class TrainingDetailResponseDto {
       })),
     };
   }
+}
+
+export class CompleteTrainingDto {
+  @ApiPropertyOptional({
+    description: 'Success rate in % (0-100, step 10)',
+    example: 70,
+    minimum: 0,
+    maximum: 100,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @IsDivisibleBy(10, { message: 'successRate must be a multiple of 10' })
+  successRate?: number;
+
+  @ApiPropertyOptional({
+    enum: FocusLevel,
+    example: FocusLevel.YES,
+  })
+  @IsOptional()
+  @IsEnum(FocusLevel)
+  focus?: FocusLevel;
+
+  @ApiPropertyOptional({
+    enum: MistakeLevel,
+    example: MistakeLevel.NO,
+  })
+  @IsOptional()
+  @IsEnum(MistakeLevel)
+  repeatedMistakes?: MistakeLevel;
+
+  @ApiPropertyOptional({
+    description: 'Workout note',
+    maxLength: 2000,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  note?: string;
 }

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react"
+import { Calendar, CalendarClock, ChevronLeft, ChevronRight, SkipForward, Undo2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,9 @@ import { dogColorClass } from "@/lib/dogColors"
 import { cn } from "@/lib/utils"
 
 import { weekTrainingsQueryOptions, type WeekTraining } from "@/features/week/api/weekQueryOptions"
+import { MoveTrainingDialog } from "@/features/week/components/MoveTrainingDialog"
+import { SkipTrainingDialog } from "@/features/week/components/SkipTrainingDialog"
+import { useUndoSkip } from "@/features/week/hooks/useSkipTraining"
 
 import { WeekPickerDialog } from "./WeekPickerDialog"
 
@@ -38,22 +41,66 @@ const exerciseCount = (count: number): string => {
   return `${count} cviků`
 }
 
-function WeekTrainingCard({ training }: { training: WeekTraining }) {
-  const titles = training.exercises.map((exercise) => exercise.title)
+// A skip can be taken back until the training's week is over (#75).
+function UndoSkipButton({ training, heading }: { training: WeekTraining; heading: string }) {
+  const undoSkip = useUndoSkip(training.id)
 
-  const cardContent = (
-    <>
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="min-h-11"
+      aria-label={`Vrátit přeskočení tréninku ${heading}`}
+      disabled={undoSkip.isPending}
+      onClick={() => undoSkip.mutate()}
+    >
+      <Undo2 className="size-4" />
+      Vrátit
+    </Button>
+  )
+}
+
+type WeekTrainingCardProps = {
+  training: WeekTraining
+  today: CalendarDate
+}
+
+function WeekTrainingCard({ training, today }: WeekTrainingCardProps) {
+  const [isMoveOpen, setIsMoveOpen] = useState(false)
+  const [isSkipOpen, setIsSkipOpen] = useState(false)
+  const titles = training.exercises.map((exercise) => exercise.title)
+  const isPlanned = training.status === "PLANNED"
+  const canUndoSkip =
+    training.status === "SKIPPED" && startOfWeekOf(training.date) >= startOfWeekOf(today)
+  const heading = `${training.dog.name} · ${training.goal.title}`
+
+  return (
+    <li className="relative overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4 transition-colors has-[a:hover]:border-foreground/30">
       {/* The dog's colour tells the dogs apart, as in the day strip above. */}
       <span
         aria-hidden="true"
         className={cn("absolute inset-y-0 left-0 w-1", dogColorClass(training.dog.color))}
       />
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-medium text-foreground transition-colors group-hover:text-primary">
-          {training.dog.name} · {training.goal.title}
+        <h3 className="text-base font-medium text-foreground">
+          {isPlanned ? (
+            // The link covers the whole card (::after), so the card still opens
+            // the walkthrough (#76); the actions below sit on top of it.
+            <Link
+              to="/trainings/$trainingId"
+              params={{ trainingId: training.id }}
+              className="outline-hidden transition-colors after:absolute after:inset-0 after:rounded-lg hover:text-primary focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
+              aria-label={`Trénink ${heading}`}
+            >
+              {heading}
+            </Link>
+          ) : (
+            heading
+          )}
         </h3>
         <Badge
-          variant={training.status === "PLANNED" ? "secondary" : "outline"}
+          variant={isPlanned ? "secondary" : "outline"}
           className={cn(
             "shrink-0 font-mono text-xs font-semibold tracking-wider uppercase",
             training.status === "COMPLETED" && "border-primary/40 bg-primary/10 text-primary",
@@ -67,27 +114,52 @@ function WeekTrainingCard({ training }: { training: WeekTraining }) {
           ? "Plán zatím nemá žádný cvik."
           : `${exerciseCount(titles.length)} · ${titles.join(", ")}`}
       </p>
-    </>
-  )
-
-  if (training.status === "PLANNED") {
-    return (
-      <li className="relative">
-        <Link
-          to="/trainings/$trainingId"
-          params={{ trainingId: training.id }}
-          className="group block overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4 outline-hidden transition-colors hover:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          aria-label={`Trénink ${training.dog.name} · ${training.goal.title}`}
-        >
-          {cardContent}
-        </Link>
-      </li>
-    )
-  }
-
-  return (
-    <li className="relative overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4">
-      {cardContent}
+      {isPlanned ? (
+        <>
+          <div className="relative mt-3 flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-11"
+              aria-label={`Přesunout trénink ${heading}`}
+              onClick={() => setIsMoveOpen(true)}
+            >
+              <CalendarClock className="size-4" />
+              Přesunout
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-11"
+              aria-label={`Přeskočit trénink ${heading}`}
+              onClick={() => setIsSkipOpen(true)}
+            >
+              <SkipForward className="size-4" />
+              Přeskočit
+            </Button>
+          </div>
+          <MoveTrainingDialog
+            training={training}
+            isOpen={isMoveOpen}
+            onOpenChange={setIsMoveOpen}
+          />
+          <SkipTrainingDialog
+            training={training}
+            isOpen={isSkipOpen}
+            onOpenChange={setIsSkipOpen}
+          />
+        </>
+      ) : null}
+      {canUndoSkip ? (
+        <div className="mt-3 flex gap-2">
+          <UndoSkipButton
+            training={training}
+            heading={heading}
+          />
+        </div>
+      ) : null}
     </li>
   )
 }
@@ -119,6 +191,9 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
     <div className="flex flex-col gap-6">
       <header className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Týden</h1>
+        <p className="text-sm text-muted-foreground">
+          Jednotlivé tréninky vašich psů. Na jednom cíli můžete pracovat v několika dnech.
+        </p>
         {/* Week switching (#73): arrows a week back and forth, "Dnes" back to this week. */}
         <div className="flex items-center gap-1">
           <Button
@@ -293,6 +368,7 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
               <WeekTrainingCard
                 key={training.id}
                 training={training}
+                today={today}
               />
             ))}
           </ul>

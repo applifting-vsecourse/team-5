@@ -2,11 +2,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type * as Router from "@tanstack/react-router"
 import { render, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { moveTraining } from "@/features/week/api/moveTraining"
+import { skipTraining, undoSkip } from "@/features/week/api/skipTraining"
 import { weekKeys, type WeekTraining } from "@/features/week/api/weekQueryOptions"
 
 import { WeekView } from "./WeekView"
+
+vi.mock("@/features/week/api/moveTraining", () => ({ moveTraining: vi.fn() }))
+vi.mock("@/features/week/api/skipTraining", () => ({ skipTraining: vi.fn(), undoSkip: vi.fn() }))
 
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof Router>("@tanstack/react-router")
@@ -154,6 +159,7 @@ describe("WeekView", () => {
     expect(screen.getByRole("link", { name: "Přejít na psy" })).toHaveAttribute("href", "/dogs")
   })
 
+
   it("picks the whole week of any day in the month calendar behind the week range", async () => {
     const user = userEvent.setup()
     const { onWeekChange } = renderWeek([])
@@ -165,5 +171,140 @@ describe("WeekView", () => {
     await user.click(within(dialog).getByRole("button", { name: "středa, 7. října 2026" }))
 
     expect(onWeekChange).toHaveBeenCalledWith("2026-10-05")
+  })
+
+
+  describe("moving a training (#74)", () => {
+    beforeEach(() => {
+      // Wednesday 21 Oct 2026, the same day as the week's "today".
+      vi.useFakeTimers({ toFake: ["Date"] })
+      vi.setSystemTime(new Date(2026, 9, 21, 10, 0))
+      vi.mocked(moveTraining).mockReset()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it("offers 'Přesunout' only on a planned training", () => {
+      renderWeek([
+        aTraining({ id: "t1", status: "PLANNED" }),
+        aTraining({ id: "t2", status: "COMPLETED", goal: { id: "g2", title: "Pac" } }),
+      ])
+
+      expect(
+        screen.getByRole("button", { name: "Přesunout trénink Rex · Chůze u nohy" }),
+      ).toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: "Přesunout trénink Rex · Pac" })).toBeNull()
+      // The card still opens the walkthrough (#76).
+      expect(screen.getByRole("link", { name: "Trénink Rex · Chůze u nohy" })).toHaveAttribute(
+        "href",
+        "/trainings/t1",
+      )
+    })
+
+    it("moves the training to a day in the next week", async () => {
+      const user = userEvent.setup()
+      vi.mocked(moveTraining).mockResolvedValue({
+        id: "t1",
+        goalId: "g1",
+        dogId: "d1",
+        date: "2026-10-27",
+      })
+      renderWeek([aTraining({ status: "PLANNED" })])
+
+      await user.click(screen.getByRole("button", { name: /^Přesunout trénink/ }))
+      const dialog = screen.getByRole("dialog", { name: "Přesunout trénink" })
+      // The day it is on now cannot be picked, so tomorrow is offered first.
+      expect(within(dialog).getByRole("radio", { name: "středa 21. 10." })).toBeDisabled()
+      expect(within(dialog).getByRole("radio", { name: "čtvrtek 22. 10." })).toBeChecked()
+
+      await user.click(within(dialog).getByRole("button", { name: "Další týden" }))
+      await user.click(within(dialog).getByRole("radio", { name: "úterý 27. 10." }))
+      await user.click(within(dialog).getByRole("button", { name: "Přesunout na úterý 27. 10." }))
+
+      expect(moveTraining).toHaveBeenCalledWith("t1", "2026-10-27")
+      expect(screen.queryByRole("dialog")).toBeNull()
+    })
+
+    it("keeps the dialog open when the move fails", async () => {
+      const user = userEvent.setup()
+      vi.mocked(moveTraining).mockRejectedValue(new Error("offline"))
+      renderWeek([aTraining({ status: "PLANNED" })])
+
+      await user.click(screen.getByRole("button", { name: /^Přesunout trénink/ }))
+      await user.click(screen.getByRole("button", { name: "Přesunout na čtvrtek 22. 10." }))
+
+      expect(screen.getByRole("dialog", { name: "Přesunout trénink" })).toBeInTheDocument()
+    })
+  })
+
+  describe("skipping a training (#75)", () => {
+    const skipped = {
+      id: "t1",
+      goalId: "g1",
+      dogId: "d1",
+      date: "2026-10-21",
+      status: "SKIPPED" as const,
+    }
+
+    beforeEach(() => {
+      vi.mocked(skipTraining).mockReset()
+      vi.mocked(undoSkip).mockReset()
+    })
+
+    it("skips a planned training after confirmation", async () => {
+      const user = userEvent.setup()
+      vi.mocked(skipTraining).mockResolvedValue(skipped)
+      renderWeek([aTraining({ status: "PLANNED" })])
+
+      await user.click(screen.getByRole("button", { name: /^Přeskočit trénink/ }))
+      const dialog = screen.getByRole("alertdialog", { name: "Přeskočit trénink?" })
+      expect(dialog).toHaveTextContent("plán cíle se neposune")
+
+      await user.click(within(dialog).getByRole("button", { name: "Přeskočit" }))
+
+      expect(skipTraining).toHaveBeenCalledWith("t1")
+    })
+
+    it("does not skip when the user keeps the training", async () => {
+      const user = userEvent.setup()
+      renderWeek([aTraining({ status: "PLANNED" })])
+
+      await user.click(screen.getByRole("button", { name: /^Přeskočit trénink/ }))
+      await user.click(screen.getByRole("button", { name: "Ponechat" }))
+
+      expect(skipTraining).not.toHaveBeenCalled()
+      expect(screen.queryByRole("alertdialog")).toBeNull()
+    })
+
+    it("keeps a skipped training in the week and lets the user take the skip back", async () => {
+      const user = userEvent.setup()
+      vi.mocked(undoSkip).mockResolvedValue({ ...skipped, status: "PLANNED" })
+      renderWeek([aTraining({ status: "SKIPPED" })])
+
+      expect(screen.getByText("Přeskočeno")).toBeInTheDocument()
+      expect(screen.queryByRole("button", { name: /^Přeskočit trénink/ })).toBeNull()
+
+      await user.click(
+        screen.getByRole("button", { name: "Vrátit přeskočení tréninku Rex · Chůze u nohy" }),
+      )
+
+      expect(undoSkip).toHaveBeenCalledWith("t1")
+    })
+
+    it("does not offer to take back a skip from a past week", () => {
+      renderWeek([aTraining({ date: "2026-10-14", status: "SKIPPED" })], "2026-10-12")
+
+      expect(screen.queryByRole("button", { name: /^Vrátit přeskočení/ })).toBeNull()
+    })
+
+    it("offers no action on a completed training", () => {
+      renderWeek([aTraining({ status: "COMPLETED" })])
+
+      expect(screen.queryByRole("button", { name: /^Přeskočit trénink/ })).toBeNull()
+      expect(screen.queryByRole("button", { name: /^Vrátit přeskočení/ })).toBeNull()
+    })
+
   })
 })

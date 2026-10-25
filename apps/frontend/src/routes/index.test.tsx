@@ -108,12 +108,12 @@ describe("LandingPage", () => {
     await user.type(input, "ABC123XYZ")
 
     const submitButton = screen.getByRole("button", {
-      name: /pokračovat k registraci/i,
+      name: /pokračovat/i,
     })
     await user.click(submitButton)
 
     expect(mockNavigate).toHaveBeenCalledWith({
-      to: "/signup",
+      to: "/invite",
       search: { code: "ABC123XYZ" },
     })
   })

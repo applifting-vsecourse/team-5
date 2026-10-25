@@ -1,8 +1,12 @@
+import { TrainingStatus, WorkoutLog } from '@/generated/prisma/client';
 import {
   fromCalendarDate,
+  lastDayOfWeek,
+  toCalendarDate,
   todayInAppZone,
 } from '@/modules/dog/domain/calendar-date';
 import {
+  CompleteTrainingData,
   ScheduledTraining,
   ScheduledTrainingDetail,
   WeekTraining,
@@ -54,6 +58,161 @@ export class TrainingsService {
     return training;
   }
 
+  // Completes the scheduled training and writes a workout log (#77).
+  // Only the dog's owner can complete their dog's training.
+  async completeTraining(
+    user: Identity,
+    trainingId: string,
+    data: CompleteTrainingData,
+  ): Promise<WorkoutLog> {
+    const training =
+      await this.scheduledTrainingRepository.getTrainingById(trainingId);
+    if (!training) {
+      throw new NotFoundException(`Training with ID ${trainingId} not found`);
+    }
+
+    await this.dogAccessService.getOwnedDog(user, training.dogId);
+
+    if (training.status === TrainingStatus.COMPLETED) {
+      throw new ConflictException('This training is already completed');
+    }
+    // A skipped training already has its record (#75); take the skip back first.
+    if (training.status === TrainingStatus.SKIPPED) {
+      throw new ConflictException('This training is skipped');
+    }
+
+    const log = await this.scheduledTrainingRepository.completeTraining(
+      trainingId,
+      user.id,
+      data,
+    );
+    // Completed or skipped meanwhile, e.g. a second submit of the same form.
+    if (!log) {
+      throw new ConflictException('Only a planned training can be completed');
+    }
+    return log;
+  }
+
+  // Moves a planned training to another day (#74), in any week. Like the
+  // walkthrough's record (#77) it is the owner's own plan, so a trainer with a
+  // share gets 403. A completed or skipped training stays where it happened.
+  async moveTraining(
+    user: Identity,
+    trainingId: string,
+    date: string,
+    now: Date = new Date(),
+  ): Promise<ScheduledTraining> {
+    const training = await this.getOwnedTraining(user, trainingId);
+
+    if (date < todayInAppZone(now)) {
+      throw new BadRequestException('A training cannot be moved to the past');
+    }
+
+    const moved =
+      training.status === TrainingStatus.PLANNED
+        ? await this.scheduledTrainingRepository.movePlannedTraining(
+            trainingId,
+            training.goalId,
+            fromCalendarDate(date),
+          )
+        : null;
+    if (!moved) {
+      throw new ConflictException('Only a planned training can be moved');
+    }
+    if (moved === 'day-taken') {
+      throw new ConflictException(
+        'This goal already has a planned training on this day',
+      );
+    }
+    return moved;
+  }
+
+  // Skips a planned training (#75). The training stays in the week marked as
+  // skipped and the dog's Activities get a "skipped" record. The plan itself
+  // does not move on: the goal's exercises stay as they are.
+  async skipTraining(
+    user: Identity,
+    trainingId: string,
+  ): Promise<ScheduledTraining> {
+    const training = await this.getOwnedTraining(user, trainingId);
+    const skipped =
+      training.status === TrainingStatus.PLANNED
+        ? await this.scheduledTrainingRepository.skipPlannedTraining(
+            trainingId,
+            user.id,
+          )
+        : null;
+    if (!skipped) {
+      throw new ConflictException('Only a planned training can be skipped');
+    }
+    return skipped;
+  }
+
+  // Takes a skip back (#75) until the training's week is over: from the
+  // Monday after it, the skip stays.
+  async undoSkip(
+    user: Identity,
+    trainingId: string,
+    now: Date = new Date(),
+  ): Promise<ScheduledTraining> {
+    const training = await this.getOwnedTraining(user, trainingId);
+    if (training.status !== TrainingStatus.SKIPPED) {
+      throw new ConflictException('This training is not skipped');
+    }
+    if (todayInAppZone(now) > lastDayOfWeek(toCalendarDate(training.date))) {
+      throw new ConflictException(
+        "The skip can only be undone until the training's week is over",
+      );
+    }
+
+    const result =
+      await this.scheduledTrainingRepository.restoreSkippedTraining(
+        trainingId,
+        training.goalId,
+        training.date,
+      );
+    if (result === 'day-taken') {
+      throw new ConflictException(
+        'This goal already has a planned training on this day',
+      );
+    }
+    if (result === 'not-skipped') {
+      throw new ConflictException('This training is not skipped');
+    }
+    return result;
+  }
+
+  // The training, when the user owns its dog: a trainer with a share gets 403,
+  // anyone else the same 404 as for a training that does not exist.
+  private async getOwnedTraining(
+    user: Identity,
+    trainingId: string,
+  ): Promise<ScheduledTrainingDetail> {
+    const training =
+      await this.scheduledTrainingRepository.getTrainingById(trainingId);
+    if (!training) {
+      throw new NotFoundException(`Training with ID ${trainingId} not found`);
+    }
+    try {
+      await this.dogAccessService.getOwnedDog(user, training.dogId);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw new NotFoundException(`Training with ID ${trainingId} not found`);
+      }
+      throw error;
+    }
+    return training;
+  }
+
+  // Planned trainings of one dog (#74), for everyone who sees the dog.
+  async getPlannedDogTrainings(
+    user: Identity,
+    dogId: string,
+  ): Promise<WeekTraining[]> {
+    await this.dogAccessService.getAccessibleDog(user, dogId);
+    return this.scheduledTrainingRepository.getPlannedTrainingsByDogId(dogId);
+  }
+
   // The owner's trainings between two days, both included (#72). The range is
   // capped so one request cannot pull a whole year.
   async getWeekTrainings(
@@ -85,9 +244,8 @@ export class TrainingsService {
     return this.scheduledTrainingRepository.getTrainingsByGoalId(goalId);
   }
 
-  // Puts the goal's training on one day (#71). A day in the past is refused,
-  // and a goal that already has a planned training is refused with 409;
-  // changing its day will be a move (#74), not a second plan.
+  // Adds an independent dated session to a reusable goal. Other sessions
+  // remain untouched; only the same goal/day cannot be planned twice.
   async scheduleTraining(
     user: Identity,
     goalId: string,
@@ -109,7 +267,9 @@ export class TrainingsService {
         date: fromCalendarDate(date),
       });
     if (!training) {
-      throw new ConflictException('This training is already planned for a day');
+      throw new ConflictException(
+        'This goal already has a planned training on this day',
+      );
     }
     return training;
   }

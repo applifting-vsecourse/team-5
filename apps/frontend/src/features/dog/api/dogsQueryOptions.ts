@@ -10,6 +10,7 @@ import {
   dogSchema,
   dogsSchema,
   planBlocksSchema,
+  plannedTrainingsSchema,
   trainingsSchema,
 } from "./dogSchemas"
 
@@ -76,6 +77,17 @@ export function goalTrainingsQueryOptions(goalId: string) {
       return trainingsSchema.parse(json)
     },
     enabled: Boolean(goalId),
+  })
+}
+
+export function dogPlannedTrainingsQueryOptions(dogId: string) {
+  return queryOptions({
+    queryKey: dogKeys.plannedTrainings(dogId),
+    queryFn: async () => {
+      const json = await api.get(`dogs/${dogId}/trainings`).json()
+      return plannedTrainingsSchema.parse(json)
+    },
+    enabled: Boolean(dogId),
   })
 }
 
