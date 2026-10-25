@@ -287,11 +287,11 @@ export function DogActivitiesSection({
 
               <div className="space-y-4 py-2">
                 {selectedActivity.status === "completed" && (
-                  <div className="flex items-center gap-4 rounded-lg bg-secondary/50 p-3">
+                  <div className="flex items-center justify-between gap-4 rounded-lg bg-secondary/50 p-4">
                     {selectedActivity.successRate !== undefined && (
                       <div>
                         <div className="text-xs text-muted-foreground">Úspěšnost</div>
-                        <div className="text-lg font-bold text-foreground">
+                        <div className="font-mono text-lg font-bold text-foreground">
                           {selectedActivity.successRate} %
                         </div>
                       </div>
@@ -299,7 +299,7 @@ export function DogActivitiesSection({
                     {selectedActivity.rating !== undefined && (
                       <div>
                         <div className="text-xs text-muted-foreground">Hodnocení</div>
-                        <div className="text-lg font-bold text-foreground">
+                        <div className="font-mono text-lg font-bold text-foreground">
                           {selectedActivity.rating} / 5
                         </div>
                       </div>

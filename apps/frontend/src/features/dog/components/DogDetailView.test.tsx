@@ -154,7 +154,7 @@ describe("DogActivitiesSection", () => {
     expect(screen.getByText("Poslušnost v parku")).toBeInTheDocument()
     expect(screen.getAllByText("Odcvičeno").length).toBeGreaterThan(0)
     // Results and notes are in the detail, not in the list.
-    expect(screen.queryByText("Úspěšnost: 95 %")).not.toBeInTheDocument()
+    expect(screen.queryByText(/Úspěšnost/)).not.toBeInTheDocument()
     expect(screen.queryByText(/Soustředil se skvěle/)).not.toBeInTheDocument()
   })
 

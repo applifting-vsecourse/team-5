@@ -159,6 +159,19 @@ describe("WeekView", () => {
     expect(screen.getByRole("link", { name: "Přejít na psy" })).toHaveAttribute("href", "/dogs")
   })
 
+  it("picks the whole week of any day in the month calendar behind the week range", async () => {
+    const user = userEvent.setup()
+    const { onWeekChange } = renderWeek([])
+
+    await user.click(screen.getByRole("button", { name: /^Vybrat týden/ }))
+    const dialog = screen.getByRole("dialog", { name: "Vybrat týden" })
+
+    // Wednesday 7 October lies in the week of Monday 5 October.
+    await user.click(within(dialog).getByRole("button", { name: "středa, 7. října 2026" }))
+
+    expect(onWeekChange).toHaveBeenCalledWith("2026-10-05")
+  })
+
   describe("moving a training (#74)", () => {
     beforeEach(() => {
       // Wednesday 21 Oct 2026, the same day as the week's "today".

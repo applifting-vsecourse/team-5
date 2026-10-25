@@ -19,7 +19,7 @@ export function DogCard({ dog, className }: DogCardProps) {
   return (
     <Card
       className={cn(
-        "group relative flex flex-row items-stretch gap-0 overflow-hidden border border-border p-0 transition-colors hover:border-foreground/30",
+        "group relative flex flex-row items-stretch gap-0 overflow-hidden border border-border p-0 transition-all duration-150 hover:border-foreground/30 active:scale-[0.99]",
         className,
       )}
     >

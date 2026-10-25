@@ -1,6 +1,31 @@
-import { useState } from "react"
+import { useState, type CSSProperties, type HTMLAttributes } from "react"
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import { useQuery } from "@tanstack/react-query"
-import { ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from "lucide-react"
+import {
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  ListOrdered,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react"
 
 import {
   AlertDialog,
@@ -14,6 +39,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 
 import type { PlanBlock } from "@/features/dog/api/dogSchemas"
 import { goalBlocksQueryOptions } from "@/features/dog/api/dogsQueryOptions"
@@ -34,6 +60,10 @@ type PlanBlockItemProps = {
   onEdit: () => void
   onMove: (direction: -1 | 1) => void
   onDelete: () => void
+  dragHandleProps?: HTMLAttributes<HTMLDivElement>
+  isDragging?: boolean
+  style?: CSSProperties
+  setNodeRef?: (node: HTMLElement | null) => void
 }
 
 function PlanBlockItem({
@@ -45,15 +75,47 @@ function PlanBlockItem({
   onEdit,
   onMove,
   onDelete,
+  dragHandleProps,
+  isDragging,
+  style,
+  setNodeRef,
 }: PlanBlockItemProps) {
+  const handleMoveWithHaptic = (direction: -1 | 1) => {
+    if ("vibrate" in navigator && typeof navigator.vibrate === "function") {
+      navigator.vibrate(15)
+    }
+    onMove(direction)
+  }
+
   return (
-    <li className="flex gap-3 rounded-lg border border-border bg-card p-3">
-      <span
-        aria-hidden="true"
-        className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary text-sm font-medium text-secondary-foreground"
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "relative flex gap-3 rounded-lg border border-border bg-card p-3 transition-all duration-150 active:scale-[0.995]",
+        isDragging && "z-20 opacity-60 shadow-lg ring-2 ring-primary/40",
+      )}
+    >
+      {/* Agility Track Station Marker & Drag Handle */}
+      <div
+        {...dragHandleProps}
+        className="flex cursor-grab touch-none flex-col items-center select-none active:cursor-grabbing"
+        title="Přetáhněte pro změnu pořadí"
+        aria-label={`Přetáhnout cvik ${block.title}`}
       >
-        {number}
-      </span>
+        {/* Agility Course Station Checkpoint */}
+        <span
+          aria-hidden="true"
+          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-xs font-bold text-secondary-foreground ring-2 ring-primary/25"
+        >
+          {number}
+        </span>
+
+        <GripVertical
+          aria-hidden="true"
+          className="mt-1 size-3.5 text-muted-foreground/45 transition-colors hover:text-foreground"
+        />
+      </div>
 
       {/* Clicking the block opens it for editing (#65). */}
       <button
@@ -73,11 +135,15 @@ function PlanBlockItem({
         ) : null}
         {/* The criterion stays visible without opening the block (#63). */}
         {block.criterion ? (
-          <span className="block text-sm text-foreground">Kritérium: {block.criterion}</span>
+          <span className="mt-1 block text-left">
+            <span className="inline-block rounded-md border border-border/60 bg-secondary/80 px-2 py-0.5 font-mono text-xs font-semibold text-secondary-foreground">
+              Kritérium: {block.criterion}
+            </span>
+          </span>
         ) : null}
       </button>
 
-      {/* Arrows instead of drag and drop, so the order can be changed on a phone too. */}
+      {/* Buttons for accessibility and mobile arrow navigation */}
       <div className="grid shrink-0 grid-cols-2 content-start gap-1">
         <Button
           type="button"
@@ -86,7 +152,7 @@ function PlanBlockItem({
           className="size-11"
           aria-label={`Posunout cvik ${block.title} nahoru`}
           disabled={isFirst || isReordering}
-          onClick={() => onMove(-1)}
+          onClick={() => handleMoveWithHaptic(-1)}
         >
           <ChevronUp className="size-5" />
         </Button>
@@ -107,7 +173,7 @@ function PlanBlockItem({
           className="size-11"
           aria-label={`Posunout cvik ${block.title} dolů`}
           disabled={isLast || isReordering}
-          onClick={() => onMove(1)}
+          onClick={() => handleMoveWithHaptic(1)}
         >
           <ChevronDown className="size-5" />
         </Button>
@@ -126,6 +192,29 @@ function PlanBlockItem({
   )
 }
 
+function SortablePlanBlockItem(
+  props: Omit<PlanBlockItemProps, "dragHandleProps" | "isDragging" | "style" | "setNodeRef">,
+) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: props.block.id,
+  })
+
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <PlanBlockItem
+      {...props}
+      setNodeRef={setNodeRef}
+      style={style}
+      dragHandleProps={{ ...attributes, ...listeners }}
+      isDragging={isDragging}
+    />
+  )
+}
+
 export function PlanBlocksSection({ goalId }: { goalId: string }) {
   const [dialogMode, setDialogMode] = useState<ExerciseDialogMode | null>(null)
   const [blockToDelete, setBlockToDelete] = useState<PlanBlock | null>(null)
@@ -137,6 +226,17 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
   const reorderBlocks = useReorderPlanBlocks(goalId)
 
   const blocks = blocksQuery.data ?? []
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  )
 
   const handleSave = async (exercise: NewExercise) => {
     try {
@@ -159,6 +259,22 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
     const [moved] = reordered.splice(index, 1)
     if (!moved) return
     reordered.splice(target, 0, moved)
+    reorderBlocks.mutate(reordered)
+  }
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = blocks.findIndex((b) => b.id === active.id)
+    const newIndex = blocks.findIndex((b) => b.id === over.id)
+    if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return
+
+    if ("vibrate" in navigator && typeof navigator.vibrate === "function") {
+      navigator.vibrate(20)
+    }
+
+    const reordered = arrayMove(blocks, oldIndex, newIndex)
     reorderBlocks.mutate(reordered)
   }
 
@@ -204,25 +320,41 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
           </Button>
         </div>
       ) : blocks.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Plán zatím nemá žádný cvik. Přidejte první krok, který se bude doma cvičit.
-        </p>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-6 text-center">
+          <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+            <ListOrdered className="size-5" />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Plán zatím nemá žádný cvik. Přidejte první krok, který se bude doma cvičit.
+          </p>
+        </div>
       ) : (
-        <ol className="flex flex-col gap-2">
-          {blocks.map((block, index) => (
-            <PlanBlockItem
-              key={block.id}
-              block={block}
-              number={index + 1}
-              isFirst={index === 0}
-              isLast={index === blocks.length - 1}
-              isReordering={reorderBlocks.isPending}
-              onEdit={() => setDialogMode({ kind: "edit", block })}
-              onMove={(direction) => handleMove(index, direction)}
-              onDelete={() => setBlockToDelete(block)}
-            />
-          ))}
-        </ol>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={blocks.map((b) => b.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ol className="flex flex-col gap-2">
+              {blocks.map((block, index) => (
+                <SortablePlanBlockItem
+                  key={block.id}
+                  block={block}
+                  number={index + 1}
+                  isFirst={index === 0}
+                  isLast={index === blocks.length - 1}
+                  isReordering={reorderBlocks.isPending}
+                  onEdit={() => setDialogMode({ kind: "edit", block })}
+                  onMove={(direction) => handleMove(index, direction)}
+                  onDelete={() => setBlockToDelete(block)}
+                />
+              ))}
+            </ol>
+          </SortableContext>
+        </DndContext>
       )}
 
       <Button
