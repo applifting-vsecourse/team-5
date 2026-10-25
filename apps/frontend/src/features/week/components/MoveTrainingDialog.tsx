@@ -57,7 +57,7 @@ export function MoveTrainingDialog({ training, isOpen, onOpenChange }: MoveTrain
         </DialogHeader>
         <DayPicker
           initialDay={firstOfferedDay(training.date)}
-          unavailableDay={training.date}
+          unavailableDays={[training.date]}
           hint="Vyberte nový den, i v jiném týdnu. Den v minulosti vybrat nejde."
           isPending={moveTraining.isPending}
           submitLabel={(day) => `Přesunout na ${formatDayAccusative(day)}`}

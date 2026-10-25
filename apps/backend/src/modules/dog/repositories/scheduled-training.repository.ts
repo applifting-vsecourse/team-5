@@ -87,7 +87,8 @@ export class ScheduledTrainingRepository {
     });
   }
 
-  // Returns null when the goal already has a planned training.
+  // A goal can be practised on many days. Only a duplicate planned session
+  // for the same day is refused (including concurrent double submissions).
   // A transaction alone does not stop two quick clicks: under READ COMMITTED
   // both would see "nothing planned" and insert. Locking the goal row first
   // makes concurrent requests for the same goal wait for each other, so the
@@ -102,7 +103,11 @@ export class ScheduledTrainingRepository {
       await tx.$queryRaw`SELECT "id" FROM "training_goal" WHERE "id" = ${data.goalId} FOR UPDATE`;
 
       const planned = await tx.scheduledTraining.findFirst({
-        where: { goalId: data.goalId, status: TrainingStatus.PLANNED },
+        where: {
+          goalId: data.goalId,
+          date: data.date,
+          status: TrainingStatus.PLANNED,
+        },
         select: { id: true },
       });
       if (planned) return null;

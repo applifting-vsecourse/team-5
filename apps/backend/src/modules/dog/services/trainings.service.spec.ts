@@ -149,7 +149,7 @@ describe('TrainingsService', () => {
       ).resolves.toBeDefined();
     });
 
-    it('refuses a second plan for a training that is already planned', async () => {
+    it('refuses a duplicate planned session on the same day', async () => {
       const { service, repository } = setup();
       repository.createPlannedTraining.mockResolvedValue(null);
 

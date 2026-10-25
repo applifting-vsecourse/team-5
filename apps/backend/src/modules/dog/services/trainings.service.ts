@@ -244,9 +244,8 @@ export class TrainingsService {
     return this.scheduledTrainingRepository.getTrainingsByGoalId(goalId);
   }
 
-  // Puts the goal's training on one day (#71). A day in the past is refused,
-  // and a goal that already has a planned training is refused with 409;
-  // changing its day is a move (#74), not a second plan.
+  // Adds an independent dated session to a reusable goal. Other sessions
+  // remain untouched; only the same goal/day cannot be planned twice.
   async scheduleTraining(
     user: Identity,
     goalId: string,
@@ -268,7 +267,9 @@ export class TrainingsService {
         date: fromCalendarDate(date),
       });
     if (!training) {
-      throw new ConflictException('This training is already planned for a day');
+      throw new ConflictException(
+        'This goal already has a planned training on this day',
+      );
     }
     return training;
   }

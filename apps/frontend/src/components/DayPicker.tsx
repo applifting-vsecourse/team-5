@@ -19,9 +19,10 @@ import {
 export type DayPickerProps = {
   // The day picked when the picker opens; today by default.
   initialDay?: CalendarDate
-  // A day that cannot be picked besides the past, e.g. the day a training
-  // is on now when it is being moved (#74).
-  unavailableDay?: CalendarDate
+  // Days that cannot be picked besides the past: a goal has many trainings
+  // but at most one a day, so the days it is already planned for (PO
+  // feedback), and the day a training is on now when it is being moved (#74).
+  unavailableDays?: CalendarDate[]
   hint: string
   isPending: boolean
   submitLabel: (day: CalendarDate) => string
@@ -33,7 +34,7 @@ export type DayPickerProps = {
 // always starts again from the initial day (#71, #74).
 export function DayPicker({
   initialDay,
-  unavailableDay,
+  unavailableDays = [],
   hint,
   isPending,
   submitLabel,
@@ -41,8 +42,12 @@ export function DayPicker({
 }: DayPickerProps) {
   const today = todayCalendarDate()
   const currentWeek = startOfWeekOf(today)
-  const [selected, setSelected] = useState<CalendarDate>(initialDay ?? today)
-  const [weekStart, setWeekStart] = useState(startOfWeekOf(selected))
+  const firstDay = initialDay ?? today
+  // Nothing is preselected when the first offered day is taken.
+  const [selected, setSelected] = useState<CalendarDate | undefined>(
+    unavailableDays.includes(firstDay) ? undefined : firstDay,
+  )
+  const [weekStart, setWeekStart] = useState(startOfWeekOf(firstDay))
 
   return (
     <>
@@ -80,7 +85,7 @@ export function DayPicker({
 
         <ToggleGroup
           type="single"
-          value={selected}
+          value={selected ?? ""}
           onValueChange={(value) => {
             // Radix sends "" when the selected day is clicked again; keep it.
             if (value) setSelected(value)
@@ -93,7 +98,7 @@ export function DayPicker({
             <ToggleGroupItem
               key={day}
               value={day}
-              disabled={day < today || day === unavailableDay}
+              disabled={day < today || unavailableDays.includes(day)}
               aria-label={formatDayLong(day)}
               className="flex h-auto min-h-14 min-w-11 flex-col gap-0 rounded-md border border-transparent px-0 py-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[today=true]:border-border"
               data-today={day === today}
@@ -111,11 +116,13 @@ export function DayPicker({
         <Button
           type="button"
           className="min-h-11 w-full"
-          disabled={isPending}
-          onClick={() => void onPick(selected)}
+          disabled={isPending || !selected}
+          onClick={() => {
+            if (selected) void onPick(selected)
+          }}
         >
           {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-          {submitLabel(selected)}
+          {selected ? submitLabel(selected) : "Vyberte den tréninku"}
         </Button>
       </DialogFooter>
     </>

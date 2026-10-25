@@ -14,15 +14,19 @@ type ScheduleTrainingDialogProps = {
   onOpenChange: (isOpen: boolean) => void
   isPending: boolean
   onSchedule: (date: CalendarDate) => Promise<void>
+  // Days the goal already has a planned training on: one a day at most.
+  plannedDates?: CalendarDate[]
 }
 
-// "Kdy má Rex cvičit?" – one day, today preselected, no days in the past (#71).
+// "Kdy má Rex cvičit?" – a new training of the goal on one day, today
+// preselected when it is free, no days in the past (#71).
 export function ScheduleTrainingDialog({
   dogName,
   isOpen,
   onOpenChange,
   isPending,
   onSchedule,
+  plannedDates,
 }: ScheduleTrainingDialogProps) {
   return (
     <Dialog
@@ -33,12 +37,13 @@ export function ScheduleTrainingDialog({
         <DialogHeader>
           <DialogTitle>Kdy má {dogName} cvičit?</DialogTitle>
           <DialogDescription>
-            Vyberte jeden den. Trénink se objeví v Týdnu ve vybraný den.
+            Vyberte den nového tréninku. Ostatní tréninky k tomuto cíli zůstanou naplánované.
           </DialogDescription>
         </DialogHeader>
         <DayPicker
-          hint="Den v minulosti vybrat nejde. Na jiný den trénink později přesunete."
+          hint="Minulé dny a dny, na které už má tento cíl naplánovaný trénink, nelze vybrat."
           isPending={isPending}
+          unavailableDays={plannedDates}
           submitLabel={(day) => `Naplánovat na ${formatDayAccusative(day)}`}
           onPick={onSchedule}
         />

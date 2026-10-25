@@ -241,12 +241,15 @@ export class TrainingsController {
 
   @Post('goals/:goalId/trainings')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: "Plan the goal's training for one day" })
+  @ApiOperation({ summary: 'Add a dated training session to a goal' })
   @ApiResponse({ status: 201, type: TrainingResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid date or a past day' })
   @ApiResponse({ status: 401, description: 'Not signed in' })
   @ApiResponse({ status: 404, description: 'Goal not found' })
-  @ApiResponse({ status: 409, description: 'The training is already planned' })
+  @ApiResponse({
+    status: 409,
+    description: 'This goal already has a planned session on this day',
+  })
   async schedule(
     @User() user: Identity,
     @Param('goalId') goalId: string,

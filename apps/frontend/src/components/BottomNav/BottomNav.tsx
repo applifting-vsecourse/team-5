@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { Link, useLocation } from "@tanstack/react-router"
 import { Calendar, PawPrint, User, Users } from "lucide-react"
 
@@ -32,9 +33,10 @@ const NAV_ITEMS = [
 
 type BottomNavProps = {
   isTrainer?: boolean
+  accountMenu?: ReactNode
 }
 
-export function BottomNav({ isTrainer = false }: BottomNavProps) {
+export function BottomNav({ isTrainer = false, accountMenu }: BottomNavProps) {
   const location = useLocation()
   const currentPath = location.pathname
 
@@ -53,6 +55,16 @@ export function BottomNav({ isTrainer = false }: BottomNavProps) {
     >
       <div className="mx-auto flex h-16 max-w-md items-center justify-around px-2">
         {items.map((item) => {
+          if (item.to === "/account" && accountMenu) {
+            return (
+              <div
+                key="account"
+                className="flex flex-1 justify-center"
+              >
+                {accountMenu}
+              </div>
+            )
+          }
           const Icon = item.icon
           const isActive = currentPath.startsWith(item.matchPrefix)
 

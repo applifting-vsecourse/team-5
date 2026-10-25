@@ -1,7 +1,8 @@
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { HTTPError } from "ky"
-import { AlertCircle, ChevronLeft } from "lucide-react"
+import { AlertCircle, ChevronLeft, Pencil } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -38,7 +39,7 @@ function GoalPageShell({ dogId, dogName, title, subtitle, children }: GoalPageSh
           <ChevronLeft className="size-5" />
         </Link>
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">{title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight break-words text-foreground">{title}</h1>
           {subtitle ? <p className="truncate text-sm text-muted-foreground">{subtitle}</p> : null}
         </div>
       </header>
@@ -131,6 +132,10 @@ export function NewGoalPage({ dogId }: { dogId: string }) {
         />
       ) : (
         <div className="flex flex-col gap-6">
+          <p className="text-sm text-muted-foreground">
+            Cíl popisuje, čeho chcete dosáhnout. Přidejte princip a cviky; jednotlivé tréninky pak
+            naplánujete na konkrétní dny.
+          </p>
           <GoalForm
             disciplines={dog.disciplines}
             isPending={createGoal.isPending}
@@ -159,6 +164,7 @@ export function EditGoalPage({
   isScheduleRequested,
   onScheduleRequestHandled,
 }: EditGoalPageProps) {
+  const [isEditing, setIsEditing] = useState(false)
   const dogQuery = useQuery(dogDetailQueryOptions(dogId))
   const goalQuery = useQuery(goalQueryOptions(goalId))
   const updateGoal = useUpdateGoal(dogId, goalId)
@@ -170,6 +176,7 @@ export function EditGoalPage({
   const handleSubmit = async (values: GoalFormValues) => {
     try {
       await updateGoal.mutateAsync(values)
+      setIsEditing(false)
     } catch {
       // useUpdateGoal already told the user; keep the form as it is.
     }
@@ -199,17 +206,58 @@ export function EditGoalPage({
         />
       ) : (
         <div className="flex flex-col gap-12">
-          <GoalForm
-            key={goal.id}
-            disciplines={dog.disciplines}
-            defaultValues={{
-              title: goal.title,
-              discipline: goal.discipline ?? "",
-              principle: goal.principle ?? "",
-            }}
-            isPending={updateGoal.isPending}
-            onSubmit={handleSubmit}
-          />
+          <section
+            className="space-y-4"
+            aria-labelledby="goal-principle-heading"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <h2
+                id="goal-principle-heading"
+                className="text-xl font-semibold tracking-tight text-foreground"
+              >
+                Cíl a princip
+              </h2>
+              <Button
+                variant="ghost"
+                className="min-h-11 shrink-0"
+                onClick={() => setIsEditing(!isEditing)}
+                disabled={updateGoal.isPending}
+              >
+                <Pencil
+                  className="size-4"
+                  aria-hidden="true"
+                />
+                {isEditing ? "Zrušit úpravy" : "Upravit cíl"}
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Společný základ pro všechny tréninky tohoto cíle.
+            </p>
+            {isEditing ? (
+              <GoalForm
+                key={goal.id}
+                disciplines={dog.disciplines}
+                defaultValues={{
+                  title: goal.title,
+                  discipline: goal.discipline ?? "",
+                  principle: goal.principle ?? "",
+                }}
+                isPending={updateGoal.isPending}
+                onSubmit={handleSubmit}
+              />
+            ) : (
+              <div className="space-y-3">
+                {goal.discipline && (
+                  <p className="text-sm text-muted-foreground">{goal.discipline}</p>
+                )}
+                <p className="text-base leading-relaxed break-words whitespace-pre-wrap text-foreground">
+                  {goal.principle?.trim()
+                    ? goal.principle
+                    : "Doplňte princip: čeho chcete dosáhnout a na co si při cvičení dát pozor."}
+                </p>
+              </div>
+            )}
+          </section>
           <PlanBlocksSection goalId={goal.id} />
           <TrainingScheduleSection
             goalId={goal.id}

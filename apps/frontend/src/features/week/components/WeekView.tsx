@@ -181,6 +181,9 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
     <div className="flex flex-col gap-6">
       <header className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Týden</h1>
+        <p className="text-sm text-muted-foreground">
+          Jednotlivé tréninky vašich psů. Na jednom cíli můžete pracovat v několika dnech.
+        </p>
         {/* Week switching (#73): arrows a week back and forth, "Dnes" back to this week. */}
         <div className="flex items-center gap-1">
           <Button
