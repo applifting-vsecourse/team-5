@@ -183,7 +183,6 @@ describe("DogActivitiesSection", () => {
       "href",
       "/dogs/d-123/activities",
     )
-
   })
 
   it("paginates activities page by page", async () => {

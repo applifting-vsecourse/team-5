@@ -159,7 +159,6 @@ describe("WeekView", () => {
     expect(screen.getByRole("link", { name: "Přejít na psy" })).toHaveAttribute("href", "/dogs")
   })
 
-
   it("picks the whole week of any day in the month calendar behind the week range", async () => {
     const user = userEvent.setup()
     const { onWeekChange } = renderWeek([])
@@ -172,7 +171,6 @@ describe("WeekView", () => {
 
     expect(onWeekChange).toHaveBeenCalledWith("2026-10-05")
   })
-
 
   describe("moving a training (#74)", () => {
     beforeEach(() => {
@@ -305,6 +303,5 @@ describe("WeekView", () => {
       expect(screen.queryByRole("button", { name: /^Přeskočit trénink/ })).toBeNull()
       expect(screen.queryByRole("button", { name: /^Vrátit přeskočení/ })).toBeNull()
     })
-
   })
 })
