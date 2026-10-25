@@ -53,7 +53,7 @@ export function useUndoSkip(trainingId: string) {
       if (isConflict(error)) void queryClient.invalidateQueries({ queryKey: weekKeys.all })
       toast.error(
         isConflict(error)
-          ? "Přeskočení už vrátit nejde. Cíl má jiný naplánovaný trénink, nebo týden skončil."
+          ? "Přeskočení už vrátit nejde. Cíl má na ten den jiný trénink, nebo týden skončil."
           : "Přeskočení se nepodařilo vrátit. Zkuste to prosím znovu.",
       )
     },

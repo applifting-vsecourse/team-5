@@ -192,19 +192,20 @@ export class ScheduledTrainingRepository {
 
   // Takes a skip back (#75): the training is planned again and its "skipped"
   // record disappears. Like planning (#71), it locks the goal row, so a goal
-  // never ends up with two planned trainings.
+  // never ends up with two planned trainings on the same day ('day-taken').
   async restoreSkippedTraining(
     id: string,
     goalId: string,
-  ): Promise<ScheduledTraining | 'not-skipped' | 'goal-has-plan'> {
+    date: Date,
+  ): Promise<ScheduledTraining | 'not-skipped' | 'day-taken'> {
     return this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "training_goal" WHERE "id" = ${goalId} FOR UPDATE`;
 
-      const planned = await tx.scheduledTraining.findFirst({
-        where: { goalId, status: TrainingStatus.PLANNED },
+      const sameDay = await tx.scheduledTraining.findFirst({
+        where: { goalId, date, status: TrainingStatus.PLANNED },
         select: { id: true },
       });
-      if (planned) return 'goal-has-plan';
+      if (sameDay) return 'day-taken';
 
       const { count } = await tx.scheduledTraining.updateMany({
         where: { id, status: TrainingStatus.SKIPPED },

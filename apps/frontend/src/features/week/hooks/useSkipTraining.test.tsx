@@ -106,7 +106,7 @@ describe("useUndoSkip", () => {
     await act(() => result.current.mutateAsync().catch(() => undefined))
 
     expect(toast.error).toHaveBeenCalledWith(
-      "Přeskočení už vrátit nejde. Cíl má jiný naplánovaný trénink, nebo týden skončil.",
+      "Přeskočení už vrátit nejde. Cíl má na ten den jiný trénink, nebo týden skončil.",
     )
     expect(invalidate).toHaveBeenCalledWith({ queryKey: weekKeys.all })
   })

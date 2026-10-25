@@ -548,6 +548,7 @@ describe('TrainingsService', () => {
       expect(repository.restoreSkippedTraining).toHaveBeenCalledWith(
         't1',
         'g1',
+        new Date('2026-10-19T00:00:00Z'),
       );
     });
 
@@ -587,13 +588,14 @@ describe('TrainingsService', () => {
       ).rejects.toThrow(ConflictException);
     });
 
-    it('refuses when the goal has been planned again meanwhile', async () => {
+    // Other days of the goal do not matter: a goal has many trainings (PO).
+    it('refuses when the goal has been planned on the same day meanwhile', async () => {
       const { service, repository } = setup();
       repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-22'));
-      repository.restoreSkippedTraining.mockResolvedValue('goal-has-plan');
+      repository.restoreSkippedTraining.mockResolvedValue('day-taken');
 
       await expect(service.undoSkip(owner, 't1', now)).rejects.toThrow(
-        'The goal already has a planned training',
+        'This goal already has a planned training on this day',
       );
     });
 

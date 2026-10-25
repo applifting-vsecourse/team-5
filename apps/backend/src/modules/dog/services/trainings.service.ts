@@ -86,9 +86,9 @@ export class TrainingsService {
       user.id,
       data,
     );
-    // Completed meanwhile, e.g. a second submit of the same form.
+    // Completed or skipped meanwhile, e.g. a second submit of the same form.
     if (!log) {
-      throw new ConflictException('This training is already completed');
+      throw new ConflictException('Only a planned training can be completed');
     }
     return log;
   }
@@ -169,9 +169,12 @@ export class TrainingsService {
       await this.scheduledTrainingRepository.restoreSkippedTraining(
         trainingId,
         training.goalId,
+        training.date,
       );
-    if (result === 'goal-has-plan') {
-      throw new ConflictException('The goal already has a planned training');
+    if (result === 'day-taken') {
+      throw new ConflictException(
+        'This goal already has a planned training on this day',
+      );
     }
     if (result === 'not-skipped') {
       throw new ConflictException('This training is not skipped');
