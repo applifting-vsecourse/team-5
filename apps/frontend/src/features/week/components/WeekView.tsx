@@ -178,7 +178,6 @@ type WeekViewProps = {
 }
 
 export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
-  const currentWeek = startOfWeekOf(today)
   const days = daysOfWeek(weekStart)
   // Today when it is in the shown week, otherwise its Monday.
   const [selectedDay, setSelectedDay] = useState<CalendarDate>(
@@ -201,13 +200,13 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
         <p className="text-sm text-muted-foreground">
           Jednotlivé tréninky vašich psů. Na jednom cíli můžete pracovat v několika dnech.
         </p>
-        {/* Week switching (#73): arrows a week back and forth, "Dnes" back to this week. */}
-        <div className="flex items-center gap-1">
+        {/* Week switching (#73): arrows a week back and forth, range opens month calendar */}
+        <div className="flex items-center justify-between gap-1">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="size-11"
+            className="size-11 shrink-0"
             aria-label="Předchozí týden"
             onClick={() => onWeekChange(addCalendarDays(weekStart, -7))}
           >
@@ -218,33 +217,28 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
           <Button
             type="button"
             variant="ghost"
-            className="min-h-11 flex-1 gap-2 text-lg font-semibold tracking-tight"
+            className="min-h-11 min-w-0 flex-1 gap-1.5 px-2 text-base font-semibold tracking-tight sm:gap-2 sm:text-lg"
             aria-label={`Vybrat týden, aktuálně ${formatWeekRange(weekStart)}`}
             onClick={() => setIsWeekPickerOpen(true)}
           >
-            <span aria-live="polite">{formatWeekRange(weekStart)}</span>
-            <Calendar className="size-4 text-muted-foreground" />
+            <span
+              aria-live="polite"
+              className="truncate"
+            >
+              {formatWeekRange(weekStart)}
+            </span>
+            <Calendar className="size-4 shrink-0 text-muted-foreground" />
           </Button>
 
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="size-11"
+            className="size-11 shrink-0"
             aria-label="Další týden"
             onClick={() => onWeekChange(addCalendarDays(weekStart, 7))}
           >
             <ChevronRight className="size-5" />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="min-h-11"
-            disabled={weekStart === currentWeek}
-            onClick={() => onWeekChange(currentWeek)}
-          >
-            Dnes
           </Button>
         </div>
 
