@@ -18,6 +18,7 @@ export interface Client {
 export interface Invitation {
   id: string;
   code: string;
+  email?: string | null;
   trainerId: string;
   expiresAt: Date;
   usedAt?: Date | null;

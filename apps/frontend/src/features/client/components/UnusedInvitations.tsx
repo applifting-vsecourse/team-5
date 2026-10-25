@@ -35,7 +35,10 @@ export function UnusedInvitations() {
             className="flex min-h-11 items-center gap-3 py-2"
           >
             <span className="font-mono text-base font-medium text-foreground">{inv.code}</span>
-            <span className="flex-1 text-sm text-muted-foreground">
+            <span className="flex-1 truncate text-sm text-muted-foreground">
+              {inv.email ? (
+                <strong className="mr-2 font-normal text-foreground">{inv.email}</strong>
+              ) : null}
               {formatExpirationDate(new Date(inv.expiresAt))}
             </span>
             <Button

@@ -282,6 +282,7 @@ model DogShare {
 model Invitation {
   id        String    @id @default(cuid())
   code      String    @unique @db.VarChar(6)
+  email     String?   @db.VarChar(255)
   trainerId String
   trainer   User      @relation("TrainerInvitations", fields: [trainerId], references: [id], onDelete: Cascade)
   expiresAt DateTime

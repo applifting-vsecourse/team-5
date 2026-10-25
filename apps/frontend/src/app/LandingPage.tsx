@@ -36,11 +36,11 @@ export function LandingPage() {
 
   const handleInviteSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const trimmedCode = inviteCode.trim()
+    const trimmedCode = inviteCode.trim().toUpperCase()
     if (!trimmedCode) return
     setIsInviteDialogOpen(false)
     void navigate({
-      to: ROUTES.signup,
+      to: ROUTES.invite,
       search: { code: trimmedCode },
     })
   }
@@ -162,7 +162,7 @@ export function LandingPage() {
               >
                 Zrušit
               </Button>
-              <Button type="submit">Pokračovat k registraci</Button>
+              <Button type="submit">Pokračovat</Button>
             </DialogFooter>
           </form>
         </DialogContent>

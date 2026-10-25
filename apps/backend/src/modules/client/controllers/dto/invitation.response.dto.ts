@@ -1,5 +1,5 @@
 import { Invitation } from '@/modules/client/domain/client';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class InvitationResponseDto {
   @ApiProperty()
@@ -7,6 +7,9 @@ export class InvitationResponseDto {
 
   @ApiProperty()
   code!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  email?: string | null;
 
   @ApiProperty({ type: String, format: 'date-time' })
   expiresAt!: Date;
@@ -18,6 +21,7 @@ export class InvitationResponseDto {
     return {
       id: invitation.id,
       code: invitation.code,
+      email: invitation.email ?? null,
       expiresAt: invitation.expiresAt,
       createdAt: invitation.createdAt,
     };

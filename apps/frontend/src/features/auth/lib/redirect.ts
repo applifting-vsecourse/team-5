@@ -25,6 +25,7 @@ export const decodeRedirectUri = (encoded?: string) => {
       ROUTES.week,
       ROUTES.account,
       ROUTES.dashboard,
+      ROUTES.invite,
     ]
     if (!protectedPaths.some((route) => path === route || path.startsWith(`${route}/`))) {
       return undefined
