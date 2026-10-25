@@ -773,6 +773,14 @@ export const seedClientData = async (
     },
   });
 
+  // The seed runs on every deploy and puts the demo trainings back to their
+  // seeded day and status. Their records in Activities go too: a training set
+  // back to planned with its old record still linked could not be completed
+  // again (one record per training, scheduledTrainingId is unique).
+  await prisma.workoutLog.deleteMany({
+    where: { scheduledTrainingId: { in: scheduledTrainings.map((s) => s.id) } },
+  });
+
   for (const st of scheduledTrainings) {
     await prisma.scheduledTraining.upsert({
       where: { id: st.id },
