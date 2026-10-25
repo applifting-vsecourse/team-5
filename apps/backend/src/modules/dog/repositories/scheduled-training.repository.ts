@@ -11,7 +11,7 @@ import {
   ScheduledTrainingDetail,
   WeekTraining,
 } from '@/modules/dog/domain/scheduled-training';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ScheduledTrainingRepository {
@@ -127,9 +127,18 @@ export class ScheduledTrainingRepository {
       repeatedMistakes?: MistakeLevel | null;
       note?: string | null;
     },
-  ): Promise<WorkoutLog> {
+  ): Promise<WorkoutLog | null> {
     return this.prisma.$transaction(async (tx) => {
-      const training = await tx.scheduledTraining.findUnique({
+      // The status check is part of the UPDATE, so of two quick submits
+      // (double click, a retry on a weak signal) only one completes the
+      // training and writes a record. Null: it is no longer planned.
+      const { count } = await tx.scheduledTraining.updateMany({
+        where: { id: trainingId, status: TrainingStatus.PLANNED },
+        data: { status: TrainingStatus.COMPLETED },
+      });
+      if (count === 0) return null;
+
+      const training = await tx.scheduledTraining.findUniqueOrThrow({
         where: { id: trainingId },
         include: {
           goal: {
@@ -140,14 +149,6 @@ export class ScheduledTrainingRepository {
             },
           },
         },
-      });
-      if (!training) {
-        throw new NotFoundException(`Training with ID ${trainingId} not found`);
-      }
-
-      await tx.scheduledTraining.update({
-        where: { id: trainingId },
-        data: { status: TrainingStatus.COMPLETED },
       });
 
       return tx.workoutLog.create({

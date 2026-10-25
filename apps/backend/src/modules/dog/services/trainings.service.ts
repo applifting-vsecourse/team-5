@@ -75,11 +75,16 @@ export class TrainingsService {
       throw new ConflictException('This training is already completed');
     }
 
-    return this.scheduledTrainingRepository.completeTraining(
+    const log = await this.scheduledTrainingRepository.completeTraining(
       trainingId,
       user.id,
       data,
     );
+    // Completed meanwhile, e.g. a second submit of the same form.
+    if (!log) {
+      throw new ConflictException('This training is already completed');
+    }
+    return log;
   }
 
   // The owner's trainings between two days, both included (#72). The range is

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
+import { HTTPError } from "ky"
 import { toast } from "sonner"
 
 import { dogKeys } from "@/lib/dogKeys"
@@ -22,8 +23,21 @@ export function useCompleteTraining(trainingId: string, dogId: string) {
       toast.success("Záznam tréninku byl uložen")
       void navigate({ to: "/week" })
     },
-    onError: () => {
-      toast.error("Záznam se nepodařilo uložit. Zkuste to prosím znovu.")
+    onError: (error) => {
+      const status = error instanceof HTTPError ? error.response.status : undefined
+      // 409: already completed, e.g. the form was sent twice. "Try again"
+      // would mislead; the training is done, so back to the week.
+      if (status === 409) {
+        void queryClient.invalidateQueries({ queryKey: weekKeys.all })
+        toast.error("Trénink už je odcvičený")
+        void navigate({ to: "/week" })
+        return
+      }
+      toast.error(
+        status === 403
+          ? "Záznam z tréninku odesílá psovod"
+          : "Záznam se nepodařilo uložit. Zkuste to prosím znovu.",
+      )
     },
   })
 }
