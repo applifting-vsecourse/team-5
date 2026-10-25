@@ -545,7 +545,7 @@ describe('TrainingsService', () => {
       repository.getTrainingById.mockResolvedValue(skippedOn('2026-10-19'));
       repository.restoreSkippedTraining.mockResolvedValue(aTraining());
 
-      // Sunday 25 Oct, 22:30 in Prague (still summer time, UTC+2)...
+      // Sunday 25 Oct, 21:30 in Prague (winter time since that night, UTC+1)...
       await expect(
         service.undoSkip(owner, 't1', new Date('2026-10-25T20:30:00Z')),
       ).resolves.toBeDefined();
