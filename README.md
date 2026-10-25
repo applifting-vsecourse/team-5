@@ -9,6 +9,7 @@ Staging prostředí: [team-5.vsepractical.applifting.dev](https://team-5.vseprac
 ## Projektová dokumentace a výstupy discovery
 
 Kompletní dokumentace a výstupy z discovery fáze se nachází v adresáři [`docs/vystupy/`](docs/vystupy/README.md):
+
 - **Lean Canvas & Finanční model:** [`docs/vystupy/lean-canvas.md`](docs/vystupy/lean-canvas.md), [`nakladova-struktura.xlsx`](docs/vystupy/nakladova-struktura.xlsx)
 - **Kvalitativní rozhovory s trenéry:** [`docs/vystupy/rozhovor/vysledky.md`](docs/vystupy/rozhovor/vysledky.md)
 - **Sitemapa a architektura:** [`docs/vystupy/sitemapa.md`](docs/vystupy/sitemapa.md) ([SVG diagram](docs/vystupy/sitemapa.svg))
