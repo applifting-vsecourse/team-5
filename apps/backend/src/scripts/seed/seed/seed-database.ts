@@ -709,6 +709,61 @@ export const seedClientData = async (
       date: today,
       status: TrainingStatus.PLANNED,
     },
+    // --- Další týden ---
+    // 6. Rex v úterý příštího týdne (PLANNED) - Spolehlivá chůze u nohy
+    {
+      id: 'train-rex-next-1',
+      dogId: rex.id,
+      goalId: 'goal-1',
+      createdById: jan.id,
+      date: getWeekDay(8),
+      status: TrainingStatus.PLANNED,
+    },
+    // 7. Rex ve čtvrtek příštího týdne (PLANNED) - Start na povel
+    {
+      id: 'train-rex-next-2',
+      dogId: rex.id,
+      goalId: 'goal-2',
+      createdById: jan.id,
+      date: getWeekDay(10),
+      status: TrainingStatus.PLANNED,
+    },
+    // 8. Baryk ve středu příštího týdne (PLANNED) - Překonání áčka v agility
+    {
+      id: 'train-baryk-next-1',
+      dogId: baryk.id,
+      goalId: barykGoal.id,
+      createdById: jan.id,
+      date: getWeekDay(9),
+      status: TrainingStatus.PLANNED,
+    },
+    // 9. Baryk v sobotu příštího týdne (PLANNED) - Překonání áčka v agility
+    {
+      id: 'train-baryk-next-2',
+      dogId: baryk.id,
+      goalId: barykGoal.id,
+      createdById: jan.id,
+      date: getWeekDay(12),
+      status: TrainingStatus.PLANNED,
+    },
+    // 10. Argo v úterý příštího týdne (PLANNED) - Vyštěkání v maketě
+    {
+      id: 'train-argo-next-1',
+      dogId: argo.id,
+      goalId: argoGoal.id,
+      createdById: trainerId,
+      date: getWeekDay(8),
+      status: TrainingStatus.PLANNED,
+    },
+    // 11. Argo v pátek příštího týdne (PLANNED) - Vyštěkání v maketě
+    {
+      id: 'train-argo-next-2',
+      dogId: argo.id,
+      goalId: argoGoal.id,
+      createdById: trainerId,
+      date: getWeekDay(11),
+      status: TrainingStatus.PLANNED,
+    },
   ];
 
   await prisma.scheduledTraining.deleteMany({
