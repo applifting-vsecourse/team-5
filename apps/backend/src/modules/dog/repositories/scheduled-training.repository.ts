@@ -120,17 +120,36 @@ export class ScheduledTrainingRepository {
 
   // Returns null when the training is no longer planned. The status check is
   // part of the update itself, so a training completed in the meantime
-  // (e.g. on another device) is never moved.
+  // (e.g. on another device) is never moved. A goal is practised on many
+  // days but at most once a day: 'day-taken' when it already has a planned
+  // training on the new day. The goal row is locked like when planning (#71),
+  // so a move and a new plan for the same day cannot both get through.
   async movePlannedTraining(
     id: string,
+    goalId: string,
     date: Date,
-  ): Promise<ScheduledTraining | null> {
-    const { count } = await this.prisma.scheduledTraining.updateMany({
-      where: { id, status: TrainingStatus.PLANNED },
-      data: { date },
+  ): Promise<ScheduledTraining | 'day-taken' | null> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "training_goal" WHERE "id" = ${goalId} FOR UPDATE`;
+
+      const sameDay = await tx.scheduledTraining.findFirst({
+        where: {
+          goalId,
+          date,
+          status: TrainingStatus.PLANNED,
+          id: { not: id },
+        },
+        select: { id: true },
+      });
+      if (sameDay) return 'day-taken';
+
+      const { count } = await tx.scheduledTraining.updateMany({
+        where: { id, status: TrainingStatus.PLANNED },
+        data: { date },
+      });
+      if (count === 0) return null;
+      return tx.scheduledTraining.findUnique({ where: { id } });
     });
-    if (count === 0) return null;
-    return this.prisma.scheduledTraining.findUnique({ where: { id } });
   }
 
   // A dog's trainings still to be done, for its Activities (#74): the owner

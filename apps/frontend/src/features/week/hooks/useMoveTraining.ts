@@ -21,12 +21,13 @@ export function useMoveTraining(trainingId: string) {
       toast.success(`Trénink je přesunutý na ${formatDayAccusative(training.date)}`)
     },
     onError: (error) => {
-      // 409: it was completed or skipped meanwhile (e.g. on another device).
-      const isNotPlanned = error instanceof HTTPError && error.response.status === 409
-      if (isNotPlanned) void queryClient.invalidateQueries({ queryKey: weekKeys.all })
+      // 409: the goal already has a training on that day, or this one was
+      // completed or skipped meanwhile (e.g. on another device).
+      const isConflict = error instanceof HTTPError && error.response.status === 409
+      if (isConflict) void queryClient.invalidateQueries({ queryKey: weekKeys.all })
       toast.error(
-        isNotPlanned
-          ? "Trénink už není naplánovaný, přesunout ho nejde."
+        isConflict
+          ? "Přesunout to nejde: cíl už má na ten den trénink, nebo tento trénink už není naplánovaný."
           : "Trénink se nepodařilo přesunout. Zkuste to prosím znovu.",
       )
     },

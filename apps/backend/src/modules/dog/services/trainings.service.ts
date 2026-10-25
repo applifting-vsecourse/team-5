@@ -118,11 +118,17 @@ export class TrainingsService {
       training.status === TrainingStatus.PLANNED
         ? await this.scheduledTrainingRepository.movePlannedTraining(
             trainingId,
+            training.goalId,
             fromCalendarDate(date),
           )
         : null;
     if (!moved) {
       throw new ConflictException('Only a planned training can be moved');
+    }
+    if (moved === 'day-taken') {
+      throw new ConflictException(
+        'This goal already has a planned training on this day',
+      );
     }
     return moved;
   }
