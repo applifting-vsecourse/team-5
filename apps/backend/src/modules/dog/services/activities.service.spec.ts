@@ -39,14 +39,31 @@ describe('ActivitiesService (#85)', () => {
   describe('getActivitiesByDogId', () => {
     it('lets the owner and a trainer with a share read the records', async () => {
       const { service, activityRepository } = setup();
-      activityRepository.getActivitiesByDogId.mockResolvedValue([]);
+      const empty = { items: [], total: 0 };
+      activityRepository.getActivitiesByDogId.mockResolvedValue(empty);
 
       await expect(service.getActivitiesByDogId(owner, 'd1')).resolves.toEqual(
-        [],
+        empty,
       );
       await expect(
         service.getActivitiesByDogId(trainer, 'd1'),
-      ).resolves.toEqual([]);
+      ).resolves.toEqual(empty);
+    });
+
+    // The history only grows, so it is loaded a page at a time (#79).
+    it('turns a page number into how many records to skip', async () => {
+      const { service, activityRepository } = setup();
+      activityRepository.getActivitiesByDogId.mockResolvedValue({
+        items: [],
+        total: 0,
+      });
+
+      await service.getActivitiesByDogId(owner, 'd1', 3, 5);
+
+      expect(activityRepository.getActivitiesByDogId).toHaveBeenCalledWith(
+        'd1',
+        { skip: 10, take: 5 },
+      );
     });
 
     it("does not show another user's dog records", async () => {

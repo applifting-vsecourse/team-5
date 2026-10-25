@@ -232,6 +232,27 @@ export class ClientRepository {
     });
   }
 
+  // A new invitation to the same e-mail replaces the older ones (#59). They
+  // expire rather than disappear, so the per-e-mail daily limit still counts
+  // them.
+  async expireOtherInvitationsToEmail(
+    trainerId: string,
+    email: string,
+    keepInvitationId: string,
+  ): Promise<void> {
+    const now = new Date();
+    await this.prisma.invitation.updateMany({
+      where: {
+        trainerId,
+        email,
+        usedAt: null,
+        expiresAt: { gt: now },
+        id: { not: keepInvitationId },
+      },
+      data: { expiresAt: now },
+    });
+  }
+
   async deleteInvitation(invitationId: string): Promise<void> {
     await this.prisma.invitation.delete({
       where: { id: invitationId },

@@ -147,6 +147,12 @@ describe('ClientsService', () => {
       expect.stringContaining('Veronika Trenérka'),
       '<html>Invite</html>',
     );
+    // A repeated invitation replaces the older ones to the same e-mail (#59).
+    expect(repository.expireOtherInvitationsToEmail).toHaveBeenCalledWith(
+      'trainer-1',
+      'klient@example.com',
+      'inv-new',
+    );
   });
 
   it('creates an invitation without sending email when email is omitted', async () => {
@@ -302,6 +308,34 @@ describe('ClientsService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('still returns a sent invitation when older ones fail to expire', async () => {
+    const trainer: Identity = {
+      id: 'trainer-1',
+      name: 'Veronika',
+      email: 'veronika@trainloop.cz',
+      role: 'trainer',
+    };
+    repository.findInvitationByCode.mockResolvedValue(null);
+    repository.createInvitation.mockResolvedValue({
+      id: 'inv-sent',
+      code: 'SENT01',
+      email: 'klient@example.com',
+      trainerId: 'trainer-1',
+      expiresAt: new Date(),
+      createdAt: new Date(),
+    });
+    repository.expireOtherInvitationsToEmail.mockRejectedValue(
+      new Error('DB down'),
+    );
+
+    // The e-mail is already out, so the trainer must not see a failure.
+    await expect(
+      service.createInvitation(trainer, 'klient@example.com'),
+    ).resolves.toMatchObject({ id: 'inv-sent' });
+    expect(emailService.sendEmail).toHaveBeenCalled();
+    expect(repository.deleteInvitation).not.toHaveBeenCalled();
+  });
+
   it('deletes invitation and throws BadGatewayException if email delivery fails', async () => {
     const trainer: Identity = {
       id: 'trainer-1',
@@ -326,5 +360,7 @@ describe('ClientsService', () => {
     ).rejects.toThrow();
 
     expect(repository.deleteInvitation).toHaveBeenCalledWith('inv-failed');
+    // The e-mail never went out, so the older invitation keeps working.
+    expect(repository.expireOtherInvitationsToEmail).not.toHaveBeenCalled();
   });
 });

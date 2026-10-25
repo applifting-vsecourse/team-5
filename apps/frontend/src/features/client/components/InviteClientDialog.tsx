@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label"
 import type { Invitation } from "@/features/client/api/clientSchemas"
 import { useInviteClient } from "@/features/client/api/inviteClient"
 
+import { CopyInviteLinkButton } from "./CopyInviteLinkButton"
+
 type InviteClientDialogProps = {
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
@@ -101,6 +103,9 @@ export function InviteClientDialog({ isOpen, onOpenChange }: InviteClientDialogP
               <p className="mt-1 font-mono text-2xl font-bold tracking-widest text-foreground">
                 {createdInvitation.code}
               </p>
+              <div className="mt-3">
+                <CopyInviteLinkButton code={createdInvitation.code} />
+              </div>
               <p className="mt-2 text-xs text-muted-foreground">
                 Klient může kliknout na odkaz v e-mailu nebo zadat tento kód na úvodní stránce či ve
                 svém účtu. Platnost je 7 dní.

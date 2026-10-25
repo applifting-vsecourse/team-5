@@ -103,23 +103,30 @@ export function DogActivitiesSection({
   const [page, setPage] = useState(1)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
 
+  // A dog's records come from the API one page at a time (#79); records passed
+  // in (or the demo ones) are paged here.
+  const isPagedByApi = Boolean(dogId) && initialActivities === undefined
   const activitiesQuery = useQuery({
-    ...dogActivitiesQueryOptions(dogId ?? ""),
-    enabled: Boolean(dogId) && initialActivities === undefined,
+    ...dogActivitiesQueryOptions(dogId ?? "", page, ITEMS_PER_PAGE),
+    enabled: isPagedByApi,
   })
 
-  const effectiveActivities =
-    initialActivities ?? activitiesQuery.data ?? (dogId ? [] : DEFAULT_ACTIVITIES)
+  const localActivities = initialActivities ?? (dogId ? [] : DEFAULT_ACTIVITIES)
+  const total = isPagedByApi ? (activitiesQuery.data?.total ?? 0) : localActivities.length
+  const startIndex = (page - 1) * ITEMS_PER_PAGE
+  const currentItems = isPagedByApi
+    ? (activitiesQuery.data?.items ?? [])
+    : localActivities.slice(startIndex, startIndex + ITEMS_PER_PAGE)
   // Resolve from current query data so a refreshed author cannot remain in an
   // already open dialog after the trainer deletes their account.
-  const selectedActivity = effectiveActivities.find(
-    (activity) => activity.id === selectedActivityId,
-  )
+  const selectedActivity = currentItems.find((activity) => activity.id === selectedActivityId)
 
   // The compact list is always the first page, without paging.
-  const totalPages = isCompact ? 1 : Math.ceil(effectiveActivities.length / ITEMS_PER_PAGE) || 1
-  const startIndex = (page - 1) * ITEMS_PER_PAGE
-  const currentItems = effectiveActivities.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  const totalPages = isCompact ? 1 : Math.ceil(total / ITEMS_PER_PAGE) || 1
+  // Fewer records than before (e.g. a skip taken back) can leave the page past
+  // the end: go to the last one instead of an empty list.
+  const isTotalKnown = !isPagedByApi || activitiesQuery.data !== undefined
+  if (isTotalKnown && page > totalPages) setPage(totalPages)
 
   const hasNextPage = page < totalPages
   const hasPrevPage = page > 1
@@ -142,7 +149,7 @@ export function DogActivitiesSection({
           </p>
         </div>
 
-        {isCompact && dogId && effectiveActivities.length > 0 && (
+        {isCompact && dogId && total > 0 && (
           <Link
             to="/dogs/$dogId/activities"
             params={{ dogId }}
@@ -205,7 +212,7 @@ export function DogActivitiesSection({
           <Skeleton className="h-24 w-full rounded-xl" />
           <Skeleton className="h-24 w-full rounded-xl" />
         </div>
-      ) : effectiveActivities.length === 0 ? (
+      ) : total === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-6 text-center">
           <p className="text-sm text-muted-foreground">
             {dogName} zatím nemá zaznamenané žádné tréninky.
@@ -269,7 +276,7 @@ export function DogActivitiesSection({
                 <div className="flex items-center justify-between gap-2 pr-6">
                   <span className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Calendar className="size-3.5" />
-                    {selectedActivity.date}
+                    {formatActivityDate(selectedActivity.completedAt, selectedActivity.date)}
                   </span>
                   <Badge
                     variant={selectedActivity.status === "completed" ? "secondary" : "outline"}
