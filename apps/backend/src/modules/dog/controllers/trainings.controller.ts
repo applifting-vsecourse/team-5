@@ -15,6 +15,7 @@ import { AuthenticatedUserGuard } from '@/shared/auth/guards/authenticated-user.
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -107,6 +108,54 @@ export class TrainingsController {
       trainingId,
       body.date,
     );
+    return TrainingResponseDto.fromDomain(training);
+  }
+
+  @Post('trainings/:trainingId/skip')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: "Skip a planned training (the plan's exercises stay as they are)",
+  })
+  @ApiResponse({ status: 200, type: TrainingResponseDto })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
+  @ApiResponse({
+    status: 403,
+    description: 'Only the dog owner can skip the training',
+  })
+  @ApiResponse({ status: 404, description: 'Training not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'The training is completed or already skipped',
+  })
+  async skip(
+    @User() user: Identity,
+    @Param('trainingId') trainingId: string,
+  ): Promise<TrainingResponseDto> {
+    const training = await this.trainingsService.skipTraining(user, trainingId);
+    return TrainingResponseDto.fromDomain(training);
+  }
+
+  @Delete('trainings/:trainingId/skip')
+  @ApiOperation({
+    summary: "Undo a skip until the training's week is over",
+  })
+  @ApiResponse({ status: 200, type: TrainingResponseDto })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
+  @ApiResponse({
+    status: 403,
+    description: 'Only the dog owner can undo the skip',
+  })
+  @ApiResponse({ status: 404, description: 'Training not found' })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Not skipped, the week is over, or the goal is planned again meanwhile',
+  })
+  async undoSkip(
+    @User() user: Identity,
+    @Param('trainingId') trainingId: string,
+  ): Promise<TrainingResponseDto> {
+    const training = await this.trainingsService.undoSkip(user, trainingId);
     return TrainingResponseDto.fromDomain(training);
   }
 

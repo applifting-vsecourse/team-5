@@ -152,6 +152,72 @@ export class ScheduledTrainingRepository {
     });
   }
 
+  // Marks a planned training as skipped and writes a "skipped" record for the
+  // dog's Activities (#75), both or neither. Returns null when the training
+  // is no longer planned (completed or skipped meanwhile).
+  async skipPlannedTraining(
+    id: string,
+    authorId: string,
+  ): Promise<ScheduledTraining | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.scheduledTraining.updateMany({
+        where: { id, status: TrainingStatus.PLANNED },
+        data: { status: TrainingStatus.SKIPPED },
+      });
+      if (count === 0) return null;
+
+      const training = await tx.scheduledTraining.findUniqueOrThrow({
+        where: { id },
+      });
+      const goal = await tx.trainingGoal.findUniqueOrThrow({
+        where: { id: training.goalId },
+        select: { title: true, discipline: true },
+      });
+      await tx.workoutLog.create({
+        data: {
+          dog: { connect: { id: training.dogId } },
+          goal: { connect: { id: training.goalId } },
+          author: { connect: { id: authorId } },
+          scheduledTraining: { connect: { id } },
+          title: goal.title,
+          discipline: goal.discipline,
+          status: WorkoutStatus.SKIPPED,
+          // The record belongs to the day the training was planned for.
+          completedAt: training.date,
+        },
+      });
+      return training;
+    });
+  }
+
+  // Takes a skip back (#75): the training is planned again and its "skipped"
+  // record disappears. Like planning (#71), it locks the goal row, so a goal
+  // never ends up with two planned trainings on the same day ('day-taken').
+  async restoreSkippedTraining(
+    id: string,
+    goalId: string,
+    date: Date,
+  ): Promise<ScheduledTraining | 'not-skipped' | 'day-taken'> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "training_goal" WHERE "id" = ${goalId} FOR UPDATE`;
+
+      const sameDay = await tx.scheduledTraining.findFirst({
+        where: { goalId, date, status: TrainingStatus.PLANNED },
+        select: { id: true },
+      });
+      if (sameDay) return 'day-taken';
+
+      const { count } = await tx.scheduledTraining.updateMany({
+        where: { id, status: TrainingStatus.SKIPPED },
+        data: { status: TrainingStatus.PLANNED },
+      });
+      if (count === 0) return 'not-skipped';
+
+      await tx.workoutLog.deleteMany({ where: { scheduledTrainingId: id } });
+      return tx.scheduledTraining.findUniqueOrThrow({ where: { id } });
+    });
+  }
+
   // A dog's trainings still to be done, for its Activities (#74): the owner
   // and a trainer with a share see the day each one is planned for.
   async getPlannedTrainingsByDogId(dogId: string): Promise<WeekTraining[]> {
@@ -212,6 +278,7 @@ export class ScheduledTrainingRepository {
           dog: { connect: { id: training.dogId } },
           goal: { connect: { id: training.goalId } },
           author: { connect: { id: authorId } },
+          scheduledTraining: { connect: { id: trainingId } },
           title: training.goal.title,
           discipline: training.goal.discipline ?? null,
           status: WorkoutStatus.COMPLETED,
