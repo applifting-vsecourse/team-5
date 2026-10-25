@@ -1,6 +1,11 @@
-import { ScheduledTraining, TrainingStatus } from '@/generated/prisma/client';
+import {
+  FocusLevel,
+  MistakeLevel,
+  ScheduledTraining,
+  TrainingStatus,
+} from '@/generated/prisma/client';
 
-export type { ScheduledTraining, TrainingStatus };
+export type { FocusLevel, MistakeLevel, ScheduledTraining, TrainingStatus };
 
 // A training as the week shows it (#72): which dog, which goal and the plan's
 // exercises in order, so a card can list them without more requests.
@@ -33,4 +38,11 @@ export type ScheduledTrainingDetail = ScheduledTraining & {
       criterion: string | null;
     }[];
   };
+};
+
+export type CompleteTrainingData = {
+  successRate?: number;
+  focus?: FocusLevel;
+  repeatedMistakes?: MistakeLevel;
+  note?: string;
 };

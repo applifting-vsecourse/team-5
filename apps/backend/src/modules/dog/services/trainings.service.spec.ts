@@ -11,6 +11,7 @@ import { Identity } from '@/shared/auth/domain/identity';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 import { mock, MockProxy } from 'jest-mock-extended';
@@ -71,6 +72,15 @@ const setup = (): {
       : Promise.reject(new NotFoundException()),
   );
   dogAccessService.getAccessibleDog.mockImplementation((user, dogId) =>
+    user.id === 'u1' && dogId === 'd1'
+      ? Promise.resolve({
+          id: 'd1',
+          name: 'Rex',
+          ownerId: 'u1',
+        } as unknown as Dog)
+      : Promise.reject(new NotFoundException()),
+  );
+  dogAccessService.getOwnedDog.mockImplementation((user, dogId) =>
     user.id === 'u1' && dogId === 'd1'
       ? Promise.resolve({
           id: 'd1',
@@ -203,6 +213,118 @@ describe('TrainingsService', () => {
 
       await expect(service.getTraining(stranger, 't1')).rejects.toThrow(
         NotFoundException,
+      );
+    });
+  });
+
+  describe('completeTraining', () => {
+    const fakeLog = {
+      id: 'log1',
+      dogId: 'd1',
+      goalId: 'g1',
+      authorId: 'u1',
+      title: 'Chůze u nohy',
+      discipline: 'Poslušnost',
+      status: 'COMPLETED' as const,
+      completedAt: new Date(),
+      successRate: 70,
+      rating: null,
+      focus: 'YES' as const,
+      repeatedMistakes: 'NO' as const,
+      note: 'Super výkon.',
+      videoUrl: null,
+      skipReason: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('completes the training and returns the created workout log', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      repository.completeTraining.mockResolvedValue(fakeLog);
+
+      const dto = {
+        successRate: 70,
+        focus: 'YES' as const,
+        repeatedMistakes: 'NO' as const,
+        note: 'Super výkon.',
+      };
+
+      await expect(service.completeTraining(owner, 't1', dto)).resolves.toEqual(
+        fakeLog,
+      );
+
+      expect(repository.completeTraining).toHaveBeenCalledWith(
+        't1',
+        owner.id,
+        dto,
+      );
+    });
+
+    it('throws NotFoundException if training does not exist', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(null);
+
+      await expect(
+        service.completeTraining(owner, 'missing', {}),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(repository.completeTraining).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException if user has no access to the dog', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+
+      await expect(
+        service.completeTraining(stranger, 't1', {}),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(repository.completeTraining).not.toHaveBeenCalled();
+    });
+
+    it('throws ForbiddenException if user is not the dog owner', async () => {
+      const { service, repository, dogAccessService } = setup();
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      dogAccessService.getOwnedDog.mockRejectedValue(new ForbiddenException());
+
+      await expect(service.completeTraining(owner, 't1', {})).rejects.toThrow(
+        ForbiddenException,
+      );
+
+      expect(repository.completeTraining).not.toHaveBeenCalled();
+    });
+
+    it('throws ConflictException if training is already completed', async () => {
+      const { service, repository } = setup();
+      repository.getTrainingById.mockResolvedValue(
+        aTrainingDetail({ status: 'COMPLETED' }),
+      );
+
+      await expect(service.completeTraining(owner, 't1', {})).rejects.toThrow(
+        ConflictException,
+      );
+
+      expect(repository.completeTraining).not.toHaveBeenCalled();
+    });
+
+    it('answers 409 to a second submit that loses the race', async () => {
+      const { service, repository } = setup();
+      // Both requests read the training as planned...
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      // ...but only the first one completes it.
+      repository.completeTraining.mockResolvedValueOnce(fakeLog);
+      repository.completeTraining.mockResolvedValueOnce(null);
+
+      const [first, second] = await Promise.allSettled([
+        service.completeTraining(owner, 't1', {}),
+        service.completeTraining(owner, 't1', {}),
+      ]);
+
+      expect(first).toEqual({ status: 'fulfilled', value: fakeLog });
+      expect(second.status).toBe('rejected');
+      expect((second as PromiseRejectedResult).reason).toBeInstanceOf(
+        ConflictException,
       );
     });
   });

@@ -1,4 +1,6 @@
+import { ActivityResponseDto } from '@/modules/dog/controllers/dto/activity.dto';
 import {
+  CompleteTrainingDto,
   ScheduleTrainingDto,
   TrainingDetailResponseDto,
   TrainingResponseDto,
@@ -77,6 +79,50 @@ export class TrainingsController {
   ): Promise<TrainingDetailResponseDto> {
     const training = await this.trainingsService.getTraining(user, trainingId);
     return TrainingDetailResponseDto.fromDomain(training);
+  }
+
+  @Post('trainings/:trainingId/complete')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Complete a scheduled training and log a workout record',
+  })
+  @ApiResponse({ status: 201, type: ActivityResponseDto })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
+  @ApiResponse({
+    status: 403,
+    description: 'Only the dog owner can complete the training',
+  })
+  @ApiResponse({ status: 404, description: 'Training not found' })
+  @ApiResponse({ status: 409, description: 'Training is already completed' })
+  async completeTraining(
+    @User() user: Identity,
+    @Param('trainingId') trainingId: string,
+    @Body() body: CompleteTrainingDto = {},
+  ): Promise<ActivityResponseDto> {
+    const a = await this.trainingsService.completeTraining(
+      user,
+      trainingId,
+      body,
+    );
+    return {
+      id: a.id,
+      dogId: a.dogId,
+      authorId: a.authorId,
+      messages: [],
+      title: a.title,
+      discipline: a.discipline,
+      status: a.status,
+      completedAt: a.completedAt,
+      successRate: a.successRate,
+      rating: a.rating,
+      focus: a.focus,
+      repeatedMistakes: a.repeatedMistakes,
+      note: a.note,
+      videoUrl: a.videoUrl,
+      skipReason: a.skipReason,
+      createdAt: a.createdAt,
+      updatedAt: a.updatedAt,
+    };
   }
 
   @Get('goals/:goalId/trainings')

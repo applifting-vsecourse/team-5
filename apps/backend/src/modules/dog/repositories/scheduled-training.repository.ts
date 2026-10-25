@@ -1,5 +1,11 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
-import { TrainingStatus } from '@/generated/prisma/client';
+import {
+  FocusLevel,
+  MistakeLevel,
+  TrainingStatus,
+  WorkoutLog,
+  WorkoutStatus,
+} from '@/generated/prisma/client';
 import {
   ScheduledTraining,
   ScheduledTrainingDetail,
@@ -107,6 +113,57 @@ export class ScheduledTrainingRepository {
           dog: { connect: { id: data.dogId } },
           createdBy: { connect: { id: data.createdById } },
           date: data.date,
+        },
+      });
+    });
+  }
+
+  async completeTraining(
+    trainingId: string,
+    authorId: string,
+    data: {
+      successRate?: number | null;
+      focus?: FocusLevel | null;
+      repeatedMistakes?: MistakeLevel | null;
+      note?: string | null;
+    },
+  ): Promise<WorkoutLog | null> {
+    return this.prisma.$transaction(async (tx) => {
+      // The status check is part of the UPDATE, so of two quick submits
+      // (double click, a retry on a weak signal) only one completes the
+      // training and writes a record. Null: it is no longer planned.
+      const { count } = await tx.scheduledTraining.updateMany({
+        where: { id: trainingId, status: TrainingStatus.PLANNED },
+        data: { status: TrainingStatus.COMPLETED },
+      });
+      if (count === 0) return null;
+
+      const training = await tx.scheduledTraining.findUniqueOrThrow({
+        where: { id: trainingId },
+        include: {
+          goal: {
+            select: {
+              id: true,
+              title: true,
+              discipline: true,
+            },
+          },
+        },
+      });
+
+      return tx.workoutLog.create({
+        data: {
+          dog: { connect: { id: training.dogId } },
+          goal: { connect: { id: training.goalId } },
+          author: { connect: { id: authorId } },
+          title: training.goal.title,
+          discipline: training.goal.discipline ?? null,
+          status: WorkoutStatus.COMPLETED,
+          completedAt: new Date(),
+          successRate: data.successRate ?? null,
+          focus: data.focus ?? null,
+          repeatedMistakes: data.repeatedMistakes ?? null,
+          note: data.note?.trim() || null,
         },
       });
     });
