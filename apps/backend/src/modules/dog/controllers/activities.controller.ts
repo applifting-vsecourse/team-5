@@ -89,6 +89,10 @@ export class ActivitiesController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new activity / workout log for a dog' })
   @ApiResponse({ status: 201, type: ActivityResponseDto })
+  @ApiResponse({
+    status: 403,
+    description: 'Only the owner can log a workout (a trainer only reads)',
+  })
   @ApiResponse({ status: 401, description: 'Not signed in' })
   @ApiResponse({ status: 404, description: 'Dog not found' })
   async create(

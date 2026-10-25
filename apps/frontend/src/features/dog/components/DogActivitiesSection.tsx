@@ -123,6 +123,10 @@ export function DogActivitiesSection({
 
   // The compact list is always the first page, without paging.
   const totalPages = isCompact ? 1 : Math.ceil(total / ITEMS_PER_PAGE) || 1
+  // Fewer records than before (e.g. a skip taken back) can leave the page past
+  // the end: go to the last one instead of an empty list.
+  const isTotalKnown = !isPagedByApi || activitiesQuery.data !== undefined
+  if (isTotalKnown && page > totalPages) setPage(totalPages)
 
   const hasNextPage = page < totalPages
   const hasPrevPage = page > 1

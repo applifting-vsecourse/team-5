@@ -100,7 +100,7 @@ describe('the owner', () => {
     assert.equal((await goals.getGoalsByDogId(owner, dog.id)).length, 1);
     assert.equal((await goals.getGoal(owner, goal.id)).id, goal.id);
     assert.equal((await blocks.getBlocks(owner, goal.id)).length, 1);
-    assert.equal((await activities.getActivitiesByDogId(owner, dog.id)).length, 1);
+    assert.equal((await activities.getActivitiesByDogId(owner, dog.id)).total, 1);
     const week = await trainings.getWeekTrainings(owner, inDays(-1), inDays(5));
     assert.ok(Array.isArray(week));
   });
@@ -141,14 +141,14 @@ describe('a trainer the dog is shared with', () => {
   });
 
   test("reads the dog's activity records", async () => {
-    assert.equal((await activities.getActivitiesByDogId(trainer, dog.id)).length, 1);
+    assert.equal((await activities.getActivitiesByDogId(trainer, dog.id)).total, 1);
   });
 
   test("cannot log a workout for the owner or edit the dog's profile (403)", async () => {
     await rejectsWith(403, activities.createActivity(trainer, dog.id, { title: 'Podvrh' }));
     await rejectsWith(403, dogs.updateDog(trainer, dog.id, { name: 'Hacked' }));
     assert.equal((await dogs.getDogById(owner, dog.id)).name, 'Rexík');
-    assert.equal((await activities.getActivitiesByDogId(owner, dog.id)).length, 1);
+    assert.equal((await activities.getActivitiesByDogId(owner, dog.id)).total, 1);
   });
 
   test("does not get the dog among their own dogs", async () => {
@@ -211,7 +211,7 @@ describe('when the collaboration ends (#61)', () => {
   test('the owner keeps the plan, trainings and records', async () => {
     assert.equal((await goals.getGoalsByDogId(owner, dog.id)).length, 1);
     assert.equal((await blocks.getBlocks(owner, goal.id)).length, 1);
-    assert.equal((await activities.getActivitiesByDogId(owner, dog.id)).length, 1);
+    assert.equal((await activities.getActivitiesByDogId(owner, dog.id)).total, 1);
     const week = await trainings.getWeekTrainings(owner, inDays(0), inDays(5));
     assert.ok(week.length >= 1);
   });

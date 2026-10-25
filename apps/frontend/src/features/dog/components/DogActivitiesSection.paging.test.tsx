@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { render, screen } from "@testing-library/react"
+import { act, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
@@ -64,6 +64,42 @@ describe("DogActivitiesSection loads records page by page (#79)", () => {
     expect(api.get).toHaveBeenLastCalledWith("dogs/d1/activities", {
       searchParams: { page: 2, pageSize: 3 },
     })
+  })
+
+  it("goes back to the last page when records disappear", async () => {
+    const user = userEvent.setup()
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    render(
+      <QueryClientProvider client={client}>
+        <DogActivitiesSection
+          dogId="d1"
+          dogName="Rex"
+        />
+      </QueryClientProvider>,
+    )
+    await screen.findByText("Trénink 1")
+    await user.click(screen.getByRole("button", { name: /další stránka aktivit/i }))
+    expect(await screen.findByText("Trénink 4")).toBeInTheDocument()
+
+    // Two records are gone (e.g. skips taken back): only one page is left.
+    vi.mocked(api.get).mockImplementation((_url, options) => {
+      const { page, pageSize } = (options?.searchParams ?? {}) as {
+        page: number
+        pageSize: number
+      }
+      const all = [1, 2, 3].map(record)
+      const items = all.slice((page - 1) * pageSize, page * pageSize)
+      return { json: () => Promise.resolve({ items, total: all.length, page, pageSize }) } as never
+    })
+    await act(() => client.invalidateQueries())
+
+    // Back on page 1, and with one page left there is no paging any more.
+    // (Page 1 may show from the cache first, with the old total, until refetched.)
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: /předchozí stránka aktivit/i })).toBeNull(),
+    )
+    expect(screen.getByText("Trénink 1")).toBeInTheDocument()
+    expect(screen.queryByText("Trénink 4")).not.toBeInTheDocument()
   })
 
   it("on the dog's page loads only the latest records, without paging", async () => {

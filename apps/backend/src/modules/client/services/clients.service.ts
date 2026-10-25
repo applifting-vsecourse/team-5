@@ -12,6 +12,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 
@@ -26,6 +27,8 @@ function generateInvitationCode(): string {
 
 @Injectable()
 export class ClientsService {
+  private readonly logger = new Logger(ClientsService.name);
+
   constructor(
     private readonly clientRepository: ClientRepository,
     @Inject('EmailService') private readonly emailService: EmailService,
@@ -133,12 +136,21 @@ export class ClientsService {
         );
       }
       // Only once the new e-mail is out: if sending fails, the older
-      // invitation keeps working.
-      await this.clientRepository.expireOtherInvitationsToEmail(
-        trainer.id,
-        email,
-        invitation.id,
-      );
+      // invitation keeps working. The e-mail cannot be taken back, so a
+      // failure here must not look like a failed invitation (the trainer
+      // would send another one); it is logged and the invitation returned.
+      try {
+        await this.clientRepository.expireOtherInvitationsToEmail(
+          trainer.id,
+          email,
+          invitation.id,
+        );
+      } catch (error) {
+        this.logger.error(
+          `Older invitations of trainer ${trainer.id} were not expired after invitation ${invitation.id} was sent`,
+          error instanceof Error ? error.stack : String(error),
+        );
+      }
     }
 
     return invitation;
