@@ -169,7 +169,7 @@ export function DogActivitiesSection({
               disabled={!hasPrevPage}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               aria-label="Předchozí stránka aktivit"
-              className="size-9"
+              className="size-11"
             >
               <ChevronLeft className="size-4" />
             </Button>
@@ -183,7 +183,7 @@ export function DogActivitiesSection({
               disabled={!hasNextPage}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               aria-label="Další stránka aktivit"
-              className="size-9"
+              className="size-11"
             >
               <ChevronRight className="size-4" />
             </Button>

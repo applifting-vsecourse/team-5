@@ -99,7 +99,8 @@ function PlanBlockItem({
       {/* Agility Track Station Marker & Drag Handle */}
       <div
         {...dragHandleProps}
-        className="flex cursor-grab touch-none flex-col items-center select-none active:cursor-grabbing"
+        // At least 44 px wide, a touch target on a phone (#89).
+        className="flex min-w-11 cursor-grab touch-none flex-col items-center select-none active:cursor-grabbing"
         title="Přetáhněte pro změnu pořadí"
         aria-label={`Přetáhnout cvik ${block.title}`}
       >
