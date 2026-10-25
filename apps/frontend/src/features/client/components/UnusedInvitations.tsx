@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { useCancelInvitation } from "@/features/client/api/cancelInvitation"
 import { clientInvitationsQueryOptions } from "@/features/client/api/clientsQueryOptions"
 
+import { CopyInviteLinkButton } from "./CopyInviteLinkButton"
+
 function formatExpirationDate(date: Date): string {
   const day = date.getDate()
   const month = date.getMonth() + 1
@@ -41,6 +43,10 @@ export function UnusedInvitations() {
               ) : null}
               {formatExpirationDate(new Date(inv.expiresAt))}
             </span>
+            <CopyInviteLinkButton
+              code={inv.code}
+              isCompact
+            />
             <Button
               variant="ghost"
               size="sm"
