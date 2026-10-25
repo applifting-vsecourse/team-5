@@ -1,10 +1,28 @@
-# Quacker — full-stack starter template
+# TrainLoop
 
-Starter template for [4IT580](https://4it580.vse.cz) team projects: a minimal, working full-stack app you fork and grow into your own product.
+Aplikace pro trenéry psů a jejich psovody vyvíjená týmem 5 v rámci kurzu [4IT580](https://4it580.vse.cz) na VŠE. TrainLoop usnadňuje plánování tréninkových cílů, vedení tréninků v terénu, zaznamenávání zpětné vazby z proběhlých cvičení a sdílení pokroku mezi trenérem a majitelem psa.
 
-**Stack:** React + Vite + TanStack Router/Query + Tailwind/shadcn (frontend) · NestJS + Prisma + PostgreSQL + BetterAuth (backend) · pnpm workspaces.
+**Stack:** React + Vite + TanStack Router/Query + Tailwind CSS + shadcn/ui (frontend) · NestJS + Prisma + PostgreSQL + BetterAuth (backend) · pnpm workspaces.
 
-What's included: working login/signup (BetterAuth — you use it, you don't build it), one worked-example feature (the quack feed: read a list, post a new one — copy its pattern), seeded demo data, example tests, CI. The full demo app this template was trimmed from lives on the `reference/full-app` branch.
+Staging prostředí: [team-5.vsepractical.applifting.dev](https://team-5.vsepractical.applifting.dev)
+
+## Projektová dokumentace a výstupy discovery
+
+Kompletní dokumentace a výstupy z discovery fáze se nachází v adresáři [`docs/vystupy/`](docs/vystupy/README.md):
+- **Lean Canvas & Finanční model:** [`docs/vystupy/lean-canvas.md`](docs/vystupy/lean-canvas.md), [`nakladova-struktura.xlsx`](docs/vystupy/nakladova-struktura.xlsx)
+- **Kvalitativní rozhovory s trenéry:** [`docs/vystupy/rozhovor/vysledky.md`](docs/vystupy/rozhovor/vysledky.md)
+- **Sitemapa a architektura:** [`docs/vystupy/sitemapa.md`](docs/vystupy/sitemapa.md) ([SVG diagram](docs/vystupy/sitemapa.svg))
+- **Feature breakdown a backlog:** [`docs/vystupy/feature-breakdown.xlsx`](docs/vystupy/feature-breakdown.xlsx)
+- **Figma Wireframy a Design:** [Wireframy (01–21)](https://www.figma.com/design/IjEnmXXeJB8YBOWPjWiFu3/Trainloop-wireframe?node-id=0-1) · [Design systém & obrazovky](https://www.figma.com/design/LBlhF1wiyl639ENDDG2RWE/Trainloop)
+- **Pravidla a konvence:** Pravidla pro UI v [`DESIGN.md`](DESIGN.md), technické konvence a workflow v [`CLAUDE.md`](CLAUDE.md).
+
+## Klíčové funkce
+
+- **Týdenní kalendář tréninků:** Přehled naplánovaných cvičení na daný týden, možnost přesunu na jiný den či přeskočení tréninku.
+- **Průchod tréninkem v terénu:** Krok za krokem vedený trénink s cviky, kritérii úspěchu a časovačem.
+- **Záznam tréninku („Jak to šlo?“):** Zhodnocení tréninku psovodem (posuvník úspěšnosti po 10 %, soustředění, chyby, poznámka).
+- **Správa psů a tréninkových cílů:** Tvorba cílů s rozpadem na konkrétní cviky a drag-and-drop řazením.
+- **Propojení trenéra a klienta:** Generování pozvánek s unikátním kódem pro sdílení profilu psa a tréninkového plánu.
 
 ## Prerequisites
 
