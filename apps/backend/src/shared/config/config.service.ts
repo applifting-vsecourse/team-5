@@ -29,10 +29,10 @@ export class Config {
   @IsNotEmpty()
   readonly betterAuthSecret!: string;
 
-  @Env('SUPERADMIN_EMAIL')
+  @Env('SUPERADMIN_EMAIL', { defaultValue: 'admin@example.com' })
   readonly superadminEmail!: string;
 
-  @Env('SUPERADMIN_PASSWORD')
+  @Env('SUPERADMIN_PASSWORD', { defaultValue: 'adminpassword' })
   readonly superadminPassword!: string;
 
   @Env('NODE_ENV', { expose: true })

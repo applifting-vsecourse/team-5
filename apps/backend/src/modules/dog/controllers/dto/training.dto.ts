@@ -15,6 +15,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsDateString,
+  IsDivisibleBy,
   IsEnum,
   IsInt,
   IsOptional,
@@ -239,6 +240,7 @@ export class CompleteTrainingDto {
   @IsInt()
   @Min(0)
   @Max(100)
+  @IsDivisibleBy(10, { message: 'successRate must be a multiple of 10' })
   successRate?: number;
 
   @ApiPropertyOptional({

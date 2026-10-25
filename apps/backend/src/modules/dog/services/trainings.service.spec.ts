@@ -307,6 +307,26 @@ describe('TrainingsService', () => {
 
       expect(repository.completeTraining).not.toHaveBeenCalled();
     });
+
+    it('answers 409 to a second submit that loses the race', async () => {
+      const { service, repository } = setup();
+      // Both requests read the training as planned...
+      repository.getTrainingById.mockResolvedValue(aTrainingDetail());
+      // ...but only the first one completes it.
+      repository.completeTraining.mockResolvedValueOnce(fakeLog);
+      repository.completeTraining.mockResolvedValueOnce(null);
+
+      const [first, second] = await Promise.allSettled([
+        service.completeTraining(owner, 't1', {}),
+        service.completeTraining(owner, 't1', {}),
+      ]);
+
+      expect(first).toEqual({ status: 'fulfilled', value: fakeLog });
+      expect(second.status).toBe('rejected');
+      expect((second as PromiseRejectedResult).reason).toBeInstanceOf(
+        ConflictException,
+      );
+    });
   });
 
   describe('getWeekTrainings', () => {
