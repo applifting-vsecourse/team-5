@@ -99,7 +99,7 @@ function InvitePage() {
           footer={
             <Link
               to={ROUTES.home}
-              className="font-medium text-foreground underline underline-offset-4"
+              className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-4"
             >
               Zpět na úvodní stránku
             </Link>
@@ -153,7 +153,7 @@ function InvitePage() {
           footer={
             <Link
               to={ROUTES.home}
-              className="font-medium text-foreground underline underline-offset-4"
+              className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-4"
             >
               Zpět na úvodní stránku
             </Link>
@@ -213,7 +213,7 @@ function InvitePage() {
         footer={
           <Link
             to={ROUTES.home}
-            className="font-medium text-foreground underline underline-offset-4"
+            className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-4"
           >
             Zpět na úvodní stránku
           </Link>

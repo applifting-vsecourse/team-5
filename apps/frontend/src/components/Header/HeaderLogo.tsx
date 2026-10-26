@@ -6,7 +6,8 @@ export function HeaderLogo() {
   return (
     <Link
       to={ROUTES.home}
-      className="font-semibold tracking-tight"
+      // A 44 px tall touch target on a phone (#89).
+      className="inline-flex min-h-11 items-center font-semibold tracking-tight"
     >
       TrainLoop
     </Link>

@@ -169,4 +169,12 @@ export const dogActivitySchema = z.object({
 
 export const dogActivitiesSchema = z.array(dogActivitySchema)
 
+// One page of a dog's records from the API (#79).
+export const dogActivityPageSchema = z.object({
+  items: dogActivitiesSchema,
+  total: z.number(),
+  page: z.number(),
+  pageSize: z.number(),
+})
+
 export type DogActivity = z.infer<typeof dogActivitySchema>
