@@ -1,4 +1,4 @@
-import { EmailLayout, EMAIL_THEME } from './components/email-layout';
+import { EMAIL_THEME, EmailLayout } from './components/email-layout';
 import { InviteClient } from './invite-client';
 import { ResetPassword } from './reset-password';
 import { VerifyEmail } from './verify-email';
