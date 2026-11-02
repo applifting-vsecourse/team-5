@@ -121,14 +121,25 @@ export class TrainingReplyRepository {
             id: true,
             date: true,
             goal: { select: { title: true } },
-            workoutLog: { select: { id: true, title: true, completedAt: true, dog: { select: dogSummary } } },
+            workoutLog: {
+              select: {
+                id: true,
+                title: true,
+                completedAt: true,
+                dog: { select: dogSummary },
+              },
+            },
             dog: { select: dogSummary },
           },
         },
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
     });
-    return replies.map((reply) => ({ ...reply, workoutLog: reply.workoutLog ?? reply.scheduledTraining?.workoutLog ?? null }));
+    return replies.map((reply) => ({
+      ...reply,
+      workoutLog:
+        reply.workoutLog ?? reply.scheduledTraining?.workoutLog ?? null,
+    }));
   }
 
   async getRecord(
@@ -163,7 +174,9 @@ export class TrainingReplyRepository {
             recipientId: userId,
             OR: [
               { workoutLogId: activity.id },
-              ...(activity.scheduledTrainingId ? [{ scheduledTrainingId: activity.scheduledTrainingId }] : []),
+              ...(activity.scheduledTrainingId
+                ? [{ scheduledTrainingId: activity.scheduledTrainingId }]
+                : []),
             ],
           },
           select: { id: true, kind: true },
