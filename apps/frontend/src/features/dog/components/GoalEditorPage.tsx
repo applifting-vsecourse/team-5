@@ -22,16 +22,25 @@ type GoalPageShellProps = {
   title: string
   subtitle?: string
   children: React.ReactNode
+  replyToActivityId?: string
 }
 
 // "Tvorba tréninku": the goal header now (#62), the plan's blocks below it later (#63).
-function GoalPageShell({ dogId, dogName, title, subtitle, children }: GoalPageShellProps) {
+function GoalPageShell({
+  dogId,
+  dogName,
+  title,
+  subtitle,
+  children,
+  replyToActivityId,
+}: GoalPageShellProps) {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
       <header className="mb-8 flex items-center gap-2">
         <Link
           to="/dogs/$dogId"
           params={{ dogId }}
+          search={{ activityId: replyToActivityId }}
           aria-label={dogName ? `Zpět na psa ${dogName}` : "Zpět na psa"}
           className="-ml-3 inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
         >
@@ -149,6 +158,7 @@ export function NewGoalPage({ dogId }: { dogId: string }) {
 type EditGoalPageProps = {
   dogId: string
   goalId: string
+  replyToActivityId?: string
   isScheduleRequested?: boolean
   onScheduleRequestHandled?: () => void
 }
@@ -157,11 +167,12 @@ export function EditGoalPage({
   dogId,
   goalId,
   isScheduleRequested,
+  replyToActivityId,
   onScheduleRequestHandled,
 }: EditGoalPageProps) {
   const dogQuery = useQuery(dogDetailQueryOptions(dogId))
   const goalQuery = useQuery(goalQueryOptions(goalId))
-  const updateGoal = useUpdateGoal(dogId, goalId)
+  const updateGoal = useUpdateGoal(dogId, goalId, replyToActivityId)
 
   const dog = dogQuery.data
   // A goal opened under a different dog's URL is treated as not found.
@@ -181,6 +192,7 @@ export function EditGoalPage({
     <GoalPageShell
       dogId={dogId}
       dogName={dog?.name}
+      replyToActivityId={replyToActivityId}
       title={goal?.title ?? "Cíl"}
       subtitle={dog && goal ? `Pro psa ${dog.name} · Autor: ${goal.createdBy.name}` : undefined}
     >
@@ -210,7 +222,10 @@ export function EditGoalPage({
             isPending={updateGoal.isPending}
             onSubmit={handleSubmit}
           />
-          <PlanBlocksSection goalId={goal.id} />
+          <PlanBlocksSection
+            goalId={goal.id}
+            replyToActivityId={replyToActivityId}
+          />
           <TrainingScheduleSection
             goalId={goal.id}
             dogName={dog.name}

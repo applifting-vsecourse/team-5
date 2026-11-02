@@ -90,6 +90,7 @@ model User {
   sharedDogs         DogShare[]          @relation("TrainerSharedDogs")
   invitations        Invitation[]        @relation("TrainerInvitations")
   messages           TrainingMessage[]
+  unreadReplies      TrainingReply[]
   role               UserRole            @default(user)
 
   username        String? @db.VarChar(50)
@@ -207,17 +208,18 @@ enum TrainingStatus {
 // ScheduledTrainingRepository under a lock on the goal row); another day for
 // the same training is a move, not a second plan (duplication is #103).
 model ScheduledTraining {
-  id          String         @id @default(cuid())
-  goalId      String
-  goal        TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  dogId       String
-  dog         Dog            @relation(fields: [dogId], references: [id], onDelete: Cascade)
-  createdById String?
-  createdBy   User?          @relation("TrainingScheduler", fields: [createdById], references: [id], onDelete: SetNull)
-  date        DateTime       @db.Date
-  status      TrainingStatus @default(PLANNED)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @default(now()) @updatedAt
+  id            String          @id @default(cuid())
+  goalId        String
+  goal          TrainingGoal    @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  dogId         String
+  dog           Dog             @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  createdById   String?
+  createdBy     User?           @relation("TrainingScheduler", fields: [createdById], references: [id], onDelete: SetNull)
+  date          DateTime        @db.Date
+  status        TrainingStatus  @default(PLANNED)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @default(now()) @updatedAt
+  unreadReplies TrainingReply[]
 
   @@index([dogId, date])
   @@index([goalId, status])
@@ -243,6 +245,7 @@ model WorkoutLog {
   note             String?           @db.Text
   videoUrl         String?           @db.VarChar(500)
   messages         TrainingMessage[]
+  unreadReplies    TrainingReply[]
   skipReason       String?           @db.Text
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @default(now()) @updatedAt
@@ -321,4 +324,32 @@ model TrainingMessage {
   @@index([workoutLogId, createdAt])
   @@index([authorId])
   @@map("training_message")
+}
+
+enum TrainingReplyKind {
+  MESSAGE
+  PLAN_CHANGED
+
+  @@map("training_reply_kind")
+}
+
+// Only pending replies are stored. A read acknowledges the exact IDs displayed,
+// never a timestamp: a concurrent message must survive an older read request.
+// A plan change can refer to both its source record and the upcoming training;
+// opening either clears that one notification in both views.
+model TrainingReply {
+  id                  String             @id @default(cuid())
+  recipientId         String
+  recipient           User               @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  workoutLogId        String?
+  workoutLog          WorkoutLog?        @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  scheduledTrainingId String?
+  scheduledTraining   ScheduledTraining? @relation(fields: [scheduledTrainingId], references: [id], onDelete: Cascade)
+  kind                TrainingReplyKind
+  createdAt           DateTime           @default(now())
+
+  @@index([recipientId, createdAt])
+  @@index([workoutLogId])
+  @@index([scheduledTrainingId])
+  @@map("training_reply")
 }

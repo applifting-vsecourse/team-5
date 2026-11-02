@@ -15,9 +15,16 @@ import { PesAvatar } from "./PesAvatar"
 type DogDetailViewProps = {
   dog: Dog
   isOwner?: boolean
+  openActivityId?: string
+  onActivityClose?: () => void
 }
 
-export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
+export function DogDetailView({
+  dog,
+  isOwner = true,
+  openActivityId,
+  onActivityClose,
+}: DogDetailViewProps) {
   const [isEditOpen, setIsEditOpen] = useState(false)
 
   return (
@@ -104,6 +111,9 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
           dogName={dog.name}
         />
         <DogActivitiesSection
+          key={openActivityId ?? dog.id}
+          openActivityId={openActivityId}
+          onActivityClose={onActivityClose}
           dogId={dog.id}
           dogName={dog.name}
         />

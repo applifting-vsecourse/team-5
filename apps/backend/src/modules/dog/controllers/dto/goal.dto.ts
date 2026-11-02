@@ -13,6 +13,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { PlanReplySourceDto } from './training-reply.dto';
 
 // Limits mirror the training_goal columns; principle is TEXT, so its cap only
 // keeps a single request reasonable.
@@ -81,7 +82,7 @@ export class CreateGoalDto {
   order?: number;
 }
 
-export class UpdateGoalDto {
+export class UpdateGoalDto extends PlanReplySourceDto {
   @ApiPropertyOptional({
     description: 'Title of the training goal',
     maxLength: TITLE_MAX_LENGTH,

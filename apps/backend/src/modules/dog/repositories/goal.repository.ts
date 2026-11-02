@@ -2,6 +2,7 @@ import { PrismaService } from '@/core/prisma/prisma.service';
 import { GoalStatus } from '@/generated/prisma/client';
 import { Goal } from '@/modules/dog/domain/goal';
 import { Injectable } from '@nestjs/common';
+import { PlanReplyContext, recordPlanReply } from './training-reply.repository';
 
 const withAuthor = {
   createdBy: { select: { id: true, name: true } },
@@ -61,17 +62,30 @@ export class GoalRepository {
       status?: GoalStatus;
       order?: number;
     },
+    reply?: PlanReplyContext,
   ): Promise<Goal> {
-    return this.prisma.trainingGoal.update({
-      where: { id },
-      data: {
-        ...(data.title !== undefined && { title: data.title }),
-        ...(data.discipline !== undefined && { discipline: data.discipline }),
-        ...(data.principle !== undefined && { principle: data.principle }),
-        ...(data.status !== undefined && { status: data.status }),
-        ...(data.order !== undefined && { order: data.order }),
-      },
-      include: withAuthor,
+    return this.prisma.$transaction(async (tx) => {
+      const before = await tx.trainingGoal.findUniqueOrThrow({ where: { id } });
+      const updated = await tx.trainingGoal.update({
+        where: { id },
+        data: {
+          ...(data.title !== undefined && { title: data.title }),
+          ...(data.discipline !== undefined && { discipline: data.discipline }),
+          ...(data.principle !== undefined && { principle: data.principle }),
+          ...(data.status !== undefined && { status: data.status }),
+          ...(data.order !== undefined && { order: data.order }),
+        },
+        include: withAuthor,
+      });
+      if (
+        before.title !== updated.title ||
+        before.discipline !== updated.discipline ||
+        before.principle !== updated.principle ||
+        before.status !== updated.status
+      ) {
+        await recordPlanReply(tx, id, reply);
+      }
+      return updated;
     });
   }
 

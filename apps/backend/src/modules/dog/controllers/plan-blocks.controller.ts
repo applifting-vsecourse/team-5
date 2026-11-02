@@ -19,6 +19,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
   UsePipes,
   ValidationPipe,
@@ -29,6 +30,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { PlanReplySourceDto } from './dto/training-reply.dto';
 
 @ApiTags('plan blocks')
 @Controller()
@@ -93,6 +95,7 @@ export class PlanBlocksController {
       user,
       goalId,
       body.blockIds,
+      body.replyToActivityId,
     );
     return blocks.map((block) => PlanBlockResponseDto.fromDomain(block));
   }
@@ -121,7 +124,12 @@ export class PlanBlocksController {
   async delete(
     @User() user: Identity,
     @Param('blockId') blockId: string,
+    @Query() query: PlanReplySourceDto,
   ): Promise<void> {
-    await this.planBlocksService.deleteBlock(user, blockId);
+    await this.planBlocksService.deleteBlock(
+      user,
+      blockId,
+      query.replyToActivityId,
+    );
   }
 }

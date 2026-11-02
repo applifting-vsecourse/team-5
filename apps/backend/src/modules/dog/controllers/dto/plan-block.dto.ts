@@ -12,6 +12,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { PlanReplySourceDto } from './training-reply.dto';
 
 // Title mirrors the plan_block column; instruction and criterion are TEXT,
 // so their caps only keep a single request reasonable.
@@ -20,7 +21,7 @@ const INSTRUCTION_MAX_LENGTH = 2000;
 const CRITERION_MAX_LENGTH = 1000;
 const MAX_BLOCKS_IN_PLAN = 500;
 
-export class CreatePlanBlockDto {
+export class CreatePlanBlockDto extends PlanReplySourceDto {
   @ApiProperty({
     description: 'Name of the exercise',
     example: 'Sedni u nohy',
@@ -65,7 +66,7 @@ export class CreatePlanBlockDto {
   insertAt?: number;
 }
 
-export class UpdatePlanBlockDto {
+export class UpdatePlanBlockDto extends PlanReplySourceDto {
   @ApiPropertyOptional({
     description: 'Name of the exercise',
     maxLength: TITLE_MAX_LENGTH,
@@ -96,7 +97,7 @@ export class UpdatePlanBlockDto {
   criterion?: string;
 }
 
-export class ReorderPlanBlocksDto {
+export class ReorderPlanBlocksDto extends PlanReplySourceDto {
   @ApiProperty({
     description: 'IDs of all blocks of the plan in the new order',
     type: [String],

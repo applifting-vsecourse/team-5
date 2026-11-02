@@ -8,11 +8,16 @@ import { EditGoalPage } from "@/features/dog/components/GoalEditorPage"
 type GoalSearch = {
   // Set by "Uložit a naplánovat": open the day picker once the page loads (#71).
   naplanovat?: true
+  replyToActivityId?: string
 }
 
 export const Route = createFileRoute("/_ProtectedPages/dogs/$dogId/goals/$goalId")({
-  validateSearch: (search: Record<string, unknown>): GoalSearch =>
-    search.naplanovat === true ? { naplanovat: true } : {},
+  validateSearch: (search: Record<string, unknown>): GoalSearch => ({
+    ...(search.naplanovat === true ? { naplanovat: true } : {}),
+    ...(typeof search.replyToActivityId === "string" && search.replyToActivityId.length <= 255
+      ? { replyToActivityId: search.replyToActivityId }
+      : {}),
+  }),
   component: EditGoalRoute,
 })
 
@@ -23,8 +28,8 @@ function EditGoalRoute() {
 
   // Drop the flag once handled, so a reload does not open the picker again.
   const clearScheduleRequest = useCallback(() => {
-    void navigate({ search: {}, replace: true })
-  }, [navigate])
+    void navigate({ search: { replyToActivityId: search.replyToActivityId }, replace: true })
+  }, [navigate, search.replyToActivityId])
 
   return (
     <>
@@ -32,6 +37,7 @@ function EditGoalRoute() {
       <EditGoalPage
         dogId={dogId}
         goalId={goalId}
+        replyToActivityId={search.replyToActivityId}
         isScheduleRequested={search.naplanovat === true}
         onScheduleRequestHandled={clearScheduleRequest}
       />

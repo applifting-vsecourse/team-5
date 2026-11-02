@@ -1,6 +1,8 @@
+import { useQuery } from "@tanstack/react-query"
 import { Link, useLocation } from "@tanstack/react-router"
 import { Calendar, PawPrint, User, Users } from "lucide-react"
 
+import { unreadRepliesQueryOptions } from "@/lib/trainingReplies"
 import { cn } from "@/lib/utils"
 
 const NAV_ITEMS = [
@@ -37,6 +39,7 @@ type BottomNavProps = {
 export function BottomNav({ isTrainer = false }: BottomNavProps) {
   const location = useLocation()
   const currentPath = location.pathname
+  const replies = useQuery(unreadRepliesQueryOptions())
 
   const items = NAV_ITEMS.filter((item) => item.to !== "/clients" || isTrainer)
 
@@ -61,9 +64,25 @@ export function BottomNav({ isTrainer = false }: BottomNavProps) {
                   : "text-muted-foreground hover:text-foreground",
               )}
               aria-current={isActive ? "page" : undefined}
+              aria-label={
+                item.to === "/week" && replies.data?.length
+                  ? "Týden, nepřečtené odpovědi"
+                  : undefined
+              }
             >
-              <Icon className="size-5" />
+              <span className="relative">
+                <Icon className="size-5" />
+                {item.to === "/week" && Boolean(replies.data?.length) && (
+                  <span
+                    className="absolute -top-1 -right-1 size-2 rounded-full bg-foreground"
+                    aria-hidden="true"
+                  />
+                )}
+              </span>
               <span>{item.label}</span>
+              {item.to === "/week" && Boolean(replies.data?.length) && (
+                <span className="sr-only"> Nepřečtené odpovědi</span>
+              )}
             </Link>
           )
         })}
