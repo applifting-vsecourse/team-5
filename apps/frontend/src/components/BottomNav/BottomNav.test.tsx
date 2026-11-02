@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import { BottomNav } from "./BottomNav"
 
-vi.mock("@/lib/api-client", () => ({ api: { get: () => ({ json: async () => [] }) } }))
+vi.mock("@/lib/api-client", () => ({ api: { get: () => ({ json: () => Promise.resolve([]) }) } }))
 
 const nav = () => (
   <QueryClientProvider client={new QueryClient()}>
