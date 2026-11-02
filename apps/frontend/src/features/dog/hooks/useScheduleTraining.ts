@@ -17,6 +17,8 @@ export function useScheduleTraining(goalId: string) {
       void queryClient.invalidateQueries({ queryKey: dogKeys.goalTrainings(goalId) })
       // The week shows goals and their exercises too (#72).
       void queryClient.invalidateQueries({ queryKey: weekKeys.all })
+      // Activities list the dog's planned days (#74).
+      void queryClient.invalidateQueries({ queryKey: dogKeys.plannedTrainings(training.dogId) })
       toast.success(`Trénink je naplánovaný na ${formatDayAccusative(training.date)}`)
     },
     onError: (error) => {
@@ -24,7 +26,7 @@ export function useScheduleTraining(goalId: string) {
       const isAlreadyPlanned = error instanceof HTTPError && error.response.status === 409
       toast.error(
         isAlreadyPlanned
-          ? "Trénink už je naplánovaný. Na jiný den ho přesunete v Týdnu."
+          ? "Na tento den už má cíl trénink. Pro další trénink vyberte jiný den."
           : "Trénink se nepodařilo naplánovat. Zkuste to prosím znovu.",
       )
       if (isAlreadyPlanned) {

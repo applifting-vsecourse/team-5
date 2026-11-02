@@ -13,6 +13,12 @@ export type ActivityWithMessages = WorkoutLog & {
   messages: (TrainingMessage & { author: Author | null })[];
 };
 
+// One page of a dog's records (#79) and how many there are in total.
+export type ActivityPage = {
+  items: ActivityWithMessages[];
+  total: number;
+};
+
 export type CreateActivityData = {
   title: string;
   discipline?: string;

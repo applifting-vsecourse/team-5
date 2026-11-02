@@ -99,7 +99,7 @@ export class TrainingReplyRepository {
 
   async getUnread(userId: string): Promise<UnreadTrainingReply[]> {
     const dog = replyDogAccess(userId);
-    return this.prisma.trainingReply.findMany({
+    const replies = await this.prisma.trainingReply.findMany({
       where: {
         recipientId: userId,
         OR: [{ workoutLog: { dog } }, { scheduledTraining: { dog } }],
@@ -121,12 +121,14 @@ export class TrainingReplyRepository {
             id: true,
             date: true,
             goal: { select: { title: true } },
+            workoutLog: { select: { id: true, title: true, completedAt: true, dog: { select: dogSummary } } },
             dog: { select: dogSummary },
           },
         },
       },
       orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
     });
+    return replies.map((reply) => ({ ...reply, workoutLog: reply.workoutLog ?? reply.scheduledTraining?.workoutLog ?? null }));
   }
 
   async getRecord(
@@ -153,14 +155,20 @@ export class TrainingReplyRepository {
               include: { author: { select: { id: true, name: true } } },
               orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
             },
-            unreadReplies: {
-              where: { recipientId: userId },
-              select: { id: true, kind: true },
-            },
           },
         });
         if (!activity) throw new NotFoundException('Training record not found');
-        const { dog, unreadReplies, messages, ...record } = activity;
+        const unreadReplies = await tx.trainingReply.findMany({
+          where: {
+            recipientId: userId,
+            OR: [
+              { workoutLogId: activity.id },
+              ...(activity.scheduledTrainingId ? [{ scheduledTrainingId: activity.scheduledTrainingId }] : []),
+            ],
+          },
+          select: { id: true, kind: true },
+        });
+        const { dog, messages, ...record } = activity;
         return {
           ...record,
           isOwner: dog.ownerId === userId,
@@ -251,6 +259,7 @@ export class TrainingReplyRepository {
           .map((recipientId) => ({
             recipientId,
             workoutLogId: activityId,
+            scheduledTrainingId: activity.scheduledTrainingId,
             kind: 'MESSAGE' as const,
           })),
       });

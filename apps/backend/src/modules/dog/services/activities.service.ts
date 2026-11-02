@@ -1,6 +1,6 @@
 import { WorkoutLog, WorkoutStatus } from '@/generated/prisma/client';
 import {
-  ActivityWithMessages,
+  ActivityPage,
   CreateActivityData,
 } from '@/modules/dog/domain/activity';
 import { ActivityRepository } from '@/modules/dog/repositories/activity.repository';
@@ -15,12 +15,18 @@ export class ActivitiesService {
     private readonly dogAccess: DogAccessService,
   ) {}
 
+  // A page of the dog's records (#79), for the owner and a trainer with a share.
   async getActivitiesByDogId(
     user: Identity,
     dogId: string,
-  ): Promise<ActivityWithMessages[]> {
+    page = 1,
+    pageSize = 20,
+  ): Promise<ActivityPage> {
     await this.dogAccess.getAccessibleDog(user, dogId);
-    return this.activityRepository.getActivitiesByDogId(dogId);
+    return this.activityRepository.getActivitiesByDogId(dogId, {
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
   }
 
   async createActivity(

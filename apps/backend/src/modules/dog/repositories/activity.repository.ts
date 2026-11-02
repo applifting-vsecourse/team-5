@@ -5,24 +5,35 @@ import {
   WorkoutLog,
   WorkoutStatus,
 } from '@/generated/prisma/client';
-import { ActivityWithMessages } from '@/modules/dog/domain/activity';
+import { ActivityPage } from '@/modules/dog/domain/activity';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ActivityRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getActivitiesByDogId(dogId: string): Promise<ActivityWithMessages[]> {
-    return this.prisma.workoutLog.findMany({
-      where: { dogId },
-      orderBy: { completedAt: 'desc' },
-      include: {
-        messages: {
-          include: { author: { select: { id: true, name: true } } },
-          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  // One page of a dog's records, newest first (#79): the history only grows,
+  // so it is not loaded at once. The id breaks ties, so pages do not overlap.
+  async getActivitiesByDogId(
+    dogId: string,
+    page: { skip: number; take: number },
+  ): Promise<ActivityPage> {
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.workoutLog.findMany({
+        where: { dogId },
+        orderBy: [{ completedAt: 'desc' }, { id: 'desc' }],
+        skip: page.skip,
+        take: page.take,
+        include: {
+          messages: {
+            include: { author: { select: { id: true, name: true } } },
+            orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          },
         },
-      },
-    });
+      }),
+      this.prisma.workoutLog.count({ where: { dogId } }),
+    ]);
+    return { items, total };
   }
 
   async createActivity(data: {

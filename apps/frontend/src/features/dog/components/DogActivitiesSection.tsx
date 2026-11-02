@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -72,6 +73,9 @@ type DogActivitiesSectionProps = {
   activities?: DogActivity[]
   openActivityId?: string
   onActivityClose?: () => void
+  // On the dog's page: only the latest records and a link to the full
+  // history, which has its own page.
+  isCompact?: boolean
 }
 
 function formatActivityDate(date?: Date | string, fallback?: string): string {
@@ -92,6 +96,7 @@ export function DogActivitiesSection({
   activities: initialActivities,
   openActivityId,
   onActivityClose,
+  isCompact = false,
 }: DogActivitiesSectionProps) {
   const [page, setPage] = useState(1)
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(
@@ -102,22 +107,30 @@ export function DogActivitiesSection({
     ...unreadRepliesQueryOptions(),
     enabled: Boolean(dogId) && !initialActivities,
   })
+  // A dog's records come from the API one page at a time (#79); records passed
+  // in (or the demo ones) are paged here.
+  const isPagedByApi = Boolean(dogId) && initialActivities === undefined
   const activitiesQuery = useQuery({
-    ...dogActivitiesQueryOptions(dogId ?? ""),
-    enabled: Boolean(dogId) && initialActivities === undefined,
+    ...dogActivitiesQueryOptions(dogId ?? "", page, ITEMS_PER_PAGE),
+    enabled: isPagedByApi,
   })
 
-  const effectiveActivities =
-    initialActivities ?? activitiesQuery.data ?? (dogId ? [] : DEFAULT_ACTIVITIES)
+  const localActivities = initialActivities ?? (dogId ? [] : DEFAULT_ACTIVITIES)
+  const total = isPagedByApi ? (activitiesQuery.data?.total ?? 0) : localActivities.length
+  const startIndex = (page - 1) * ITEMS_PER_PAGE
+  const currentItems = isPagedByApi
+    ? (activitiesQuery.data?.items ?? [])
+    : localActivities.slice(startIndex, startIndex + ITEMS_PER_PAGE)
   // Resolve from current query data so a refreshed author cannot remain in an
   // already open dialog after the trainer deletes their account.
-  const selectedActivity = effectiveActivities.find(
-    (activity) => activity.id === selectedActivityId,
-  )
+  const selectedActivity = currentItems.find((activity) => activity.id === selectedActivityId)
 
-  const totalPages = Math.ceil(effectiveActivities.length / ITEMS_PER_PAGE) || 1
-  const startIndex = (page - 1) * ITEMS_PER_PAGE
-  const currentItems = effectiveActivities.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  // The compact list is always the first page, without paging.
+  const totalPages = isCompact ? 1 : Math.ceil(total / ITEMS_PER_PAGE) || 1
+  // Fewer records than before (e.g. a skip taken back) can leave the page past
+  // the end: go to the last one instead of an empty list.
+  const isTotalKnown = !isPagedByApi || activitiesQuery.data !== undefined
+  if (isTotalKnown && page > totalPages) setPage(totalPages)
 
   const hasNextPage = page < totalPages
   const hasPrevPage = page > 1
@@ -135,8 +148,21 @@ export function DogActivitiesSection({
           >
             Aktivity
           </h2>
-          <p className="text-xs text-muted-foreground">Záznamy tréninků od nejnovějšího</p>
+          <p className="text-xs text-muted-foreground">
+            {isCompact ? "Poslední záznamy tréninků" : "Záznamy tréninků od nejnovějšího"}
+          </p>
         </div>
+
+        {isCompact && dogId && total > 0 && (
+          <Link
+            to="/dogs/$dogId/activities"
+            params={{ dogId }}
+            className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Celá historie
+            <ChevronRight className="size-4" />
+          </Link>
+        )}
 
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
@@ -147,7 +173,7 @@ export function DogActivitiesSection({
               disabled={!hasPrevPage}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               aria-label="Předchozí stránka aktivit"
-              className="size-9"
+              className="size-11"
             >
               <ChevronLeft className="size-4" />
             </Button>
@@ -161,7 +187,7 @@ export function DogActivitiesSection({
               disabled={!hasNextPage}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               aria-label="Další stránka aktivit"
-              className="size-9"
+              className="size-11"
             >
               <ChevronRight className="size-4" />
             </Button>
@@ -205,7 +231,7 @@ export function DogActivitiesSection({
           <Skeleton className="h-24 w-full rounded-xl" />
           <Skeleton className="h-24 w-full rounded-xl" />
         </div>
-      ) : effectiveActivities.length === 0 ? (
+      ) : total === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-6 text-center">
           <p className="text-sm text-muted-foreground">
             {dogName} zatím nemá zaznamenané žádné tréninky.
@@ -247,23 +273,6 @@ export function DogActivitiesSection({
                     {isCompleted ? "Odcvičeno" : "Přeskočeno"}
                   </Badge>
                 </span>
-
-                {isCompleted && (
-                  <span className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                    {item.successRate !== undefined && (
-                      <span className="font-semibold text-foreground">
-                        Úspěšnost: {item.successRate} %
-                      </span>
-                    )}
-                    {item.rating !== undefined && <span>Hodnocení: {item.rating}/5</span>}
-                  </span>
-                )}
-
-                {item.note && (
-                  <span className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                    {item.note}
-                  </span>
-                )}
               </button>
             )
           })}

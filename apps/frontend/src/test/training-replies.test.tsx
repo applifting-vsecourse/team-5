@@ -82,7 +82,8 @@ beforeEach(() => {
     json: async () => {
       await Promise.resolve()
       if (path === "training-replies") return [...pending]
-      if (path === "dogs/dog/activities") return [activity]
+      if (path === "dogs/dog/activities")
+        return { items: [activity], total: 1, page: 1, pageSize: 3 }
       if (path === "dogs/dog/activities/record") {
         if (shouldFailDetail) throw new Error("offline")
         return {

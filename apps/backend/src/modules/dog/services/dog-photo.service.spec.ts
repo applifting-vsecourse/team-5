@@ -75,6 +75,26 @@ describe('DogPhotoService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it.each(['', 'application/octet-stream'])(
+    'accepts a valid phone photo with generic MIME %s',
+    async (mimetype) => {
+      const buffer = await sharp({
+        create: { width: 12, height: 12, channels: 3, background: 'white' },
+      })
+        .jpeg()
+        .toBuffer();
+      const url = await service.processAndSavePhoto('phone-dog', {
+        buffer,
+        size: buffer.length,
+        mimetype,
+        originalname: 'phone.jpg',
+      } as Express.Multer.File);
+      const file = path.join(getDogUploadsDir(), path.basename(url));
+      createdFiles.push(file);
+      expect((await sharp(file).metadata()).format).toBe('webp');
+    },
+  );
+
   it('rejects files larger than 10MB', async () => {
     const largeFile = {
       buffer: Buffer.alloc(10 * 1024 * 1024 + 1),

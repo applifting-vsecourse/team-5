@@ -28,16 +28,55 @@ describe('activity messages after account deletion', () => {
         },
       ],
     });
-    service.getActivitiesByDogId.mockResolvedValue([activity]);
+    service.getActivitiesByDogId.mockResolvedValue({
+      items: [activity],
+      total: 1,
+    });
     const result = await new ActivitiesController(service).listByDog(
       { id: 'owner' } as Identity,
       'dog',
+      {},
     );
-    expect(result[0].messages[0].author).toEqual({
+    const [first] = result.items;
+    expect(first.messages[0].author).toEqual({
       id: null,
       name: 'smazaný uživatel',
     });
-    expect(result[0].messages[0].text).toBe('Trainer reply');
-    expect(result[0].messages[0]).not.toHaveProperty('authorId');
+    expect(first.messages[0].text).toBe('Trainer reply');
+    expect(first.messages[0]).not.toHaveProperty('authorId');
+  });
+});
+
+describe('activities by page (#79)', () => {
+  it('asks the service for the requested page and says how many records there are', async () => {
+    const service = mock<ActivitiesService>();
+    service.getActivitiesByDogId.mockResolvedValue({ items: [], total: 7 });
+
+    const result = await new ActivitiesController(service).listByDog(
+      { id: 'owner' } as Identity,
+      'dog',
+      { page: 3, pageSize: 3 },
+    );
+
+    expect(service.getActivitiesByDogId).toHaveBeenCalledWith(
+      { id: 'owner' },
+      'dog',
+      3,
+      3,
+    );
+    expect(result).toEqual({ items: [], total: 7, page: 3, pageSize: 3 });
+  });
+
+  it('defaults to the first page of 20', async () => {
+    const service = mock<ActivitiesService>();
+    service.getActivitiesByDogId.mockResolvedValue({ items: [], total: 0 });
+
+    const result = await new ActivitiesController(service).listByDog(
+      { id: 'owner' } as Identity,
+      'dog',
+      {},
+    );
+
+    expect(result).toMatchObject({ page: 1, pageSize: 20 });
   });
 });

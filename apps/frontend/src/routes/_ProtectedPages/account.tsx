@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router"
-import { ChevronDown, LogOut, Monitor, Moon, Sun } from "lucide-react"
+import { useState } from "react"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import { ChevronDown, LogOut, Monitor, Moon, Sparkles, Sun } from "lucide-react"
 import { toast } from "sonner"
 
 import { ROUTES } from "@/app/routes"
@@ -7,11 +8,21 @@ import { Seo } from "@/components/Seo"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useTheme } from "@/hooks/useTheme"
 
@@ -27,6 +38,22 @@ export function AccountPage() {
   const { user } = useSession()
   const signOut = useSignOut()
   const { theme, setTheme, resolvedTheme } = useTheme()
+  const navigate = useNavigate()
+
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
+  const [inviteCode, setInviteCode] = useState("")
+
+  const handleInviteSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const trimmedCode = inviteCode.trim().toUpperCase()
+    if (!trimmedCode) return
+    setIsInviteDialogOpen(false)
+    setInviteCode("")
+    void navigate({
+      to: ROUTES.invite,
+      search: { code: trimmedCode },
+    })
+  }
 
   const currentThemeLabel = theme === "system" ? "Systémový" : theme === "dark" ? "Tmavý" : "Světlý"
 
@@ -48,6 +75,31 @@ export function AccountPage() {
               <p className="text-lg font-semibold text-foreground">{user.name}</p>
               <p className="text-sm text-muted-foreground">{user.email}</p>
             </div>
+
+            {user.role !== "trainer" && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <div>
+                    <h2 className="text-base font-semibold text-foreground">
+                      Propojení s trenérem
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Dostali jste od trenéra 6místný kód pozvánky? Zadejte jej a propojte svůj
+                      účet.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="min-h-11 w-full justify-start gap-2"
+                    onClick={() => setIsInviteDialogOpen(true)}
+                  >
+                    <Sparkles className="size-4 text-primary" />
+                    Mám kód od trenéra
+                  </Button>
+                </div>
+              </>
+            )}
 
             <Separator />
 
@@ -112,6 +164,62 @@ export function AccountPage() {
               </Link>
             </div>
           </div>
+        )}
+
+        {user && user.role !== "trainer" && (
+          <Dialog
+            open={isInviteDialogOpen}
+            onOpenChange={(isOpenNext) => {
+              setIsInviteDialogOpen(isOpenNext)
+              if (!isOpenNext) setInviteCode("")
+            }}
+          >
+            <DialogContent className="sm:max-w-md">
+              <form
+                onSubmit={handleInviteSubmit}
+                className="space-y-4"
+              >
+                <DialogHeader>
+                  <DialogTitle>Mám kód od trenéra</DialogTitle>
+                  <DialogDescription>
+                    Zadejte šestimístný kód pozvánky, který jste obdrželi od svého trenéra na lekci
+                    nebo v e-mailu.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-2">
+                  <Label htmlFor="account-invite-code">Kód pozvánky</Label>
+                  <Input
+                    id="account-invite-code"
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                    placeholder="např. K7M2PQ"
+                    maxLength={6}
+                    required
+                  />
+                </div>
+
+                <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setIsInviteDialogOpen(false)
+                      setInviteCode("")
+                    }}
+                  >
+                    Zrušit
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={!inviteCode.trim()}
+                  >
+                    Pokračovat
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
         )}
       </section>
     </>

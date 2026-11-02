@@ -4,6 +4,7 @@ import {
   WorkoutStatus,
 } from '@/generated/prisma/client';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsEnum,
@@ -139,6 +140,24 @@ export class TrainingMessageResponseDto {
   author!: MessageAuthorDto;
 }
 
+// Which page of a dog's records to load (#79). Newest first.
+export class ActivitiesQueryDto {
+  @ApiPropertyOptional({ minimum: 1, default: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 50, default: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  pageSize?: number;
+}
+
 export class ActivityResponseDto {
   @ApiProperty({ type: [TrainingMessageResponseDto] })
   messages!: TrainingMessageResponseDto[];
@@ -190,4 +209,18 @@ export class ActivityResponseDto {
 
   @ApiProperty({ type: String, format: 'date-time' })
   updatedAt!: Date;
+}
+
+export class ActivityPageResponseDto {
+  @ApiProperty({ type: [ActivityResponseDto] })
+  items!: ActivityResponseDto[];
+
+  @ApiProperty({ description: 'How many records the dog has in total' })
+  total!: number;
+
+  @ApiProperty()
+  page!: number;
+
+  @ApiProperty()
+  pageSize!: number;
 }

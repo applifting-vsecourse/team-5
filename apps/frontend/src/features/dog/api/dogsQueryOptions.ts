@@ -1,15 +1,16 @@
-import { queryOptions } from "@tanstack/react-query"
+import { keepPreviousData, queryOptions } from "@tanstack/react-query"
 
 import { api } from "@/lib/api-client"
 
 import { dogKeys } from "./dogKeys"
 import {
-  dogActivitiesSchema,
+  dogActivityPageSchema,
   dogGoalSchema,
   dogGoalsSchema,
   dogSchema,
   dogsSchema,
   planBlocksSchema,
+  plannedTrainingsSchema,
   trainingsSchema,
 } from "./dogSchemas"
 
@@ -79,13 +80,30 @@ export function goalTrainingsQueryOptions(goalId: string) {
   })
 }
 
-export function dogActivitiesQueryOptions(dogId: string) {
+export function dogPlannedTrainingsQueryOptions(dogId: string) {
   return queryOptions({
-    queryKey: dogKeys.activities(dogId),
+    queryKey: dogKeys.plannedTrainings(dogId),
     queryFn: async () => {
-      const json = await api.get(`dogs/${dogId}/activities`).json()
-      return dogActivitiesSchema.parse(json)
+      const json = await api.get(`dogs/${dogId}/trainings`).json()
+      return plannedTrainingsSchema.parse(json)
     },
     enabled: Boolean(dogId),
+  })
+}
+
+// One page of the dog's records, newest first (#79). The key sits under
+// dogKeys.activities(dogId), so invalidating that refreshes every page.
+export function dogActivitiesQueryOptions(dogId: string, page = 1, pageSize = 3) {
+  return queryOptions({
+    queryKey: [...dogKeys.activities(dogId), { page, pageSize }],
+    queryFn: async () => {
+      const json = await api
+        .get(`dogs/${dogId}/activities`, { searchParams: { page, pageSize } })
+        .json()
+      return dogActivityPageSchema.parse(json)
+    },
+    enabled: Boolean(dogId),
+    // Keep the current page on screen while the next one loads.
+    placeholderData: keepPreviousData,
   })
 }

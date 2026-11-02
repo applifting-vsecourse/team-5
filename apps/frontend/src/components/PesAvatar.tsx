@@ -36,7 +36,7 @@ export function PesAvatar({ name, color, size = "md", photoUrl, className }: Pes
         role="img"
         aria-label={`Avatar psa ${name}`}
         className={cn(
-          "flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-offset-1 ring-offset-background select-none",
+          "flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-2 ring-offset-2 ring-offset-border/60 select-none",
           ringClass,
           sizeClass,
           className,
@@ -59,7 +59,7 @@ export function PesAvatar({ name, color, size = "md", photoUrl, className }: Pes
       role="img"
       aria-label={`Avatar psa ${name}`}
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-full font-bold text-white select-none",
+        "flex shrink-0 items-center justify-center rounded-full font-bold text-white ring-2 ring-background ring-offset-2 ring-offset-border/60 select-none",
         colorClass,
         sizeClass,
         className,

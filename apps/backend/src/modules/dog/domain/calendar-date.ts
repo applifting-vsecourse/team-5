@@ -20,3 +20,12 @@ export const toCalendarDate = (date: Date): string =>
 
 export const fromCalendarDate = (calendarDate: string): Date =>
   new Date(`${calendarDate}T00:00:00.000Z`);
+
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+// Sunday of the Monday-to-Sunday week the day belongs to.
+export const lastDayOfWeek = (calendarDate: string): string => {
+  const date = fromCalendarDate(calendarDate);
+  const daysToSunday = (7 - date.getUTCDay()) % 7;
+  return toCalendarDate(new Date(date.getTime() + daysToSunday * DAY_IN_MS));
+};

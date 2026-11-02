@@ -41,13 +41,20 @@ const schema = z.object({
 type SignUpFormProps = {
   isLoading: boolean
   error?: RegistrationError | null
+  defaultEmail?: string
   onSubmit: (values: SignUpInput) => void | Promise<void>
 }
 
-export function SignUpForm({ isLoading, error, onSubmit }: SignUpFormProps) {
+export function SignUpForm({ isLoading, error, defaultEmail, onSubmit }: SignUpFormProps) {
   const form = useForm<SignUpInput>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", email: "", password: "", privacyConsent: false, isTrainer: false },
+    defaultValues: {
+      name: "",
+      email: defaultEmail ?? "",
+      password: "",
+      privacyConsent: false,
+      isTrainer: false,
+    },
   })
   const { setError } = form
 

@@ -1,4 +1,5 @@
 import { ClientResponseDto } from '@/modules/client/controllers/dto/client.response.dto';
+import { CreateInvitationDto } from '@/modules/client/controllers/dto/create-invitation.dto';
 import { InvitationResponseDto } from '@/modules/client/controllers/dto/invitation.response.dto';
 import { TrainerRoleGuard } from '@/modules/client/guards/trainer-role.guard';
 import { ClientsService } from '@/modules/client/services/clients.service';
@@ -6,17 +7,20 @@ import { User } from '@/shared/auth/decorators/user.decorator';
 import { Identity } from '@/shared/auth/domain/identity';
 import { AuthenticatedUserGuard } from '@/shared/auth/guards/authenticated-user.guard';
 import {
+  Body,
   Controller,
   Delete,
   Get,
   HttpCode,
   HttpStatus,
   Param,
+  Post,
   UseGuards,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
 import {
+  ApiBody,
   ApiCookieAuth,
   ApiOperation,
   ApiParam,
@@ -49,6 +53,24 @@ export class ClientsController {
   async listClients(@User() user: Identity): Promise<ClientResponseDto[]> {
     const clients = await this.clientsService.getClients(user);
     return clients.map(ClientResponseDto.fromDomain);
+  }
+
+  @Post('invitations')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Invite client by email' })
+  @ApiBody({ type: CreateInvitationDto })
+  @ApiResponse({ status: 201, type: InvitationResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid email' })
+  @ApiResponse({ status: 401, description: 'Not signed in' })
+  async inviteClient(
+    @User() user: Identity,
+    @Body() dto: CreateInvitationDto,
+  ): Promise<InvitationResponseDto> {
+    const invitation = await this.clientsService.createInvitation(
+      user,
+      dto.email,
+    );
+    return InvitationResponseDto.fromDomain(invitation);
   }
 
   @Get('invitations')

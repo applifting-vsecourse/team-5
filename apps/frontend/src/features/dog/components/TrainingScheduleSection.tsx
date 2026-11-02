@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { CalendarDays } from "lucide-react"
+import { CalendarDays, Plus } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { formatDayAccusative, type CalendarDate } from "@/lib/calendarDate"
+import { formatDayLong, type CalendarDate } from "@/lib/calendarDate"
 
 import { goalTrainingsQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 import { useScheduleTraining } from "@/features/dog/hooks/useScheduleTraining"
@@ -14,9 +15,14 @@ import { ScheduleTrainingDialog } from "./ScheduleTrainingDialog"
 type TrainingScheduleSectionProps = {
   goalId: string
   dogName: string
-  // Set when the user came from "Uložit a naplánovat" on a new goal.
   isScheduleRequested?: boolean
   onScheduleRequestHandled?: () => void
+}
+
+const statusLabels = {
+  PLANNED: "Naplánováno",
+  COMPLETED: "Odcvičeno",
+  SKIPPED: "Přeskočeno",
 }
 
 export function TrainingScheduleSection({
@@ -28,20 +34,14 @@ export function TrainingScheduleSection({
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const trainingsQuery = useQuery(goalTrainingsQueryOptions(goalId))
   const schedule = useScheduleTraining(goalId)
-
-  const planned = trainingsQuery.data?.find((training) => training.status === "PLANNED")
-
-  // Coming from "Uložit a naplánovat", the picker opens by itself once we know
-  // the training has no day yet.
-  const isAutoOpen = isScheduleRequested && trainingsQuery.isSuccess && !planned
-  const isOpen = isDialogOpen || isAutoOpen
-
-  // A request for a training that already has a day has nothing to do.
-  useEffect(() => {
-    if (isScheduleRequested && planned) onScheduleRequestHandled?.()
-  }, [isScheduleRequested, planned, onScheduleRequestHandled])
+  const trainings = trainingsQuery.data ?? []
+  const plannedDates = trainings
+    .filter((training) => training.status === "PLANNED")
+    .map((training) => training.date)
+  const isOpen = isDialogOpen || (isScheduleRequested && trainingsQuery.isSuccess)
 
   const handleOpenChange = (isNextOpen: boolean) => {
+    if (schedule.isPending) return
     setIsDialogOpen(isNextOpen)
     if (!isNextOpen && isScheduleRequested) onScheduleRequestHandled?.()
   }
@@ -49,71 +49,97 @@ export function TrainingScheduleSection({
   const handleSchedule = async (date: CalendarDate) => {
     try {
       await schedule.mutateAsync(date)
-      handleOpenChange(false)
+      setIsDialogOpen(false)
+      onScheduleRequestHandled?.()
     } catch {
-      // useScheduleTraining already told the user; keep the dialog open.
+      // The mutation reports the error; keep the selected date for retry.
     }
   }
 
   return (
     <section
-      className="space-y-3"
+      className="space-y-4 border-t border-border pt-8"
       aria-labelledby="training-schedule-heading"
     >
-      <h2
-        id="training-schedule-heading"
-        className="text-xl font-semibold tracking-tight text-foreground"
-      >
-        Kdy cvičit
-      </h2>
-
+      <div className="space-y-2">
+        <h2
+          id="training-schedule-heading"
+          className="text-xl font-semibold tracking-tight text-foreground"
+        >
+          Tréninky k cíli
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Každý trénink je jedno cvičení v konkrétní den. Na stejném cíli můžete pracovat opakovaně,
+          i několik týdnů.
+        </p>
+      </div>
       {trainingsQuery.isLoading ? (
-        <Skeleton className="h-11 w-full rounded-lg" />
+        <Skeleton className="h-16 w-full rounded-lg" />
       ) : trainingsQuery.error ? (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Termín tréninku se nepodařilo načíst.</p>
+          <p className="text-sm text-muted-foreground">Tréninky se nepodařilo načíst.</p>
           <Button
             type="button"
             variant="outline"
-            size="sm"
             className="min-h-11"
             onClick={() => void trainingsQuery.refetch()}
           >
             Zkusit znovu
           </Button>
         </div>
-      ) : planned ? (
-        // Changing the day of a planned training arrives with the move in the week (#74).
-        <p className="flex items-center gap-2 text-base text-foreground">
-          <CalendarDays
-            className="size-5 text-muted-foreground"
-            aria-hidden="true"
-          />
-          Naplánováno na {formatDayAccusative(planned.date)}
-        </p>
       ) : (
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Trénink zatím nemá den. Naplánujte ho, ať se objeví v Týdnu.
-          </p>
+        <>
+          {trainings.length ? (
+            <ul className="divide-y divide-border">
+              {trainings.map((training) => (
+                <li
+                  key={training.id}
+                  className="flex flex-wrap items-center justify-between gap-3 py-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <CalendarDays
+                      className="size-5 shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
+                    <time
+                      dateTime={training.date}
+                      className="text-base font-medium text-foreground"
+                    >
+                      {formatDayLong(training.date)} {training.date.slice(0, 4)}
+                    </time>
+                  </div>
+                  <Badge variant={training.status === "PLANNED" ? "secondary" : "outline"}>
+                    {statusLabels[training.status]}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              K tomuto cíli zatím nejsou naplánované žádné tréninky.
+            </p>
+          )}
           <Button
             type="button"
             variant="outline"
-            className="min-h-11 w-full gap-2"
+            className="min-h-11 w-full gap-2 sm:w-auto"
             onClick={() => setIsDialogOpen(true)}
           >
-            <CalendarDays className="size-4" />
-            Naplánovat
+            <Plus
+              className="size-4"
+              aria-hidden="true"
+            />
+            {trainings.length ? "Přidat další trénink" : "Naplánovat první trénink"}
           </Button>
-        </div>
+        </>
       )}
-
       <ScheduleTrainingDialog
         dogName={dogName}
         isOpen={isOpen}
         onOpenChange={handleOpenChange}
         isPending={schedule.isPending}
         onSchedule={handleSchedule}
+        plannedDates={plannedDates}
       />
     </section>
   )

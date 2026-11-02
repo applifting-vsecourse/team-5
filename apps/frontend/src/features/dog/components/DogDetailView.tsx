@@ -4,13 +4,15 @@ import { ChevronLeft, Pencil } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 import type { Dog } from "@/features/dog/api/dogSchemas"
 
 import { DogActivitiesSection } from "./DogActivitiesSection"
 import { DogGoalsSection } from "./DogGoalsSection"
 import { EditDogDialog } from "./EditDogDialog"
-import { PesAvatar } from "./PesAvatar"
+import { DOG_COLOR_CLASSES, PesAvatar } from "./PesAvatar"
+import { PlannedTrainingsList } from "./PlannedTrainingsList"
 
 type DogDetailViewProps = {
   dog: Dog
@@ -68,6 +70,13 @@ export function DogDetailView({
             <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">
               {dog.name}
             </h1>
+            <span
+              aria-hidden="true"
+              className={cn(
+                "size-3.5 shrink-0 rounded-full ring-2 ring-background",
+                DOG_COLOR_CLASSES[dog.color] ?? "bg-dog-1",
+              )}
+            />
             {isOwner && (
               <Button
                 variant="ghost"
@@ -81,6 +90,7 @@ export function DogDetailView({
             )}
           </div>
           {dog.breed && <p className="truncate text-sm text-muted-foreground">{dog.breed}</p>}
+
           {dog.disciplines && dog.disciplines.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {dog.disciplines.map((discipline) => (
@@ -104,9 +114,14 @@ export function DogDetailView({
         />
       )}
 
-      {/* Sections: Aktivní cíle + Aktivity */}
+      {/* Sections: Aktivní cíle + Naplánováno + Aktivity (latest, the rest
+          on the history page) */}
       <div className="space-y-8">
         <DogGoalsSection
+          dogId={dog.id}
+          dogName={dog.name}
+        />
+        <PlannedTrainingsList
           dogId={dog.id}
           dogName={dog.name}
         />
@@ -116,6 +131,7 @@ export function DogDetailView({
           onActivityClose={onActivityClose}
           dogId={dog.id}
           dogName={dog.name}
+          isCompact
         />
       </div>
     </div>

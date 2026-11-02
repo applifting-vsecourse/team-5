@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Full-bleed background so the icon also works as "maskable"; the mark stays inside the 80 % safe zone. -->
+  <rect width="512" height="512" fill="#c2410c"/>
+  <path d="M152 168h208v52h-78v156h-52V220h-78z" fill="#ffffff"/>
+  <circle cx="356" cy="356" r="26" fill="#ffffff"/>
+</svg>

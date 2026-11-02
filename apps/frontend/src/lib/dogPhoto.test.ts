@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { resolvePhotoUrl, validateDogPhoto } from "./dogPhoto"
+
+afterEach(() => vi.unstubAllEnvs())
 
 describe("dogPhoto", () => {
   describe("validateDogPhoto", () => {
@@ -30,6 +32,22 @@ describe("dogPhoto", () => {
   })
 
   describe("resolvePhotoUrl", () => {
+    it("keeps the API prefix when staging proxies only API requests", () => {
+      vi.stubEnv("VITE_API_URL", "https://trainloop.example/api")
+      expect(resolvePhotoUrl("/uploads/dogs/rex.webp")).toBe(
+        "https://trainloop.example/api/uploads/dogs/rex.webp",
+      )
+      expect(resolvePhotoUrl("/api/uploads/dogs/rex.webp")).toBe(
+        "https://trainloop.example/api/uploads/dogs/rex.webp",
+      )
+    })
+
+    it("uses the separate backend origin and preserves proxy subpaths", () => {
+      vi.stubEnv("VITE_API_URL", "http://127.0.0.1:4051/trainloop/api/")
+      expect(resolvePhotoUrl("/uploads/dogs/rex.webp")).toBe(
+        "http://127.0.0.1:4051/trainloop/api/uploads/dogs/rex.webp",
+      )
+    })
     it("returns null for empty or null photoUrl", () => {
       expect(resolvePhotoUrl(null)).toBeNull()
       expect(resolvePhotoUrl(undefined)).toBeNull()

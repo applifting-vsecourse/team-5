@@ -10,4 +10,5 @@ export const ROUTES = {
   resetPassword: "/reset-password",
   privacy: "/privacy",
   dashboard: "/dashboard",
+  invite: "/invite",
 } as const

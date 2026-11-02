@@ -342,6 +342,23 @@ test('unread replies: authenticated HTTP, per-recipient snapshots, plan edits an
       },
     );
 
+    await t.test('completed scheduled records retain plan badges and message replies link back to Week', async () => {
+      await prisma.workoutLog.update({ where: { id: log.id }, data: { scheduledTrainingId: training.id } });
+      await goals.updateGoal(goal.id, { principle: 'Plán před dokončením' }, { actorId: trainer.id });
+      await prisma.scheduledTraining.update({ where: { id: training.id }, data: { status: 'COMPLETED' } });
+      let pending = await unread(owner);
+      assert.equal(pending.length, 1);
+      assert.equal(pending[0].workoutLog.id, log.id);
+      const snapshot = await json(owner, path);
+      assert.equal(snapshot.planChanged, true);
+      await read(owner, snapshot.unreadReplyIds);
+      assert.equal((await unread(owner)).length, 0);
+      await json(trainer, path + '/messages', { text: 'Odpověď k dokončenému tréninku' });
+      pending = await unread(owner);
+      assert.equal(pending[0].scheduledTraining.id, training.id);
+      await read(owner, (await json(owner, path)).unreadReplyIds);
+    });
+
     await t.test(
       'newly revoked access immediately hides old replies and rejects reading or sending',
       async () => {

@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router"
-import { UserRound } from "lucide-react"
+import { LogOut, UserRound } from "lucide-react"
+import { toast } from "sonner"
 
 import { ROUTES } from "@/app/routes"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -14,9 +15,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 import { useSession } from "@/features/auth/hooks/useSession"
+import { useSignOut } from "@/features/auth/hooks/useSignOut"
 
-export function HeaderMenu() {
+export function HeaderMenu({ isNavigation = false }: { isNavigation?: boolean }) {
   const { user } = useSession()
+  const signOut = useSignOut()
 
   if (!user) {
     return (
@@ -43,17 +46,29 @@ export function HeaderMenu() {
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Uživatelské menu"
-          className="rounded-full"
+          aria-label={isNavigation ? "Účet a odhlášení" : "Uživatelské menu"}
+          className={
+            isNavigation
+              ? "min-h-11 w-full flex-col gap-1 py-1 text-xs text-muted-foreground"
+              : "size-11 rounded-full"
+          }
         >
-          <Avatar className="size-8">
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
+          {isNavigation ? (
+            <>
+              <UserRound className="size-5" />
+              <span>Účet</span>
+            </>
+          ) : (
+            <Avatar className="size-8">
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-48"
+        side={isNavigation ? "top" : "bottom"}
+        className="w-64"
       >
         <DropdownMenuLabel>
           <div className="flex flex-col">
@@ -61,10 +76,20 @@ export function HeaderMenu() {
             <span className="mt-1 text-xs text-muted-foreground">
               {user.username ? `@${user.username}` : user.email}
             </span>
+            <span className="mt-2 text-sm text-muted-foreground">
+              {user.role === "trainer"
+                ? "Trenér"
+                : user.role === "admin"
+                  ? "Administrátor"
+                  : "Psovod"}
+            </span>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
+        <DropdownMenuItem
+          asChild
+          className="min-h-11"
+        >
           <Link to={ROUTES.account}>
             <UserRound
               aria-hidden="true"
@@ -72,6 +97,23 @@ export function HeaderMenu() {
             />
             Účet
           </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="min-h-11"
+          disabled={signOut.isPending}
+          onSelect={(event) => {
+            event.preventDefault()
+            signOut.mutate(undefined, {
+              onError: () => toast.error("Odhlášení se nezdařilo. Zkuste to prosím znovu."),
+            })
+          }}
+        >
+          <LogOut
+            aria-hidden="true"
+            className="size-4"
+          />
+          {signOut.isPending ? "Odhlašuji…" : "Odhlásit se"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

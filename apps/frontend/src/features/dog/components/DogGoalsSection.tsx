@@ -44,6 +44,9 @@ export function DogGoalsSection({ dogId, dogName }: DogGoalsSectionProps) {
         </Button>
       </div>
 
+      <p className="text-sm text-muted-foreground">
+        Čeho chcete dosáhnout. Každý cíl má vlastní princip, cviky a více tréninků v kalendáři.
+      </p>
       {goalsQuery.isLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-16 w-full rounded-lg" />
