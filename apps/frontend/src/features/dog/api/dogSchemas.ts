@@ -178,3 +178,25 @@ export const dogActivityPageSchema = z.object({
 })
 
 export type DogActivity = z.infer<typeof dogActivitySchema>
+
+// Private lesson / seminar notes (#70). Only the dog owner sees them.
+export const dogNoteSchema = z.object({
+  id: z.string(),
+  dogId: z.string(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  title: z.string().min(1),
+  text: z.string().min(1),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+})
+
+export const dogNotesSchema = z.array(dogNoteSchema)
+
+export const dogNoteFormSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Zadejte datum ve formátu RRRR-MM-DD"),
+  title: z.string().trim().min(1, "Název je povinný").max(100, "Název může mít nejvýš 100 znaků"),
+  text: z.string().trim().min(1, "Text je povinný").max(2000, "Text může mít nejvýš 2000 znaků"),
+})
+
+export type DogNote = z.infer<typeof dogNoteSchema>
+export type DogNoteFormValues = z.infer<typeof dogNoteFormSchema>

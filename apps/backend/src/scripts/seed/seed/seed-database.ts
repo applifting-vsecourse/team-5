@@ -258,6 +258,32 @@ export const seedDogData = async (
     });
   }
 
+  // 3b. Seed private lesson notes for Rex (#70) — owner-only diary.
+  const existingNotesCount = await prisma.dogNote.count({
+    where: { dogId: rex.id },
+  });
+  if (existingNotesCount === 0) {
+    console.log('Creating initial private notes for Rex');
+    await prisma.dogNote.createMany({
+      data: [
+        {
+          id: 'note-1',
+          dogId: rex.id,
+          date: new Date('2026-10-18T00:00:00.000Z'),
+          title: 'Seminář poslušnosti',
+          text: 'Více odměňovat u levé nohy. Kratší úseky, pak postupně prodlužovat.',
+        },
+        {
+          id: 'note-2',
+          dogId: rex.id,
+          date: new Date('2026-10-05T00:00:00.000Z'),
+          title: 'Lekce canicross',
+          text: 'Start na povel: nejdřív klid u nohy, teprve potom tah. Neotáčet se na psa.',
+        },
+      ],
+    });
+  }
+
   // 4. Seed PlanBlocks (exercises / tasks) for Rex's goals
   const rexGoalBlocks = [
     // Goal 1: Spolehlivá chůze u nohy

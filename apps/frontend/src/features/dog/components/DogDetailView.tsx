@@ -10,6 +10,7 @@ import type { Dog } from "@/features/dog/api/dogSchemas"
 
 import { DogActivitiesSection } from "./DogActivitiesSection"
 import { DogGoalsSection } from "./DogGoalsSection"
+import { DogNotesSection } from "./DogNotesSection"
 import { EditDogDialog } from "./EditDogDialog"
 import { DOG_COLOR_CLASSES, PesAvatar } from "./PesAvatar"
 import { PlannedTrainingsList } from "./PlannedTrainingsList"
@@ -107,8 +108,7 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
         />
       )}
 
-      {/* Sections: Aktivní cíle + Naplánováno + Aktivity (latest, the rest
-          on the history page) */}
+      {/* Sections: cíle, naplánováno, aktivity; notes only for the owner (#70) */}
       <div className="space-y-8">
         <DogGoalsSection
           dogId={dog.id}
@@ -123,6 +123,12 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
           dogName={dog.name}
           isCompact
         />
+        {isOwner ? (
+          <DogNotesSection
+            dogId={dog.id}
+            dogName={dog.name}
+          />
+        ) : null}
       </div>
     </div>
   )

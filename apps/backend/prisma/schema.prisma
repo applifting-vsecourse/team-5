@@ -298,15 +298,18 @@ model Invitation {
 }
 
 // Private diary notes belong to the dog, so deleting its owner removes them.
+// Only the owner reads and writes them (#70); trainers never see them.
 model DogNote {
   id        String   @id @default(cuid())
   dogId     String
   dog       Dog      @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  title     String   @db.VarChar(100)
   text      String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  @@index([dogId])
+  @@index([dogId, date(sort: Desc)])
   @@map("dog_note")
 }
 
