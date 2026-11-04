@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
 
 import { Seo } from "@/components/Seo"
@@ -7,7 +8,13 @@ import {
   todayCalendarDate,
   type CalendarDate,
 } from "@/lib/calendarDate"
+import type { UnreadReply } from "@/lib/trainingReplies"
 
+import {
+  TrainingPlanReplyDialog,
+  TrainingRecordDialog,
+} from "@/features/dog/components/TrainingRecordDialog"
+import { UnreadReplies } from "@/features/dog/components/UnreadReplies"
 import { WeekView } from "@/features/week/components/WeekView"
 
 type WeekSearch = {
@@ -26,6 +33,7 @@ export const Route = createFileRoute("/_ProtectedPages/week")({
 })
 
 function WeekPage() {
+  const [selectedReply, setSelectedReply] = useState<UnreadReply | null>(null)
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const today = todayCalendarDate()
@@ -47,10 +55,26 @@ function WeekPage() {
         {/* Remount per week, so the selected day starts again from today or Monday. */}
         <WeekView
           key={weekStart}
+          replies={<UnreadReplies />}
+          onReplyOpen={setSelectedReply}
           weekStart={weekStart}
           today={today}
           onWeekChange={showWeek}
         />
+        {selectedReply?.workoutLog && (
+          <TrainingRecordDialog
+            dogId={selectedReply.workoutLog.dog.id}
+            dogName={selectedReply.workoutLog.dog.name}
+            activityId={selectedReply.workoutLog.id}
+            onClose={() => setSelectedReply(null)}
+          />
+        )}
+        {selectedReply && !selectedReply.workoutLog && selectedReply.scheduledTraining && (
+          <TrainingPlanReplyDialog
+            trainingId={selectedReply.scheduledTraining.id}
+            onClose={() => setSelectedReply(null)}
+          />
+        )}
       </div>
     </>
   )

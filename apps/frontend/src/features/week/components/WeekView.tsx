@@ -26,6 +26,7 @@ import {
   type CalendarDate,
 } from "@/lib/calendarDate"
 import { dogColorClass } from "@/lib/dogColors"
+import { unreadRepliesQueryOptions, type UnreadReply } from "@/lib/trainingReplies"
 import { cn } from "@/lib/utils"
 
 import { weekTrainingsQueryOptions, type WeekTraining } from "@/features/week/api/weekQueryOptions"
@@ -69,11 +70,13 @@ function UndoSkipButton({ training, heading }: { training: WeekTraining; heading
 }
 
 type WeekTrainingCardProps = {
+  reply?: UnreadReply
+  onReplyOpen?: (reply: UnreadReply) => void
   training: WeekTraining
   today: CalendarDate
 }
 
-function WeekTrainingCard({ training, today }: WeekTrainingCardProps) {
+function WeekTrainingCard({ training, today, reply, onReplyOpen }: WeekTrainingCardProps) {
   const [isMoveOpen, setIsMoveOpen] = useState(false)
   const [isSkipOpen, setIsSkipOpen] = useState(false)
   const titles = training.exercises.map((exercise) => exercise.title)
@@ -121,6 +124,16 @@ function WeekTrainingCard({ training, today }: WeekTrainingCardProps) {
           ? "Plán zatím nemá žádný cvik."
           : `${exerciseCount(titles.length)} · ${titles.join(", ")}`}
       </p>
+      {reply && (
+        <Button
+          variant="ghost"
+          className="relative mt-2 min-h-12"
+          onClick={() => onReplyOpen?.(reply)}
+          aria-label={`Otevřít odpověď u tréninku ${training.goal.title}`}
+        >
+          <Badge variant="secondary">nová odpověď</Badge>
+        </Button>
+      )}
       {isPlanned ? (
         <>
           <div className="relative mt-3 flex gap-2">
@@ -172,12 +185,14 @@ function WeekTrainingCard({ training, today }: WeekTrainingCardProps) {
 }
 
 type WeekViewProps = {
+  replies?: React.ReactNode
+  onReplyOpen?: (reply: UnreadReply) => void
   weekStart: CalendarDate
   today: CalendarDate
   onWeekChange: (weekStart: CalendarDate) => void
 }
 
-export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
+export function WeekView({ weekStart, today, onWeekChange, replies, onReplyOpen }: WeekViewProps) {
   const days = daysOfWeek(weekStart)
   // Today when it is in the shown week, otherwise its Monday.
   const [selectedDay, setSelectedDay] = useState<CalendarDate>(
@@ -185,6 +200,7 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
   )
   const [isWeekPickerOpen, setIsWeekPickerOpen] = useState(false)
   const weekQuery = useQuery(weekTrainingsQueryOptions(weekStart))
+  const unread = useQuery(unreadRepliesQueryOptions())
 
   const trainings = weekQuery.data ?? []
   const trainingsOf = (day: CalendarDate) => trainings.filter((training) => training.date === day)
@@ -257,6 +273,7 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
           </div>
         )}
       </header>
+      {replies}
 
       <ToggleGroup
         type="single"
@@ -369,6 +386,8 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
               <WeekTrainingCard
                 key={training.id}
                 training={training}
+                reply={unread.data?.find((reply) => reply.scheduledTraining?.id === training.id)}
+                onReplyOpen={onReplyOpen}
                 today={today}
               />
             ))}

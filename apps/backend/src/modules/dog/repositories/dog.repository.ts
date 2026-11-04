@@ -1,7 +1,13 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
-import { Dog as PrismaDog } from '@/generated/prisma/client';
+import { Prisma, Dog as PrismaDog } from '@/generated/prisma/client';
 import { Dog } from '@/modules/dog/domain/dog';
 import { Injectable } from '@nestjs/common';
+
+// Shared by record/reply queries so all dog resources use the same access rule.
+export const accessibleDogWhere = (userId: string): Prisma.DogWhereInput => ({
+  isArchived: false,
+  OR: [{ ownerId: userId }, { shares: { some: { trainerId: userId } } }],
+});
 
 const mapPrismaDogToDomain = (dog: PrismaDog): Dog => ({
   id: dog.id,
@@ -46,8 +52,7 @@ export class DogRepository {
     const dog = await this.prisma.dog.findFirst({
       where: {
         id,
-        isArchived: false,
-        OR: [{ ownerId: userId }, { shares: { some: { trainerId: userId } } }],
+        ...accessibleDogWhere(userId),
       },
     });
     return dog ? mapPrismaDogToDomain(dog) : null;

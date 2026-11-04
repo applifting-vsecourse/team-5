@@ -216,15 +216,21 @@ function SortablePlanBlockItem(
   )
 }
 
-export function PlanBlocksSection({ goalId }: { goalId: string }) {
+export function PlanBlocksSection({
+  goalId,
+  replyToActivityId,
+}: {
+  goalId: string
+  replyToActivityId?: string
+}) {
   const [dialogMode, setDialogMode] = useState<ExerciseDialogMode | null>(null)
   const [blockToDelete, setBlockToDelete] = useState<PlanBlock | null>(null)
 
   const blocksQuery = useQuery(goalBlocksQueryOptions(goalId))
-  const createBlock = useCreatePlanBlock(goalId)
-  const updateBlock = useUpdatePlanBlock(goalId)
-  const deleteBlock = useDeletePlanBlock(goalId)
-  const reorderBlocks = useReorderPlanBlocks(goalId)
+  const createBlock = useCreatePlanBlock(goalId, replyToActivityId)
+  const updateBlock = useUpdatePlanBlock(goalId, replyToActivityId)
+  const deleteBlock = useDeletePlanBlock(goalId, replyToActivityId)
+  const reorderBlocks = useReorderPlanBlocks(goalId, replyToActivityId)
 
   const blocks = blocksQuery.data ?? []
 

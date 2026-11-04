@@ -54,34 +54,48 @@ export class PlanBlocksService {
   async createBlock(
     user: Identity,
     goalId: string,
-    data: CreatePlanBlockData,
+    data: CreatePlanBlockData & { replyToActivityId?: string },
   ): Promise<PlanBlock> {
     await this.goalsService.getGoal(user, goalId);
-    return this.planBlockRepository.createBlock({
-      goalId,
-      title: data.title.trim(),
-      instruction: optionalText(data.instruction) ?? null,
-      criterion: optionalText(data.criterion) ?? null,
-      insertAt: data.insertAt,
-    });
+    return this.planBlockRepository.createBlock(
+      {
+        goalId,
+        title: data.title.trim(),
+        instruction: optionalText(data.instruction) ?? null,
+        criterion: optionalText(data.criterion) ?? null,
+        insertAt: data.insertAt,
+      },
+      { actorId: user.id, replyToActivityId: data.replyToActivityId },
+    );
   }
 
   async updateBlock(
     user: Identity,
     blockId: string,
-    data: UpdatePlanBlockData,
+    data: UpdatePlanBlockData & { replyToActivityId?: string },
   ): Promise<PlanBlock> {
     await this.getAccessibleBlock(user, blockId);
-    return this.planBlockRepository.updateBlock(blockId, {
-      title: data.title?.trim(),
-      instruction: optionalText(data.instruction),
-      criterion: optionalText(data.criterion),
-    });
+    return this.planBlockRepository.updateBlock(
+      blockId,
+      {
+        title: data.title?.trim(),
+        instruction: optionalText(data.instruction),
+        criterion: optionalText(data.criterion),
+      },
+      { actorId: user.id, replyToActivityId: data.replyToActivityId },
+    );
   }
 
-  async deleteBlock(user: Identity, blockId: string): Promise<void> {
+  async deleteBlock(
+    user: Identity,
+    blockId: string,
+    replyToActivityId?: string,
+  ): Promise<void> {
     const block = await this.getAccessibleBlock(user, blockId);
-    await this.planBlockRepository.deleteBlock(blockId, block.goalId);
+    await this.planBlockRepository.deleteBlock(blockId, block.goalId, {
+      actorId: user.id,
+      replyToActivityId,
+    });
   }
 
   // The new order must list every block of the plan exactly once, so a stale
@@ -90,6 +104,7 @@ export class PlanBlocksService {
     user: Identity,
     goalId: string,
     blockIds: string[],
+    replyToActivityId?: string,
   ): Promise<PlanBlock[]> {
     await this.goalsService.getGoal(user, goalId);
     const current = await this.planBlockRepository.getBlocksByGoalId(goalId);
@@ -103,6 +118,9 @@ export class PlanBlocksService {
         'The new order must contain every block of the plan exactly once',
       );
     }
-    return this.planBlockRepository.reorderBlocks(goalId, blockIds);
+    return this.planBlockRepository.reorderBlocks(goalId, blockIds, {
+      actorId: user.id,
+      replyToActivityId,
+    });
   }
 }

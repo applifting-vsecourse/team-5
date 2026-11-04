@@ -10,6 +10,8 @@ import { weekKeys, type WeekTraining } from "@/features/week/api/weekQueryOption
 
 import { WeekView } from "./WeekView"
 
+vi.mock("@/lib/api-client", () => ({ api: { get: () => ({ json: () => Promise.resolve([]) }) } }))
+
 vi.mock("@/features/week/api/moveTraining", () => ({ moveTraining: vi.fn() }))
 vi.mock("@/features/week/api/skipTraining", () => ({ skipTraining: vi.fn(), undoSkip: vi.fn() }))
 

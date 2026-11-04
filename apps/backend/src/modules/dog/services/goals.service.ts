@@ -101,24 +101,28 @@ export class GoalsService {
   async updateGoal(
     user: Identity,
     goalId: string,
-    data: UpdateGoalData,
+    data: UpdateGoalData & { replyToActivityId?: string },
   ): Promise<Goal> {
     const { goal, dog } = await this.getAccessibleGoal(user, goalId);
 
-    return this.goalRepository.updateGoal(goalId, {
-      title: data.title?.trim(),
-      discipline: this.normalizeDiscipline(
-        dog,
-        data.discipline,
-        goal.discipline,
-      ),
-      principle:
-        data.principle !== undefined
-          ? data.principle.trim() || null
-          : undefined,
-      status: data.status,
-      order: data.order,
-    });
+    return this.goalRepository.updateGoal(
+      goalId,
+      {
+        title: data.title?.trim(),
+        discipline: this.normalizeDiscipline(
+          dog,
+          data.discipline,
+          goal.discipline,
+        ),
+        principle:
+          data.principle !== undefined
+            ? data.principle.trim() || null
+            : undefined,
+        status: data.status,
+        order: data.order,
+      },
+      { actorId: user.id, replyToActivityId: data.replyToActivityId },
+    );
   }
 
   async deleteGoal(user: Identity, goalId: string): Promise<Goal> {

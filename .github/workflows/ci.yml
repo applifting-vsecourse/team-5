@@ -72,6 +72,7 @@ jobs:
         run: |
           pnpm backend migrate
           pnpm backend test:auth:postgres
+          pnpm backend test:replies:postgres
 
       - name: Build frontend
         run: pnpm frontend build

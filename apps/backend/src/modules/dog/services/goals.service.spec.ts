@@ -196,13 +196,17 @@ describe('GoalsService', () => {
         discipline: 'Canicross',
       });
 
-      expect(goalRepository.updateGoal).toHaveBeenCalledWith('g1', {
-        title: 'Start na povel',
-        discipline: 'Canicross',
-        principle: undefined,
-        status: undefined,
-        order: undefined,
-      });
+      expect(goalRepository.updateGoal).toHaveBeenCalledWith(
+        'g1',
+        {
+          title: 'Start na povel',
+          discipline: 'Canicross',
+          principle: undefined,
+          status: undefined,
+          order: undefined,
+        },
+        { actorId: 'u1', replyToActivityId: undefined },
+      );
     });
 
     it("rejects a discipline the dog doesn't do", async () => {
@@ -233,6 +237,7 @@ describe('GoalsService', () => {
       expect(goalRepository.updateGoal).toHaveBeenCalledWith(
         'g1',
         expect.objectContaining({ discipline: 'Poslušnost' }),
+        { actorId: 'u1', replyToActivityId: undefined },
       );
     });
 

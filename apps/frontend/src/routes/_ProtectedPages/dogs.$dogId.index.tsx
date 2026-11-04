@@ -12,11 +12,17 @@ import { dogDetailQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 import { DogDetailView } from "@/features/dog/components/DogDetailView"
 
 export const Route = createFileRoute("/_ProtectedPages/dogs/$dogId/")({
+  validateSearch: (search: Record<string, unknown>): { activityId?: string } =>
+    typeof search.activityId === "string" && search.activityId.length <= 255
+      ? { activityId: search.activityId }
+      : {},
   component: DogDetailPage,
 })
 
 function DogDetailPage() {
   const { dogId } = Route.useParams()
+  const { activityId } = Route.useSearch()
+  const navigate = Route.useNavigate()
   const dogQuery = useQuery(dogDetailQueryOptions(dogId))
   const { user } = useSession()
 
@@ -75,6 +81,8 @@ function DogDetailPage() {
       <DogDetailView
         dog={dog}
         isOwner={isOwner}
+        openActivityId={activityId}
+        onActivityClose={() => void navigate({ search: {}, replace: true })}
       />
     </>
   )

@@ -9,7 +9,11 @@ export async function createGoal(dogId: string, values: GoalFormValues): Promise
   return dogGoalSchema.parse(json)
 }
 
-export async function updateGoal(goalId: string, values: GoalFormValues): Promise<DogGoal> {
-  const json = await api.patch(`goals/${goalId}`, { json: values }).json()
+export async function updateGoal(
+  goalId: string,
+  values: GoalFormValues,
+  replyToActivityId?: string,
+): Promise<DogGoal> {
+  const json = await api.patch(`goals/${goalId}`, { json: { ...values, replyToActivityId } }).json()
   return dogGoalSchema.parse(json)
 }
