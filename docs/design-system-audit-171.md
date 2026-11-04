@@ -58,3 +58,16 @@ mode regardless of stored theme or OS preference. Header and account appearance
 controls are hidden; toast notifications follow the forced theme too. Existing
 preferences are not deleted. Dark tokens and both-theme contrast checks remain
 as foundations for later reactivation. The dark hero in the light design remains.
+
+## Token provenance and retained compatibility
+
+| Category                        | Tokens and intended use                                                                                                                                                                                                                                                      |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Confirmed in the new design     | Light background, foreground, card, primary, accent, secondary, muted text and dog-1…6 match the foundations. Hero colours, card/hero/action radii and control dimensions come from the inspected Today/profile/desktop frames.                                              |
+| Semantic adaptations            | `dog-foreground` provides opaque readable text. `hero-accent` replaces translucent inset fills with a reusable solid surface. Success follows completion chips; warning/info pairs extend system feedback and are implementation choices, not a claim of exact Figma values. |
+| Existing kit semantics retained | Popover, input, border, ring, destructive and the foreground pairs support existing controls. They remain useful but are not all individually specified by the foundation swatches.                                                                                          |
+| Compatibility only              | `font-serif`, Geist fallbacks, mono, compact radius aliases and the shadow scale remain for existing components. New headings use Plus Jakarta Sans; shadows are restricted to floating surfaces. Their retention does not introduce an additional visual direction.         |
+| Deferred                        | Dark palette, including adapted status pairs, stays available for later reactivation. It is currently inaccessible through application appearance controls.                                                                                                                  |
+
+Do not treat every retained token as a required feature of the new design. Remove
+compatibility tokens only after their existing call sites have been migrated.
