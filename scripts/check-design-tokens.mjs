@@ -58,12 +58,19 @@ for (const [mode, palette] of Object.entries({ light, dark })) {
     'warning',
     'info',
     'hero',
+    'danger',
   ]) {
-    pairs.push([`${surface}-foreground`, surface, 4.5]);
+    pairs.push([
+      `${surface}-foreground`,
+      surface === 'danger' ? 'danger-surface' : surface,
+      4.5,
+    ]);
   }
   pairs.push(
     ['hero-muted', 'hero', 4.5],
     ['hero-foreground', 'hero-accent', 4.5],
+    ['hero-muted', 'hero-accent', 4.5],
+    ['hero-positive', 'hero', 4.5],
   );
   for (let index = 1; index <= 6; index++)
     pairs.push(['dog-foreground', `dog-${index}`, 4.5]);
@@ -86,3 +93,20 @@ for (const [mode, palette] of Object.entries({ light, dark })) {
     `${mode}: ${results.length} pairs pass; minimum text ${text.ratio.toFixed(2)} (${text.fg}/${text.bg}), focus ${focus.ratio.toFixed(2)} (${focus.bg})`,
   );
 }
+
+// The mockup's small visual labels must not shrink actual hit targets.
+for (const [name, minimum] of [
+  ['control-min', 44],
+  ['control-field', 44],
+  ['control-action', 56],
+]) {
+  const match = css.match(new RegExp(`--${name}:\\s*([\\d.]+)rem;`));
+  assert.ok(match, `Missing rem dimension: ${name}`);
+  assert.ok(
+    Number(match[1]) * 16 >= minimum,
+    `${name} must be at least ${minimum}px`,
+  );
+}
+console.log(
+  'Control dimensions pass: touch >=44px, field >=44px, action >=56px',
+);

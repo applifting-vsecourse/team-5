@@ -71,7 +71,8 @@ success, failure or actions.
 
 Use `font-sans` (Plus Jakarta Sans with the existing fallback stack) for headings,
 names, controls and body. The approved design does not introduce a serif diary
-style. Keep `font-serif` only for compatibility; use `font-mono` for codes.
+style. No application code uses a serif token; the old override and unused Geist
+Sans import have been removed. Use `font-mono` only for codes.
 
 One h1 per page, sequential heading levels. Page titles use text-2xl/text-3xl,
 font-extrabold and tracking-tight; sections use text-lg/text-xl and font-bold.
@@ -79,7 +80,7 @@ Body is text-base, support text-sm, short labels text-xs. Use relaxed body leadi
 and tight headings. Sentence case, except short uppercase chips shown in Figma.
 
 Use Tailwind spacing units 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 12, 16. This
-includes the 20px mobile and 28px desktop gutters in Figma. Related items use
+includes the mobile and desktop gutters in Figma. Related items use
 gap-2/gap-3, separate blocks gap-6/gap-8. No arbitrary pixel values in feature UI.
 Control dimensions use the semantic `touch` and `action` tokens.
 
@@ -147,3 +148,50 @@ Respect reduced motion for optional transitions and celebrations.
 Every list has loading, empty and error states. Empty states explain what will
 appear and offer a relevant action. Errors offer retry. Refresh normal data via
 query invalidation and refetch on focus, not a manual reload action.
+
+## Foundation recipes for the complete redesign
+
+These recipes are the starting point for #172 and every screen ticket. Values
+come from `global.css`; use these semantic utilities instead of adding per-screen
+colour, radius, typography or control-size constants.
+
+| Pattern / inspected reference                   | Foundation recipe                                                                                                                                                           |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Page title / Today and Week                     | `text-page font-extrabold tracking-tight text-foreground`                                                                                                                   |
+| Dog name / training step                        | `text-title font-extrabold tracking-tight`; dog headers use `text-dog-foreground`                                                                                           |
+| Section heading                                 | `text-section font-extrabold`                                                                                                                                               |
+| Main action label / timer                       | `text-action font-bold`; timer `text-timer font-extrabold tabular-nums`                                                                                                     |
+| Compact supporting label                        | `text-label text-muted-foreground`; keep full opacity                                                                                                                       |
+| Primary action                                  | `bg-primary text-primary-foreground min-h-action rounded-control`, with visible focus and pending state                                                                     |
+| Input / sign-in and training forms              | `min-h-field rounded-field border-input bg-card text-card-foreground`; visible label and associated error                                                                   |
+| Calendar training row / client row              | `rounded-item border-border bg-card text-card-foreground`; dog-colour identity strip and labelled status                                                                    |
+| Goal / metric / dog content section             | `rounded-card border-border bg-card text-card-foreground`                                                                                                                   |
+| Hero / selected day / selected segmented option | `bg-hero text-hero-foreground`; only the summary uses `rounded-hero`; support uses `text-hero-muted`                                                                        |
+| Positive delta inside hero                      | `text-hero-positive` with a trend label; neutral cards use `text-success-foreground`                                                                                        |
+| Error panel / destructive confirmation          | `bg-danger-surface text-danger-foreground` for the error icon/status; destructive action uses `bg-destructive text-destructive-foreground`                                  |
+| Modal overlay / bottom sheet                    | `bg-overlay`; sheet `rounded-t-sheet bg-background`, desktop dialog `rounded-sheet`; retain Radix focus management and escape/close controls                                |
+| Desktop sidebar                                 | `w-sidebar bg-sidebar text-sidebar-foreground`; supporting labels `text-sidebar-muted`, quiet hover `bg-sidebar-accent`, active action `bg-primary text-primary-foreground` |
+| Editor library / contextual dog panel           | `w-context shrink-0` only at wide widths; stack below lg                                                                                                                    |
+| Mobile content / desktop workspace              | `px-gutter lg:px-gutter-desktop`; `min-w-0` on grid/flex content                                                                                                            |
+| Bottom navigation and fixed actions             | `min-h-tab-bar pb-safe-bottom`; content reserves that height plus safe area and spacing; walkthrough actions replace the tab bar                                            |
+| Progress tracks / loading skeletons             | `bg-chart-track` for track, `bg-muted` skeleton; progress fill uses primary or dog colour according to the data meaning                                                     |
+
+`rounded-full` is reserved for pills and circular avatars, not page cards. Compact
+chips are visual labels; when clickable, their wrapper still supplies a full
+`touch` target. Fields use `field` (52px); touch controls use `touch` (44px); main
+actions use `action` (56px). The 36px mockup row buttons are enlarged to the touch
+minimum rather than copied literally.
+
+The client activity heatmap has a different meaning from dog identity. Use
+`bg-performance-low` for <50%, `bg-performance-medium` for 50?<65%,
+`bg-performance-high` for 65?<80%, `bg-performance-top` for >=80%, and
+`bg-performance-empty` for no training. Keep a labelled legend and numeric values;
+no-training is not zero success. Intermediate colours reproduce Figma blends on
+white cards and are chart marks only, not text or reusable status colours. Dog
+trend charts instead retain the dog's stored colour. Never hardcode these band
+colours or thresholds independently in multiple feature components.
+
+The desktop sidebar remains dark within the light app; this is a scoped surface,
+not a reactivation of dark mode. Text and neutral controls inside hero/sidebar
+surfaces must use their matching tokens. Do not put muted-foreground on a dark
+surface. Dialogs are portalled to neutral surfaces and use the normal ring token.

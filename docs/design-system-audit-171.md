@@ -27,7 +27,7 @@ needed for tokens or the contract.
 
 Run `node scripts/check-design-tokens.mjs`. It reads the actual CSS declarations,
 merges inherited dark tokens and computes WCAG sRGB contrast without rounding
-before assertions. It checks 36 pairs per theme: neutral body/supporting text,
+before assertions. It checks 39 pairs per theme: neutral body/supporting text,
 surface foregrounds, dog labels, hero text/chips, and focus on neutral surfaces.
 
 | Theme | Lowest text contrast               | Lowest neutral focus contrast  |
@@ -61,13 +61,40 @@ as foundations for later reactivation. The dark hero in the light design remains
 
 ## Token provenance and retained compatibility
 
-| Category                        | Tokens and intended use                                                                                                                                                                                                                                                      |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Confirmed in the new design     | Light background, foreground, card, primary, accent, secondary, muted text and dog-1…6 match the foundations. Hero colours, card/hero/action radii and control dimensions come from the inspected Today/profile/desktop frames.                                              |
-| Semantic adaptations            | `dog-foreground` provides opaque readable text. `hero-accent` replaces translucent inset fills with a reusable solid surface. Success follows completion chips; warning/info pairs extend system feedback and are implementation choices, not a claim of exact Figma values. |
-| Existing kit semantics retained | Popover, input, border, ring, destructive and the foreground pairs support existing controls. They remain useful but are not all individually specified by the foundation swatches.                                                                                          |
-| Compatibility only              | `font-serif`, Geist fallbacks, mono, compact radius aliases and the shadow scale remain for existing components. New headings use Plus Jakarta Sans; shadows are restricted to floating surfaces. Their retention does not introduce an additional visual direction.         |
-| Deferred                        | Dark palette, including adapted status pairs, stays available for later reactivation. It is currently inaccessible through application appearance controls.                                                                                                                  |
+| Category                        | Tokens and intended use                                                                                                                                                                                                                                                                             |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Confirmed in the new design     | Light background, foreground, card, primary, accent, secondary, muted text and dog-1…6 match the foundations. Hero colours, card/hero/action radii and control dimensions come from the inspected Today/profile/desktop frames.                                                                     |
+| Semantic adaptations            | `dog-foreground` provides opaque readable text. `hero-accent` replaces translucent inset fills with a reusable solid surface. Success follows completion chips; warning/info pairs extend system feedback and are implementation choices, not a claim of exact Figma values.                        |
+| Existing kit semantics retained | Popover, input, border, ring, destructive and the foreground pairs support existing controls. They remain useful but are not all individually specified by the foundation swatches.                                                                                                                 |
+| Compatibility only              | Mono, compact radius aliases and the shadow scale remain for existing components. The unused serif override and Geist Sans import were removed. New headings use Plus Jakarta Sans; shadows are restricted to floating surfaces. Their retention does not introduce an additional visual direction. |
+| Deferred                        | Dark palette, including adapted status pairs, stays available for later reactivation. It is currently inaccessible through application appearance controls.                                                                                                                                         |
 
 Do not treat every retained token as a required feature of the new design. Remove
 compatibility tokens only after their existing call sites have been migrated.
+
+## Complete redesign foundation coverage
+
+Additional high-fidelity Figma contexts were inspected for Week (114:999),
+walkthrough (117:851), training record (117:927), trainer overview (122:1221),
+desktop editor (132:1665), sign-in (141:1507), loading/error (222:753) and
+irreversible confirmation (221:753). Together with Today, profile and the desktop
+overview these cover the recurring foundations across the planned screen families.
+
+The implementation now also supplies error surfaces, overlay, sidebar aliases,
+positive hero text, heatmap bands, progress tracks, field/item/sheet radii,
+semantic typography, field height, gutters, sidebar/context widths, bottom-bar
+height and safe-area spacing. DESIGN.md maps each recurring pattern to concrete
+utilities, so screen work can compose the new design without inventing values.
+
+Heatmap intermediate fills are flattened from the desktop overview's translucent
+marks on the white card; they do not carry readable text. Status labels and values
+remain separate. This distinction preserves the meaning of dog identity colours.
+
+`pnpm design:check` now verifies 78 contrast pairs and minimum control dimensions.
+The dedicated CI step runs it even though CI invokes workspace checks separately
+rather than calling the root `check-all` script. The app remains light-only.
+
+Foundation coverage does not replace the shared component implementation in #172
+or the screen implementation/acceptance checks in #161?164 and #173?175. The
+recipes define their common inputs; accessible behaviour and data remain part of
+those tickets.

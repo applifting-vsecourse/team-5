@@ -53,6 +53,9 @@ jobs:
       - name: Type-check frontend
         run: pnpm frontend type-check
 
+      - name: Check design token contrast
+        run: pnpm design:check
+
       - name: Test backend
         run: pnpm backend test
 
