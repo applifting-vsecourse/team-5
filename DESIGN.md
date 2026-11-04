@@ -1,4 +1,4 @@
-﻿# TrainLoop design contract
+# TrainLoop design contract
 
 Read before changing UI. The product owner approved the new direction in the
 implementation conversation on 4 November 2026. The Figma annotation
@@ -13,8 +13,11 @@ implementation conversation on 4 November 2026. The Figma annotation
 - [Additional screens, series 08](https://www.figma.com/design/IjEnmXXeJB8YBOWPjWiFu3/Trainloop-wireframe?node-id=235-749)
 
 Series 05 experiments, including its dark Today mockup, are outside this redesign.
-Keep the existing light/dark/system preference. Dark tokens are the accessible
-counterpart of the approved light design, not a separate experimental UI.
+Dark mode is temporarily deferred by the product owner (4 November 2026). The
+application currently forces light mode, including users with a saved dark/system
+preference; appearance controls are hidden in both the header and account. Keep
+the dark tokens and their contrast checks for later reactivation. The dark hero
+surface remains part of the light design and is not dark mode.
 
 `apps/frontend/src/styles/global.css` is the only source of token values. This
 contract defines their meaning. Translate Figma intent into these tokens; do not
@@ -138,7 +141,7 @@ keep it visible through sticky headers, dialogs and bottom controls. Text contra
 is at least 4.5:1, focus indicators at least 3:1 against adjacent surfaces. Token
 measurements and remaining adoption work live in docs/design-system-audit-171.md.
 
-Light/dark/system share semantics, layout and dog identity. Never invert dog fills.
+When dark mode is reactivated, light/dark/system must share semantics, layout and dog identity. Never invert dog fills.
 Respect reduced motion for optional transitions and celebrations.
 
 Every list has loading, empty and error states. Empty states explain what will

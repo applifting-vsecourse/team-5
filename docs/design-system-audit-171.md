@@ -1,4 +1,4 @@
-﻿# Design system audit — #171
+# Design system audit — #171
 
 The product owner confirmed the new Figma direction on 4 November 2026.
 Implementation is on `feature/171-design-system`.
@@ -16,7 +16,7 @@ Implementation is on `feature/171-design-system`.
 | Controls                                   | Added touch/action dimensions. Shared Button has a 44px minimum; lg main action has a 56px minimum.              |
 | Focus                                      | Solid offset outline takes precedence over kit outline-none. Hero/dog containers use a light outline.            |
 | Desktop 128:1679 and trainer tabs 110:1001 | Contract specifies trainer sidebar/context panel, handler overview, mobile destinations and intermediate layout. |
-| Existing theme switcher                    | Light, dark and system modes retained; dog indices are stable across themes. Series 05 excluded.                 |
+| Existing theme switcher                    | Light mode forced for now; dark foundations retained. Dog indices are stable. Series 05 excluded.                |
 
 All values live in `apps/frontend/src/styles/global.css`; components use semantic
 classes. Dark success/warning/info pairs are accessibility adaptations because the
@@ -50,3 +50,11 @@ migrated or manually checked in a browser.
   targets still need screen-level checks; the Button floor does not cover those.
 - Existing hardcoded feature colours are migration work for their screen tickets.
   New components must use the contract and semantic tokens.
+
+## Temporary dark-mode deferral
+
+On 4 November 2026 the product owner deferred dark mode. The app forces light
+mode regardless of stored theme or OS preference. Header and account appearance
+controls are hidden; toast notifications follow the forced theme too. Existing
+preferences are not deleted. Dark tokens and both-theme contrast checks remain
+as foundations for later reactivation. The dark hero in the light design remains.
