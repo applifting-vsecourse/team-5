@@ -23,8 +23,9 @@ surface remains part of the light design and is not dark mode.
 contract defines their meaning. Translate Figma intent into these tokens; do not
 copy raw colours into feature components. Reuse `src/components/ui/` controls;
 prefer token styling over rewriting the vendored shadcn kit. #171 supplies the
-foundations; #172 and the screen tickets adopt them. Existing screens are not all
-redesigned by #171.
+foundations; #172 shared components are catalogued in
+[`docs/ui-components.md`](docs/ui-components.md). Screen tickets adopt them.
+Existing screens are not all redesigned by #171.
 
 ## Colour and states
 

@@ -1,12 +1,12 @@
 import { Link } from "@tanstack/react-router"
 import { ChevronRight } from "lucide-react"
 
-import { Card } from "@/components/ui/card"
+import { StripCard } from "@/components/StripCard"
 import { cn } from "@/lib/utils"
 
 import type { Dog } from "@/features/dog/api/dogSchemas"
 
-import { DOG_COLOR_CLASSES, PesAvatar } from "./PesAvatar"
+import { PesAvatar } from "./PesAvatar"
 
 type DogCardProps = {
   dog: Dog
@@ -14,20 +14,14 @@ type DogCardProps = {
 }
 
 export function DogCard({ dog, className }: DogCardProps) {
-  const colorClass = DOG_COLOR_CLASSES[dog.color] ?? "bg-dog-1"
-
   return (
-    <Card
+    <StripCard
+      dogColor={dog.color}
       className={cn(
-        "group relative flex flex-row items-stretch gap-0 overflow-hidden border border-border p-0 transition-all duration-150 hover:border-foreground/30 active:scale-[0.99]",
+        "group transition-all duration-150 hover:border-foreground/30 active:scale-[0.99]",
         className,
       )}
     >
-      <div
-        aria-hidden="true"
-        className={cn("w-1.5 shrink-0 self-stretch", colorClass)}
-      />
-
       <Link
         to="/dogs/$dogId"
         params={{ dogId: dog.id }}
@@ -52,6 +46,6 @@ export function DogCard({ dog, className }: DogCardProps) {
 
         <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
       </Link>
-    </Card>
+    </StripCard>
   )
 }

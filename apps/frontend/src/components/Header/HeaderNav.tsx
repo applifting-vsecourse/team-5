@@ -5,12 +5,13 @@ type HeaderNavProps = {
   isTrainer?: boolean
 }
 
-// The logo already links home, so "Home" would be a duplicate.
+// md+ header mirrors role destinations from DESIGN.md / Figma tab bars.
 export function HeaderNav({ isTrainer = false }: HeaderNavProps) {
   return (
     <nav className="hidden items-center gap-1 md:flex">
-      <HeaderNavLink to={ROUTES.dogs}>Psi</HeaderNavLink>
-      <HeaderNavLink to={ROUTES.week}>Týden</HeaderNavLink>
+      <HeaderNavLink to={ROUTES.dashboard}>{isTrainer ? "Přehled" : "Dnes"}</HeaderNavLink>
+      {!isTrainer && <HeaderNavLink to={ROUTES.week}>Týden</HeaderNavLink>}
+      <HeaderNavLink to={ROUTES.dogs}>{isTrainer ? "Cíle" : "Psi"}</HeaderNavLink>
       {isTrainer && <HeaderNavLink to={ROUTES.clients}>Klienti</HeaderNavLink>}
     </nav>
   )
