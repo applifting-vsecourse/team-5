@@ -133,7 +133,7 @@ describe("TrainerOverview", () => {
     expect(screen.getByRole("button", { name: /pozvat klienta/i })).toBeInTheDocument()
   })
 
-  it("shows error and retry when clients fail to load", async () => {
+  it("keeps Kalendář and Moji psi when clients fail to load", async () => {
     vi.mocked(api.get).mockImplementation((url: unknown) => {
       const path = String(url)
       if (path === "clients") {
@@ -151,9 +151,12 @@ describe("TrainerOverview", () => {
 
     expect(await screen.findByText("Přehled se nepodařilo načíst")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /zkusit znovu/i })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /kalendář/i })).toHaveAttribute("href", "/week")
+    expect(screen.getByRole("link", { name: /moji psi/i })).toHaveAttribute("href", "/dogs")
+    expect(screen.getByRole("link", { name: /^klienti$/i })).toHaveAttribute("href", "/clients")
   })
 
-  it("keeps overview when invitations soft-fail", async () => {
+  it("keeps overview when invitations soft-fail without inventing zero", async () => {
     vi.mocked(api.get).mockImplementation((url: unknown) => {
       const path = String(url)
       if (path === "clients") {
@@ -172,6 +175,8 @@ describe("TrainerOverview", () => {
     expect(await screen.findByText("Jan Novák")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Přehled" })).toBeInTheDocument()
     expect(screen.queryByText(/čeká na přijetí/i)).not.toBeInTheDocument()
+    expect(screen.queryByText("pozvánek")).not.toBeInTheDocument()
+    expect(screen.getByText(/počet pozvánek teď nejde načíst/i)).toBeInTheDocument()
     expect(screen.queryByText("Přehled se nepodařilo načíst")).not.toBeInTheDocument()
   })
 })

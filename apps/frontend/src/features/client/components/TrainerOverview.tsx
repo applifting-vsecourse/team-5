@@ -11,6 +11,7 @@ import { PesAvatar } from "@/components/PesAvatar"
 import { QueryState } from "@/components/QueryState"
 import { StripCard } from "@/components/StripCard"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 import type { Client } from "@/features/client/api/clientSchemas"
 import {
@@ -70,6 +71,54 @@ function ClientOverviewRow({ client }: { client: Client }) {
   )
 }
 
+function OverviewShortcuts() {
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <Button
+        asChild
+        size="lg"
+        className="w-full sm:flex-1"
+      >
+        <Link to={ROUTES.clients}>
+          <Users
+            className="size-4"
+            aria-hidden
+          />
+          Klienti
+        </Link>
+      </Button>
+      <Button
+        asChild
+        variant="secondary"
+        size="lg"
+        className="w-full sm:flex-1"
+      >
+        <Link to={ROUTES.week}>
+          <Calendar
+            className="size-4"
+            aria-hidden
+          />
+          Kalendář
+        </Link>
+      </Button>
+      <Button
+        asChild
+        variant="outline"
+        size="lg"
+        className="w-full sm:flex-1"
+      >
+        <Link to={ROUTES.dogs}>
+          <PawPrint
+            className="size-4"
+            aria-hidden
+          />
+          Moji psi
+        </Link>
+      </Button>
+    </div>
+  )
+}
+
 export function TrainerOverview() {
   const [isInviteOpen, setIsInviteOpen] = useState(false)
   const clientsQuery = useQuery(clientsQueryOptions())
@@ -81,6 +130,8 @@ export function TrainerOverview() {
   const isLoading = clientsQuery.isLoading
   const isError = clientsQuery.isError
   const error = clientsQuery.error ?? new Error("Nepodařilo se načíst přehled.")
+  const isInvitationsKnown = invitationsQuery.isSuccess
+  const isInvitationsFailed = invitationsQuery.isError
 
   const retry = () => {
     void clientsQuery.refetch()
@@ -108,6 +159,9 @@ export function TrainerOverview() {
         </p>
       </header>
 
+      {/* Shortcuts stay available even when clients fail to load (#182 review). */}
+      <OverviewShortcuts />
+
       <QueryState
         isLoading={isLoading}
         error={isError ? error : null}
@@ -120,7 +174,12 @@ export function TrainerOverview() {
       >
         <div className="flex flex-col gap-6">
           <HeroCard eyebrow="Pracovní prostor">
-            <div className="grid grid-cols-3 gap-3">
+            <div
+              className={cn(
+                "grid gap-3",
+                isInvitationsKnown ? "grid-cols-3" : "grid-cols-2",
+              )}
+            >
               <Metric
                 isOnHero
                 value={clients.length}
@@ -131,44 +190,32 @@ export function TrainerOverview() {
                 value={sharedDogs}
                 label="sdílených psů"
               />
-              <Metric
-                isOnHero
-                value={invitations.length}
-                label="pozvánek"
-              />
+              {isInvitationsKnown ? (
+                <Metric
+                  isOnHero
+                  value={invitations.length}
+                  label="pozvánek"
+                />
+              ) : null}
             </div>
-            {invitations.length > 0 ? (
+            {isInvitationsKnown && invitations.length > 0 ? (
               <HeroChip>{invitations.length} čeká na přijetí</HeroChip>
             ) : null}
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Button
-                asChild
-                size="lg"
-                className="w-full sm:flex-1"
-              >
-                <Link to={ROUTES.clients}>
-                  <Users
-                    className="size-4"
-                    aria-hidden
-                  />
-                  Klienti
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="secondary"
-                size="lg"
-                className="w-full sm:flex-1"
-              >
-                <Link to={ROUTES.week}>
-                  <Calendar
-                    className="size-4"
-                    aria-hidden
-                  />
-                  Kalendář
-                </Link>
-              </Button>
-            </div>
+            {isInvitationsFailed ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-medium text-hero-muted">
+                  Počet pozvánek teď nejde načíst.
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => void invitationsQuery.refetch()}
+                >
+                  Zkusit znovu
+                </Button>
+              </div>
+            ) : null}
           </HeroCard>
 
           <section
@@ -229,27 +276,11 @@ export function TrainerOverview() {
             ) : null}
           </section>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="w-full sm:flex-1"
-            >
-              <Link to={ROUTES.dogs}>
-                <PawPrint
-                  className="size-4"
-                  aria-hidden
-                />
-                Moji psi
-              </Link>
-            </Button>
-            {sharedDogs > 0 ? (
-              <p className="text-sm text-muted-foreground sm:text-right">
-                S klienty sdílíte {dogCountLabel(sharedDogs)}.
-              </p>
-            ) : null}
-          </div>
+          {sharedDogs > 0 ? (
+            <p className="text-sm text-muted-foreground">
+              S klienty sdílíte {dogCountLabel(sharedDogs)}.
+            </p>
+          ) : null}
         </div>
       </QueryState>
 
