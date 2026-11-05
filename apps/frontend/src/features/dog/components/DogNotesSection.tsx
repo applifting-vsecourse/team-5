@@ -83,9 +83,7 @@ export function DogNotesSection({ dogId, dogName }: DogNotesSectionProps) {
       <QueryState
         isLoading={notesQuery.isLoading}
         error={
-          notesQuery.isError
-            ? (notesQuery.error ?? new Error("Deník se nepodařilo načíst."))
-            : null
+          notesQuery.isError ? (notesQuery.error ?? new Error("Deník se nepodařilo načíst.")) : null
         }
         isEmpty={!notesQuery.isLoading && !notesQuery.isError && notes.length === 0}
         onRetry={() => void notesQuery.refetch()}

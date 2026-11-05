@@ -198,7 +198,9 @@ describe("DogNotesSection", () => {
     const emptyTitle = await screen.findByText(/Rex zatím nemá žádnou poznámku/i)
     const emptyRegion = emptyTitle.closest("[class*='rounded-card']")
     expect(emptyRegion).toBeTruthy()
-    await user.click(within(emptyRegion as HTMLElement).getByRole("button", { name: /nová poznámka/i }))
+    await user.click(
+      within(emptyRegion as HTMLElement).getByRole("button", { name: /nová poznámka/i }),
+    )
     expect(screen.getByRole("dialog")).toBeInTheDocument()
   })
 })
