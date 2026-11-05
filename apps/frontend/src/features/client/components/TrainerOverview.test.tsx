@@ -132,4 +132,46 @@ describe("TrainerOverview", () => {
     })
     expect(screen.getByRole("button", { name: /pozvat klienta/i })).toBeInTheDocument()
   })
+
+  it("shows error and retry when clients fail to load", async () => {
+    vi.mocked(api.get).mockImplementation((url: unknown) => {
+      const path = String(url)
+      if (path === "clients") {
+        return {
+          json: () => Promise.reject(new Error("network")),
+        } as ReturnType<typeof api.get>
+      }
+      if (path === "clients/invitations") {
+        return { json: () => Promise.resolve([]) } as ReturnType<typeof api.get>
+      }
+      throw new Error(`Unexpected path ${path}`)
+    })
+
+    render(<TrainerOverview />, { wrapper: createWrapper() })
+
+    expect(await screen.findByText("Přehled se nepodařilo načíst")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /zkusit znovu/i })).toBeInTheDocument()
+  })
+
+  it("keeps overview when invitations soft-fail", async () => {
+    vi.mocked(api.get).mockImplementation((url: unknown) => {
+      const path = String(url)
+      if (path === "clients") {
+        return { json: () => Promise.resolve(mockClients) } as ReturnType<typeof api.get>
+      }
+      if (path === "clients/invitations") {
+        return {
+          json: () => Promise.reject(new Error("invitations down")),
+        } as ReturnType<typeof api.get>
+      }
+      throw new Error(`Unexpected path ${path}`)
+    })
+
+    render(<TrainerOverview />, { wrapper: createWrapper() })
+
+    expect(await screen.findByText("Jan Novák")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Přehled" })).toBeInTheDocument()
+    expect(screen.queryByText(/čeká na přijetí/i)).not.toBeInTheDocument()
+    expect(screen.queryByText("Přehled se nepodařilo načíst")).not.toBeInTheDocument()
+  })
 })

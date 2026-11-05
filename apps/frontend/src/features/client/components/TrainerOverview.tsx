@@ -5,11 +5,10 @@ import { Calendar, ChevronRight, PawPrint, UserPlus, Users } from "lucide-react"
 
 import { ROUTES } from "@/app/routes"
 import { EmptyState } from "@/components/EmptyState"
-import { HeroCard } from "@/components/HeroCard"
+import { HeroCard, HeroChip } from "@/components/HeroCard"
 import { Metric } from "@/components/Metric"
 import { PesAvatar } from "@/components/PesAvatar"
 import { QueryState } from "@/components/QueryState"
-import { StatusChip } from "@/components/StatusChip"
 import { StripCard } from "@/components/StripCard"
 import { Button } from "@/components/ui/button"
 
@@ -77,7 +76,7 @@ export function TrainerOverview() {
   const invitationsQuery = useQuery(clientInvitationsQueryOptions())
 
   const clients = clientsQuery.data ?? []
-  const invitations = invitationsQuery.data ?? []
+  const invitations = invitationsQuery.isSuccess ? (invitationsQuery.data ?? []) : []
   const sharedDogs = clients.reduce((sum, client) => sum + client.dogs.length, 0)
   const isLoading = clientsQuery.isLoading
   const isError = clientsQuery.isError
@@ -85,6 +84,7 @@ export function TrainerOverview() {
 
   const retry = () => {
     void clientsQuery.refetch()
+    void invitationsQuery.refetch()
   }
 
   return (
@@ -138,7 +138,7 @@ export function TrainerOverview() {
               />
             </div>
             {invitations.length > 0 ? (
-              <StatusChip tone="warning">{invitations.length} čeká na přijetí</StatusChip>
+              <HeroChip>{invitations.length} čeká na přijetí</HeroChip>
             ) : null}
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button
