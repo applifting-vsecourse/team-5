@@ -2,13 +2,13 @@ import type { CalendarDate } from "@/lib/calendarDate"
 
 import type { WeekTraining } from "@/features/week/api/weekQueryOptions"
 
-/** Next planned training on or after today (stable: date, dog name, id). */
+/** Next unfinished planned training in the week (overdue first; stable: date, dog, id). */
 export function pickNextTraining(
   trainings: WeekTraining[],
-  today: CalendarDate,
+  _today: CalendarDate,
 ): WeekTraining | null {
   const planned = trainings
-    .filter((training) => training.status === "PLANNED" && training.date >= today)
+    .filter((training) => training.status === "PLANNED")
     .sort(
       (a, b) =>
         a.date.localeCompare(b.date) ||

@@ -71,17 +71,9 @@ function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
         <p className="text-sm font-medium text-hero-muted">
           {titles.length === 0
             ? "Plán zatím nemá žádný cvik."
-            : `${exerciseCount(titles.length)} · ${titles.join(", ")}`}
+            : `${exerciseCount(titles.length)} · ${titles.slice(0, 5).join(", ")}`}
         </p>
       </div>
-
-      {training.exercises.length > 0 ? (
-        <ol className="list-decimal space-y-1 pl-5 text-sm font-medium text-hero-muted">
-          {training.exercises.slice(0, 5).map((exercise) => (
-            <li key={exercise.id}>{exercise.title}</li>
-          ))}
-        </ol>
-      ) : null}
 
       <Button
         asChild
@@ -116,9 +108,11 @@ export function TodayView({ userName }: TodayViewProps) {
   const nextTraining = pickNextTraining(trainings, today)
   const completedCount = trainings.filter((training) => training.status === "COMPLETED").length
   const totalCount = trainings.length
-  const remainingPlanned = trainings.filter(
-    (training) => training.status === "PLANNED" && training.date >= today,
-  ).length
+  const remainingPlanned = trainings.filter((training) => training.status === "PLANNED").length
+  const remainingLabel =
+    remainingPlanned === 1 ? "zbývá trénink" : remainingPlanned >= 2 && remainingPlanned <= 4
+      ? "zbývají tréninky"
+      : "zbývá tréninků"
 
   const dogs = [...new Map(trainings.map((training) => [training.dog.id, training.dog])).values()]
 
@@ -126,7 +120,7 @@ export function TodayView({ userName }: TodayViewProps) {
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6 md:py-8">
       <header className="space-y-1">
         <p className="text-sm font-semibold text-muted-foreground">{formatDayHeading(today)}</p>
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+        <h1 className="text-page font-extrabold tracking-tight text-foreground">
           {userName ? `Ahoj ${firstName(userName)}` : "Dnes"}
         </h1>
       </header>
@@ -207,7 +201,7 @@ export function TodayView({ userName }: TodayViewProps) {
                 />
                 <Metric
                   value={remainingPlanned}
-                  label={remainingPlanned === 1 ? "zbývá trénink" : "zbývá tréninků"}
+                  label={remainingLabel}
                 />
               </div>
             </section>
@@ -220,7 +214,7 @@ export function TodayView({ userName }: TodayViewProps) {
             >
               <h2
                 id="today-dogs-heading"
-                className="text-lg font-bold tracking-tight text-foreground"
+                className="text-section font-extrabold tracking-tight text-foreground"
               >
                 Tvoji psi
               </h2>

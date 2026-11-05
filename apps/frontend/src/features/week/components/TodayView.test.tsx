@@ -106,6 +106,24 @@ describe("TodayView", () => {
     expect(screen.getByRole("link", { name: "Otevřít týden" })).toHaveAttribute("href", "/week")
   })
 
+  it("surfaces overdue planned training instead of claiming volno", () => {
+    renderToday([
+      aTraining({
+        id: "overdue",
+        date: "2026-11-03",
+        goal: { id: "g0", title: "Zmeškané áčko" },
+      }),
+    ])
+
+    expect(screen.queryByText("Dnes máte volno")).not.toBeInTheDocument()
+    expect(screen.getByText("Další trénink")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Zmeškané áčko" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /Začít trénink/i })).toHaveAttribute(
+      "href",
+      "/trainings/overdue",
+    )
+  })
+
   it("labels a future training as Další trénink and links dogs with plan subtitle", () => {
     renderToday([
       aTraining({

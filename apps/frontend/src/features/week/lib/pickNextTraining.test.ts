@@ -15,11 +15,24 @@ const training = (overrides: Partial<WeekTraining>): WeekTraining => ({
 })
 
 describe("pickNextTraining", () => {
-  it("returns the earliest planned training on or after today", () => {
+  it("returns overdue planned before today and later", () => {
     expect(
       pickNextTraining(
         [
           training({ id: "past", date: "2026-11-04", status: "PLANNED" }),
+          training({ id: "later", date: "2026-11-07", dog: { id: "d2", name: "Bára", color: 2 } }),
+          training({ id: "today", date: "2026-11-05" }),
+          training({ id: "done", date: "2026-11-05", status: "COMPLETED" }),
+        ],
+        "2026-11-05",
+      )?.id,
+    ).toBe("past")
+  })
+
+  it("prefers today over later when nothing is overdue", () => {
+    expect(
+      pickNextTraining(
+        [
           training({ id: "later", date: "2026-11-07", dog: { id: "d2", name: "Bára", color: 2 } }),
           training({ id: "today", date: "2026-11-05" }),
           training({ id: "done", date: "2026-11-05", status: "COMPLETED" }),

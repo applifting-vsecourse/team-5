@@ -199,7 +199,7 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
   return (
     <div className="flex flex-col gap-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Týden</h1>
+        <h1 className="text-page font-extrabold tracking-tight text-foreground">Týden</h1>
         <p className="text-sm text-muted-foreground">
           Jednotlivé tréninky vašich psů. Na jednom cíli můžete pracovat v několika dnech.
         </p>
