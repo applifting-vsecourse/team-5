@@ -12,6 +12,7 @@ import {
   IsString,
   Matches,
   MaxLength,
+  ValidateIf,
 } from 'class-validator';
 
 const TITLE_MAX_LENGTH = 100;
@@ -57,7 +58,8 @@ export class UpdateDogNoteDto {
     example: '2026-11-03',
     format: 'date',
   })
-  @IsOptional()
+  // IsOptional also skips null; null must 400, omitted date keeps the original.
+  @ValidateIf((_, value) => value !== undefined)
   @Matches(CALENDAR_DATE_PATTERN, { message: 'date must be YYYY-MM-DD' })
   @IsDateString({ strict: true })
   date?: string;

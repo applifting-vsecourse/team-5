@@ -84,5 +84,17 @@ describe('dog note DTOs', () => {
         errorsFor(UpdateDogNoteDto, { title: '   ' }),
       ).resolves.toEqual(['title']);
     });
+
+    it('rejects an explicit null date', async () => {
+      await expect(
+        errorsFor(UpdateDogNoteDto, { date: null }),
+      ).resolves.toEqual(['date']);
+    });
+
+    it('accepts omitting the date', async () => {
+      await expect(
+        errorsFor(UpdateDogNoteDto, { text: 'Jen text' }),
+      ).resolves.toEqual([]);
+    });
   });
 });
