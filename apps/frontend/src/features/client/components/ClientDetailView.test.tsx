@@ -113,6 +113,6 @@ describe("ClientDetailView", () => {
     }
     render(<ClientDetailView client={clientWithoutDogs} />, { wrapper: createWrapper() })
 
-    expect(screen.getByText("Klient s vámi zatím nesdílí žádného psa.")).toBeInTheDocument()
+    expect(screen.getByText("Klient s vámi zatím nesdílí žádného psa")).toBeInTheDocument()
   })
 })
