@@ -21,6 +21,8 @@ const aDog = (overrides: Partial<Dog> = {}): Dog => ({
 });
 
 const aGoal = (overrides: Partial<Goal> = {}): Goal => ({
+  disciplineId: 'discipline-1',
+  criterion: null,
   id: 'g1',
   dogId: 'd1',
   createdById: 'u1',
@@ -136,6 +138,7 @@ describe('GoalsService', () => {
       ).resolves.toEqual(created);
 
       expect(goalRepository.createGoal).toHaveBeenCalledWith({
+        criterion: null,
         dogId: 'd1',
         createdById: 'u1',
         title: 'Spolehlivá chůze u nohy',
@@ -197,6 +200,7 @@ describe('GoalsService', () => {
       });
 
       expect(goalRepository.updateGoal).toHaveBeenCalledWith('g1', {
+        criterion: undefined,
         title: 'Start na povel',
         discipline: 'Canicross',
         principle: undefined,

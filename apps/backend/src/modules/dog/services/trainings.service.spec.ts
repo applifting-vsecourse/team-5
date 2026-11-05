@@ -20,6 +20,7 @@ import { TrainingsService } from './trainings.service';
 const aTraining = (
   overrides: Partial<ScheduledTraining> = {},
 ): ScheduledTraining => ({
+  trainingId: 'session-1',
   id: 't1',
   goalId: 'g1',
   dogId: 'd1',
@@ -34,6 +35,7 @@ const aTraining = (
 const aTrainingDetail = (
   overrides: Partial<ScheduledTrainingDetail> = {},
 ): ScheduledTrainingDetail => ({
+  training: { id: 'session-1', title: 'První trénink' },
   ...aTraining(),
   dog: { id: 'd1', name: 'Rex', color: 1 },
   goal: {
@@ -219,6 +221,7 @@ describe('TrainingsService', () => {
 
   describe('completeTraining', () => {
     const fakeLog = {
+      trainingId: 'session-1',
       id: 'log1',
       dogId: 'd1',
       goalId: 'g1',

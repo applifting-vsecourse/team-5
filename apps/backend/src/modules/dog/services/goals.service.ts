@@ -88,6 +88,7 @@ export class GoalsService {
   ): Promise<Goal> {
     const dog = await this.dogAccess.getAccessibleDog(user, dogId);
     return this.goalRepository.createGoal({
+      criterion: data.criterion?.trim() || null,
       dogId,
       createdById: user.id,
       title: data.title.trim(),
@@ -106,6 +107,10 @@ export class GoalsService {
     const { goal, dog } = await this.getAccessibleGoal(user, goalId);
 
     return this.goalRepository.updateGoal(goalId, {
+      criterion:
+        data.criterion === undefined
+          ? undefined
+          : data.criterion.trim() || null,
       title: data.title?.trim(),
       discipline: this.normalizeDiscipline(
         dog,

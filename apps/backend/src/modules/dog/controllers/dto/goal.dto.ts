@@ -12,6 +12,7 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 
 // Limits mirror the training_goal columns; principle is TEXT, so its cap only
@@ -29,6 +30,11 @@ export class ListGoalsQueryDto {
 }
 
 export class CreateGoalDto {
+  @ApiPropertyOptional({ maxLength: 1000, description: 'Hotovo, když…' })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsString()
+  @MaxLength(1000)
+  criterion?: string;
   @ApiProperty({
     description: 'Title of the training goal',
     example: 'Spolehlivá chůze u nohy',
@@ -82,6 +88,11 @@ export class CreateGoalDto {
 }
 
 export class UpdateGoalDto {
+  @ApiPropertyOptional({ maxLength: 1000, description: 'Hotovo, když…' })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsString()
+  @MaxLength(1000)
+  criterion?: string;
   @ApiPropertyOptional({
     description: 'Title of the training goal',
     maxLength: TITLE_MAX_LENGTH,
@@ -140,6 +151,11 @@ export class GoalAuthorDto {
 
 export class GoalResponseDto {
   @ApiProperty()
+  disciplineId!: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  criterion!: string | null;
+  @ApiProperty()
   id!: string;
 
   @ApiProperty()
@@ -171,6 +187,8 @@ export class GoalResponseDto {
 
   static fromDomain(goal: Goal): GoalResponseDto {
     return {
+      disciplineId: goal.disciplineId,
+      criterion: goal.criterion,
       id: goal.id,
       dogId: goal.dogId,
       createdBy: presentAuthor(goal.createdBy),

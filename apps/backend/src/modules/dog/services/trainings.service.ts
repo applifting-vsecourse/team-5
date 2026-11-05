@@ -251,6 +251,7 @@ export class TrainingsService {
     goalId: string,
     date: string,
     now: Date = new Date(),
+    trainingId?: string,
   ): Promise<ScheduledTraining> {
     const goal = await this.goalsService.getGoal(user, goalId);
 
@@ -261,6 +262,7 @@ export class TrainingsService {
 
     const training =
       await this.scheduledTrainingRepository.createPlannedTraining({
+        trainingId,
         goalId,
         dogId: goal.dogId,
         createdById: user.id,
