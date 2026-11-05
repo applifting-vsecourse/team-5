@@ -50,3 +50,7 @@ src/generated/
 # Uploads
 /uploads
 uploads
+
+# React-email export output
+/out
+
