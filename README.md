@@ -27,7 +27,7 @@ Kompletní dokumentace a výstupy z discovery fáze se nachází v adresáři [`
 
 ## Prerequisites
 
-- Node.js 24 — the version in [`.nvmrc`](.nvmrc). With nvm or fnm, `nvm use` picks it up from anywhere in the repo (they search parent directories), and every `package.json` declares it too, so pnpm warns if you are on an older one.
+- Node.js 24.22.2 or newer — the version in [`.nvmrc`](.nvmrc). With nvm or fnm, `nvm use` picks it up from anywhere in the repo (they search parent directories), and every `package.json` declares it too, so pnpm warns if you are on an older one.
 - pnpm — `corepack enable` picks the version from `package.json`
 - Docker (for the database)
 
@@ -101,6 +101,10 @@ Two things worth knowing:
 - **You set exactly two URLs**, `BACKEND_URL` and `FRONTEND_URL`. The backend uses them for CORS, BetterAuth trusted origins and password-reset links; the frontend's API URL is derived from `BACKEND_URL`. Point them at the real domains or the backend rejects the browser.
 - **The frontend bakes its API URL in at build time** (`VITE_*` are build args, not runtime env), so changing `BACKEND_URL` needs a rebuild, not just a restart.
 - **Production migrates and seeds on startup** — the container runs `prisma migrate deploy` and `node dist/scripts/seed/seed.script.js` before starting the server. If the database is empty, it populates demo users and dogs; if data already exists, it preserves existing data.
+
+## Dependency security
+
+Run `pnpm security:audit` to check runtime and development dependencies. High and critical findings fail CI and block deployment; weekly CI also checks newly published advisories. Dependabot proposes dependency, GitHub Actions, and Docker image updates for review. See [the security report](docs/security-report.md) for findings, remaining risks, and reproduction commands.
 
 ## When something goes wrong
 

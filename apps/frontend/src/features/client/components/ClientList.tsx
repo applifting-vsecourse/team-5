@@ -78,7 +78,7 @@ export function ClientList() {
       )}
 
       {/* Empty state */}
-      {!isLoading && !isError && clients && clients.length === 0 && (
+      {!isLoading && !isError && clients?.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-8 text-center sm:p-12">
           <div className="flex size-12 items-center justify-center rounded-full bg-muted">
             <Users

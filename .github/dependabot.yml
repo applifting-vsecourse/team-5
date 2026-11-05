@@ -1,0 +1,42 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    groups:
+      compatible:
+        update-types: [minor, patch]
+      security:
+        applies-to: security-updates
+        patterns: ['*']
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+  - package-ecosystem: docker
+    directories:
+      - /apps/backend
+      - /apps/frontend
+    target-branch: dev
+    schedule:
+      interval: weekly
+    ignore:
+      # PostgreSQL major upgrades require a separate data migration.
+      - dependency-name: postgres
+        update-types: [version-update:semver-major]
+  - package-ecosystem: docker-compose
+    directories:
+      - /
+      - /apps/backend
+    target-branch: dev
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: postgres
+        update-types: [version-update:semver-major]
