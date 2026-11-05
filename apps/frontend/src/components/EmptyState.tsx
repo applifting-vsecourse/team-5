@@ -70,7 +70,9 @@ export function EmptyState({
         </div>
       </div>
 
-      <TitleTag className="text-2xl font-extrabold tracking-tight text-foreground">{title}</TitleTag>
+      <TitleTag className="text-2xl font-extrabold tracking-tight text-foreground">
+        {title}
+      </TitleTag>
       <p className="max-w-sm text-sm font-medium text-muted-foreground">{description}</p>
 
       {action || secondaryAction ? (

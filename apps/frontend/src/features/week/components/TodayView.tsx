@@ -58,7 +58,9 @@ function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
           </span>
         </HeroChip>
         {!isToday ? (
-          <span className="text-xs font-semibold text-hero-muted">{formatDayLong(training.date)}</span>
+          <span className="text-xs font-semibold text-hero-muted">
+            {formatDayLong(training.date)}
+          </span>
         ) : null}
       </div>
 

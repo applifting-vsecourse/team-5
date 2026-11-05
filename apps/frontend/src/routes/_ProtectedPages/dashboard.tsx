@@ -20,9 +20,7 @@ export function DashboardPage() {
     return (
       <div className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
         <Seo title="Přehled" />
-        <h1 className="text-page font-extrabold tracking-tight text-foreground">
-          Přehled
-        </h1>
+        <h1 className="text-page font-extrabold tracking-tight text-foreground">Přehled</h1>
         <p className="mt-2 text-sm font-medium text-muted-foreground">
           Kalendář a vlastní psi zůstávají dostupné z přehledu.
         </p>

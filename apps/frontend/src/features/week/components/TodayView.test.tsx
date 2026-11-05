@@ -8,7 +8,7 @@ import { weekKeys, type WeekTraining } from "@/features/week/api/weekQueryOption
 import { TodayView } from "./TodayView"
 
 vi.mock("@/lib/calendarDate", async () => {
-  const actual = (await vi.importActual("@/lib/calendarDate"))
+  const actual = await vi.importActual("@/lib/calendarDate")
   return {
     ...actual,
     todayCalendarDate: () => "2026-11-05",

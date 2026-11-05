@@ -114,7 +114,9 @@ function WeekTrainingCard({ training, today }: WeekTrainingCardProps) {
               heading
             )}
           </h3>
-          <StatusChip tone={STATUS_TONE[training.status]}>{STATUS_LABELS[training.status]}</StatusChip>
+          <StatusChip tone={STATUS_TONE[training.status]}>
+            {STATUS_LABELS[training.status]}
+          </StatusChip>
         </div>
         <p className="text-sm text-muted-foreground">
           {titles.length === 0
