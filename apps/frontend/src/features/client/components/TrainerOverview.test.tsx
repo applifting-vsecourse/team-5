@@ -139,7 +139,7 @@ describe("TrainerOverview", () => {
       if (path === "clients") {
         return {
           json: () => Promise.reject(new Error("network")),
-        } as ReturnType<typeof api.get>
+        } as unknown as ReturnType<typeof api.get>
       }
       if (path === "clients/invitations") {
         return { json: () => Promise.resolve([]) } as ReturnType<typeof api.get>
@@ -162,7 +162,7 @@ describe("TrainerOverview", () => {
       if (path === "clients/invitations") {
         return {
           json: () => Promise.reject(new Error("invitations down")),
-        } as ReturnType<typeof api.get>
+        } as unknown as ReturnType<typeof api.get>
       }
       throw new Error(`Unexpected path ${path}`)
     })
