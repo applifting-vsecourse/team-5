@@ -38,8 +38,7 @@ export function PlannedTrainingsList({ dogId, dogName }: PlannedTrainingsListPro
         isLoading={plannedQuery.isLoading}
         error={
           plannedQuery.isError
-            ? (plannedQuery.error ??
-              new Error("Naplánované tréninky se nepodařilo načíst."))
+            ? (plannedQuery.error ?? new Error("Naplánované tréninky se nepodařilo načíst."))
             : null
         }
         isEmpty={!plannedQuery.isLoading && !plannedQuery.isError && planned.length === 0}

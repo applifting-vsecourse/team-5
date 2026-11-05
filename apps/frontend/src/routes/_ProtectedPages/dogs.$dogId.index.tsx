@@ -37,12 +37,11 @@ function DogDetailPage() {
   const { user } = useSession()
 
   const notFoundMessage = "Tento pes neexistuje nebo k němu nemáte přístup."
-  const error =
-    dogQuery.isError
-      ? (dogQuery.error ?? new Error(notFoundMessage))
-      : !dogQuery.isLoading && !dogQuery.data
-        ? new Error(notFoundMessage)
-        : null
+  const error = dogQuery.isError
+    ? (dogQuery.error ?? new Error(notFoundMessage))
+    : !dogQuery.isLoading && !dogQuery.data
+      ? new Error(notFoundMessage)
+      : null
 
   if (error) {
     return (

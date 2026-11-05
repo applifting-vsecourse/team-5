@@ -113,9 +113,7 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
         />
       ) : metricsQuery.isError ? (
         <div className="mb-8 space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Týdenní metriky se nepodařilo načíst.
-          </p>
+          <p className="text-sm text-muted-foreground">Týdenní metriky se nepodařilo načíst.</p>
           <Button
             type="button"
             variant="outline"

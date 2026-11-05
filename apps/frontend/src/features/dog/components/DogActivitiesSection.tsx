@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+
 import type { DogActivity } from "@/features/dog/api/dogSchemas"
 import { dogActivitiesQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 
@@ -199,9 +200,7 @@ export function DogActivitiesSection({
                 new Error("Tréninkové záznamy a zprávy se nepodařilo načíst."))
               : null
           }
-          isEmpty={
-            !activitiesQuery.isLoading && !activitiesQuery.isError && total === 0
-          }
+          isEmpty={!activitiesQuery.isLoading && !activitiesQuery.isError && total === 0}
           onRetry={() => void activitiesQuery.refetch()}
           loadingLabel="Načítání aktivit"
           errorTitle="Aktivity se nepodařilo načíst"
@@ -235,9 +234,7 @@ export function DogActivitiesSection({
                     />
                     {formatActivityDate(selectedActivity.completedAt, selectedActivity.date)}
                   </span>
-                  <StatusChip
-                    tone={selectedActivity.status === "completed" ? "success" : "muted"}
-                  >
+                  <StatusChip tone={selectedActivity.status === "completed" ? "success" : "muted"}>
                     {selectedActivity.status === "completed" ? "Odcvičeno" : "Přeskočeno"}
                   </StatusChip>
                 </div>

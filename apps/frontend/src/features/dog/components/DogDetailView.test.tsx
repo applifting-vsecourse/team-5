@@ -4,8 +4,9 @@ import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
-import type { Dog, DogActivity } from "@/features/dog/api/dogSchemas"
 import { dogKeys } from "@/lib/dogKeys"
+
+import type { Dog, DogActivity } from "@/features/dog/api/dogSchemas"
 
 import { DogActivitiesSection } from "./DogActivitiesSection"
 import { DogDetailView } from "./DogDetailView"

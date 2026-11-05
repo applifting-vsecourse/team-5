@@ -53,9 +53,7 @@ export function DogGoalsSection({ dogId, dogName }: DogGoalsSectionProps) {
       <QueryState
         isLoading={goalsQuery.isLoading}
         error={
-          goalsQuery.isError
-            ? (goalsQuery.error ?? new Error("Cíle se nepodařilo načíst."))
-            : null
+          goalsQuery.isError ? (goalsQuery.error ?? new Error("Cíle se nepodařilo načíst.")) : null
         }
         isEmpty={!goalsQuery.isLoading && !goalsQuery.isError && goals.length === 0}
         onRetry={() => void goalsQuery.refetch()}
