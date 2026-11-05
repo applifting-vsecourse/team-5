@@ -4,11 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ConfirmDestructiveDialog } from "./ConfirmDestructiveDialog"
 
-function mockViewport(matchesMdUp: boolean) {
+function mockViewport(isMdUp: boolean) {
   Object.defineProperty(window, "matchMedia", {
     writable: true,
     value: vi.fn().mockImplementation((query: string) => ({
-      matches: query.includes("48rem") ? matchesMdUp : false,
+      matches: query.includes("48rem") ? isMdUp : false,
       media: query,
       onchange: null,
       addEventListener: vi.fn(),
@@ -27,9 +27,21 @@ describe("ConfirmDestructiveDialog", () => {
 
   beforeEach(() => {
     // jsdom lacks pointer capture; vaul calls it when opening the sheet.
-    Element.prototype.setPointerCapture ??= vi.fn()
-    Element.prototype.releasePointerCapture ??= vi.fn()
-    Element.prototype.hasPointerCapture ??= vi.fn(() => false)
+    Object.defineProperty(Element.prototype, "setPointerCapture", {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    })
+    Object.defineProperty(Element.prototype, "releasePointerCapture", {
+      configurable: true,
+      writable: true,
+      value: vi.fn(),
+    })
+    Object.defineProperty(Element.prototype, "hasPointerCapture", {
+      configurable: true,
+      writable: true,
+      value: vi.fn(() => false),
+    })
   })
 
   it("opens a centred dialog from md up", async () => {
