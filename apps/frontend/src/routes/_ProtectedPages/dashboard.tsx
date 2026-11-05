@@ -1,9 +1,10 @@
-import { Link, createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import { Calendar, PawPrint } from "lucide-react"
 
 import { ROUTES } from "@/app/routes"
 import { Seo } from "@/components/Seo"
 import { Button } from "@/components/ui/button"
+
 import { useSession } from "@/features/auth/hooks/useSession"
 
 export const Route = createFileRoute("/_ProtectedPages/dashboard")({
