@@ -7,6 +7,7 @@ import {
   dogActivityPageSchema,
   dogGoalSchema,
   dogGoalsSchema,
+  dogMetricsSchema,
   dogNotesSchema,
   dogSchema,
   dogsSchema,
@@ -118,5 +119,16 @@ export function dogActivitiesQueryOptions(dogId: string, page = 1, pageSize = 3)
     enabled: Boolean(dogId),
     // Keep the current page on screen while the next one loads.
     placeholderData: keepPreviousData,
+  })
+}
+
+export function dogMetricsQueryOptions(dogId: string) {
+  return queryOptions({
+    queryKey: dogKeys.metrics(dogId),
+    queryFn: async () => {
+      const json = await api.get(`dogs/${dogId}/metrics`).json()
+      return dogMetricsSchema.parse(json)
+    },
+    enabled: Boolean(dogId),
   })
 }

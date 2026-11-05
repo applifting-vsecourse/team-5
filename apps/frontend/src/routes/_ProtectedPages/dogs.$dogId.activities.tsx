@@ -33,7 +33,9 @@ function DogActivitiesPage() {
         </Link>
       </nav>
 
-      <h1 className="mb-6 text-2xl font-bold tracking-tight text-foreground">Historie tréninků</h1>
+      <h1 className="mb-6 text-page font-extrabold tracking-tight text-foreground">
+        Historie tréninků
+      </h1>
 
       {dogQuery.isLoading ? (
         <Skeleton className="h-48 w-full rounded-lg" />

@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { ChevronRight, Plus } from "lucide-react"
+import { ChevronRight, Plus, Target } from "lucide-react"
 
+import { EmptyState } from "@/components/EmptyState"
+import { QueryState } from "@/components/QueryState"
+import { StripCard } from "@/components/StripCard"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 
 import { dogGoalsQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 
@@ -14,6 +16,7 @@ type DogGoalsSectionProps = {
 
 export function DogGoalsSection({ dogId, dogName }: DogGoalsSectionProps) {
   const goalsQuery = useQuery(dogGoalsQueryOptions(dogId))
+  const goals = goalsQuery.data ?? []
 
   return (
     <section
@@ -23,7 +26,7 @@ export function DogGoalsSection({ dogId, dogName }: DogGoalsSectionProps) {
       <div className="flex items-center justify-between gap-4">
         <h2
           id="goals-heading"
-          className="text-lg font-semibold tracking-tight text-foreground"
+          className="text-section font-extrabold text-foreground"
         >
           Aktivní cíle
         </h2>
@@ -47,49 +50,66 @@ export function DogGoalsSection({ dogId, dogName }: DogGoalsSectionProps) {
       <p className="text-sm text-muted-foreground">
         Čeho chcete dosáhnout. Každý cíl má vlastní princip, cviky a více tréninků v kalendáři.
       </p>
-      {goalsQuery.isLoading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-16 w-full rounded-lg" />
-          <Skeleton className="h-16 w-full rounded-lg" />
-        </div>
-      ) : goalsQuery.error ? (
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Cíle se nepodařilo načíst.</p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="min-h-11"
-            onClick={() => void goalsQuery.refetch()}
-          >
-            Zkusit znovu
-          </Button>
-        </div>
-      ) : !goalsQuery.data?.length ? (
-        <p className="text-sm text-muted-foreground">
-          {dogName} zatím nemá žádný cíl. Založte první a popište, čeho chcete docílit.
-        </p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {goalsQuery.data.map((goal) => (
-            <li key={goal.id}>
-              <Link
-                to="/dogs/$dogId/goals/$goalId"
-                params={{ dogId, goalId: goal.id }}
-                className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-foreground/30 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
+      <QueryState
+        isLoading={goalsQuery.isLoading}
+        error={
+          goalsQuery.isError ? (goalsQuery.error ?? new Error("Cíle se nepodařilo načíst.")) : null
+        }
+        isEmpty={!goalsQuery.isLoading && !goalsQuery.isError && goals.length === 0}
+        onRetry={() => void goalsQuery.refetch()}
+        loadingLabel="Načítání cílů"
+        errorTitle="Cíle se nepodařilo načíst"
+        errorDescription="Zkontroluj připojení a zkus to znovu."
+        empty={
+          <EmptyState
+            icon={Target}
+            chip="BEZ CÍLŮ"
+            titleAs="p"
+            title={`${dogName} zatím nemá žádný cíl`}
+            description="Založte první cíl a popište, čeho chcete docílit."
+            action={
+              <Button
+                asChild
+                size="lg"
+                className="w-full"
               >
-                <div className="min-w-0">
-                  <p className="truncate text-base font-medium text-foreground">{goal.title}</p>
-                  {goal.discipline ? (
-                    <p className="truncate text-sm text-muted-foreground">{goal.discipline}</p>
-                  ) : null}
-                </div>
-                <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
-              </Link>
+                <Link
+                  to="/dogs/$dogId/goals/new"
+                  params={{ dogId }}
+                >
+                  <Plus className="size-4" />
+                  Nový cíl
+                </Link>
+              </Button>
+            }
+          />
+        }
+      >
+        <ul className="flex flex-col gap-2">
+          {goals.map((goal) => (
+            <li key={goal.id}>
+              <StripCard>
+                <Link
+                  to="/dogs/$dogId/goals/$goalId"
+                  params={{ dogId, goalId: goal.id }}
+                  className="flex min-h-11 items-center justify-between gap-3 px-4 py-3 outline-hidden transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-medium text-foreground">{goal.title}</p>
+                    {goal.discipline ? (
+                      <p className="truncate text-sm text-muted-foreground">{goal.discipline}</p>
+                    ) : null}
+                  </div>
+                  <ChevronRight
+                    aria-hidden="true"
+                    className="size-5 shrink-0 text-muted-foreground"
+                  />
+                </Link>
+              </StripCard>
             </li>
           ))}
         </ul>
-      )}
+      </QueryState>
     </section>
   )
 }
