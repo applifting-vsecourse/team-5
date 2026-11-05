@@ -109,6 +109,8 @@ export class ReorderPlanBlocksDto {
 
 export class PlanBlockResponseDto {
   @ApiProperty()
+  trainingId!: string;
+  @ApiProperty()
   id!: string;
 
   @ApiProperty()
@@ -134,6 +136,7 @@ export class PlanBlockResponseDto {
 
   static fromDomain(block: PlanBlock): PlanBlockResponseDto {
     return {
+      trainingId: block.trainingId,
       id: block.id,
       goalId: block.goalId,
       position: block.position,

@@ -56,6 +56,9 @@ jobs:
       - name: Test backend
         run: pnpm backend test
 
+      - name: Test hierarchy migration
+        run: pnpm backend test:migration
+
       - name: Test frontend
         run: pnpm frontend test:ci
 

@@ -248,7 +248,7 @@ export class TrainingsController {
   @ApiResponse({ status: 404, description: 'Goal not found' })
   @ApiResponse({
     status: 409,
-    description: 'This goal already has a planned session on this day',
+    description: 'This training is already planned on this day',
   })
   async schedule(
     @User() user: Identity,

@@ -8,6 +8,7 @@ import { mock, MockProxy } from 'jest-mock-extended';
 import { PlanBlocksService } from './plan-blocks.service';
 
 const aBlock = (overrides: Partial<PlanBlock> = {}): PlanBlock => ({
+  trainingId: 'session-1',
   id: 'b1',
   goalId: 'g1',
   position: 0,
