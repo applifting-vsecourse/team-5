@@ -248,6 +248,7 @@ describe("DogDetailView", () => {
         queries: { retry: false, staleTime: Infinity },
       },
     })
+    queryClient.setQueryData(dogKeys.notes(aDog.id), [])
     queryClient.setQueryData(dogKeys.goals(aDog.id), [])
     queryClient.setQueryData(dogKeys.plannedTrainings(aDog.id), [])
     queryClient.setQueryData([...dogKeys.activities(aDog.id), { page: 1, pageSize: 3 }], {
