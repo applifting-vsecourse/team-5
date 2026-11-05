@@ -7,6 +7,7 @@ import {
   dogActivityPageSchema,
   dogGoalSchema,
   dogGoalsSchema,
+  dogNotesSchema,
   dogSchema,
   dogsSchema,
   planBlocksSchema,
@@ -86,6 +87,18 @@ export function dogPlannedTrainingsQueryOptions(dogId: string) {
     queryFn: async () => {
       const json = await api.get(`dogs/${dogId}/trainings`).json()
       return plannedTrainingsSchema.parse(json)
+    },
+    enabled: Boolean(dogId),
+  })
+}
+
+// Owner-only diary notes for a dog (#70), newest lesson day first.
+export function dogNotesQueryOptions(dogId: string) {
+  return queryOptions({
+    queryKey: dogKeys.notes(dogId),
+    queryFn: async () => {
+      const json = await api.get(`dogs/${dogId}/notes`).json()
+      return dogNotesSchema.parse(json)
     },
     enabled: Boolean(dogId),
   })

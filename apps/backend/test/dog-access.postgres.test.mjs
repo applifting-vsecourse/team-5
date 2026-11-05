@@ -6,12 +6,14 @@ import { after, before, describe, test } from 'node:test';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../dist/generated/prisma/client.js';
 import { ActivityRepository } from '../dist/modules/dog/repositories/activity.repository.js';
+import { DogNoteRepository } from '../dist/modules/dog/repositories/dog-note.repository.js';
 import { DogRepository } from '../dist/modules/dog/repositories/dog.repository.js';
 import { GoalRepository } from '../dist/modules/dog/repositories/goal.repository.js';
 import { PlanBlockRepository } from '../dist/modules/dog/repositories/plan-block.repository.js';
 import { ScheduledTrainingRepository } from '../dist/modules/dog/repositories/scheduled-training.repository.js';
 import { ActivitiesService } from '../dist/modules/dog/services/activities.service.js';
 import { DogAccessService } from '../dist/modules/dog/services/dog-access.service.js';
+import { DogNotesService } from '../dist/modules/dog/services/dog-notes.service.js';
 import { DogsService } from '../dist/modules/dog/services/dogs.service.js';
 import { GoalsService } from '../dist/modules/dog/services/goals.service.js';
 import { PlanBlocksService } from '../dist/modules/dog/services/plan-blocks.service.js';
@@ -34,6 +36,7 @@ const trainings = new TrainingsService(
   goals,
 );
 const activities = new ActivitiesService(new ActivityRepository(prisma), dogAccess);
+const notes = new DogNotesService(new DogNoteRepository(prisma), dogAccess);
 
 const userIds = [];
 async function createUser(role) {
@@ -68,6 +71,7 @@ let stranger; // an ordinary user
 let dog;
 let goal;
 let block;
+let note;
 
 before(async () => {
   owner = await createUser('user');
@@ -86,6 +90,11 @@ before(async () => {
   goal = await goals.createGoal(owner, dog.id, { title: 'Chůze u nohy' });
   block = await blocks.createBlock(owner, goal.id, { title: 'Sedni' });
   await activities.createActivity(owner, dog.id, { title: 'Chůze' });
+  note = await notes.createNote(owner, dog.id, {
+    date: inDays(-2),
+    title: 'Seminář',
+    text: 'Poznámka jen pro psovoda',
+  });
 });
 
 after(async () => {
@@ -94,13 +103,15 @@ after(async () => {
 });
 
 describe('the owner', () => {
-  test('reads and edits their own dog, goals, plan, trainings and records', async () => {
+  test('reads and edits their own dog, goals, plan, trainings, records and notes', async () => {
     assert.equal((await dogs.getDogById(owner, dog.id)).id, dog.id);
     assert.equal((await dogs.updateDog(owner, dog.id, { name: 'Rexík' })).name, 'Rexík');
     assert.equal((await goals.getGoalsByDogId(owner, dog.id)).length, 1);
     assert.equal((await goals.getGoal(owner, goal.id)).id, goal.id);
     assert.equal((await blocks.getBlocks(owner, goal.id)).length, 1);
     assert.equal((await activities.getActivitiesByDogId(owner, dog.id)).total, 1);
+    assert.equal((await notes.getNotesByDogId(owner, dog.id)).length, 1);
+    assert.equal((await notes.getNote(owner, note.id)).id, note.id);
     const week = await trainings.getWeekTrainings(owner, inDays(-1), inDays(5));
     assert.ok(Array.isArray(week));
   });
@@ -144,11 +155,20 @@ describe('a trainer the dog is shared with', () => {
     assert.equal((await activities.getActivitiesByDogId(trainer, dog.id)).total, 1);
   });
 
-  test("cannot log a workout for the owner or edit the dog's profile (403)", async () => {
+  test("cannot log a workout, edit the dog's profile or touch private notes (403)", async () => {
     await rejectsWith(403, activities.createActivity(trainer, dog.id, { title: 'Podvrh' }));
     await rejectsWith(403, dogs.updateDog(trainer, dog.id, { name: 'Hacked' }));
+    await rejectsWith(403, notes.getNotesByDogId(trainer, dog.id));
+    await rejectsWith(403, notes.getNote(trainer, note.id));
+    await rejectsWith(
+      403,
+      notes.createNote(trainer, dog.id, { title: 'x', text: 'x' }),
+    );
+    await rejectsWith(403, notes.updateNote(trainer, note.id, { title: 'x' }));
+    await rejectsWith(403, notes.deleteNote(trainer, note.id));
     assert.equal((await dogs.getDogById(owner, dog.id)).name, 'Rexík');
     assert.equal((await activities.getActivitiesByDogId(owner, dog.id)).total, 1);
+    assert.equal((await notes.getNotesByDogId(owner, dog.id)).length, 1);
   });
 
   test("does not get the dog among their own dogs", async () => {
@@ -178,6 +198,14 @@ for (const [label, who] of [
       await rejectsWith(404, trainings.getGoalTrainings(user, goal.id));
       await rejectsWith(404, activities.getActivitiesByDogId(user, dog.id));
       await rejectsWith(404, activities.createActivity(user, dog.id, { title: 'x' }));
+      await rejectsWith(404, notes.getNotesByDogId(user, dog.id));
+      await rejectsWith(404, notes.getNote(user, note.id));
+      await rejectsWith(
+        404,
+        notes.createNote(user, dog.id, { title: 'x', text: 'x' }),
+      );
+      await rejectsWith(404, notes.updateNote(user, note.id, { title: 'x' }));
+      await rejectsWith(404, notes.deleteNote(user, note.id));
     });
 
     test('gets the same 404 as for data that does not exist', async () => {
@@ -206,12 +234,15 @@ describe('when the collaboration ends (#61)', () => {
     await rejectsWith(404, blocks.getBlocks(trainer, goal.id));
     await rejectsWith(404, trainings.scheduleTraining(trainer, goal.id, inDays(4)));
     await rejectsWith(404, activities.getActivitiesByDogId(trainer, dog.id));
+    await rejectsWith(404, notes.getNotesByDogId(trainer, dog.id));
+    await rejectsWith(404, notes.getNote(trainer, note.id));
   });
 
-  test('the owner keeps the plan, trainings and records', async () => {
+  test('the owner keeps the plan, trainings, records and notes', async () => {
     assert.equal((await goals.getGoalsByDogId(owner, dog.id)).length, 1);
     assert.equal((await blocks.getBlocks(owner, goal.id)).length, 1);
     assert.equal((await activities.getActivitiesByDogId(owner, dog.id)).total, 1);
+    assert.equal((await notes.getNotesByDogId(owner, dog.id)).length, 1);
     const week = await trainings.getWeekTrainings(owner, inDays(0), inDays(5));
     assert.ok(week.length >= 1);
   });
