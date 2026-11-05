@@ -36,7 +36,7 @@ function ClientOverviewRow({ client }: { client: Client }) {
       <Link
         to="/clients/$clientId"
         params={{ clientId: client.id }}
-        className="flex min-h-11 items-center gap-3 px-4 py-3 outline-hidden transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+        className="flex min-h-11 items-center gap-3 px-4 py-3 outline-hidden transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
       >
         <div className="flex shrink-0 items-center">
           {primaryDog ? (
