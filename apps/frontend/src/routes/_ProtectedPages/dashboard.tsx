@@ -6,6 +6,7 @@ import { Seo } from "@/components/Seo"
 import { Button } from "@/components/ui/button"
 
 import { useSession } from "@/features/auth/hooks/useSession"
+import { TodayView } from "@/features/week/components/TodayView"
 
 export const Route = createFileRoute("/_ProtectedPages/dashboard")({
   component: DashboardPage,
@@ -15,18 +16,16 @@ export function DashboardPage() {
   const { user } = useSession()
   const isTrainer = user?.role === "trainer" || user?.role === "admin"
 
-  return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
-      <Seo title={isTrainer ? "Přehled" : "Dnes"} />
-      <h1 className="text-page font-extrabold tracking-tight text-foreground">
-        {isTrainer ? "Přehled" : "TrainLoop"}
-      </h1>
-      <p className="mt-2 text-sm font-medium text-muted-foreground">
-        {isTrainer
-          ? "Kalendář a vlastní psi zůstávají dostupné z přehledu."
-          : "Vítejte v aplikaci TrainLoop."}
-      </p>
-      {isTrainer ? (
+  if (isTrainer) {
+    return (
+      <div className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
+        <Seo title="Přehled" />
+        <h1 className="text-page font-extrabold tracking-tight text-foreground">
+          Přehled
+        </h1>
+        <p className="mt-2 text-sm font-medium text-muted-foreground">
+          Kalendář a vlastní psi zůstávají dostupné z přehledu.
+        </p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <Button
             asChild
@@ -50,7 +49,14 @@ export function DashboardPage() {
             </Link>
           </Button>
         </div>
-      ) : null}
-    </div>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <Seo title="Dnes" />
+      <TodayView userName={user?.name} />
+    </>
   )
 }
