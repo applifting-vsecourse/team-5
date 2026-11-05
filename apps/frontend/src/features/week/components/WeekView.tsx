@@ -10,10 +10,12 @@ import {
   Undo2,
 } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
+import { EmptyState } from "@/components/EmptyState"
+import { QueryState } from "@/components/QueryState"
+import { StatusChip } from "@/components/StatusChip"
+import { StripCard } from "@/components/StripCard"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   addCalendarDays,
@@ -39,6 +41,12 @@ const STATUS_LABELS: Record<WeekTraining["status"], string> = {
   PLANNED: "Naplánováno",
   COMPLETED: "Odcvičeno",
   SKIPPED: "Přeskočeno",
+}
+
+const STATUS_TONE: Record<WeekTraining["status"], "muted" | "success" | "warning"> = {
+  PLANNED: "muted",
+  COMPLETED: "success",
+  SKIPPED: "warning",
 }
 
 // 1 cvik, 2–4 cviky, 5 cviků.
@@ -83,91 +91,86 @@ function WeekTrainingCard({ training, today }: WeekTrainingCardProps) {
   const heading = `${training.dog.name} · ${training.goal.title}`
 
   return (
-    <li className="relative overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4 transition-colors has-[a:hover]:border-foreground/30">
-      {/* The dog's colour tells the dogs apart, as in the day strip above. */}
-      <span
-        aria-hidden="true"
-        className={cn("absolute inset-y-0 left-0 w-1", dogColorClass(training.dog.color))}
-      />
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-medium text-foreground">
-          {isPlanned ? (
-            // The link covers the whole card (::after), so the card still opens
-            // the walkthrough (#76); the actions below sit on top of it.
-            <Link
-              to="/trainings/$trainingId"
-              params={{ trainingId: training.id }}
-              className="outline-hidden transition-colors after:absolute after:inset-0 after:rounded-lg hover:text-primary focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
-              aria-label={`Trénink ${heading}`}
-            >
-              {heading}
-            </Link>
-          ) : (
-            heading
-          )}
-        </h3>
-        <Badge
-          variant={isPlanned ? "secondary" : "outline"}
-          className={cn(
-            "shrink-0 font-mono text-xs font-semibold tracking-wider uppercase",
-            training.status === "COMPLETED" && "border-primary/40 bg-primary/10 text-primary",
-          )}
-        >
-          {STATUS_LABELS[training.status]}
-        </Badge>
-      </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {titles.length === 0
-          ? "Plán zatím nemá žádný cvik."
-          : `${exerciseCount(titles.length)} · ${titles.join(", ")}`}
-      </p>
-      {isPlanned ? (
-        <>
-          <div className="relative mt-3 flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="min-h-11"
-              aria-label={`Přesunout trénink ${heading}`}
-              onClick={() => setIsMoveOpen(true)}
-            >
-              <CalendarClock className="size-4" />
-              Přesunout
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="min-h-11"
-              aria-label={`Přeskočit trénink ${heading}`}
-              onClick={() => setIsSkipOpen(true)}
-            >
-              <SkipForward className="size-4" />
-              Přeskočit
-            </Button>
-          </div>
-          <MoveTrainingDialog
-            training={training}
-            isOpen={isMoveOpen}
-            onOpenChange={setIsMoveOpen}
-          />
-          <SkipTrainingDialog
-            training={training}
-            isOpen={isSkipOpen}
-            onOpenChange={setIsSkipOpen}
-          />
-        </>
-      ) : null}
-      {canUndoSkip ? (
-        <div className="mt-3 flex gap-2">
-          <UndoSkipButton
-            training={training}
-            heading={heading}
-          />
+    <StripCard
+      as="li"
+      dogColor={training.dog.color}
+      className="relative transition-colors has-[a:hover]:border-foreground/30"
+    >
+      <div className="flex flex-col gap-1 py-3 pr-3 pl-4">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-base font-medium text-foreground">
+            {isPlanned ? (
+              // The link covers the whole card (::after), so the card still opens
+              // the walkthrough (#76); the actions below sit on top of it.
+              <Link
+                to="/trainings/$trainingId"
+                params={{ trainingId: training.id }}
+                className="outline-hidden transition-colors after:absolute after:inset-0 after:rounded-item hover:text-primary focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
+                aria-label={`Trénink ${heading}`}
+              >
+                {heading}
+              </Link>
+            ) : (
+              heading
+            )}
+          </h3>
+          <StatusChip tone={STATUS_TONE[training.status]}>
+            {STATUS_LABELS[training.status]}
+          </StatusChip>
         </div>
-      ) : null}
-    </li>
+        <p className="text-sm text-muted-foreground">
+          {titles.length === 0
+            ? "Plán zatím nemá žádný cvik."
+            : `${exerciseCount(titles.length)} · ${titles.join(", ")}`}
+        </p>
+        {isPlanned ? (
+          <>
+            <div className="relative mt-2 flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-11"
+                aria-label={`Přesunout trénink ${heading}`}
+                onClick={() => setIsMoveOpen(true)}
+              >
+                <CalendarClock className="size-4" />
+                Přesunout
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="min-h-11"
+                aria-label={`Přeskočit trénink ${heading}`}
+                onClick={() => setIsSkipOpen(true)}
+              >
+                <SkipForward className="size-4" />
+                Přeskočit
+              </Button>
+            </div>
+            <MoveTrainingDialog
+              training={training}
+              isOpen={isMoveOpen}
+              onOpenChange={setIsMoveOpen}
+            />
+            <SkipTrainingDialog
+              training={training}
+              isOpen={isSkipOpen}
+              onOpenChange={setIsSkipOpen}
+            />
+          </>
+        ) : null}
+        {canUndoSkip ? (
+          <div className="relative mt-2 flex gap-2">
+            <UndoSkipButton
+              training={training}
+              heading={heading}
+            />
+          </div>
+        ) : null}
+      </div>
+    </StripCard>
   )
 }
 
@@ -196,7 +199,7 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
   return (
     <div className="flex flex-col gap-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Týden</h1>
+        <h1 className="text-page font-extrabold tracking-tight text-foreground">Týden</h1>
         <p className="text-sm text-muted-foreground">
           Jednotlivé tréninky vašich psů. Na jednom cíli můžete pracovat v několika dnech.
         </p>
@@ -320,60 +323,54 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
           {selectedDay === today ? " · dnes" : ""}
         </h2>
 
-        {weekQuery.isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-20 w-full rounded-lg" />
-            <Skeleton className="h-20 w-full rounded-lg" />
-          </div>
-        ) : weekQuery.error ? (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Týden se nepodařilo načíst.</p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="min-h-11"
-              onClick={() => void weekQuery.refetch()}
-            >
-              Zkusit znovu
-            </Button>
-          </div>
-        ) : trainings.length === 0 ? (
-          // Nothing in the whole week: say what to do next (#72).
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-8 text-center sm:p-12">
-            <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-              <Calendar className="size-6" />
+        <QueryState
+          isLoading={weekQuery.isLoading}
+          error={weekQuery.error}
+          onRetry={() => void weekQuery.refetch()}
+          isEmpty={trainings.length === 0}
+          errorTitle="Týden se nepodařilo načíst"
+          empty={
+            <EmptyState
+              icon={Calendar}
+              chip="BEZ PLÁNU"
+              titleAs="p"
+              title="Na tento týden nemáte nic naplánováno"
+              description="Založte psovi cíl a naplánujte trénink, nebo počkejte, až vám ho zadá trenér."
+              action={
+                <Button
+                  asChild
+                  size="lg"
+                  className="w-full"
+                >
+                  <Link to="/dogs">Přejít na psy</Link>
+                </Button>
+              }
+            />
+          }
+        >
+          {selectedTrainings.length === 0 ? (
+            // Keep a single day-level h2 above; avoid EmptyState's extra h2 here.
+            <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-border bg-card p-6 text-center">
+              <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                <Calendar
+                  className="size-5"
+                  aria-hidden
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">Na tento den nemáte nic naplánováno.</p>
             </div>
-            <p className="max-w-md text-sm text-muted-foreground">
-              Na tento týden nemáte nic naplánováno. Založte psovi cíl a naplánujte trénink, nebo
-              počkejte, až vám ho zadá trenér.
-            </p>
-            <Button
-              asChild
-              variant="outline"
-              className="mt-4 min-h-11"
-            >
-              <Link to="/dogs">Přejít na psy</Link>
-            </Button>
-          </div>
-        ) : selectedTrainings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-6 text-center">
-            <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-              <Calendar className="size-5" />
-            </div>
-            <p className="text-sm text-muted-foreground">Na tento den nemáte nic naplánováno.</p>
-          </div>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {selectedTrainings.map((training) => (
-              <WeekTrainingCard
-                key={training.id}
-                training={training}
-                today={today}
-              />
-            ))}
-          </ul>
-        )}
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {selectedTrainings.map((training) => (
+                <WeekTrainingCard
+                  key={training.id}
+                  training={training}
+                  today={today}
+                />
+              ))}
+            </ul>
+          )}
+        </QueryState>
       </section>
 
       {/* Month Calendar Week Picker Dialog */}

@@ -13,6 +13,8 @@ type EmptyStateProps = {
   className?: string
   /** Soft tint behind the icon circle — keep to semantic surfaces. */
   iconTone?: "primary" | "dog" | "danger"
+  /** Use `p` when nested under an existing section heading. */
+  titleAs?: "h2" | "p"
 }
 
 /**
@@ -29,7 +31,9 @@ export function EmptyState({
   secondaryAction,
   className,
   iconTone = "primary",
+  titleAs = "h2",
 }: EmptyStateProps) {
+  const TitleTag = titleAs
   return (
     <div
       className={cn(
@@ -66,7 +70,9 @@ export function EmptyState({
         </div>
       </div>
 
-      <h2 className="text-2xl font-extrabold tracking-tight text-foreground">{title}</h2>
+      <TitleTag className="text-2xl font-extrabold tracking-tight text-foreground">
+        {title}
+      </TitleTag>
       <p className="max-w-sm text-sm font-medium text-muted-foreground">{description}</p>
 
       {action || secondaryAction ? (

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { DashboardPage } from "./dashboard"
 
-let mockUser: { role?: string } | null = { role: "client" }
+let mockUser: { role?: string; name?: string } | null = { role: "client" }
 
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => () => ({}),
@@ -20,13 +20,20 @@ vi.mock("@/features/auth/hooks/useSession", () => ({
   useSession: () => ({ user: mockUser }),
 }))
 
+vi.mock("@/features/week/components/TodayView", () => ({
+  TodayView: ({ userName }: { userName?: string }) => (
+    <div data-testid="today-view">{userName ?? "handler"}</div>
+  ),
+}))
+
 describe("DashboardPage", () => {
   beforeEach(() => {
-    mockUser = { role: "client" }
+    mockUser = { role: "client", name: "Anna Handler" }
   })
 
-  it("does not link to the calendar for a handler", () => {
+  it("shows Dnes for a handler without calendar shortcuts", () => {
     render(<DashboardPage />)
+    expect(screen.getByTestId("today-view")).toHaveTextContent("Anna Handler")
     expect(screen.queryByRole("link", { name: /kalendář/i })).not.toBeInTheDocument()
   })
 
