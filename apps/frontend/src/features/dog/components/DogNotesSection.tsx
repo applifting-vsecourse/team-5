@@ -4,20 +4,13 @@ import { format, parseISO } from "date-fns"
 import { cs } from "date-fns/locale"
 import { NotebookPen, Pencil, Plus, Trash2 } from "lucide-react"
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ConfirmDestructiveDialog } from "@/components/ConfirmDestructiveDialog"
+import { EmptyState } from "@/components/EmptyState"
+import { QueryState } from "@/components/QueryState"
+import { StripCard } from "@/components/StripCard"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
 
-import type { DogNote, DogNoteFormValues } from "@/features/dog/api/dogSchemas"
+import type { DogNoteFormValues } from "@/features/dog/api/dogSchemas"
 import { dogNotesQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 import { useCreateDogNote } from "@/features/dog/hooks/useCreateDogNote"
 import { useDeleteDogNote } from "@/features/dog/hooks/useDeleteDogNote"
@@ -35,7 +28,6 @@ const formatNoteDate = (date: string): string =>
 
 export function DogNotesSection({ dogId, dogName }: DogNotesSectionProps) {
   const [dialogMode, setDialogMode] = useState<DogNoteDialogMode | null>(null)
-  const [noteToDelete, setNoteToDelete] = useState<DogNote | null>(null)
 
   const notesQuery = useQuery(dogNotesQueryOptions(dogId))
   const createNote = useCreateDogNote(dogId)
@@ -57,12 +49,6 @@ export function DogNotesSection({ dogId, dogName }: DogNotesSectionProps) {
     }
   }
 
-  const handleConfirmDelete = () => {
-    if (!noteToDelete) return
-    deleteNote.mutate(noteToDelete.id)
-    setNoteToDelete(null)
-  }
-
   return (
     <section
       className="space-y-3"
@@ -71,9 +57,9 @@ export function DogNotesSection({ dogId, dogName }: DogNotesSectionProps) {
       <div className="flex items-center justify-between gap-4">
         <h2
           id="notes-heading"
-          className="text-lg font-semibold tracking-tight text-foreground"
+          className="text-section font-extrabold text-foreground"
         >
-          Poznámky
+          Deník
         </h2>
         <Button
           type="button"
@@ -82,7 +68,10 @@ export function DogNotesSection({ dogId, dogName }: DogNotesSectionProps) {
           className="min-h-11 min-w-11 gap-2"
           onClick={() => setDialogMode({ kind: "create" })}
         >
-          <Plus className="size-4" />
+          <Plus
+            className="size-4"
+            aria-hidden
+          />
           <span>Nová poznámka</span>
         </Button>
       </div>
@@ -91,43 +80,53 @@ export function DogNotesSection({ dogId, dogName }: DogNotesSectionProps) {
         Co zaznělo na lekci nebo semináři. Vidíte jen vy.
       </p>
 
-      {notesQuery.isLoading ? (
-        <div className="space-y-2">
-          <Skeleton className="h-20 w-full rounded-lg" />
-          <Skeleton className="h-20 w-full rounded-lg" />
-        </div>
-      ) : notesQuery.error ? (
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Poznámky se nepodařilo načíst.</p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="min-h-11"
-            onClick={() => void notesQuery.refetch()}
-          >
-            Zkusit znovu
-          </Button>
-        </div>
-      ) : notes.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-6 text-center">
-          <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-            <NotebookPen className="size-5" />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {dogName} zatím nemá žádnou poznámku. Zapište si, co zaznělo na lekci.
-          </p>
-        </div>
-      ) : (
+      <QueryState
+        isLoading={notesQuery.isLoading}
+        error={
+          notesQuery.isError
+            ? (notesQuery.error ?? new Error("Deník se nepodařilo načíst."))
+            : null
+        }
+        isEmpty={!notesQuery.isLoading && !notesQuery.isError && notes.length === 0}
+        onRetry={() => void notesQuery.refetch()}
+        loadingLabel="Načítání deníku"
+        errorTitle="Deník se nepodařilo načíst"
+        errorDescription="Zkontroluj připojení a zkus to znovu."
+        empty={
+          <EmptyState
+            icon={NotebookPen}
+            chip="BEZ POZNÁMEK"
+            titleAs="p"
+            title={`${dogName} zatím nemá žádnou poznámku`}
+            description="Zapište si, co zaznělo na lekci nebo semináři."
+            action={
+              <Button
+                type="button"
+                size="lg"
+                className="w-full"
+                onClick={() => setDialogMode({ kind: "create" })}
+              >
+                <Plus
+                  className="size-4"
+                  aria-hidden
+                />
+                Nová poznámka
+              </Button>
+            }
+          />
+        }
+      >
         <ul className="flex flex-col gap-2">
           {notes.map((note) => (
-            <li
+            <StripCard
               key={note.id}
-              className="rounded-lg border border-border bg-card p-3"
+              as="li"
             >
-              <div className="flex items-start gap-2">
+              <div className="flex items-start gap-2 px-4 py-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-muted-foreground">{formatNoteDate(note.date)}</p>
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {formatNoteDate(note.date)}
+                  </p>
                   <p className="truncate text-base font-medium text-foreground">{note.title}</p>
                   <p className="mt-1 line-clamp-3 text-sm whitespace-pre-wrap text-muted-foreground">
                     {note.text}
@@ -142,24 +141,38 @@ export function DogNotesSection({ dogId, dogName }: DogNotesSectionProps) {
                     aria-label={`Upravit poznámku ${note.title}`}
                     onClick={() => setDialogMode({ kind: "edit", note })}
                   >
-                    <Pencil className="size-5" />
+                    <Pencil
+                      className="size-5"
+                      aria-hidden
+                    />
                   </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="size-11 text-destructive hover:text-destructive"
-                    aria-label={`Smazat poznámku ${note.title}`}
-                    onClick={() => setNoteToDelete(note)}
-                  >
-                    <Trash2 className="size-5" />
-                  </Button>
+                  <ConfirmDestructiveDialog
+                    title="Smazat poznámku?"
+                    description={`Poznámka „${note.title}“ zmizí. Vrátit to nepůjde.`}
+                    confirmLabel="Smazat"
+                    cancelLabel="Ponechat"
+                    onConfirm={() => deleteNote.mutate(note.id)}
+                    trigger={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-11 text-destructive hover:text-destructive"
+                        aria-label={`Smazat poznámku ${note.title}`}
+                      >
+                        <Trash2
+                          className="size-5"
+                          aria-hidden
+                        />
+                      </Button>
+                    }
+                  />
                 </div>
               </div>
-            </li>
+            </StripCard>
           ))}
         </ul>
-      )}
+      </QueryState>
 
       <DogNoteDialog
         mode={dialogMode}
@@ -167,32 +180,6 @@ export function DogNotesSection({ dogId, dogName }: DogNotesSectionProps) {
         isPending={createNote.isPending || updateNote.isPending}
         onSubmit={handleSave}
       />
-
-      <AlertDialog
-        open={noteToDelete !== null}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) setNoteToDelete(null)
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Smazat poznámku?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Poznámka „{noteToDelete?.title}“ zmizí. Vrátit to nepůjde.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="min-h-11">Ponechat</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              className="min-h-11"
-              onClick={handleConfirmDelete}
-            >
-              Smazat
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </section>
   )
 }
