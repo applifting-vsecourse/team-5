@@ -11,26 +11,23 @@ type StripCardProps = {
   as?: "article" | "div" | "li"
 }
 
-/**
- * Card with an optional dog-colour identity strip (calendar row, client row).
- * Callers: DogCard.tsx (migrate strip), week cards in #161, docs/ui-components.md.
- * Reads dogColor index only — no API/schema writes. No existing shared StripCard
- * (DogCard inlines the pattern). User: "vem si nejaky redesign issue z baclogu
- * tohohle sprintu a zacni na nem delat".
- */
+/** List/calendar row with an optional dog-colour identity strip. */
 export function StripCard({ children, dogColor, className, as: Comp = "article" }: StripCardProps) {
   return (
     <Comp
       data-slot="strip-card"
       className={cn(
-        "relative flex flex-row items-stretch overflow-hidden rounded-item border border-border bg-card text-card-foreground",
+        "relative flex flex-row items-stretch rounded-item border border-border bg-card text-card-foreground",
         className,
       )}
     >
       {dogColor != null ? (
         <div
           aria-hidden
-          className={cn("w-1.5 shrink-0 self-stretch", dogColorClass(dogColor))}
+          className={cn(
+            "w-1.5 shrink-0 self-stretch overflow-hidden rounded-l-item",
+            dogColorClass(dogColor),
+          )}
         />
       ) : null}
       <div className="flex min-w-0 flex-1 flex-col">{children}</div>

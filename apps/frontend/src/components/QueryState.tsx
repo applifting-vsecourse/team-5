@@ -21,12 +21,7 @@ type QueryStateProps = {
   className?: string
 }
 
-/**
- * Loading / empty / error for every list (DESIGN.md).
- * Callers: DogList.tsx (~L19–80), ClientList.tsx (~L39–100).
- * No existing QueryState — both lists duplicate Alert+Skeleton+empty.
- * User: "vem si nejaky redesign issue z baclogu tohohle sprintu a zacni na nem delat".
- */
+/** Loading / empty / error for every list (DESIGN.md). */
 export function QueryState({
   isLoading = false,
   error = null,

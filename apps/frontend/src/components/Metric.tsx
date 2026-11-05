@@ -10,10 +10,7 @@ type MetricProps = {
   isOnHero?: boolean
 }
 
-/**
- * One number + short label (úspěšnost, série, počet tréninků).
- * Callers: HeroCard demos, dog/training cards in #161/#163, docs/ui-components.md.
- */
+/** One number + short label (úspěšnost, série, počet tréninků). */
 export function Metric({ value, label, className, isOnHero = false }: MetricProps) {
   return (
     <div className={cn("flex min-w-0 flex-col gap-0.5", className)}>

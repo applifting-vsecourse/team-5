@@ -25,7 +25,7 @@ export function DogCard({ dog, className }: DogCardProps) {
       <Link
         to="/dogs/$dogId"
         params={{ dogId: dog.id }}
-        className="flex min-h-16 flex-1 items-center justify-between gap-4 p-4 text-left outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        className="focus-ring-custom flex min-h-16 flex-1 items-center justify-between gap-4 p-4 text-left outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
         aria-label={`Detail psa ${dog.name}`}
       >
         <div className="flex min-w-0 items-center gap-3">

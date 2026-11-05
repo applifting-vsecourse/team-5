@@ -9,11 +9,7 @@ type HeroCardProps = {
   eyebrow?: string
 }
 
-/**
- * Dark summary surface for the next training or one highlighted metric.
- * Callers: Dnes redesign (#161), docs/ui-components.md, HeroCard tests.
- * No existing hero component (grep empty). Instruction: redesign issue from sprint backlog.
- */
+/** Dark summary surface for the next training or one highlighted metric. */
 export function HeroCard({ children, className, eyebrow }: HeroCardProps) {
   return (
     <section
