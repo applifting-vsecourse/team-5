@@ -151,7 +151,7 @@ describe("DogDetailView", () => {
     // Sections
     expect(screen.getByRole("heading", { name: "Aktivní cíle" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Aktivity" })).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "Poznámky" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Deník" })).toBeInTheDocument()
     // "+ Nový cíl" opens Tvorba tréninku (#62)
     expect(screen.getByRole("link", { name: /nový cíl/i })).toHaveAttribute(
       "href",
@@ -197,7 +197,7 @@ describe("DogDetailView", () => {
     // Edit button must NOT be rendered
     expect(screen.queryByRole("button", { name: /upravit psa/i })).not.toBeInTheDocument()
     // Private notes stay with the owner (#70)
-    expect(screen.queryByRole("heading", { name: "Poznámky" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "Deník" })).not.toBeInTheDocument()
 
     // Back button links to client detail
     const backLink = screen.getByRole("link", { name: /zpět na detail klienta/i })
