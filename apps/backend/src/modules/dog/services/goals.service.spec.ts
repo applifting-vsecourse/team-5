@@ -149,7 +149,7 @@ describe('GoalsService', () => {
       });
     });
 
-    it('stores a goal without discipline and principle as null', async () => {
+    it('uses the default discipline and clears an empty principle', async () => {
       const { service, goalRepository } = setup();
       goalRepository.createGoal.mockResolvedValue(aGoal());
 
@@ -160,7 +160,16 @@ describe('GoalsService', () => {
       });
 
       expect(goalRepository.createGoal).toHaveBeenCalledWith(
-        expect.objectContaining({ discipline: null, principle: null }),
+        expect.objectContaining({ discipline: 'Obecné', principle: null }),
+      );
+    });
+
+    it('uses the default discipline when no discipline is supplied', async () => {
+      const { service, goalRepository } = setup();
+      goalRepository.createGoal.mockResolvedValue(aGoal());
+      await service.createGoal(owner, 'd1', { title: 'Pac' });
+      expect(goalRepository.createGoal).toHaveBeenCalledWith(
+        expect.objectContaining({ discipline: 'Obecné' }),
       );
     });
 
@@ -187,6 +196,19 @@ describe('GoalsService', () => {
   });
 
   describe('updateGoal', () => {
+    it('moves a goal to the default discipline when cleared', async () => {
+      const { service, goalRepository } = setup();
+      goalRepository.getGoalById.mockResolvedValue(aGoal());
+      goalRepository.updateGoal.mockResolvedValue(
+        aGoal({ discipline: 'Obecné' }),
+      );
+      await service.updateGoal(owner, 'g1', { discipline: '   ' });
+      expect(goalRepository.updateGoal).toHaveBeenCalledWith(
+        'g1',
+        expect.objectContaining({ discipline: 'Obecné' }),
+      );
+    });
+
     it('updates a goal of the user’s dog', async () => {
       const { service, goalRepository } = setup();
       goalRepository.getGoalById.mockResolvedValue(aGoal());

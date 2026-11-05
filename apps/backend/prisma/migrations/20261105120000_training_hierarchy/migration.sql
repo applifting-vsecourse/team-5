@@ -30,7 +30,8 @@ ALTER TABLE "scheduled_training" ADD COLUMN "trainingId" TEXT;
 ALTER TABLE "workout_log" ADD COLUMN "trainingId" TEXT;
 
 CREATE TEMP TABLE legacy_disciplines ON COMMIT DROP AS
-  SELECT "id" AS "dogId", unnest("disciplines") AS "name" FROM "dog"
+  SELECT "id" AS "dogId", btrim(item.value) AS "name" FROM "dog", unnest("disciplines") AS item(value)
+    WHERE NULLIF(btrim(item.value), '') IS NOT NULL
   UNION SELECT "dogId", COALESCE(NULLIF(btrim("discipline"), ''), 'Obecné') FROM "training_goal"
 ;
 INSERT INTO "discipline" ("id", "name")
@@ -40,6 +41,10 @@ SELECT 'dog-discipline-' || md5(l."dogId" || ':' || l."name"), l."dogId", d."id"
 FROM legacy_disciplines l JOIN "discipline" d ON d."name" = l."name";
 UPDATE "training_goal" g SET "disciplineId" = d."id", "discipline" = d."name"
 FROM "discipline" d WHERE d."name" = COALESCE(NULLIF(btrim(g."discipline"), ''), 'Obecné');
+UPDATE "dog" dog SET "disciplines" = ARRAY(
+  SELECT d."name" FROM "dog_discipline" dd JOIN "discipline" d ON d."id" = dd."disciplineId"
+  WHERE dd."dogId" = dog."id" ORDER BY d."name"
+);
 INSERT INTO "goal_training" ("id", "goalId", "title", "createdAt", "updatedAt")
 SELECT 'training-' || "id", "id", "title", "createdAt", "updatedAt" FROM "training_goal";
 UPDATE "plan_block" SET "trainingId" = 'training-' || "goalId";
@@ -56,10 +61,29 @@ ALTER TABLE "workout_log" ADD CONSTRAINT "workout_log_trainingId_fkey"
   FOREIGN KEY ("trainingId") REFERENCES "goal_training"("id") ON DELETE SET NULL;
 CREATE INDEX "plan_block_trainingId_position_idx" ON "plan_block"("trainingId", "position");
 CREATE INDEX "scheduled_training_trainingId_date_idx" ON "scheduled_training"("trainingId", "date");
--- Existing duplicate legacy sessions, if any, remain available. Application
--- writes serialize on the goal row, including move/restore/reorder operations.
+-- Keep all legacy IDs and record links; skip surplus plans deterministically.
+WITH ranked AS (
+  SELECT "id", row_number() OVER (
+    PARTITION BY "trainingId", "date" ORDER BY "createdAt", "id"
+  ) AS position FROM "scheduled_training" WHERE "status" = 'PLANNED'
+)
+UPDATE "scheduled_training" s SET "status" = 'SKIPPED'
+FROM ranked r WHERE s."id" = r."id" AND r.position > 1;
+CREATE UNIQUE INDEX "scheduled_training_planned_training_date_key"
+  ON "scheduled_training"("trainingId", "date") WHERE "status" = 'PLANNED';
 
 -- Keep the legacy dog's string list as an input/projection during the UI rollout.
+CREATE FUNCTION normalize_dog_disciplines() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  NEW."disciplines" := ARRAY(
+    SELECT DISTINCT btrim(name) FROM unnest(NEW."disciplines") AS name
+    WHERE NULLIF(btrim(name), '') IS NOT NULL ORDER BY btrim(name)
+  );
+  RETURN NEW;
+END $$;
+CREATE TRIGGER normalize_dog_disciplines BEFORE INSERT OR UPDATE OF "disciplines" ON "dog"
+FOR EACH ROW EXECUTE FUNCTION normalize_dog_disciplines();
+
 CREATE FUNCTION sync_dog_disciplines() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   INSERT INTO "discipline" ("id", "name")
@@ -96,9 +120,14 @@ BEGIN
       WHERE "name" = selected_name;
     INSERT INTO "dog_discipline" ("id", "dogId", "disciplineId")
       VALUES ('dog-discipline-' || md5(NEW."dogId" || ':' || selected_name), NEW."dogId", NEW."disciplineId")
-      ON CONFLICT ("dogId", "disciplineId") DO NOTHING;
+      ON CONFLICT ("dogId", "disciplineId") DO UPDATE
+        SET "isArchived" = false, "updatedAt" = CURRENT_TIMESTAMP;
     NEW."discipline" := selected_name;
   END IF;
+  -- Use an atomic array update so simultaneous goals cannot lose a discipline.
+  -- The dog trigger restores the membership for explicit disciplineId writes too.
+  UPDATE "dog" SET "disciplines" = array_append("disciplines", selected_name)
+    WHERE "id" = NEW."dogId";
   RETURN NEW;
 END $$;
 CREATE TRIGGER goal_discipline BEFORE INSERT OR UPDATE OF "discipline", "disciplineId", "dogId"

@@ -105,7 +105,7 @@ export class UpdateGoalDto {
   title?: string;
 
   @ApiPropertyOptional({
-    description: "One of the dog's disciplines; empty string clears it",
+    description: "One of the dog's disciplines; empty string selects Obecné",
     maxLength: DISCIPLINE_MAX_LENGTH,
   })
   @IsOptional()

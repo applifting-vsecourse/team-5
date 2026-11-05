@@ -45,7 +45,7 @@ export class GoalsService {
   }
 
   // The discipline is picked from the dog's own disciplines (#62). An empty
-  // value means "no discipline" and is stored as null. A goal may keep the
+  // value selects the default "Obecné" discipline. A goal may keep the
   // discipline it already has even after the dog dropped it, so editing
   // something else on that goal still works.
   private normalizeDiscipline(
@@ -55,7 +55,7 @@ export class GoalsService {
   ): string | null | undefined {
     if (discipline === undefined) return undefined;
     const trimmed = discipline.trim();
-    if (!trimmed) return null;
+    if (!trimmed) return 'Obecné';
     if (
       trimmed !== currentDiscipline &&
       !(dog.disciplines ?? []).includes(trimmed)
@@ -92,7 +92,7 @@ export class GoalsService {
       dogId,
       createdById: user.id,
       title: data.title.trim(),
-      discipline: this.normalizeDiscipline(dog, data.discipline) ?? null,
+      discipline: this.normalizeDiscipline(dog, data.discipline) ?? 'Obecné',
       principle: data.principle?.trim() || null,
       status: data.status,
       order: data.order,

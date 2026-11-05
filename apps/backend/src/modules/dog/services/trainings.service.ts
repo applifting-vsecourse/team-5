@@ -121,7 +121,7 @@ export class TrainingsService {
     }
     if (moved === 'day-taken') {
       throw new ConflictException(
-        'This goal already has a planned training on this day',
+        'This training is already planned on this day',
       );
     }
     return moved;
@@ -173,7 +173,7 @@ export class TrainingsService {
       );
     if (result === 'day-taken') {
       throw new ConflictException(
-        'This goal already has a planned training on this day',
+        'This training is already planned on this day',
       );
     }
     if (result === 'not-skipped') {
@@ -270,7 +270,7 @@ export class TrainingsService {
       });
     if (!training) {
       throw new ConflictException(
-        'This goal already has a planned training on this day',
+        'This training is already planned on this day',
       );
     }
     return training;

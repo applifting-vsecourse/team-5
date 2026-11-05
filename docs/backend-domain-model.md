@@ -43,6 +43,18 @@ udržují vazby i pro původní seed a klienty. Původní zápis bloku nebo term
 přes cíl lze jednoznačně převést pouze pokud má cíl nejvýše jeden trénink;
 jinak je třeba použít konkrétní ID tréninku. Nové API vždy pracuje s tímto ID.
 
+Názvy disciplín se při migraci i pozdějších zápisech oříznou; prázdné položky
+seznamu psa se odstraní a duplicity sloučí. Založení cíle obnoví archivované
+přiřazení jeho disciplíny a doplní ji do seznamu psa. Prázdná disciplína cíle
+vybere „Obecné“ (také při úpravě); cíl vždy patří do jedné disciplíny.
+Legacy čtení `/goals/:goalId/blocks` vrací 409, pokud má cíl více tréninků,
+včetně archivovaných; pro konkrétní kroky slouží `/goal-trainings/:id`.
+
+Databáze vynucuje nejvýše jeden PLANNED termín pro dvojici `trainingId`, `date`.
+Při migraci zůstane z případných duplicit plánovaný nejstarší termín
+(při shodě rozhodne ID); ostatní přejdou na SKIPPED. Jejich ID i vazby na
+záznamy zůstávají zachované, nic se nemaže. Dokončené termíny index neomezuje.
+
 Archivace tréninku ani disciplíny nemaže kroky, termíny nebo záznamy. Archivovaný
 cíl/rodič blokuje nové plánování a změny obsahu; historické termíny zůstávají
 čitelné a lze je dokončit. Oprávnění vycházejí ze stávajícího `DogAccessService`:
@@ -84,10 +96,7 @@ neúplný seznam ID vrací 400; nejednoznačný starý zápis přes celý cíl v
 Různé tréninky téhož cíle lze naplánovat na stejný den; duplicita stejného
 tréninku ve stavu PLANNED ve stejný den vrací 409.
 
-Izolovaný test migrace lze spustit bez Dockeru: nainstalovat
-`@electric-sql/pglite` do dočasné složky pomocí `npm install --prefix <temp-dir>
---no-save --ignore-scripts @electric-sql/pglite`, nastavit `PGLITE_MODULE_PATH`
-na absolutní cestu k `node_modules/@electric-sql/pglite/dist/index.js` v této
-složce a spustit `node apps/backend/test/training-hierarchy.migration.mjs`.
+Izolovaný test migrace lze spustit bez Dockeru: `pnpm backend test:migration`.
+PGlite je vývojová závislost a stejný test běží automaticky v CI.
 Test přehraje migrace a ověří zachování ID/vazeb, společné disciplíny,
 oddělené plány, kompatibilitu, neplatné rodiče a smazání majitele v paměti.

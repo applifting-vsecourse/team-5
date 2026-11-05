@@ -1,5 +1,5 @@
-// Isolated migration check. PGLITE_MODULE_PATH points to a temporary PGlite
-// installation, so this tool adds no application/runtime dependency.
+// Isolated migration regression test; uses only an in-memory database.
+// PGLITE_MODULE_PATH optionally overrides the installed development dependency.
 import assert from 'node:assert/strict';
 import { readdir, readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
@@ -26,13 +26,17 @@ try {
     INSERT INTO "user" (id,name,email,"emailVerified","createdAt","updatedAt")
       VALUES ('owner','Owner','owner@example.test',true,now(),now());
     INSERT INTO dog (id,name,color,"ownerId",disciplines) VALUES
-      ('alik','Alík',1,'owner',ARRAY['Poslušnost']), ('rex','Rex',2,'owner',ARRAY['Poslušnost']);
+      ('alik','Alík',1,'owner',ARRAY[' Poslušnost ', 'Poslušnost', '', '   ']), ('rex','Rex',2,'owner',ARRAY['Poslušnost']);
     INSERT INTO training_goal (id,"dogId",title,discipline) VALUES
       ('g1','alik','Chůze u nohy','Poslušnost'), ('g2','rex','Chůze u nohy','Poslušnost'),
       ('g3','alik','Bez disciplíny',NULL);
     INSERT INTO plan_block (id,"goalId",position,title,criterion) VALUES ('b1','g1',0,'Kontakt','5 sekund');
     INSERT INTO scheduled_training (id,"goalId","dogId",date,status) VALUES ('s1','g1','alik','2026-11-05','COMPLETED');
+    INSERT INTO scheduled_training (id,"goalId","dogId",date,status) VALUES
+      ('duplicate-a','g1','alik','2026-11-08','PLANNED'),
+      ('duplicate-b','g1','alik','2026-11-08','PLANNED');
     INSERT INTO workout_log (id,"dogId","goalId",title,"scheduledTrainingId") VALUES ('l1','alik','g1','Kontakt','s1');
+    INSERT INTO workout_log (id,"dogId","goalId",title,"scheduledTrainingId") VALUES ('duplicate-log','alik','g1','Legacy duplicate','duplicate-b');
   `);
   await db.exec(
     await readFile(new URL(`${latest}/migration.sql`, migrations), 'utf8'),
@@ -70,12 +74,53 @@ try {
     'Obecné',
   );
 
+  assert.deepEqual(
+    (await sql(`SELECT disciplines FROM dog WHERE id='alik'`))[0].disciplines,
+    ['Obecné', 'Poslušnost'],
+  );
+  assert.deepEqual(
+    await sql(
+      `SELECT id,status FROM scheduled_training WHERE id LIKE 'duplicate-%' ORDER BY id`,
+    ),
+    [
+      { id: 'duplicate-a', status: 'PLANNED' },
+      { id: 'duplicate-b', status: 'SKIPPED' },
+    ],
+  );
+  await assert.rejects(
+    db.exec(`INSERT INTO scheduled_training (id,"goalId","trainingId","dogId",date)
+    VALUES ('duplicate-new','g1','training-g1','alik','2026-11-08')`),
+    /unique/i,
+  );
+  assert.deepEqual(
+    (
+      await sql(
+        `SELECT "scheduledTrainingId", "trainingId" FROM workout_log WHERE id='duplicate-log'`,
+      )
+    )[0],
+    { scheduledTrainingId: 'duplicate-b', trainingId: 'training-g1' },
+  );
+  await assert.rejects(
+    db.exec(
+      `UPDATE scheduled_training SET status='PLANNED' WHERE id='duplicate-b'`,
+    ),
+    /unique/i,
+  );
+  await assert.rejects(
+    db.exec(
+      `UPDATE scheduled_training SET date='2026-11-08',status='PLANNED' WHERE id='s1'`,
+    ),
+    /unique/i,
+  );
+  await db.exec(`INSERT INTO scheduled_training (id,"goalId","trainingId","dogId",date,status)
+    VALUES ('completed-same-day','g1','training-g1','alik','2026-11-08','COMPLETED')`);
+
   await db.exec(`
     INSERT INTO training_goal (id,"dogId",title) VALUES ('g4','rex','Nový cíl');
     INSERT INTO plan_block (id,"goalId",position,title) VALUES ('b4','g4',0,'První krok');
     INSERT INTO goal_training (id,"goalId",title,position) VALUES ('t2','g1','Obraty',1);
     INSERT INTO plan_block (id,"goalId","trainingId",position,title) VALUES ('b2','g1','t2',0,'Obrat');
-    INSERT INTO scheduled_training (id,"goalId","trainingId","dogId",date) VALUES ('s2','g1','t2','alik','2026-11-06');
+    INSERT INTO scheduled_training (id,"goalId","trainingId","dogId",date) VALUES ('s2','g1','t2','alik','2026-11-08');
   `);
   assert.equal(
     (await sql(`SELECT "trainingId" FROM plan_block WHERE id='b4'`))[0]
@@ -122,6 +167,50 @@ try {
       .n,
     1,
   );
+  // Restore an archived default membership through a new legacy goal.
+  await db.exec(
+    `INSERT INTO training_goal (id,"dogId",title) VALUES ('restored','alik','New goal')`,
+  );
+  assert.equal(
+    (
+      await sql(`SELECT dd."isArchived" FROM dog_discipline dd JOIN discipline d ON d.id=dd."disciplineId"
+    WHERE dd."dogId"='alik' AND d.name='Obecné'`)
+    )[0].isArchived,
+    false,
+  );
+  assert.deepEqual(
+    (await sql(`SELECT disciplines FROM dog WHERE id='alik'`))[0].disciplines,
+    ['Obecné'],
+  );
+  await db.exec(
+    `UPDATE dog SET disciplines=ARRAY[' Poslušnost ', 'Poslušnost', '', ' '] WHERE id='alik'`,
+  );
+  assert.deepEqual(
+    (await sql(`SELECT disciplines FROM dog WHERE id='alik'`))[0].disciplines,
+    ['Poslušnost'],
+  );
+  assert.equal(
+    (
+      await sql(
+        `SELECT count(*)::int AS n FROM discipline WHERE name=' Poslušnost '`,
+      )
+    )[0].n,
+    0,
+  );
+  // Explicit disciplineId writes also restore membership and the legacy projection.
+  await db.exec(`INSERT INTO training_goal (id,"dogId",title,"disciplineId")
+    SELECT 'explicit','alik','Explicit',id FROM discipline WHERE name='Obecné'`);
+  assert.deepEqual(
+    (await sql(`SELECT disciplines FROM dog WHERE id='alik'`))[0].disciplines,
+    ['Obecné', 'Poslušnost'],
+  );
+  await db.exec(`UPDATE training_goal SET discipline='' WHERE id='explicit'`);
+  assert.equal(
+    (await sql(`SELECT discipline FROM training_goal WHERE id='explicit'`))[0]
+      .discipline,
+    'Obecné',
+  );
+
   await db.exec(`DELETE FROM "user" WHERE id='owner'`);
   for (const table of [
     'dog',
