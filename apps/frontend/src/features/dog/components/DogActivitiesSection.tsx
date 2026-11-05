@@ -3,9 +3,11 @@ import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { Calendar, ChevronLeft, ChevronRight, FileText } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
+import { EmptyState } from "@/components/EmptyState"
+import { QueryState } from "@/components/QueryState"
+import { StatusChip } from "@/components/StatusChip"
+import { StripCard } from "@/components/StripCard"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -13,63 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Skeleton } from "@/components/ui/skeleton"
-
 import type { DogActivity } from "@/features/dog/api/dogSchemas"
 import { dogActivitiesQueryOptions } from "@/features/dog/api/dogsQueryOptions"
-
-const DEFAULT_ACTIVITIES: DogActivity[] = [
-  {
-    id: "act-1",
-    date: "18. října 2026",
-    title: "Poslušnost v parku",
-    status: "completed",
-    successRate: 95,
-    rating: 5,
-    note: "Soustředil se skvěle, jen u druhého cviku byl trochu rozptýlený kolemjdoucím psem. Odložení za pohybu zvládl napoprvé.",
-  },
-  {
-    id: "act-2",
-    date: "16. října 2026",
-    title: "Canicross intervaly",
-    status: "completed",
-    successRate: 88,
-    rating: 4,
-    note: "Pěkné tempo v první polovině trasy, pak mírná únava na štěrku. Celkově velmi dobré nasazení.",
-  },
-  {
-    id: "act-3",
-    date: "15. října 2026",
-    title: "Trénink odložení",
-    status: "skipped",
-    note: "Pršelo a pes byl unavený po návštěvě veterináře. Trénink jsme po dohodě přeskočili.",
-  },
-  {
-    id: "act-4",
-    date: "13. října 2026",
-    title: "Nosework – vyhledávání skořice",
-    status: "completed",
-    successRate: 100,
-    rating: 5,
-    note: "Všechny 3 vzorky našel do 40 sekund. Perfektní označení čumákem bez škrábání.",
-  },
-  {
-    id: "act-5",
-    date: "11. října 2026",
-    title: "Socializace na nádraží",
-    status: "completed",
-    successRate: 80,
-    rating: 4,
-    note: "Hluk přijíždějícího vlaku zvládl s pamlsky, u eskalátoru ještě váhal.",
-  },
-  {
-    id: "act-6",
-    date: "9. října 2026",
-    title: "Klid v kavárně",
-    status: "skipped",
-    note: "Přesunuto z důvodu nemoci psovoda.",
-  },
-]
 
 const ITEMS_PER_PAGE = 3
 
@@ -104,14 +51,14 @@ export function DogActivitiesSection({
   const [selectedActivityId, setSelectedActivityId] = useState<string | null>(null)
 
   // A dog's records come from the API one page at a time (#79); records passed
-  // in (or the demo ones) are paged here.
+  // in are paged here.
   const isPagedByApi = Boolean(dogId) && initialActivities === undefined
   const activitiesQuery = useQuery({
     ...dogActivitiesQueryOptions(dogId ?? "", page, ITEMS_PER_PAGE),
     enabled: isPagedByApi,
   })
 
-  const localActivities = initialActivities ?? (dogId ? [] : DEFAULT_ACTIVITIES)
+  const localActivities = initialActivities ?? []
   const total = isPagedByApi ? (activitiesQuery.data?.total ?? 0) : localActivities.length
   const startIndex = (page - 1) * ITEMS_PER_PAGE
   const currentItems = isPagedByApi
@@ -131,6 +78,55 @@ export function DogActivitiesSection({
   const hasNextPage = page < totalPages
   const hasPrevPage = page > 1
 
+  const emptyState = (
+    <EmptyState
+      icon={Calendar}
+      chip="BEZ ZÁZNAMŮ"
+      titleAs="p"
+      title={`${dogName} zatím nemá zaznamenané žádné tréninky`}
+      description="Po prvním odcvičeném tréninku se záznamy objeví tady."
+    />
+  )
+
+  const activityList = (
+    <ul className="flex flex-col gap-3">
+      {currentItems.map((item) => {
+        const isCompleted = item.status === "completed"
+
+        return (
+          <StripCard
+            key={item.id}
+            as="li"
+          >
+            <button
+              type="button"
+              className="group flex w-full items-start justify-between gap-3 px-4 py-3 text-left outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+              onClick={() => setSelectedActivityId(item.id)}
+              aria-label={`Otevřít detail aktivity ${item.title}`}
+            >
+              <div>
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Calendar
+                    aria-hidden="true"
+                    className="size-3.5"
+                  />
+                  {formatActivityDate(item.completedAt, item.date)}
+                </span>
+                <span className="mt-1 block font-semibold text-foreground transition-colors group-hover:text-primary">
+                  {item.title}
+                </span>
+              </div>
+
+              <StatusChip tone={isCompleted ? "success" : "muted"}>
+                {isCompleted ? "Odcvičeno" : "Přeskočeno"}
+              </StatusChip>
+            </button>
+          </StripCard>
+        )
+      })}
+    </ul>
+  )
+
   return (
     <section
       className="space-y-4"
@@ -140,7 +136,7 @@ export function DogActivitiesSection({
         <div>
           <h2
             id="activities-heading"
-            className="text-lg font-semibold tracking-tight text-foreground"
+            className="text-section font-extrabold text-foreground"
           >
             Aktivity
           </h2>
@@ -153,10 +149,13 @@ export function DogActivitiesSection({
           <Link
             to="/dogs/$dogId/activities"
             params={{ dogId }}
-            className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-medium text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             Celá historie
-            <ChevronRight className="size-4" />
+            <ChevronRight
+              aria-hidden="true"
+              className="size-4"
+            />
           </Link>
         )}
 
@@ -191,75 +190,30 @@ export function DogActivitiesSection({
         )}
       </div>
 
-      {activitiesQuery.isError && !initialActivities ? (
-        <div
-          className="space-y-3"
-          role="alert"
+      {isPagedByApi ? (
+        <QueryState
+          isLoading={activitiesQuery.isLoading}
+          error={
+            activitiesQuery.isError
+              ? (activitiesQuery.error ??
+                new Error("Tréninkové záznamy a zprávy se nepodařilo načíst."))
+              : null
+          }
+          isEmpty={
+            !activitiesQuery.isLoading && !activitiesQuery.isError && total === 0
+          }
+          onRetry={() => void activitiesQuery.refetch()}
+          loadingLabel="Načítání aktivit"
+          errorTitle="Aktivity se nepodařilo načíst"
+          errorDescription="Tréninkové záznamy a zprávy se nepodařilo načíst."
+          empty={emptyState}
         >
-          <p className="text-sm text-destructive">
-            Tréninkové záznamy a zprávy se nepodařilo načíst.
-          </p>
-          <Button
-            variant="outline"
-            className="min-h-12"
-            onClick={() => void activitiesQuery.refetch()}
-          >
-            Zkusit znovu
-          </Button>
-        </div>
-      ) : activitiesQuery.isLoading && !initialActivities ? (
-        <div className="space-y-3">
-          <Skeleton className="h-24 w-full rounded-xl" />
-          <Skeleton className="h-24 w-full rounded-xl" />
-        </div>
+          {activityList}
+        </QueryState>
       ) : total === 0 ? (
-        <div className="rounded-lg border border-dashed border-border p-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            {dogName} zatím nemá zaznamenané žádné tréninky.
-          </p>
-        </div>
+        emptyState
       ) : (
-        <div className="flex flex-col gap-3">
-          {currentItems.map((item) => {
-            const isCompleted = item.status === "completed"
-
-            return (
-              <Card
-                key={item.id}
-                onClick={() => setSelectedActivityId(item.id)}
-                className="group cursor-pointer border border-border p-4 transition-colors hover:border-foreground/30"
-                tabIndex={0}
-                role="button"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault()
-                    setSelectedActivityId(item.id)
-                  }
-                }}
-                aria-label={`Otevřít detail aktivity ${item.title}`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Calendar className="size-3.5" />
-                      {formatActivityDate(item.completedAt, item.date)}
-                    </span>
-                    <h3 className="mt-1 font-semibold text-foreground transition-colors group-hover:text-primary">
-                      {item.title}
-                    </h3>
-                  </div>
-
-                  <Badge variant={isCompleted ? "secondary" : "outline"}>
-                    {isCompleted ? "Odcvičeno" : "Přeskočeno"}
-                  </Badge>
-                </div>
-
-                {/* Only the header in the list; results, the note and the
-                    messages are in the detail. */}
-              </Card>
-            )
-          })}
-        </div>
+        activityList
       )}
 
       {/* Dialog detailu aktivity */}
@@ -275,14 +229,17 @@ export function DogActivitiesSection({
               <DialogHeader>
                 <div className="flex items-center justify-between gap-2 pr-6">
                   <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Calendar className="size-3.5" />
+                    <Calendar
+                      aria-hidden="true"
+                      className="size-3.5"
+                    />
                     {formatActivityDate(selectedActivity.completedAt, selectedActivity.date)}
                   </span>
-                  <Badge
-                    variant={selectedActivity.status === "completed" ? "secondary" : "outline"}
+                  <StatusChip
+                    tone={selectedActivity.status === "completed" ? "success" : "muted"}
                   >
                     {selectedActivity.status === "completed" ? "Odcvičeno" : "Přeskočeno"}
-                  </Badge>
+                  </StatusChip>
                 </div>
                 <DialogTitle className="mt-2 text-xl font-bold tracking-tight">
                   {selectedActivity.title}
