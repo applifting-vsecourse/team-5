@@ -22,9 +22,9 @@ implementers at shared building blocks. Linked from DESIGN.md foundations sectio
 
 ## Navigation destinations
 
-| Role    | Mobile / md header                                    | Notes                                                  |
-| ------- | ----------------------------------------------------- | ------------------------------------------------------ |
-| Handler | Dnes → `/dashboard`, Týden, Psi, Účet                 | Dnes content is a screen ticket (#161).                |
+| Role    | Mobile / md header                                    | Notes                                                                                       |
+| ------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Handler | Dnes → `/dashboard`, Týden, Psi, Účet                 | Dnes content is a screen ticket (#161).                                                     |
 | Trainer | Přehled → `/dashboard`, Klienti, Cíle → `/dogs`, Účet | Calendar (`/week`) and own dogs stay reachable from Přehled; Cíle keeps `/dogs` until #164. |
 
 Walkthrough routes (`/trainings/*`) hide the tab bar.
