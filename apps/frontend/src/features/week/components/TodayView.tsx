@@ -110,9 +110,11 @@ export function TodayView({ userName }: TodayViewProps) {
   const totalCount = trainings.length
   const remainingPlanned = trainings.filter((training) => training.status === "PLANNED").length
   const remainingLabel =
-    remainingPlanned === 1 ? "zbývá trénink" : remainingPlanned >= 2 && remainingPlanned <= 4
-      ? "zbývají tréninky"
-      : "zbývá tréninků"
+    remainingPlanned === 1
+      ? "zbývá trénink"
+      : remainingPlanned >= 2 && remainingPlanned <= 4
+        ? "zbývají tréninky"
+        : "zbývá tréninků"
 
   const dogs = [...new Map(trainings.map((training) => [training.dog.id, training.dog])).values()]
 
