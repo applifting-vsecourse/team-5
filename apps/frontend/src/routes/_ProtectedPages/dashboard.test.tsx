@@ -26,6 +26,10 @@ vi.mock("@/features/week/components/TodayView", () => ({
   ),
 }))
 
+vi.mock("@/features/client/components/TrainerOverview", () => ({
+  TrainerOverview: () => <div data-testid="trainer-overview">Přehled</div>,
+}))
+
 describe("DashboardPage", () => {
   beforeEach(() => {
     mockUser = { role: "client", name: "Anna Handler" }
@@ -34,15 +38,14 @@ describe("DashboardPage", () => {
   it("shows Dnes for a handler without calendar shortcuts", () => {
     render(<DashboardPage />)
     expect(screen.getByTestId("today-view")).toHaveTextContent("Anna Handler")
-    expect(screen.queryByRole("link", { name: /kalendář/i })).not.toBeInTheDocument()
+    expect(screen.queryByTestId("trainer-overview")).not.toBeInTheDocument()
   })
 
-  it("links a trainer to the calendar from the overview", () => {
+  it("shows trainer overview for a trainer", () => {
     mockUser = { role: "trainer" }
     render(<DashboardPage />)
 
-    expect(screen.getByRole("heading", { name: "Přehled" })).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /kalendář/i })).toHaveAttribute("href", "/week")
-    expect(screen.getByRole("link", { name: /moji psi/i })).toHaveAttribute("href", "/dogs")
+    expect(screen.getByTestId("trainer-overview")).toBeInTheDocument()
+    expect(screen.queryByTestId("today-view")).not.toBeInTheDocument()
   })
 })

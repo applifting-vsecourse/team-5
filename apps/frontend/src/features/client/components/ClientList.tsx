@@ -19,7 +19,7 @@ export function ClientList() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-page font-extrabold tracking-tight text-foreground">Vaši klienti</h1>
+        <h1 className="text-page font-extrabold tracking-tight text-foreground">Klienti</h1>
         {clients && clients.length > 0 && (
           <Button
             variant="default"
