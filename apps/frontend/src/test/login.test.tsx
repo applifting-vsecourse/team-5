@@ -101,7 +101,7 @@ function acceptLogin(role = "user") {
 }
 
 describe("login and logout", () => {
-  it.each(["Uživatelské menu", "Účet a odhlášení"])(
+  it.each(["Uživatelské menu", "Účet"])(
     "logs out directly from %s without opening account settings",
     async (menuName) => {
       auth.getSession.mockResolvedValue({ data: { user }, error: null })
@@ -345,7 +345,7 @@ describe("login and logout", () => {
     auth.getSession.mockResolvedValue({ data: null, error: null })
     await interaction.click(
       within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("button", {
-        name: "Účet a odhlášení",
+        name: "Účet",
       }),
     )
     await interaction.click(screen.getByRole("menuitem", { name: "Účet" }))
@@ -417,7 +417,7 @@ describe("login and logout", () => {
     await screen.findByRole("heading", { name: "Psi" })
     await interaction.click(
       within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("button", {
-        name: "Účet a odhlášení",
+        name: "Účet",
       }),
     )
     await interaction.click(screen.getByRole("menuitem", { name: "Účet" }))
