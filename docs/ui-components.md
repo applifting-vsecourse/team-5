@@ -14,7 +14,7 @@ implementers at shared building blocks. Linked from DESIGN.md foundations sectio
 | `StripCard`                   | `components/StripCard`                 | List row/card with optional dog-colour strip (`dogColor` 1–6).                           |
 | `Metric`                      | `components/Metric`                    | Number + short label. Set `isOnHero` inside `HeroCard`.                                  |
 | `HeroCard` / `HeroChip`       | `components/HeroCard`                  | One dark summary per view (next training / highlight).                                   |
-| `ConfirmDestructiveDialog`    | `components/ConfirmDestructiveDialog`  | Irreversible delete/confirm. Red only here.                                              |
+| `ConfirmDestructiveDialog`    | `components/ConfirmDestructiveDialog`  | Irreversible delete/confirm. Mobile bottom sheet, md+ centred dialog. Red only here.     |
 | `Drawer*`                     | `components/ui/drawer`                 | Mobile bottom sheet (`bg-overlay`, `rounded-t-sheet`). Desktop dialogs stay on `Dialog`. |
 | `Dialog*` / `AlertDialog*`    | `components/ui/dialog`, `alert-dialog` | Centred modals; overlays use `bg-overlay`.                                               |
 | `BottomNav`                   | `components/BottomNav`                 | Mobile tabs: handler Dnes·Týden·Psi·Účet; trainer Přehled·Klienti·Cíle·Účet.             |
@@ -25,7 +25,7 @@ implementers at shared building blocks. Linked from DESIGN.md foundations sectio
 | Role    | Mobile / md header                                    | Notes                                                  |
 | ------- | ----------------------------------------------------- | ------------------------------------------------------ |
 | Handler | Dnes → `/dashboard`, Týden, Psi, Účet                 | Dnes content is a screen ticket (#161).                |
-| Trainer | Přehled → `/dashboard`, Klienti, Cíle → `/dogs`, Účet | Cíle keeps `/dogs` until the goals route lands (#164). |
+| Trainer | Přehled → `/dashboard`, Klienti, Cíle → `/dogs`, Účet | Calendar (`/week`) and own dogs stay reachable from Přehled; Cíle keeps `/dogs` until #164. |
 
 Walkthrough routes (`/trainings/*`) hide the tab bar.
 
