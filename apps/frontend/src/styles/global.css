@@ -255,3 +255,8 @@
 :where(.bg-hero, .bg-sidebar, [class*="bg-dog-"]) :focus-visible {
   outline-color: var(--dog-foreground);
 }
+/* Card-wide hit targets that draw their own inset ring (StripCard links). */
+.focus-ring-custom:focus-visible {
+  outline: none;
+  outline-offset: 0;
+}
