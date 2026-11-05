@@ -5,14 +5,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { AccountPage } from "./account"
 
 const mockMutate = vi.fn()
-const mockSetTheme = vi.fn()
 const mockNavigate = vi.fn()
 let mockUser: { name: string; email: string; role?: string } | null = {
   name: "Jan Novák",
   email: "jan.novak@example.com",
 }
-let mockTheme = "system"
-let mockResolvedTheme = "dark"
 
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => () => ({}),
@@ -41,14 +38,6 @@ vi.mock("@/features/auth/hooks/useSignOut", () => ({
   }),
 }))
 
-vi.mock("@/hooks/useTheme", () => ({
-  useTheme: () => ({
-    theme: mockTheme,
-    setTheme: mockSetTheme,
-    resolvedTheme: mockResolvedTheme,
-  }),
-}))
-
 vi.mock("sonner", () => ({
   toast: {
     error: vi.fn(),
@@ -62,8 +51,6 @@ describe("AccountPage", () => {
       name: "Jan Novák",
       email: "jan.novak@example.com",
     }
-    mockTheme = "system"
-    mockResolvedTheme = "dark"
   })
 
   it("renders page title and user details without card containers", () => {
@@ -74,19 +61,9 @@ describe("AccountPage", () => {
     expect(screen.getByText("jan.novak@example.com")).toBeInTheDocument()
   })
 
-  it("displays current system theme and changes theme via dropdown", async () => {
-    const user = userEvent.setup()
+  it("does not offer appearance settings while dark mode is deferred", () => {
     render(<AccountPage />)
-
-    const themeButton = screen.getByRole("button", { name: /vzhled: systémový/i })
-    expect(themeButton).toBeInTheDocument()
-
-    await user.click(themeButton)
-
-    const lightOption = screen.getByRole("menuitem", { name: /světlý/i })
-    await user.click(lightOption)
-
-    expect(mockSetTheme).toHaveBeenCalledWith("light")
+    expect(screen.queryByRole("button", { name: /vzhled/i })).not.toBeInTheDocument()
   })
 
   it("calls signOut on clicking logout button", async () => {

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { ChevronDown, LogOut, Monitor, Moon, Sparkles, Sun } from "lucide-react"
+import { LogOut, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
 import { ROUTES } from "@/app/routes"
@@ -15,16 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { useTheme } from "@/hooks/useTheme"
 
 import { DeleteAccountDialog } from "@/features/auth/components/DeleteAccountDialog"
 import { useSession } from "@/features/auth/hooks/useSession"
@@ -37,7 +30,6 @@ export const Route = createFileRoute("/_ProtectedPages/account")({
 export function AccountPage() {
   const { user } = useSession()
   const signOut = useSignOut()
-  const { theme, setTheme, resolvedTheme } = useTheme()
   const navigate = useNavigate()
 
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
@@ -54,10 +46,6 @@ export function AccountPage() {
       search: { code: trimmedCode },
     })
   }
-
-  const currentThemeLabel = theme === "system" ? "Systémový" : theme === "dark" ? "Tmavý" : "Světlý"
-
-  const ThemeIcon = resolvedTheme === "dark" ? Moon : Sun
 
   return (
     <>
@@ -104,35 +92,6 @@ export function AccountPage() {
             <Separator />
 
             <div className="flex flex-col gap-3">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="min-h-11 w-full justify-between gap-2"
-                  >
-                    <span className="flex items-center gap-2">
-                      <ThemeIcon className="size-4" />
-                      <span>Vzhled: {currentThemeLabel}</span>
-                    </span>
-                    <ChevronDown className="size-4 text-muted-foreground" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="w-56"
-                >
-                  <DropdownMenuItem onClick={() => setTheme("light")}>
-                    <Sun className="size-4" /> Světlý
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme("dark")}>
-                    <Moon className="size-4" /> Tmavý
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme("system")}>
-                    <Monitor className="size-4" /> Systémový
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
               {signOut.isError ? (
                 <Alert variant="destructive">
                   <AlertDescription>
