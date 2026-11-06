@@ -1,51 +1,70 @@
-import { Link } from "@tanstack/react-router"
-import { ChevronRight } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
 
-import { StripCard } from "@/components/StripCard"
+import { DogPlayerCard } from "@/components/DogPlayerCard"
+import { formatDayLong, todayCalendarDate } from "@/lib/calendarDate"
+import type { DogMetrics } from "@/lib/dogMetrics"
 import { cn } from "@/lib/utils"
 
-import type { Dog } from "@/features/dog/api/dogSchemas"
+import type { Dog, PlannedTraining } from "@/features/dog/api/dogSchemas"
+import {
+  dogGoalsQueryOptions,
+  dogMetricsQueryOptions,
+  dogPlannedTrainingsQueryOptions,
+} from "@/features/dog/api/dogsQueryOptions"
 
-import { PesAvatar } from "./PesAvatar"
+export type DogCardExtras = {
+  metrics?: DogMetrics | null
+  activeGoalCount?: number | null
+  goalCount?: number | null
+  nextLabel?: string | null
+}
 
 type DogCardProps = {
   dog: Dog
   className?: string
+  /** When set, the card does not fetch. Dnes already has these values. */
+  extras?: DogCardExtras
 }
 
-export function DogCard({ dog, className }: DogCardProps) {
+function nextTrainingLabel(items: PlannedTraining[], today: string): string | null {
+  const upcoming = [...items].sort((left, right) => left.date.localeCompare(right.date))
+  const next = upcoming.find((item) => item.date >= today) ?? upcoming[0]
+  if (!next) return null
+  const when = next.date === today ? "Dnes" : formatDayLong(next.date)
+  return `${when} · ${next.goal.title}`
+}
+
+export function DogCard({ dog, className, extras }: DogCardProps) {
+  const shouldLoad = extras == null
+  const metricsQuery = useQuery({ ...dogMetricsQueryOptions(dog.id), enabled: shouldLoad })
+  const goalsQuery = useQuery({ ...dogGoalsQueryOptions(dog.id), enabled: shouldLoad })
+  const plannedQuery = useQuery({
+    ...dogPlannedTrainingsQueryOptions(dog.id),
+    enabled: shouldLoad,
+  })
+
+  const metrics = extras ? extras.metrics : metricsQuery.data
+  const activeGoalCount = extras
+    ? extras.activeGoalCount
+    : goalsQuery.isSuccess
+      ? goalsQuery.data.filter((goal) => goal.status === "ACTIVE").length
+      : null
+  const goalCount = extras ? extras.goalCount : goalsQuery.isSuccess ? goalsQuery.data.length : null
+  const nextLabel = extras
+    ? extras.nextLabel
+    : plannedQuery.isSuccess
+      ? nextTrainingLabel(plannedQuery.data, todayCalendarDate())
+      : null
+
   return (
-    <StripCard
-      dogColor={dog.color}
-      className={cn(
-        "group transition-all duration-150 hover:border-foreground/30 active:scale-[0.99]",
-        className,
-      )}
-    >
-      <Link
-        to="/dogs/$dogId"
-        params={{ dogId: dog.id }}
-        className="focus-ring-custom flex min-h-16 flex-1 items-center justify-between gap-4 p-4 text-left outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-        aria-label={`Detail psa ${dog.name}`}
-      >
-        <div className="flex min-w-0 items-center gap-3">
-          <PesAvatar
-            name={dog.name}
-            color={dog.color}
-            size="md"
-            photoUrl={dog.photoUrl}
-          />
-
-          <div className="min-w-0 truncate">
-            <h2 className="truncate text-base font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
-              {dog.name}
-            </h2>
-            {dog.breed && <p className="truncate text-sm text-muted-foreground">{dog.breed}</p>}
-          </div>
-        </div>
-
-        <ChevronRight className="size-5 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
-      </Link>
-    </StripCard>
+    <div className={cn(className)}>
+      <DogPlayerCard
+        dog={dog}
+        metrics={metrics}
+        activeGoalCount={activeGoalCount}
+        goalCount={goalCount}
+        nextLabel={nextLabel}
+      />
+    </div>
   )
 }

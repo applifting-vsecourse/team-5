@@ -1,12 +1,10 @@
 import { useQueries, useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { Calendar, PawPrint, Play } from "lucide-react"
+import { Calendar, Play } from "lucide-react"
 
 import { EmptyState } from "@/components/EmptyState"
 import { HeroCard, HeroChip } from "@/components/HeroCard"
-import { Metric } from "@/components/Metric"
 import { QueryState } from "@/components/QueryState"
-import { StripCard } from "@/components/StripCard"
 import { Button } from "@/components/ui/button"
 import {
   addCalendarDays,
@@ -20,18 +18,13 @@ import { dogMetricsQueryOptions } from "@/lib/dogMetrics"
 import { dogsListQueryOptions } from "@/lib/dogsListQueryOptions"
 import { cn } from "@/lib/utils"
 
+import { DogPlayerCard } from "@/components/DogPlayerCard"
 import {
   upcomingTrainingsQueryOptions,
   weekTrainingsQueryOptions,
   type WeekTraining,
 } from "@/features/week/api/weekQueryOptions"
 import { pickNextTraining } from "@/features/week/lib/pickNextTraining"
-
-const exerciseCount = (count: number): string => {
-  if (count === 1) return "1 cvik"
-  if (count >= 2 && count <= 4) return `${count} cviky`
-  return `${count} cviků`
-}
 
 function firstName(fullName: string): string {
   const parts = fullName.trim().split(/\s+/).filter(Boolean)
@@ -46,24 +39,10 @@ function formatDayHeading(today: CalendarDate): string {
 type NextTrainingHeroProps = {
   training: WeekTraining
   today: CalendarDate
-  streak?: number | null
-  successRate?: number | null
-  weeklyTrainedDays?: number | null
-  weeklyTarget?: number | null
 }
 
-function NextTrainingHero({
-  training,
-  today,
-  streak,
-  successRate,
-  weeklyTrainedDays,
-  weeklyTarget,
-}: NextTrainingHeroProps) {
+function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
   const isToday = training.date === today
-  const titles = training.exercises.map((exercise) => exercise.title)
-  const hasHeroMetrics =
-    streak != null || successRate != null || (weeklyTrainedDays != null && weeklyTarget != null)
 
   return (
     <HeroCard eyebrow={isToday ? "Dnešní trénink" : "Další trénink"}>
@@ -84,42 +63,23 @@ function NextTrainingHero({
         ) : null}
       </div>
 
-      <div className="space-y-1">
-        <h2 className="text-xl font-extrabold tracking-tight text-hero-foreground">
-          {training.goal.title}
-        </h2>
-        <p className="text-sm font-medium text-hero-muted">
-          {titles.length === 0
-            ? "Plán zatím nemá žádný cvik."
-            : `${exerciseCount(titles.length)} · ${titles.slice(0, 5).join(", ")}`}
-        </p>
-      </div>
-
-      {hasHeroMetrics ? (
-        <div className="flex flex-wrap gap-6">
-          {weeklyTrainedDays != null && weeklyTarget != null ? (
-            <Metric
-              isOnHero
-              value={`${weeklyTrainedDays}/${weeklyTarget}`}
-              label="týdenní cíl"
-            />
-          ) : null}
-          {streak != null ? (
-            <Metric
-              isOnHero
-              value={streak}
-              label="série"
-            />
-          ) : null}
-          {successRate != null ? (
-            <Metric
-              isOnHero
-              value={`${successRate} %`}
-              label="úspěšnost"
-            />
-          ) : null}
-        </div>
-      ) : null}
+      <h2 className="text-xl font-extrabold tracking-tight text-hero-foreground">
+        {training.goal.title}
+      </h2>
+      {training.exercises.length > 0 ? (
+        <ol className="flex flex-col gap-2">
+          {training.exercises.map((exercise, index) => (
+            <li
+              key={exercise.id}
+              className="rounded-full bg-hero-accent px-3 py-2 text-sm font-semibold text-hero-foreground"
+            >
+              {index + 1} {exercise.title}
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="text-sm font-medium text-hero-muted">Plán zatím nemá žádný cvik.</p>
+      )}
 
       <Button
         asChild
@@ -157,16 +117,6 @@ export function TodayView({ userName }: TodayViewProps) {
   const weekTrainings = weekQuery.data ?? []
   const upcomingTrainings = upcomingQuery.data ?? weekTrainings
   const nextTraining = pickNextTraining(upcomingTrainings, today)
-  const completedCount = weekTrainings.filter((training) => training.status === "COMPLETED").length
-  const totalCount = weekTrainings.length
-  const remainingPlanned = weekTrainings.filter((training) => training.status === "PLANNED").length
-  const remainingLabel =
-    remainingPlanned === 1
-      ? "zbývá trénink"
-      : remainingPlanned >= 2 && remainingPlanned <= 4
-        ? "zbývají tréninky"
-        : "zbývá tréninků"
-
   const dogs = dogsQuery.data ?? []
   const metricsQueries = useQueries({
     queries: dogs.map((dog) => ({
@@ -224,10 +174,6 @@ export function TodayView({ userName }: TodayViewProps) {
             <NextTrainingHero
               training={nextTraining}
               today={today}
-              streak={nextMetrics?.streak}
-              successRate={nextMetrics?.successRate ?? null}
-              weeklyTrainedDays={nextMetrics?.weeklyTrainedDays}
-              weeklyTarget={nextMetrics?.weeklyTarget}
             />
           ) : (
             <EmptyState
@@ -257,27 +203,35 @@ export function TodayView({ userName }: TodayViewProps) {
             />
           )}
 
-          {totalCount > 0 ? (
+          {nextMetrics ? (
             <section
-              aria-labelledby="today-week-progress"
-              className="flex flex-col gap-3"
+              aria-label="Metriky"
+              className="grid grid-cols-3 gap-2"
             >
-              <h2
-                id="today-week-progress"
-                className="text-section font-extrabold tracking-tight text-foreground"
-              >
-                Tento týden
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <Metric
-                  value={`${completedCount}/${totalCount}`}
-                  label="odcvičeno tento týden"
-                />
-                <Metric
-                  value={remainingPlanned}
-                  label={remainingLabel}
-                />
-              </div>
+              <article className="rounded-card border border-border bg-card p-3">
+                <p className="text-label text-muted-foreground">Týdenní cíl</p>
+                <p className="text-title font-extrabold tabular-nums">
+                  {nextMetrics.weeklyTrainedDays}/{nextMetrics.weeklyTarget}
+                </p>
+              </article>
+              <article className="rounded-card border border-border bg-card p-3">
+                <p className="text-label text-muted-foreground">Série</p>
+                <p className="text-title font-extrabold tabular-nums">{nextMetrics.streak}</p>
+              </article>
+              <article className="rounded-card border border-border bg-card p-3">
+                <p className="text-label text-muted-foreground">Úspěšnost</p>
+                <p className="text-title font-extrabold tabular-nums">
+                  {nextMetrics.successRate != null
+                    ? `${Math.round(nextMetrics.successRate)} %`
+                    : "—"}
+                </p>
+                {nextMetrics.weeklyChange != null ? (
+                  <p className="text-sm font-semibold text-success-foreground">
+                    {nextMetrics.weeklyChange > 0 ? "+" : ""}
+                    {nextMetrics.weeklyChange} b.
+                  </p>
+                ) : null}
+              </article>
             </section>
           ) : null}
 
@@ -292,47 +246,25 @@ export function TodayView({ userName }: TodayViewProps) {
               >
                 Tvoji psi
               </h2>
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col gap-3">
                 {dogs.map((dog) => {
                   const nextForDog = pickNextTraining(
                     upcomingTrainings.filter((training) => training.dog.id === dog.id),
                     today,
                   )
-                  const metrics = metricsByDogId.get(dog.id)
-                  const planSubtitle = nextForDog
+                  const nextLabel = nextForDog
                     ? nextForDog.date === today
                       ? `Dnes · ${nextForDog.goal.title}`
                       : `${formatDayLong(nextForDog.date)} · ${nextForDog.goal.title}`
-                    : "Bez naplánovaného tréninku"
-                  const metricBits = [
-                    metrics ? `série ${metrics.streak}` : null,
-                    metrics?.successRate != null ? `${metrics.successRate} %` : null,
-                  ].filter(Boolean)
-                  const subtitle =
-                    metricBits.length > 0
-                      ? `${planSubtitle} · ${metricBits.join(" · ")}`
-                      : planSubtitle
+                    : null
                   return (
-                    <StripCard
-                      key={dog.id}
-                      as="li"
-                      dogColor={dog.color}
-                    >
-                      <Link
-                        to="/dogs/$dogId"
-                        params={{ dogId: dog.id }}
-                        className="flex min-h-16 items-center justify-between gap-3 p-4 outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-foreground">{dog.name}</p>
-                          <p className="truncate text-sm text-muted-foreground">{subtitle}</p>
-                        </div>
-                        <PawPrint
-                          className="size-5 shrink-0 text-muted-foreground"
-                          aria-hidden
-                        />
-                      </Link>
-                    </StripCard>
+                    <li key={dog.id}>
+                      <DogPlayerCard
+                        dog={dog}
+                        metrics={metricsByDogId.get(dog.id) ?? null}
+                        nextLabel={nextLabel}
+                      />
+                    </li>
                   )
                 })}
               </ul>

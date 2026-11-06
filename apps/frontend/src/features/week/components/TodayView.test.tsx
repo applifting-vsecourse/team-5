@@ -97,8 +97,8 @@ describe("TodayView", () => {
       "href",
       "/trainings/t1",
     )
-    expect(screen.getByText("0/1")).toBeInTheDocument()
-    expect(screen.getByText("odcvičeno tento týden")).toBeInTheDocument()
+    expect(screen.getByText("1 Přivolání na píšťalku")).toBeInTheDocument()
+    expect(screen.getByText("2 Sedni – zůstaň")).toBeInTheDocument()
   })
 
   it("shows empty state when the week has no trainings", () => {
@@ -125,7 +125,7 @@ describe("TodayView", () => {
     ])
 
     expect(screen.queryByText("Dnes máte volno")).not.toBeInTheDocument()
-    expect(screen.getByText("Další trénink")).toBeInTheDocument()
+    expect(screen.getAllByText(/Další trénink/).length).toBeGreaterThan(0)
     expect(screen.getByRole("heading", { name: "Zmeškané áčko" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Začít trénink/i })).toHaveAttribute(
       "href",
@@ -143,16 +143,16 @@ describe("TodayView", () => {
       }),
     ])
 
-    expect(screen.getByText("Další trénink")).toBeInTheDocument()
+    expect(screen.getAllByText(/Další trénink/).length).toBeGreaterThan(0)
     expect(screen.getByText("sobota 7. 11.")).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Začít trénink/i })).toHaveAttribute(
       "href",
       "/trainings/t2",
     )
-    expect(screen.getByRole("link", { name: /Bára.*sobota 7\. 11\. · Áčko/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /detail psa bára/i })).toHaveAttribute(
       "href",
       "/dogs/d2",
     )
-    expect(screen.getByText("zbývá trénink")).toBeInTheDocument()
+    expect(screen.getByText(/sobota 7\. 11\. · Áčko/)).toBeInTheDocument()
   })
 })
