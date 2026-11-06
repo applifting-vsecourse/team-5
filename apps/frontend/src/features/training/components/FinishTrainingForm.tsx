@@ -106,8 +106,7 @@ export function FinishTrainingForm({
           {dog.name} · {goal.title}
         </h1>
 
-        {/* Úspěšnost (Slider) */}
-        <div className="space-y-2">
+        <div className="space-y-2 rounded-card border border-border bg-card p-4">
           <div className="flex items-center justify-between text-sm">
             <Label
               htmlFor="success-rate-slider"
@@ -145,8 +144,7 @@ export function FinishTrainingForm({
           />
         </div>
 
-        {/* Soustředění */}
-        <div className="space-y-2">
+        <div className="space-y-2 rounded-card border border-border bg-card p-4">
           <Label className="text-sm font-medium text-foreground">Soustředění</Label>
           <ToggleGroup
             type="single"
@@ -176,8 +174,7 @@ export function FinishTrainingForm({
           </ToggleGroup>
         </div>
 
-        {/* Opakované chyby */}
-        <div className="space-y-2">
+        <div className="space-y-2 rounded-card border border-border bg-card p-4">
           <Label className="text-sm font-medium text-foreground">Opakované chyby</Label>
           <ToggleGroup
             type="single"
@@ -207,7 +204,7 @@ export function FinishTrainingForm({
           </ToggleGroup>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 rounded-card border border-border bg-card p-4">
           <Label
             htmlFor="training-video-url"
             className="text-sm font-medium text-foreground"
@@ -226,8 +223,7 @@ export function FinishTrainingForm({
           />
         </div>
 
-        {/* Poznámka (Textarea) */}
-        <div className="space-y-2">
+        <div className="space-y-2 rounded-card border border-border bg-card p-4">
           <Label
             htmlFor="training-note"
             className="text-sm font-medium text-foreground"
@@ -257,7 +253,8 @@ export function FinishTrainingForm({
         {/* Submit button */}
         <Button
           type="submit"
-          className="min-h-11 w-full text-base font-medium"
+          size="lg"
+          className="w-full"
           disabled={isPending}
         >
           {isPending ? "Ukládám…" : "Uložit záznam"}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link } from "@tanstack/react-router"
-import { ChevronLeft } from "lucide-react"
+import { Check, ChevronLeft, Pause, Play } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { useMoveCurrentStep } from "@/lib/useMoveCurrentStep"
@@ -22,22 +22,37 @@ function formatElapsed(totalSeconds: number): string {
 /** Remount with a new key when the exercise changes so elapsed time resets without setState-in-effect. */
 function StepTimer() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
 
   useEffect(() => {
+    if (isPaused) return
     const id = window.setInterval(() => {
       setElapsedSeconds((prev) => prev + 1)
     }, 1000)
     return () => window.clearInterval(id)
-  }, [])
+  }, [isPaused])
 
   return (
-    <p
-      className="text-timer font-extrabold text-foreground tabular-nums"
-      aria-live="polite"
-      aria-label={`Čas na cviku ${formatElapsed(elapsedSeconds)}`}
-    >
-      {formatElapsed(elapsedSeconds)}
-    </p>
+    <div className="flex items-center gap-3">
+      <p
+        className="flex size-20 items-center justify-center rounded-full border-4 border-primary text-timer font-extrabold text-foreground tabular-nums"
+        aria-live="polite"
+        aria-label={`Čas na cviku ${formatElapsed(elapsedSeconds)}`}
+      >
+        {formatElapsed(elapsedSeconds)}
+      </p>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="size-11"
+        aria-label={isPaused ? "Pokračovat v čase" : "Pozastavit čas"}
+        aria-pressed={isPaused}
+        onClick={() => setIsPaused((isPausedNow) => !isPausedNow)}
+      >
+        {isPaused ? <Play className="size-4" /> : <Pause className="size-4" />}
+      </Button>
+    </div>
   )
 }
 
@@ -156,13 +171,21 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
               </p>
             </div>
 
-            <div className="rounded-card border border-border bg-card px-4 py-4 text-card-foreground">
-              <span className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
-                Hotovo, když…
+            <div className="flex gap-3 rounded-card border border-border bg-card px-4 py-4 text-card-foreground">
+              <span
+                aria-hidden
+                className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
+              >
+                <Check className="size-5" />
               </span>
-              <p className="mt-2 text-lg leading-snug font-bold text-foreground">
-                {currentExercise?.criterion ?? "Kritérium nebylo specifikováno."}
-              </p>
+              <div>
+                <span className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
+                  Hotovo, když…
+                </span>
+                <p className="mt-1 text-lg leading-snug font-bold text-foreground">
+                  {currentExercise?.criterion ?? "Kritérium nebylo specifikováno."}
+                </p>
+              </div>
             </div>
 
             <div className="min-h-6 flex-1" />
@@ -177,36 +200,36 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
             <div className="flex flex-col gap-2 pt-4">
               {isOnCurrentStep ? (
                 <>
-                  <div className="flex gap-2">
+                  <div className="flex items-stretch gap-2">
                     <Button
                       type="button"
                       variant="outline"
                       // Keep enabled on local first step so back can cross trainings (#66 AC3).
                       disabled={isBusy}
                       onClick={() => void runAction("back")}
-                      className="min-h-11 flex-1 text-base"
+                      className="min-h-action flex-1 text-base"
                     >
                       Zpět o krok
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="default"
+                      disabled={isBusy}
+                      onClick={() => void runAction("advance")}
+                      className="min-h-action flex-[1.4] text-base"
+                    >
+                      Zvládnuto
                     </Button>
                     <Button
                       type="button"
                       variant="outline"
                       disabled={isBusy}
                       onClick={() => void runAction("skip")}
-                      className="min-h-11 flex-1 text-base"
+                      className="min-h-action flex-1 text-base"
                     >
                       Přeskočit
                     </Button>
                   </div>
-                  <Button
-                    type="button"
-                    variant="default"
-                    disabled={isBusy}
-                    onClick={() => void runAction("advance")}
-                    className="min-h-11 w-full text-base"
-                  >
-                    Zvládnuto
-                  </Button>
                 </>
               ) : (
                 <div className="flex gap-2">
