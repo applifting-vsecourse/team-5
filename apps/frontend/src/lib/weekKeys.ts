@@ -5,5 +5,6 @@ import type { CalendarDate } from "@/lib/calendarDate"
 // not in features/week, because feature folders may not import each other.
 export const weekKeys = {
   all: ["week"] as const,
-  week: (weekStart: CalendarDate) => [...weekKeys.all, weekStart] as const,
+  week: (weekStart: CalendarDate) => [...weekKeys.all, "week", weekStart] as const,
+  range: (from: CalendarDate, to: CalendarDate) => [...weekKeys.all, "range", from, to] as const,
 }

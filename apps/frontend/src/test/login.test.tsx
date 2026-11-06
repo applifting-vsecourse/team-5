@@ -219,7 +219,7 @@ describe("login and logout", () => {
     acceptLogin()
     await fillForm(interaction)
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-    await screen.findByRole("heading", { name: "Týden" })
+    await screen.findByRole("heading", { name: /Ahoj Jana|Dnes/ })
     await act(async () => {
       finish({ data: { user: otherUser }, error: null })
       await pending
@@ -295,8 +295,8 @@ describe("login and logout", () => {
   )
 
   it.each([
-    ["user", "Týden", "/week"],
-    ["trainer", "Klienti", "/clients"],
+    ["user", /Ahoj Jana|Dnes/, "/dashboard"],
+    ["trainer", /Klienti|Přehled/, "/clients"],
   ])(
     "logs in a %s with a persistent session and the correct destination",
     async (role, heading, path) => {
@@ -369,8 +369,8 @@ describe("login and logout", () => {
     await screen.findByRole("dialog")
     await fillForm(interaction)
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-    expect(await screen.findByRole("heading", { name: "Týden" })).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe("/week")
+    expect(await screen.findByRole("heading", { name: /Ahoj Jana|Dnes/ })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe("/dashboard")
   })
 
   it("keeps the form usable after a network failure", async () => {
@@ -386,7 +386,7 @@ describe("login and logout", () => {
     expect(screen.getByRole("button", { name: "Přihlásit se" })).toBeEnabled()
     acceptLogin()
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-    expect(await screen.findByRole("heading", { name: "Týden" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: /Ahoj Jana|Dnes/ })).toBeInTheDocument()
   })
 
   it("prevents duplicate submissions and closing while login is pending", async () => {

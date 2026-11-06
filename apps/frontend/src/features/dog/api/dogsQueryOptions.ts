@@ -1,13 +1,13 @@
 import { keepPreviousData, queryOptions } from "@tanstack/react-query"
 
 import { api } from "@/lib/api-client"
+import { dogMetricsQueryOptions as sharedDogMetricsQueryOptions } from "@/lib/dogMetrics"
 
 import { dogKeys } from "./dogKeys"
 import {
   dogActivityPageSchema,
   dogGoalSchema,
   dogGoalsSchema,
-  dogMetricsSchema,
   dogNotesSchema,
   dogSchema,
   dogsSchema,
@@ -123,12 +123,5 @@ export function dogActivitiesQueryOptions(dogId: string, page = 1, pageSize = 3)
 }
 
 export function dogMetricsQueryOptions(dogId: string) {
-  return queryOptions({
-    queryKey: dogKeys.metrics(dogId),
-    queryFn: async () => {
-      const json = await api.get(`dogs/${dogId}/metrics`).json()
-      return dogMetricsSchema.parse(json)
-    },
-    enabled: Boolean(dogId),
-  })
+  return sharedDogMetricsQueryOptions(dogId)
 }

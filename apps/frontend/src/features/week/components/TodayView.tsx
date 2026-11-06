@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQueries, useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { Calendar, PawPrint, Play } from "lucide-react"
 
@@ -9,15 +9,22 @@ import { QueryState } from "@/components/QueryState"
 import { StripCard } from "@/components/StripCard"
 import { Button } from "@/components/ui/button"
 import {
+  addCalendarDays,
   formatDayLong,
   startOfWeekOf,
   todayCalendarDate,
   type CalendarDate,
 } from "@/lib/calendarDate"
 import { dogColorClass } from "@/lib/dogColors"
+import { dogMetricsQueryOptions } from "@/lib/dogMetrics"
+import { dogsListQueryOptions } from "@/lib/dogsListQueryOptions"
 import { cn } from "@/lib/utils"
 
-import { weekTrainingsQueryOptions, type WeekTraining } from "@/features/week/api/weekQueryOptions"
+import {
+  upcomingTrainingsQueryOptions,
+  weekTrainingsQueryOptions,
+  type WeekTraining,
+} from "@/features/week/api/weekQueryOptions"
 import { pickNextTraining } from "@/features/week/lib/pickNextTraining"
 
 const exerciseCount = (count: number): string => {
@@ -39,11 +46,24 @@ function formatDayHeading(today: CalendarDate): string {
 type NextTrainingHeroProps = {
   training: WeekTraining
   today: CalendarDate
+  streak?: number | null
+  successRate?: number | null
+  weeklyTrainedDays?: number | null
+  weeklyTarget?: number | null
 }
 
-function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
+function NextTrainingHero({
+  training,
+  today,
+  streak,
+  successRate,
+  weeklyTrainedDays,
+  weeklyTarget,
+}: NextTrainingHeroProps) {
   const isToday = training.date === today
   const titles = training.exercises.map((exercise) => exercise.title)
+  const hasHeroMetrics =
+    streak != null || successRate != null || (weeklyTrainedDays != null && weeklyTarget != null)
 
   return (
     <HeroCard eyebrow={isToday ? "Dnešní trénink" : "Další trénink"}>
@@ -75,6 +95,32 @@ function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
         </p>
       </div>
 
+      {hasHeroMetrics ? (
+        <div className="flex flex-wrap gap-6">
+          {weeklyTrainedDays != null && weeklyTarget != null ? (
+            <Metric
+              isOnHero
+              value={`${weeklyTrainedDays}/${weeklyTarget}`}
+              label="týdenní cíl"
+            />
+          ) : null}
+          {streak != null ? (
+            <Metric
+              isOnHero
+              value={streak}
+              label="série"
+            />
+          ) : null}
+          {successRate != null ? (
+            <Metric
+              isOnHero
+              value={`${successRate} %`}
+              label="úspěšnost"
+            />
+          ) : null}
+        </div>
+      ) : null}
+
       <Button
         asChild
         size="lg"
@@ -102,13 +148,18 @@ type TodayViewProps = {
 export function TodayView({ userName }: TodayViewProps) {
   const today = todayCalendarDate()
   const weekStart = startOfWeekOf(today)
-  const weekQuery = useQuery(weekTrainingsQueryOptions(weekStart))
+  const upcomingFrom = addCalendarDays(weekStart, -7)
 
-  const trainings = weekQuery.data ?? []
-  const nextTraining = pickNextTraining(trainings, today)
-  const completedCount = trainings.filter((training) => training.status === "COMPLETED").length
-  const totalCount = trainings.length
-  const remainingPlanned = trainings.filter((training) => training.status === "PLANNED").length
+  const weekQuery = useQuery(weekTrainingsQueryOptions(weekStart))
+  const upcomingQuery = useQuery(upcomingTrainingsQueryOptions(upcomingFrom))
+  const dogsQuery = useQuery(dogsListQueryOptions())
+
+  const weekTrainings = weekQuery.data ?? []
+  const upcomingTrainings = upcomingQuery.data ?? weekTrainings
+  const nextTraining = pickNextTraining(upcomingTrainings, today)
+  const completedCount = weekTrainings.filter((training) => training.status === "COMPLETED").length
+  const totalCount = weekTrainings.length
+  const remainingPlanned = weekTrainings.filter((training) => training.status === "PLANNED").length
   const remainingLabel =
     remainingPlanned === 1
       ? "zbývá trénink"
@@ -116,7 +167,20 @@ export function TodayView({ userName }: TodayViewProps) {
         ? "zbývají tréninky"
         : "zbývá tréninků"
 
-  const dogs = [...new Map(trainings.map((training) => [training.dog.id, training.dog])).values()]
+  const dogs = dogsQuery.data ?? []
+  const metricsQueries = useQueries({
+    queries: dogs.map((dog) => ({
+      ...dogMetricsQueryOptions(dog.id),
+      enabled: dogsQuery.isSuccess && Boolean(dog.id),
+    })),
+  })
+  const metricsByDogId = new Map(
+    dogs.map((dog, index) => [dog.id, metricsQueries[index]?.data] as const),
+  )
+  const nextMetrics = nextTraining ? metricsByDogId.get(nextTraining.dog.id) : undefined
+
+  const isLoading = weekQuery.isLoading || dogsQuery.isLoading
+  const error = weekQuery.error ?? dogsQuery.error ?? upcomingQuery.error
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6 md:py-8">
@@ -128,10 +192,14 @@ export function TodayView({ userName }: TodayViewProps) {
       </header>
 
       <QueryState
-        isLoading={weekQuery.isLoading}
-        error={weekQuery.error}
-        onRetry={() => void weekQuery.refetch()}
-        isEmpty={!nextTraining && trainings.length === 0}
+        isLoading={isLoading}
+        error={error}
+        onRetry={() => {
+          void weekQuery.refetch()
+          void upcomingQuery.refetch()
+          void dogsQuery.refetch()
+        }}
+        isEmpty={!nextTraining && weekTrainings.length === 0 && dogs.length === 0}
         errorTitle="Dnes se nepodařilo načíst"
         empty={
           <EmptyState
@@ -156,13 +224,17 @@ export function TodayView({ userName }: TodayViewProps) {
             <NextTrainingHero
               training={nextTraining}
               today={today}
+              streak={nextMetrics?.streak}
+              successRate={nextMetrics?.successRate ?? null}
+              weeklyTrainedDays={nextMetrics?.weeklyTrainedDays}
+              weeklyTarget={nextMetrics?.weeklyTarget}
             />
           ) : (
             <EmptyState
               icon={Calendar}
               chip="HOTOVO"
               title="Dnes máte volno"
-              description="V tomto týdnu už nemáte další naplánovaný trénink. Podívejte se na týden nebo na psy."
+              description="Nemáte další naplánovaný trénink. Podívejte se na týden nebo na psy."
               action={
                 <Button
                   asChild
@@ -188,15 +260,15 @@ export function TodayView({ userName }: TodayViewProps) {
           {totalCount > 0 ? (
             <section
               aria-labelledby="today-week-progress"
-              className="rounded-card border border-border bg-card p-4"
+              className="flex flex-col gap-3"
             >
               <h2
                 id="today-week-progress"
-                className="text-sm font-bold text-foreground"
+                className="text-section font-extrabold tracking-tight text-foreground"
               >
-                Týdenní postup
+                Tento týden
               </h2>
-              <div className="mt-3 grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <Metric
                   value={`${completedCount}/${totalCount}`}
                   label="odcvičeno tento týden"
@@ -223,14 +295,23 @@ export function TodayView({ userName }: TodayViewProps) {
               <ul className="flex flex-col gap-2">
                 {dogs.map((dog) => {
                   const nextForDog = pickNextTraining(
-                    trainings.filter((training) => training.dog.id === dog.id),
+                    upcomingTrainings.filter((training) => training.dog.id === dog.id),
                     today,
                   )
-                  const subtitle = nextForDog
+                  const metrics = metricsByDogId.get(dog.id)
+                  const planSubtitle = nextForDog
                     ? nextForDog.date === today
                       ? `Dnes · ${nextForDog.goal.title}`
                       : `${formatDayLong(nextForDog.date)} · ${nextForDog.goal.title}`
-                    : "Bez dalšího plánu tento týden"
+                    : "Bez naplánovaného tréninku"
+                  const metricBits = [
+                    metrics ? `série ${metrics.streak}` : null,
+                    metrics?.successRate != null ? `${metrics.successRate} %` : null,
+                  ].filter(Boolean)
+                  const subtitle =
+                    metricBits.length > 0
+                      ? `${planSubtitle} · ${metricBits.join(" · ")}`
+                      : planSubtitle
                   return (
                     <StripCard
                       key={dog.id}

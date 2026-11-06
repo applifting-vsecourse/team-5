@@ -7,7 +7,7 @@ import { authSessionQueryOptions, type Session } from "@/features/auth/api/authS
 
 export function getLandingRedirect(session: Session): string | null {
   if (!session?.user) return null
-  return session.user.role === "trainer" ? ROUTES.clients : ROUTES.week
+  return session.user.role === "trainer" ? ROUTES.clients : ROUTES.dashboard
 }
 
 export const Route = createFileRoute("/")({
