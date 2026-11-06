@@ -56,16 +56,19 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
   const exercises = training.exercises
   const totalExercises = exercises.length
   const currentExercise = exercises[currentIndex]
-  const isFirst = currentIndex === 0
-  const isLast = currentIndex === totalExercises - 1
+  const isFirstLocal = currentIndex === 0
+  const isLastLocal = currentIndex === totalExercises - 1
   const isBusy = moveStep.isPending
   const filledCount = exercises.filter((exercise) => exercise.outcome).length
-  // Only move the goal pointer when the screen shows that step (#66 AC6).
+  const isPointerInThisTraining =
+    pointerId == null || exercises.some((exercise) => exercise.id === pointerId)
+  const isPointerElsewhere = !isPointerInThisTraining
+  // Null means the first step of the whole goal; only treat local index 0 as
+  // that step when the pointer is not known to live elsewhere (#66 AC6).
   const isOnCurrentStep =
     currentExercise != null &&
-    (pointerId === currentExercise.id || (pointerId == null && currentIndex === 0))
-  const isPointerElsewhere =
-    pointerId != null && !exercises.some((exercise) => exercise.id === pointerId)
+    (pointerId === currentExercise.id ||
+      (pointerId == null && isPointerInThisTraining && currentIndex === 0))
 
   const followPointer = (currentStepId: string | null) => {
     setMovedPointer({ basedOn: training.currentStepId, value: currentStepId })
@@ -169,41 +172,70 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
 
             {isPointerElsewhere ? (
               <p className="text-sm text-muted-foreground">
-                Aktuální krok cíle je v jiném tréninku. Tady můžete trénink jen dokončit.
+                Aktuální krok cíle je v jiném tréninku. Můžete projít cviky tohoto tréninku nebo ho
+                dokončit.
               </p>
             ) : null}
 
             <div className="flex flex-col gap-2 pt-4">
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!isOnCurrentStep || isFirst || isBusy}
-                  onClick={() => void runAction("back")}
-                  className="min-h-11 flex-1 text-base"
-                >
-                  Zpět o krok
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!isOnCurrentStep || isBusy}
-                  onClick={() => void runAction("skip")}
-                  className="min-h-11 flex-1 text-base"
-                >
-                  Přeskočit
-                </Button>
-              </div>
-              <Button
-                type="button"
-                variant="default"
-                disabled={!isOnCurrentStep || isBusy}
-                onClick={() => void runAction("advance")}
-                className="min-h-11 w-full text-base"
-              >
-                Zvládnuto
-              </Button>
-              {isLast ? (
+              {isOnCurrentStep ? (
+                <>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      // Keep enabled on local first step so back can cross trainings (#66 AC3).
+                      disabled={isBusy}
+                      onClick={() => void runAction("back")}
+                      className="min-h-11 flex-1 text-base"
+                    >
+                      Zpět o krok
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isBusy}
+                      onClick={() => void runAction("skip")}
+                      className="min-h-11 flex-1 text-base"
+                    >
+                      Přeskočit
+                    </Button>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="default"
+                    disabled={isBusy}
+                    onClick={() => void runAction("advance")}
+                    className="min-h-11 w-full text-base"
+                  >
+                    Zvládnuto
+                  </Button>
+                </>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isFirstLocal}
+                    onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+                    className="min-h-11 flex-1 text-base"
+                  >
+                    Předchozí
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isLastLocal}
+                    onClick={() =>
+                      setCurrentIndex((prev) => Math.min(totalExercises - 1, prev + 1))
+                    }
+                    className="min-h-11 flex-1 text-base"
+                  >
+                    Další cvik
+                  </Button>
+                </div>
+              )}
+              {isLastLocal || isPointerElsewhere ? (
                 <Button
                   asChild
                   variant="secondary"
