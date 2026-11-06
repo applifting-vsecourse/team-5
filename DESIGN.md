@@ -68,6 +68,12 @@ small-text default. A name or initials must identify the dog too. Charts need
 labels and values so hue is not the only way to read them. Dog colours never mean
 success, failure or actions.
 
+Exception requested in the implementation review on 6 November 2026: numbered step badges
+in the training editor cycle through dog-1 to dog-6 by position, repeating after
+six steps. These colours identify positions. The editor does not highlight the
+dog's current step or show progress-specific hints; progress belongs to the
+training walkthrough.
+
 ## Typography and spacing
 
 Use `font-sans` (Plus Jakarta Sans with the existing fallback stack) for headings,

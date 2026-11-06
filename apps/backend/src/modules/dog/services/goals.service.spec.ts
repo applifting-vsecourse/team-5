@@ -24,6 +24,7 @@ const aGoal = (overrides: Partial<Goal> = {}): Goal => ({
   disciplineId: 'discipline-1',
   currentStepId: null,
   criterion: null,
+  deadline: null,
   id: 'g1',
   dogId: 'd1',
   createdById: 'u1',
