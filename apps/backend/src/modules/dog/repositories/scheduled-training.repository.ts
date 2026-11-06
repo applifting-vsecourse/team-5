@@ -73,7 +73,7 @@ export class ScheduledTrainingRepository {
             },
           },
         },
-        goal: { select: { id: true, title: true } },
+        goal: { select: { id: true, title: true, currentStepId: true } },
         training: {
           select: {
             id: true,
@@ -85,6 +85,7 @@ export class ScheduledTrainingRepository {
                 title: true,
                 instruction: true,
                 criterion: true,
+                outcome: true,
               },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },

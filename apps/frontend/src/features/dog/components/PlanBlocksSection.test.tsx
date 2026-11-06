@@ -15,17 +15,34 @@ const aBlock = (overrides: Partial<PlanBlock> = {}): PlanBlock => ({
   title: "Sedni u nohy",
   instruction: "Pes sedí u levé nohy, odměna z levé ruky.",
   criterion: "Sedí 5 s, i když kolem letí míček.",
+  outcome: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,
 })
 
 // Seed the cache so the section renders without hitting the API.
-const renderWithBlocks = (blocks: PlanBlock[]) => {
+const renderWithBlocks = (
+  blocks: PlanBlock[],
+  goal: { currentStepId: string | null } = { currentStepId: null },
+) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   })
   queryClient.setQueryData(dogKeys.goalBlocks("g1"), blocks)
+  queryClient.setQueryData(dogKeys.goal("g1"), {
+    id: "g1",
+    dogId: "d1",
+    createdBy: { id: "u1", name: "Ada" },
+    title: "Chůze",
+    discipline: null,
+    principle: null,
+    status: "ACTIVE",
+    order: 0,
+    currentStepId: goal.currentStepId,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  })
   return render(
     <QueryClientProvider client={queryClient}>
       <PlanBlocksSection goalId="g1" />
@@ -136,5 +153,25 @@ describe("PlanBlocksSection", () => {
     await user.click(within(dialog).getByRole("button", { name: "Přidat cvik" }))
 
     expect(await within(dialog).findByText("Název cviku je povinný")).toBeInTheDocument()
+  })
+
+  it("marks the current step and shows step actions (#66)", () => {
+    renderWithBlocks(
+      [
+        aBlock(),
+        aBlock({ id: "b2", position: 1, title: "Krok vpřed", outcome: "MASTERED" }),
+        aBlock({ id: "b3", position: 2, title: "Obrat", outcome: "SKIPPED" }),
+      ],
+      { currentStepId: "b1" },
+    )
+
+    const current = screen.getByRole("listitem", { current: "step" })
+    expect(within(current).getByText("Aktuální")).toBeInTheDocument()
+    expect(within(current).getByRole("button", { name: "Zvládnuto, další krok" })).toBeInTheDocument()
+    expect(within(current).getByRole("button", { name: "Přeskočit" })).toBeInTheDocument()
+    expect(within(current).getByRole("button", { name: "Zpět o krok" })).toBeDisabled()
+
+    expect(screen.getByText("Zvládnuto")).toBeInTheDocument()
+    expect(screen.getByText("Přeskočeno")).toBeInTheDocument()
   })
 })

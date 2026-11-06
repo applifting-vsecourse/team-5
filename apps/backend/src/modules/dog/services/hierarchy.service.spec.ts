@@ -1,3 +1,4 @@
+import { Goal } from '@/modules/dog/domain/goal';
 import { HierarchyRepository } from '@/modules/dog/repositories/hierarchy.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { GoalsService } from '@/modules/dog/services/goals.service';
@@ -29,6 +30,7 @@ const training = {
   position: 0,
   isArchived: false,
   steps: [],
+  currentStepId: null,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -68,6 +70,25 @@ describe('hierarchy access and scheduling', () => {
       service.setDiscipline(user, 'd1', 'Poslušnost'),
     ).rejects.toThrow(ForbiddenException);
     expect(repository.setDiscipline).not.toHaveBeenCalled();
+  });
+
+  it('does not move the current step of a goal the user cannot see', async () => {
+    const { service, repository, goals } = setup();
+    goals.getGoal.mockRejectedValue(new NotFoundException());
+    await expect(
+      service.moveCurrentStep(user, 'g1', 'advance'),
+    ).rejects.toThrow(NotFoundException);
+    expect(repository.moveCurrentStep).not.toHaveBeenCalled();
+  });
+
+  it('moves the current step and returns the refreshed goal', async () => {
+    const { service, repository, goals } = setup();
+    const goal = { id: 'g1', currentStepId: 'b2' } as Goal;
+    goals.getGoal.mockResolvedValue(goal);
+    await expect(service.moveCurrentStep(user, 'g1', 'skip')).resolves.toBe(
+      goal,
+    );
+    expect(repository.moveCurrentStep).toHaveBeenCalledWith('g1', 'skip');
   });
 
   it('schedules the selected concrete training within its actual goal', async () => {

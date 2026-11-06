@@ -1,3 +1,4 @@
+import { StepOutcome } from '@/generated/prisma/client';
 import { PlanBlock } from '@/modules/dog/domain/plan-block';
 import { Trim } from '@/shared/validation/trim';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -128,6 +129,9 @@ export class PlanBlockResponseDto {
   @ApiPropertyOptional({ nullable: true })
   criterion!: string | null;
 
+  @ApiProperty({ enum: StepOutcome, nullable: true })
+  outcome!: StepOutcome | null;
+
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: Date;
 
@@ -143,6 +147,7 @@ export class PlanBlockResponseDto {
       title: block.title,
       instruction: block.instruction,
       criterion: block.criterion,
+      outcome: block.outcome,
       createdAt: block.createdAt,
       updatedAt: block.updatedAt,
     };

@@ -173,6 +173,8 @@ model TrainingGoal {
   order            Int                 @default(0)
   workoutLogs      WorkoutLog[]
   blocks           PlanBlock[]
+  currentStepId    String?
+  currentStep      PlanBlock?          @relation("GoalCurrentStep", fields: [currentStepId], references: [id], onDelete: SetNull)
   trainings        ScheduledTraining[]
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @default(now()) @updatedAt
@@ -185,21 +187,31 @@ model TrainingGoal {
 // One step of a goal's plan, shown top to bottom by position (#63).
 // Sequences (#64) and sub-steps (#67) will build on this model.
 model PlanBlock {
-  id          String       @id @default(cuid())
+  id          String         @id @default(cuid())
   goalId      String
-  goal        TrainingGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  trainingId  String       @default(dbgenerated())
-  training    GoalTraining @relation(fields: [trainingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  goal        TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  trainingId  String         @default(dbgenerated())
+  training    GoalTraining   @relation(fields: [trainingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   position    Int
-  title       String       @db.VarChar(100)
-  instruction String?      @db.Text
-  criterion   String?      @db.Text
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @default(now()) @updatedAt
+  title       String         @db.VarChar(100)
+  instruction String?        @db.Text
+  criterion   String?        @db.Text
+  outcome     StepOutcome?
+  currentOf   TrainingGoal[] @relation("GoalCurrentStep")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @default(now()) @updatedAt
 
   @@index([goalId, position])
   @@index([trainingId, position])
   @@map("plan_block")
+}
+
+// How a step was left behind by the current-step pointer (#66).
+enum StepOutcome {
+  MASTERED
+  SKIPPED
+
+  @@map("step_outcome")
 }
 
 enum TrainingStatus {

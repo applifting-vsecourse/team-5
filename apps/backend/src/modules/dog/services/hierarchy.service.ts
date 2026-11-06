@@ -4,11 +4,13 @@ import {
   PlanBlock,
   ScheduledTraining,
 } from '@/generated/prisma/client';
+import { CurrentStepAction } from '@/modules/dog/domain/current-step';
+import { Goal } from '@/modules/dog/domain/goal';
 import {
   CreateGoalTrainingData,
   DisciplineMembership,
   DogPlan,
-  TrainingWithSteps,
+  TrainingDetail,
   UpdateGoalTrainingData,
 } from '@/modules/dog/domain/hierarchy';
 import { CreatePlanBlockData } from '@/modules/dog/domain/plan-block';
@@ -47,7 +49,7 @@ export class HierarchyService {
     return this.repository.setDiscipline(dogId, name.trim(), isArchived);
   }
 
-  async getTraining(user: Identity, id: string): Promise<TrainingWithSteps> {
+  async getTraining(user: Identity, id: string): Promise<TrainingDetail> {
     const training = await this.repository.getTraining(id);
     if (!training) throw new NotFoundException('Training not found');
     try {
@@ -110,6 +112,17 @@ export class HierarchyService {
   ): Promise<PlanBlock[]> {
     const training = await this.getTraining(user, id);
     return this.repository.reorderSteps(training.goalId, id, ids);
+  }
+
+  // Owner and a shared trainer may walk the plan (getGoal checks the dog).
+  async moveCurrentStep(
+    user: Identity,
+    goalId: string,
+    action: CurrentStepAction,
+  ): Promise<Goal> {
+    await this.goals.getGoal(user, goalId);
+    await this.repository.moveCurrentStep(goalId, action);
+    return this.goals.getGoal(user, goalId);
   }
 
   async schedule(

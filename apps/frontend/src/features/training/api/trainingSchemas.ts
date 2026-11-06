@@ -31,12 +31,16 @@ export const completedActivitySchema = z.object({
 
 export type CompletedActivity = z.infer<typeof completedActivitySchema>
 
+export const stepOutcomeSchema = z.enum(["MASTERED", "SKIPPED"])
+export type StepOutcome = z.infer<typeof stepOutcomeSchema>
+
 export const trainingDetailExerciseSchema = z.object({
   id: z.string(),
   position: z.number(),
   title: z.string(),
   instruction: z.string().nullable(),
   criterion: z.string().nullable(),
+  outcome: stepOutcomeSchema.nullable().optional(),
 })
 
 export type TrainingDetailExercise = z.infer<typeof trainingDetailExerciseSchema>
@@ -55,6 +59,8 @@ export const trainingDetailSchema = z.object({
     id: z.string(),
     title: z.string(),
   }),
+  // null = first step of the goal; may lie outside this training (#66)
+  currentStepId: z.string().nullable(),
   exercises: z.array(trainingDetailExerciseSchema),
 })
 
