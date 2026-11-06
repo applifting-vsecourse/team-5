@@ -369,7 +369,7 @@ describe("login and logout", () => {
     await screen.findByRole("dialog")
     await fillForm(interaction)
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-    expect(await screen.findByRole("heading", { name: /Ahoj|Dnes/i })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: /Ahoj Jana|Dnes/ })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/dashboard")
   })
 
@@ -386,7 +386,7 @@ describe("login and logout", () => {
     expect(screen.getByRole("button", { name: "Přihlásit se" })).toBeEnabled()
     acceptLogin()
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-    expect(await screen.findByRole("heading", { name: "Týden" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: /Ahoj Jana|Dnes/ })).toBeInTheDocument()
   })
 
   it("prevents duplicate submissions and closing while login is pending", async () => {
