@@ -329,73 +329,73 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
       </ToggleGroup>
 
       <QueryState
-          isLoading={weekQuery.isLoading}
-          error={weekQuery.error}
-          onRetry={() => void weekQuery.refetch()}
-          isEmpty={trainings.length === 0}
-          errorTitle="Týden se nepodařilo načíst"
-          empty={
-            <EmptyState
-              icon={Calendar}
-              chip="BEZ PLÁNU"
-              titleAs="p"
-              title="Na tento týden nemáte nic naplánováno"
-              description="Založte psovi cíl a naplánujte trénink, nebo počkejte, až vám ho zadá trenér."
-              action={
-                <Button
-                  asChild
-                  size="lg"
-                  className="w-full"
+        isLoading={weekQuery.isLoading}
+        error={weekQuery.error}
+        onRetry={() => void weekQuery.refetch()}
+        isEmpty={trainings.length === 0}
+        errorTitle="Týden se nepodařilo načíst"
+        empty={
+          <EmptyState
+            icon={Calendar}
+            chip="BEZ PLÁNU"
+            titleAs="p"
+            title="Na tento týden nemáte nic naplánováno"
+            description="Založte psovi cíl a naplánujte trénink, nebo počkejte, až vám ho zadá trenér."
+            action={
+              <Button
+                asChild
+                size="lg"
+                className="w-full"
+              >
+                <Link to="/dogs">Přejít na psy</Link>
+              </Button>
+            }
+          />
+        }
+      >
+        <div className="flex flex-col gap-6">
+          {days.map((day) => {
+            const dayTrainings = trainingsOf(day)
+            const isSelected = day === selectedDay
+            return (
+              <section
+                key={day}
+                aria-labelledby={`day-${day}`}
+                className={cn(
+                  "flex flex-col gap-3",
+                  isSelected &&
+                    "rounded-card ring-2 ring-primary ring-offset-2 ring-offset-background",
+                )}
+              >
+                <h2
+                  id={`day-${day}`}
+                  className="text-sm font-extrabold tracking-tight text-foreground"
                 >
-                  <Link to="/dogs">Přejít na psy</Link>
-                </Button>
-              }
-            />
-          }
-        >
-          <div className="flex flex-col gap-6">
-            {days.map((day) => {
-              const dayTrainings = trainingsOf(day)
-              const isSelected = day === selectedDay
-              return (
-                <section
-                  key={day}
-                  aria-labelledby={`day-${day}`}
-                  className={cn(
-                    "flex flex-col gap-3",
-                    isSelected &&
-                      "rounded-card ring-2 ring-primary ring-offset-2 ring-offset-background",
-                  )}
-                >
-                  <h2
-                    id={`day-${day}`}
-                    className="text-sm font-extrabold tracking-tight text-foreground"
-                  >
-                    {formatDayLong(day)}
-                    {day === today ? " · dnes" : ""}
-                  </h2>
-                  {dayTrainings.length === 0 ? (
-                    <p className="rounded-card border border-dashed border-border bg-card px-4 py-4 text-sm text-muted-foreground">
-                      {isSelected
-                        ? "Na tento den nemáte nic naplánováno."
-                        : "Volný den – odpočinek je taky trénink."}
-                    </p>
-                  ) : (
-                    <ul className="flex flex-col gap-2">
-                      {dayTrainings.map((training) => (
-                        <WeekTrainingCard
-                          key={training.id}
-                          training={training}
-                          today={today}
-                        />
-                      ))}
-                    </ul>
-                  )}
-                </section>
-              )
-            })}
-          </div>
-        </QueryState>
+                  {formatDayLong(day)}
+                  {day === today ? " · dnes" : ""}
+                </h2>
+                {dayTrainings.length === 0 ? (
+                  <p className="rounded-card border border-dashed border-border bg-card px-4 py-4 text-sm text-muted-foreground">
+                    {isSelected
+                      ? "Na tento den nemáte nic naplánováno."
+                      : "Volný den – odpočinek je taky trénink."}
+                  </p>
+                ) : (
+                  <ul className="flex flex-col gap-2">
+                    {dayTrainings.map((training) => (
+                      <WeekTrainingCard
+                        key={training.id}
+                        training={training}
+                        today={today}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )
+          })}
+        </div>
+      </QueryState>
 
       {/* Month Calendar Week Picker Dialog */}
       <WeekPickerDialog
