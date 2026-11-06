@@ -178,6 +178,10 @@ describe("WeekView", () => {
         screen.getByRole("button", { name: "Přesunout trénink Rex · Chůze u nohy" }),
       ).toBeInTheDocument()
       expect(screen.queryByRole("button", { name: "Přesunout trénink Rex · Pac" })).toBeNull()
+      expect(screen.getByRole("link", { name: "Začít trénink Rex · Chůze u nohy" })).toHaveAttribute(
+        "href",
+        "/trainings/t1",
+      )
       // The card still opens the walkthrough (#76).
       expect(screen.getByRole("link", { name: "Trénink Rex · Chůze u nohy" })).toHaveAttribute(
         "href",
