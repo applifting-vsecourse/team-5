@@ -1,7 +1,6 @@
 import type { ReactNode } from "react"
 
 import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 
 type CheckboxFieldProps = {
@@ -23,12 +22,19 @@ export function CheckboxField({
   label,
   isChecked,
   onCheckedChange,
-  isDisabled,
+  isDisabled = false,
   className,
   name,
 }: CheckboxFieldProps) {
   return (
-    <div className={cn("flex min-h-touch items-center gap-3", className)}>
+    <label
+      htmlFor={id}
+      className={cn(
+        "flex min-h-touch items-center gap-3",
+        isDisabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+        className,
+      )}
+    >
       <Checkbox
         id={id}
         name={name}
@@ -36,12 +42,7 @@ export function CheckboxField({
         disabled={isDisabled}
         onCheckedChange={(value) => onCheckedChange(value === true)}
       />
-      <Label
-        htmlFor={id}
-        className="cursor-pointer text-sm leading-snug font-medium text-foreground"
-      >
-        {label}
-      </Label>
-    </div>
+      <span className="text-sm leading-snug font-medium text-foreground">{label}</span>
+    </label>
   )
 }
