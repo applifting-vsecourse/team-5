@@ -51,9 +51,7 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
   const moveStep = useMoveCurrentStep(training.goal.id, training.dog.id, training.id)
 
   const pointerId =
-    movedPointer?.basedOn === training.currentStepId
-      ? movedPointer.value
-      : training.currentStepId
+    movedPointer?.basedOn === training.currentStepId ? movedPointer.value : training.currentStepId
 
   const exercises = training.exercises
   const totalExercises = exercises.length
