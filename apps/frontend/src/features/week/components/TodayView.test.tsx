@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { addCalendarDays } from "@/lib/calendarDate"
-import { dogKeys } from "@/lib/dogKeys"
+import { dogsListSummaryKey } from "@/lib/dogsListQueryOptions"
 
 import { weekKeys, type WeekTraining } from "@/features/week/api/weekQueryOptions"
 
@@ -74,7 +74,7 @@ const renderToday = (trainings: WeekTraining[]) => {
   queryClient.setQueryData(weekKeys.week(weekStart), trainings)
   queryClient.setQueryData(weekKeys.range(upcomingFrom, upcomingTo), trainings)
   const dogs = [...new Map(trainings.map((training) => [training.dog.id, training.dog])).values()]
-  queryClient.setQueryData(dogKeys.lists(), dogs)
+  queryClient.setQueryData(dogsListSummaryKey, dogs)
   render(
     <QueryClientProvider client={queryClient}>
       <TodayView userName="Jan Novák" />
