@@ -27,6 +27,7 @@ import {
   Trash2,
 } from "lucide-react"
 
+import { StatusChip } from "@/components/StatusChip"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,10 +40,11 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useMoveCurrentStep } from "@/lib/useMoveCurrentStep"
 import { cn } from "@/lib/utils"
 
 import type { PlanBlock } from "@/features/dog/api/dogSchemas"
-import { goalBlocksQueryOptions } from "@/features/dog/api/dogsQueryOptions"
+import { goalBlocksQueryOptions, goalQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 import type { NewExercise } from "@/features/dog/api/savePlanBlock"
 import { useCreatePlanBlock } from "@/features/dog/hooks/useCreatePlanBlock"
 import { useDeletePlanBlock } from "@/features/dog/hooks/useDeletePlanBlock"
@@ -56,10 +58,15 @@ type PlanBlockItemProps = {
   number: number
   isFirst: boolean
   isLast: boolean
+  isCurrent: boolean
   isReordering: boolean
+  isStepBusy: boolean
   onEdit: () => void
   onMove: (direction: -1 | 1) => void
   onDelete: () => void
+  onAdvance: () => void
+  onSkip: () => void
+  onBack: () => void
   dragHandleProps?: HTMLAttributes<HTMLDivElement>
   isDragging?: boolean
   style?: CSSProperties
@@ -71,10 +78,15 @@ function PlanBlockItem({
   number,
   isFirst,
   isLast,
+  isCurrent,
   isReordering,
+  isStepBusy,
   onEdit,
   onMove,
   onDelete,
+  onAdvance,
+  onSkip,
+  onBack,
   dragHandleProps,
   isDragging,
   style,
@@ -91,104 +103,150 @@ function PlanBlockItem({
     <li
       ref={setNodeRef}
       style={style}
+      aria-current={isCurrent ? "step" : undefined}
       className={cn(
-        "relative flex gap-3 rounded-lg border border-border bg-card p-3 transition-all duration-150 active:scale-[0.995]",
+        "relative flex flex-col gap-3 rounded-lg border border-border bg-card p-3 transition-all duration-150 active:scale-[0.995]",
+        isCurrent && "border-primary ring-2 ring-primary/30",
         isDragging && "z-20 opacity-60 shadow-lg ring-2 ring-primary/40",
       )}
     >
-      {/* Agility Track Station Marker & Drag Handle */}
-      <div
-        {...dragHandleProps}
-        // At least 44 px wide, a touch target on a phone (#89).
-        className="flex min-w-11 cursor-grab touch-none flex-col items-center select-none active:cursor-grabbing"
-        title="Přetáhněte pro změnu pořadí"
-        aria-label={`Přetáhnout cvik ${block.title}`}
-      >
-        {/* Agility Course Station Checkpoint */}
-        <span
-          aria-hidden="true"
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary font-mono text-xs font-bold text-secondary-foreground ring-2 ring-primary/25"
+      <div className="flex gap-3">
+        {/* Agility Track Station Marker & Drag Handle */}
+        <div
+          {...dragHandleProps}
+          // At least 44 px wide, a touch target on a phone (#89).
+          className="flex min-w-11 cursor-grab touch-none flex-col items-center select-none active:cursor-grabbing"
+          title="Přetáhněte pro změnu pořadí"
+          aria-label={`Přetáhnout cvik ${block.title}`}
         >
-          {number}
-        </span>
-
-        <GripVertical
-          aria-hidden="true"
-          className="mt-1 size-3.5 text-muted-foreground/45 transition-colors hover:text-foreground"
-        />
-      </div>
-
-      {/* Clicking the block opens it for editing (#65). */}
-      <button
-        type="button"
-        onClick={onEdit}
-        className="flex min-w-0 flex-1 flex-col justify-start gap-1 rounded-md py-1 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
-      >
-        {/* A button only allows phrasing content, so spans instead of h3/p. */}
-        <span className="block text-base font-medium text-foreground">
-          <span className="sr-only">Cvik {number}: </span>
-          {block.title}
-        </span>
-        {block.instruction ? (
-          <span className="line-clamp-2 block text-sm text-muted-foreground">
-            Instrukce: {block.instruction}
+          <span
+            aria-hidden="true"
+            className={cn(
+              "flex size-8 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold ring-2",
+              isCurrent
+                ? "bg-primary text-primary-foreground ring-primary/40"
+                : "bg-secondary text-secondary-foreground ring-primary/25",
+            )}
+          >
+            {number}
           </span>
-        ) : null}
-        {/* The criterion stays visible without opening the block (#63). */}
-        {block.criterion ? (
-          <span className="mt-1 block text-left">
-            <span className="inline-block rounded-md border border-border/60 bg-secondary/80 px-2 py-0.5 font-mono text-xs font-semibold text-secondary-foreground">
-              Kritérium: {block.criterion}
-            </span>
-          </span>
-        ) : null}
-      </button>
 
-      {/* Buttons for accessibility and mobile arrow navigation */}
-      <div className="grid shrink-0 grid-cols-2 content-start gap-1">
-        <Button
+          <GripVertical
+            aria-hidden="true"
+            className="mt-1 size-3.5 text-muted-foreground/45 transition-colors hover:text-foreground"
+          />
+        </div>
+
+        {/* Clicking the block opens it for editing (#65). */}
+        <button
           type="button"
-          variant="ghost"
-          size="icon"
-          className="size-11"
-          aria-label={`Posunout cvik ${block.title} nahoru`}
-          disabled={isFirst || isReordering}
-          onClick={() => handleMoveWithHaptic(-1)}
-        >
-          <ChevronUp className="size-5" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-11"
-          aria-label={`Upravit cvik ${block.title}`}
           onClick={onEdit}
+          className="flex min-w-0 flex-1 flex-col justify-start gap-1 rounded-md py-1 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
         >
-          <Pencil className="size-5" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-11"
-          aria-label={`Posunout cvik ${block.title} dolů`}
-          disabled={isLast || isReordering}
-          onClick={() => handleMoveWithHaptic(1)}
-        >
-          <ChevronDown className="size-5" />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-11 text-destructive hover:text-destructive"
-          aria-label={`Smazat cvik ${block.title}`}
-          onClick={onDelete}
-        >
-          <Trash2 className="size-5" />
-        </Button>
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="block text-base font-medium text-foreground">
+              <span className="sr-only">Cvik {number}: </span>
+              {block.title}
+            </span>
+            {isCurrent ? <StatusChip tone="accent">Aktuální</StatusChip> : null}
+            {block.outcome === "MASTERED" ? (
+              <StatusChip tone="success">Zvládnuto</StatusChip>
+            ) : null}
+            {block.outcome === "SKIPPED" ? <StatusChip tone="muted">Přeskočeno</StatusChip> : null}
+          </span>
+          {block.instruction ? (
+            <span className="line-clamp-2 block text-sm text-muted-foreground">
+              Instrukce: {block.instruction}
+            </span>
+          ) : null}
+          {block.criterion ? (
+            <span className="mt-1 block text-left">
+              <span className="inline-block rounded-md border border-border/60 bg-secondary/80 px-2 py-0.5 font-mono text-xs font-semibold text-secondary-foreground">
+                Kritérium: {block.criterion}
+              </span>
+            </span>
+          ) : null}
+        </button>
+
+        <div className="grid shrink-0 grid-cols-2 content-start gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-11"
+            aria-label={`Posunout cvik ${block.title} nahoru`}
+            disabled={isFirst || isReordering}
+            onClick={() => handleMoveWithHaptic(-1)}
+          >
+            <ChevronUp className="size-5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-11"
+            aria-label={`Upravit cvik ${block.title}`}
+            onClick={onEdit}
+          >
+            <Pencil className="size-5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-11"
+            aria-label={`Posunout cvik ${block.title} dolů`}
+            disabled={isLast || isReordering}
+            onClick={() => handleMoveWithHaptic(1)}
+          >
+            <ChevronDown className="size-5" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-11 text-destructive hover:text-destructive"
+            aria-label={`Smazat cvik ${block.title}`}
+            onClick={onDelete}
+          >
+            <Trash2 className="size-5" />
+          </Button>
+        </div>
       </div>
+
+      {isCurrent ? (
+        <div className="flex flex-col gap-2 border-t border-border pt-3">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 flex-1"
+              disabled={isFirst || isStepBusy}
+              onClick={onBack}
+            >
+              Zpět o krok
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 flex-1"
+              disabled={isStepBusy}
+              onClick={onSkip}
+            >
+              Přeskočit
+            </Button>
+          </div>
+          <Button
+            type="button"
+            variant="default"
+            className="min-h-11 w-full"
+            disabled={isStepBusy}
+            onClick={onAdvance}
+          >
+            Zvládnuto, další krok
+          </Button>
+        </div>
+      ) : null}
     </li>
   )
 }
@@ -220,13 +278,17 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
   const [dialogMode, setDialogMode] = useState<ExerciseDialogMode | null>(null)
   const [blockToDelete, setBlockToDelete] = useState<PlanBlock | null>(null)
 
+  const goalQuery = useQuery(goalQueryOptions(goalId))
   const blocksQuery = useQuery(goalBlocksQueryOptions(goalId))
   const createBlock = useCreatePlanBlock(goalId)
   const updateBlock = useUpdatePlanBlock(goalId)
   const deleteBlock = useDeletePlanBlock(goalId)
   const reorderBlocks = useReorderPlanBlocks(goalId)
+  const moveStep = useMoveCurrentStep(goalId, goalQuery.data?.dogId ?? "")
 
   const blocks = blocksQuery.data ?? []
+  // null pointer means the first step of the plan (#66)
+  const currentStepId = goalQuery.data?.currentStepId ?? blocks[0]?.id ?? null
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -347,10 +409,15 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
                   number={index + 1}
                   isFirst={index === 0}
                   isLast={index === blocks.length - 1}
+                  isCurrent={block.id === currentStepId}
                   isReordering={reorderBlocks.isPending}
+                  isStepBusy={moveStep.isPending}
                   onEdit={() => setDialogMode({ kind: "edit", block })}
                   onMove={(direction) => handleMove(index, direction)}
                   onDelete={() => setBlockToDelete(block)}
+                  onAdvance={() => void moveStep.mutateAsync("advance")}
+                  onSkip={() => void moveStep.mutateAsync("skip")}
+                  onBack={() => void moveStep.mutateAsync("back")}
                 />
               ))}
             </ol>

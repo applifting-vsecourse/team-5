@@ -15,6 +15,7 @@ const aBlock = (overrides: Partial<PlanBlock> = {}): PlanBlock => ({
   title: 'Sedni u nohy',
   instruction: 'Pes sedí u levé nohy.',
   criterion: 'Sedí 5 s, i když kolem letí míček.',
+  outcome: null,
   createdAt: new Date('2026-01-01T12:00:00Z'),
   updatedAt: new Date('2026-01-01T12:00:00Z'),
   ...overrides,

@@ -2,6 +2,7 @@ import {
   FocusLevel,
   MistakeLevel,
   ScheduledTraining,
+  StepOutcome,
   TrainingStatus,
 } from '@/generated/prisma/client';
 
@@ -32,12 +33,14 @@ export type ScheduledTrainingDetail = ScheduledTraining & {
   goal: {
     id: string;
     title: string;
+    currentStepId: string | null;
     blocks: {
       id: string;
       position: number;
       title: string;
       instruction: string | null;
       criterion: string | null;
+      outcome: StepOutcome | null;
     }[];
   };
 };

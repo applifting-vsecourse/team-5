@@ -1,6 +1,7 @@
 import {
   FocusLevel,
   MistakeLevel,
+  StepOutcome,
   TrainingStatus,
 } from '@/generated/prisma/client';
 import {
@@ -184,6 +185,9 @@ export class TrainingDetailExerciseDto {
 
   @ApiPropertyOptional({ nullable: true })
   criterion!: string | null;
+
+  @ApiProperty({ enum: StepOutcome, nullable: true })
+  outcome!: StepOutcome | null;
 }
 
 export class TrainingDetailResponseDto {
@@ -203,6 +207,14 @@ export class TrainingDetailResponseDto {
 
   @ApiProperty({ type: WeekTrainingGoalDto })
   goal!: WeekTrainingGoalDto;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Effective current step of the goal (null only when the plan has no steps)',
+  })
+  currentStepId!: string | null;
 
   @ApiProperty({ type: [TrainingDetailExerciseDto] })
   exercises!: TrainingDetailExerciseDto[];
@@ -227,12 +239,14 @@ export class TrainingDetailResponseDto {
         id: training.goal.id,
         title: training.goal.title,
       },
+      currentStepId: training.goal.currentStepId,
       exercises: training.goal.blocks.map((block) => ({
         id: block.id,
         position: block.position,
         title: block.title,
         instruction: block.instruction,
         criterion: block.criterion,
+        outcome: block.outcome,
       })),
     };
   }

@@ -41,6 +41,7 @@ const aTrainingDetail = (
   goal: {
     id: 'g1',
     title: 'Chůze u nohy',
+    currentStepId: null,
     blocks: [
       {
         id: 'b1',
@@ -48,6 +49,7 @@ const aTrainingDetail = (
         title: 'Sedni u nohy',
         instruction: 'Sedni rovně u levé nohy.',
         criterion: '3x za sebou.',
+        outcome: null,
       },
     ],
   },

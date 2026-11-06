@@ -6,13 +6,14 @@ import {
   WorkoutLog,
   WorkoutStatus,
 } from '@/generated/prisma/client';
+import { effectiveCurrentStepId } from '@/modules/dog/domain/current-step';
 import {
   ScheduledTraining,
   ScheduledTrainingDetail,
   WeekTraining,
 } from '@/modules/dog/domain/scheduled-training';
 import { Injectable } from '@nestjs/common';
-import { resolveTraining } from './hierarchy.repository';
+import { planOrder, resolveTraining } from './hierarchy.repository';
 
 @Injectable()
 export class ScheduledTrainingRepository {
@@ -73,7 +74,7 @@ export class ScheduledTrainingRepository {
             },
           },
         },
-        goal: { select: { id: true, title: true } },
+        goal: { select: { id: true, title: true, currentStepId: true } },
         training: {
           select: {
             id: true,
@@ -85,6 +86,7 @@ export class ScheduledTrainingRepository {
                 title: true,
                 instruction: true,
                 criterion: true,
+                outcome: true,
               },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },
@@ -92,9 +94,25 @@ export class ScheduledTrainingRepository {
         },
       },
     });
-    return row
-      ? { ...row, goal: { ...row.goal, blocks: row.training.steps } }
-      : null;
+    if (!row) return null;
+    // Walkthrough compares the pointer to this training's steps; expose the
+    // effective first step of the whole goal when the stored pointer is null.
+    const goalSteps = await this.prisma.planBlock.findMany({
+      where: { goalId: row.goal.id, training: { isArchived: false } },
+      select: { id: true },
+      orderBy: [{ training: { position: 'asc' } }, ...planOrder],
+    });
+    return {
+      ...row,
+      goal: {
+        ...row.goal,
+        currentStepId: effectiveCurrentStepId(
+          goalSteps.map((step) => step.id),
+          row.goal.currentStepId,
+        ),
+        blocks: row.training.steps,
+      },
+    };
   }
 
   // A goal can be practised on many days. Only a duplicate planned session
