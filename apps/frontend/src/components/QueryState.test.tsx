@@ -4,9 +4,8 @@ import { describe, expect, it, vi } from "vitest"
 
 import { QueryState } from "./QueryState"
 
-/** Behaviour: loading / error+retry / empty / children. Module: QueryState.tsx. No prior tests. */
 describe("QueryState", () => {
-  it("shows loading skeleton", () => {
+  it("shows loading skeleton with status role", () => {
     render(
       <QueryState
         isLoading
@@ -16,12 +15,12 @@ describe("QueryState", () => {
       </QueryState>,
     )
 
-    expect(screen.getByLabelText("Načítám")).toBeInTheDocument()
+    expect(screen.getByRole("status", { name: "Načítám" })).toBeInTheDocument()
     expect(screen.getByText("Načítání")).toBeInTheDocument()
     expect(screen.queryByText("data")).not.toBeInTheDocument()
   })
 
-  it("shows error with retry", async () => {
+  it("shows error with retry and default CHYBA chip", async () => {
     const onRetry = vi.fn()
     const user = userEvent.setup()
     render(
@@ -36,8 +35,35 @@ describe("QueryState", () => {
 
     expect(screen.getByRole("heading", { name: "Nepodařilo se načíst data" })).toBeInTheDocument()
     expect(screen.getByText("síť")).toBeInTheDocument()
+    expect(screen.getByText("CHYBA")).toBeInTheDocument()
+    expect(screen.queryByText("BEZ PŘIPOJENÍ")).not.toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "Zkusit znovu" }))
     expect(onRetry).toHaveBeenCalledOnce()
+  })
+
+  it("allows a custom error chip or none", () => {
+    const { rerender } = render(
+      <QueryState
+        error={new Error("x")}
+        errorChip="BEZ PŘIPOJENÍ"
+        empty={<p>prázdné</p>}
+      >
+        <p>data</p>
+      </QueryState>,
+    )
+    expect(screen.getByText("BEZ PŘIPOJENÍ")).toBeInTheDocument()
+
+    rerender(
+      <QueryState
+        error={new Error("x")}
+        errorChip={null}
+        empty={<p>prázdné</p>}
+      >
+        <p>data</p>
+      </QueryState>,
+    )
+    expect(screen.queryByText("BEZ PŘIPOJENÍ")).not.toBeInTheDocument()
+    expect(screen.queryByText("CHYBA")).not.toBeInTheDocument()
   })
 
   it("shows empty and children", () => {

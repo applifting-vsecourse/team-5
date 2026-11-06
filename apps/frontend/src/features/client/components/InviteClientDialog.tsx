@@ -79,7 +79,7 @@ export function InviteClientDialog({ isOpen, onOpenChange }: InviteClientDialogP
           <>
             <DialogHeader>
               <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <CheckCircle2 className="size-6 text-green-600" />
+                <CheckCircle2 className="size-6 text-success-foreground" />
               </div>
               <DialogTitle className="text-center">
                 {createdInvitation.email ? "Pozvánka odeslána" : "Kód pozvánky vygenerován"}
