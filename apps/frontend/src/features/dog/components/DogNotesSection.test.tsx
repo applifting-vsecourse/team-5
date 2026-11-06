@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { api } from "@/lib/api-client"
 import { todayCalendarDate } from "@/lib/calendarDate"
@@ -38,6 +38,22 @@ const notes = [
   },
 ]
 
+function mockViewport(isMdUp: boolean) {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("48rem") ? isMdUp : false,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  })
+}
+
 const renderSection = () =>
   render(
     <QueryClientProvider
@@ -55,6 +71,7 @@ const renderSection = () =>
   )
 
 beforeEach(() => {
+  mockViewport(true)
   vi.mocked(api.get).mockReset()
   vi.mocked(api.post).mockReset()
   vi.mocked(api.patch).mockReset()
@@ -62,10 +79,15 @@ beforeEach(() => {
   vi.mocked(api.get).mockReturnValue({ json: () => Promise.resolve(notes) } as never)
 })
 
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
 describe("DogNotesSection", () => {
-  it("lists notes with edit and delete actions", async () => {
+  it("lists notes with edit and delete actions under Deník", async () => {
     renderSection()
 
+    expect(screen.getByRole("heading", { name: "Deník" })).toBeInTheDocument()
     expect(await screen.findByText("Seminář poslušnosti")).toBeInTheDocument()
     expect(screen.getByText("Lekce canicross")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /upravit poznámku seminář/i })).toBeInTheDocument()
@@ -164,11 +186,21 @@ describe("DogNotesSection", () => {
     })
   })
 
-  it("shows an empty state when the dog has no notes", async () => {
+  it("shows an empty state with create action when the dog has no notes", async () => {
     vi.mocked(api.get).mockReturnValue({ json: () => Promise.resolve([]) } as never)
+    const user = userEvent.setup()
 
     renderSection()
 
     expect(await screen.findByText(/Rex zatím nemá žádnou poznámku/i)).toBeInTheDocument()
+    expect(screen.getByText("BEZ POZNÁMEK")).toBeInTheDocument()
+
+    const emptyTitle = await screen.findByText(/Rex zatím nemá žádnou poznámku/i)
+    const emptyRegion = emptyTitle.closest("[class*='rounded-card']")
+    expect(emptyRegion).toBeTruthy()
+    await user.click(
+      within(emptyRegion as HTMLElement).getByRole("button", { name: /nová poznámka/i }),
+    )
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
   })
 })
