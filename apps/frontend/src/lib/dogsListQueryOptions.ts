@@ -13,9 +13,12 @@ const dogListItemSchema = z.object({
 
 export type DogListItem = z.infer<typeof dogListItemSchema>
 
+/** Own key so slim parse never overwrites the full dogs list cache. */
+export const dogsListSummaryKey = [...dogKeys.all, "list", "summary"] as const
+
 export function dogsListQueryOptions() {
   return queryOptions({
-    queryKey: dogKeys.lists(),
+    queryKey: dogsListSummaryKey,
     queryFn: async () => {
       const json = await api.get("dogs").json()
       return z.array(dogListItemSchema).parse(json)
