@@ -212,7 +212,8 @@ export class TrainingDetailResponseDto {
   @ApiProperty({
     type: String,
     nullable: true,
-    description: 'Current step of the goal; null means the first step',
+    description:
+      'Effective current step of the goal (null only when the plan has no steps)',
   })
   currentStepId!: string | null;
 

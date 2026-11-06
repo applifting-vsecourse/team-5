@@ -1,6 +1,22 @@
-import { moveCurrentStep } from './current-step';
+import { effectiveCurrentStepId, moveCurrentStep } from './current-step';
 
 const steps = ['a', 'b', 'c'];
+
+describe('effectiveCurrentStepId', () => {
+  it('returns null for an empty plan', () => {
+    expect(effectiveCurrentStepId([], null)).toBeNull();
+    expect(effectiveCurrentStepId([], 'a')).toBeNull();
+  });
+
+  it('keeps a pointer that still exists in the plan', () => {
+    expect(effectiveCurrentStepId(steps, 'b')).toBe('b');
+  });
+
+  it('resolves null or stale pointers to the first step of the goal', () => {
+    expect(effectiveCurrentStepId(steps, null)).toBe('a');
+    expect(effectiveCurrentStepId(steps, 'deleted-or-archived')).toBe('a');
+  });
+});
 
 describe('moveCurrentStep', () => {
   it('has nothing to move in an empty plan', () => {

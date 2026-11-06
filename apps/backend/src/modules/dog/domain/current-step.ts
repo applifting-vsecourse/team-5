@@ -14,6 +14,17 @@ const OUTCOME_OF_ACTION = {
   skip: StepOutcome.SKIPPED,
 } as const;
 
+// Stored null/stale means the first step of the whole goal. Resolve before
+// returning the pointer to clients so FE never treats null as "this training".
+export function effectiveCurrentStepId(
+  stepIds: string[],
+  currentStepId: string | null,
+): string | null {
+  if (stepIds.length === 0) return null;
+  if (currentStepId && stepIds.includes(currentStepId)) return currentStepId;
+  return stepIds[0];
+}
+
 // `stepIds` is the goal's whole plan in walking order (non-archived trainings
 // by position, steps by position). A missing or stale pointer means the first
 // step. Returns null for an empty plan.

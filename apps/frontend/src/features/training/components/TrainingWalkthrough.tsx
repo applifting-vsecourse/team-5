@@ -60,15 +60,12 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
   const isLastLocal = currentIndex === totalExercises - 1
   const isBusy = moveStep.isPending
   const filledCount = exercises.filter((exercise) => exercise.outcome).length
+  // Training detail resolves null to the first step of the whole goal, so a
+  // missing id here only means an empty plan — never "this training's first".
   const isPointerInThisTraining =
-    pointerId == null || exercises.some((exercise) => exercise.id === pointerId)
+    pointerId != null && exercises.some((exercise) => exercise.id === pointerId)
   const isPointerElsewhere = !isPointerInThisTraining
-  // Null means the first step of the whole goal; only treat local index 0 as
-  // that step when the pointer is not known to live elsewhere (#66 AC6).
-  const isOnCurrentStep =
-    currentExercise != null &&
-    (pointerId === currentExercise.id ||
-      (pointerId == null && isPointerInThisTraining && currentIndex === 0))
+  const isOnCurrentStep = pointerId != null && pointerId === currentExercise?.id
 
   const followPointer = (currentStepId: string | null) => {
     setMovedPointer({ basedOn: training.currentStepId, value: currentStepId })
