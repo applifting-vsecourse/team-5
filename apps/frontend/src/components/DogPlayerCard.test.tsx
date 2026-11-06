@@ -2,9 +2,8 @@ import type * as Router from "@tanstack/react-router"
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
-import type { DogMetrics } from "@/lib/dogMetrics"
-
 import { DogPlayerCard } from "@/components/DogPlayerCard"
+import type { DogMetrics } from "@/lib/dogMetrics"
 
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof Router>("@tanstack/react-router")

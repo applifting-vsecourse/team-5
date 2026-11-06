@@ -86,7 +86,7 @@ export function DogPlayerCard({
       </Link>
 
       {metrics || hasGoalCounts ? (
-        <dl className="mt-4 grid grid-cols-3 gap-2">
+        <dl className={cn("mt-4 grid gap-2", hasGoalCounts ? "grid-cols-3" : "grid-cols-2")}>
           <div className="rounded-lg bg-dog-foreground/15 px-2 py-2">
             <dt className="text-label">Úspěšnost</dt>
             <dd className="text-base font-extrabold tabular-nums">
@@ -99,12 +99,14 @@ export function DogPlayerCard({
               {metrics ? dayLabel(metrics.streak) : "—"}
             </dd>
           </div>
-          <div className="rounded-lg bg-dog-foreground/15 px-2 py-2">
-            <dt className="text-label">Cíle</dt>
-            <dd className="text-base font-extrabold tabular-nums">
-              {hasGoalCounts ? `${activeGoalCount}/${goalCount}` : "—"}
-            </dd>
-          </div>
+          {hasGoalCounts ? (
+            <div className="rounded-lg bg-dog-foreground/15 px-2 py-2">
+              <dt className="text-label">Cíle</dt>
+              <dd className="text-base font-extrabold tabular-nums">
+                {activeGoalCount}/{goalCount}
+              </dd>
+            </div>
+          ) : null}
         </dl>
       ) : null}
 

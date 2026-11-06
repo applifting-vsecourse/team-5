@@ -93,7 +93,7 @@ describe("WeekView", () => {
 
     expect(screen.getByText("19.–25. října")).toBeInTheDocument()
     expect(screen.getByRole("radio", { name: /^středa 21\. 10\., dnes/ })).toBeChecked()
-    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("středa 21. 10. · dnes")
+    expect(screen.getByRole("heading", { name: /středa 21\. 10\. · dnes/ })).toBeInTheDocument()
 
     const [rex, bella] = screen.getAllByRole("listitem")
     if (!rex || !bella) throw new Error("expected two training cards")
@@ -121,8 +121,9 @@ describe("WeekView", () => {
 
     await user.click(screen.getByRole("radio", { name: "čtvrtek 22. 10." }))
 
-    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("čtvrtek 22. 10.")
+    expect(screen.getByRole("heading", { name: /čtvrtek 22\. 10\./ })).toBeInTheDocument()
     expect(screen.getByText("Na tento den nemáte nic naplánováno.")).toBeInTheDocument()
+    expect(screen.getByText(/Chůze u nohy/)).toBeInTheDocument()
   })
 
   it("moves a week back and forth with the arrows (#73)", async () => {

@@ -209,17 +209,16 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
 
   const trainings = weekQuery.data ?? []
   const trainingsOf = (day: CalendarDate) => trainings.filter((training) => training.date === day)
-  const selectedTrainings = trainingsOf(selectedDay)
-
   const completedCount = trainings.filter((t) => t.status === "COMPLETED").length
   const totalCount = trainings.length
 
   return (
     <div className="flex flex-col gap-6">
       <header className="space-y-2">
-        <h1 className="text-page font-extrabold tracking-tight text-foreground">Týden</h1>
+        <h1 className="text-page font-extrabold tracking-tight text-foreground">Tento týden</h1>
         <p className="text-sm text-muted-foreground">
-          Jednotlivé tréninky vašich psů. Na jednom cíli můžete pracovat v několika dnech.
+          {formatWeekRange(weekStart)}
+          {totalCount > 0 ? ` · ${completedCount} z ${totalCount} tréninků` : ""}
         </p>
         {/* Week switching (#73): arrows a week back and forth, range opens month calendar */}
         <div className="flex items-center justify-between gap-1">
@@ -301,7 +300,7 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
               className={cn(
                 "flex h-auto min-h-16 min-w-11 flex-col gap-1 rounded-md px-0 py-2 transition-all duration-150 select-none",
                 "hover:bg-accent/40 active:scale-95",
-                "data-[state=on]:bg-secondary data-[state=on]:text-secondary-foreground",
+                "data-[state=on]:bg-hero data-[state=on]:text-hero-foreground",
                 day === today && "font-semibold text-primary",
               )}
             >
@@ -329,19 +328,7 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
         })}
       </ToggleGroup>
 
-      <section
-        aria-labelledby="selected-day-heading"
-        className="flex flex-col gap-3"
-      >
-        <h2
-          id="selected-day-heading"
-          className="text-xs tracking-widest text-muted-foreground uppercase"
-        >
-          {formatDayLong(selectedDay)}
-          {selectedDay === today ? " · dnes" : ""}
-        </h2>
-
-        <QueryState
+      <QueryState
           isLoading={weekQuery.isLoading}
           error={weekQuery.error}
           onRetry={() => void weekQuery.refetch()}
@@ -366,30 +353,49 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
             />
           }
         >
-          {selectedTrainings.length === 0 ? (
-            // Keep a single day-level h2 above; avoid EmptyState's extra h2 here.
-            <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-border bg-card p-6 text-center">
-              <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-                <Calendar
-                  className="size-5"
-                  aria-hidden
-                />
-              </div>
-              <p className="text-sm text-muted-foreground">Na tento den nemáte nic naplánováno.</p>
-            </div>
-          ) : (
-            <ul className="flex flex-col gap-2">
-              {selectedTrainings.map((training) => (
-                <WeekTrainingCard
-                  key={training.id}
-                  training={training}
-                  today={today}
-                />
-              ))}
-            </ul>
-          )}
+          <div className="flex flex-col gap-6">
+            {days.map((day) => {
+              const dayTrainings = trainingsOf(day)
+              const isSelected = day === selectedDay
+              return (
+                <section
+                  key={day}
+                  aria-labelledby={`day-${day}`}
+                  className={cn(
+                    "flex flex-col gap-3",
+                    isSelected &&
+                      "rounded-card ring-2 ring-primary ring-offset-2 ring-offset-background",
+                  )}
+                >
+                  <h2
+                    id={`day-${day}`}
+                    className="text-sm font-extrabold tracking-tight text-foreground"
+                  >
+                    {formatDayLong(day)}
+                    {day === today ? " · dnes" : ""}
+                  </h2>
+                  {dayTrainings.length === 0 ? (
+                    <p className="rounded-card border border-dashed border-border bg-card px-4 py-4 text-sm text-muted-foreground">
+                      {isSelected
+                        ? "Na tento den nemáte nic naplánováno."
+                        : "Volný den – odpočinek je taky trénink."}
+                    </p>
+                  ) : (
+                    <ul className="flex flex-col gap-2">
+                      {dayTrainings.map((training) => (
+                        <WeekTrainingCard
+                          key={training.id}
+                          training={training}
+                          today={today}
+                        />
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              )
+            })}
+          </div>
         </QueryState>
-      </section>
 
       {/* Month Calendar Week Picker Dialog */}
       <WeekPickerDialog

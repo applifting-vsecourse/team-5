@@ -5,7 +5,6 @@ import { ChevronLeft, Pencil } from "lucide-react"
 
 import { HeroCard } from "@/components/HeroCard"
 import { Metric } from "@/components/Metric"
-import { StatusChip } from "@/components/StatusChip"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
@@ -55,54 +54,48 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
         )}
       </nav>
 
-      {/* Dog profile matching Figma node 51-386 */}
-      <header className="mb-8 flex items-start gap-4">
-        {/* 56px PesAvatar */}
-        <PesAvatar
-          name={dog.name}
-          color={dog.color}
-          size="lg"
-          photoUrl={dog.photoUrl}
-        />
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h1 className="truncate text-page font-extrabold tracking-tight text-foreground">
-              {dog.name}
-            </h1>
-            <span
-              aria-hidden="true"
-              className={cn(
-                "size-3.5 shrink-0 rounded-full ring-2 ring-background",
-                DOG_COLOR_CLASSES[dog.color] ?? "bg-dog-1",
-              )}
-            />
-            {isOwner && (
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Upravit psa"
-                className="min-h-11 min-w-11 shrink-0"
-                onClick={() => setIsEditOpen(true)}
-              >
-                <Pencil className="size-4" />
-              </Button>
-            )}
-          </div>
-          {dog.breed && <p className="truncate text-sm text-muted-foreground">{dog.breed}</p>}
-
-          {dog.disciplines && dog.disciplines.length > 0 && (
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              {dog.disciplines.map((discipline) => (
-                <StatusChip
-                  key={discipline}
-                  tone="muted"
+      <header
+        className={cn(
+          "mb-8 rounded-hero p-5 text-dog-foreground",
+          DOG_COLOR_CLASSES[dog.color] ?? "bg-dog-1",
+        )}
+      >
+        <div className="flex items-start gap-4">
+          <PesAvatar
+            name={dog.name}
+            color={dog.color}
+            size="lg"
+            photoUrl={dog.photoUrl}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h1 className="truncate text-page font-extrabold tracking-tight">{dog.name}</h1>
+              {isOwner && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Upravit psa"
+                  className="min-h-11 min-w-11 shrink-0 text-dog-foreground hover:bg-dog-foreground/15 hover:text-dog-foreground"
+                  onClick={() => setIsEditOpen(true)}
                 >
-                  {discipline}
-                </StatusChip>
-              ))}
+                  <Pencil className="size-4" />
+                </Button>
+              )}
             </div>
-          )}
+            {dog.breed ? <p className="truncate text-sm font-medium">{dog.breed}</p> : null}
+            {dog.disciplines && dog.disciplines.length > 0 ? (
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {dog.disciplines.map((discipline) => (
+                  <li
+                    key={discipline}
+                    className="rounded-full bg-dog-foreground/15 px-2 py-1 text-xs font-bold"
+                  >
+                    {discipline}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         </div>
       </header>
 
