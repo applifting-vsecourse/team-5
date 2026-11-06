@@ -2,6 +2,7 @@ import { useQueries, useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { Calendar, Play } from "lucide-react"
 
+import { DogPlayerCard } from "@/components/DogPlayerCard"
 import { EmptyState } from "@/components/EmptyState"
 import { HeroCard, HeroChip } from "@/components/HeroCard"
 import { QueryState } from "@/components/QueryState"
@@ -18,7 +19,6 @@ import { dogMetricsQueryOptions } from "@/lib/dogMetrics"
 import { dogsListQueryOptions } from "@/lib/dogsListQueryOptions"
 import { cn } from "@/lib/utils"
 
-import { DogPlayerCard } from "@/components/DogPlayerCard"
 import {
   upcomingTrainingsQueryOptions,
   weekTrainingsQueryOptions,
