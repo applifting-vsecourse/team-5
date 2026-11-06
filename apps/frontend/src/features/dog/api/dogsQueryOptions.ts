@@ -1,10 +1,9 @@
 import { keepPreviousData, queryOptions } from "@tanstack/react-query"
 
 import { api } from "@/lib/api-client"
-
-import { dogKeys } from "./dogKeys"
 import { dogMetricsQueryOptions as sharedDogMetricsQueryOptions } from "@/lib/dogMetrics"
 
+import { dogKeys } from "./dogKeys"
 import {
   dogActivityPageSchema,
   dogGoalSchema,
@@ -16,7 +15,6 @@ import {
   plannedTrainingsSchema,
   trainingsSchema,
 } from "./dogSchemas"
-
 
 export function dogsQueryOptions() {
   return queryOptions({

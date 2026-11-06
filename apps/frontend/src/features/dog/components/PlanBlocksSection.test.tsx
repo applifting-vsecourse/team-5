@@ -167,7 +167,9 @@ describe("PlanBlocksSection", () => {
 
     const current = screen.getByRole("listitem", { current: "step" })
     expect(within(current).getByText("Aktuální")).toBeInTheDocument()
-    expect(within(current).getByRole("button", { name: "Zvládnuto, další krok" })).toBeInTheDocument()
+    expect(
+      within(current).getByRole("button", { name: "Zvládnuto, další krok" }),
+    ).toBeInTheDocument()
     expect(within(current).getByRole("button", { name: "Přeskočit" })).toBeInTheDocument()
     expect(within(current).getByRole("button", { name: "Zpět o krok" })).toBeDisabled()
 

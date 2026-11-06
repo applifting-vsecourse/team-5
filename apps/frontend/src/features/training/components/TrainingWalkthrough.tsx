@@ -4,9 +4,8 @@ import { Check, ChevronLeft } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { cn } from "@/lib/utils"
-
 import { useMoveCurrentStep } from "@/lib/useMoveCurrentStep"
+import { cn } from "@/lib/utils"
 
 import type { TrainingDetail } from "@/features/training/api/trainingSchemas"
 import { startExerciseIndex } from "@/features/training/lib/startExerciseIndex"

@@ -3,10 +3,7 @@ import { HTTPError } from "ky"
 import { toast } from "sonner"
 
 import { dogKeys } from "@/lib/dogKeys"
-import {
-  moveCurrentStep,
-  type CurrentStepAction,
-} from "@/lib/moveCurrentStep"
+import { moveCurrentStep, type CurrentStepAction } from "@/lib/moveCurrentStep"
 import { weekKeys } from "@/lib/weekKeys"
 
 const trainingKeysAll = ["trainings"] as const

@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useMoveCurrentStep } from "@/lib/useMoveCurrentStep"
 import { cn } from "@/lib/utils"
 
 import type { PlanBlock } from "@/features/dog/api/dogSchemas"
@@ -49,7 +50,6 @@ import { useCreatePlanBlock } from "@/features/dog/hooks/useCreatePlanBlock"
 import { useDeletePlanBlock } from "@/features/dog/hooks/useDeletePlanBlock"
 import { useReorderPlanBlocks } from "@/features/dog/hooks/useReorderPlanBlocks"
 import { useUpdatePlanBlock } from "@/features/dog/hooks/useUpdatePlanBlock"
-import { useMoveCurrentStep } from "@/lib/useMoveCurrentStep"
 
 import { ExerciseDialog, type ExerciseDialogMode } from "./ExerciseDialog"
 

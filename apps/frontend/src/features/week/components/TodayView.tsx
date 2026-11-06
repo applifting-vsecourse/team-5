@@ -63,9 +63,7 @@ function NextTrainingHero({
   const isToday = training.date === today
   const titles = training.exercises.map((exercise) => exercise.title)
   const hasHeroMetrics =
-    streak != null ||
-    successRate != null ||
-    (weeklyTrainedDays != null && weeklyTarget != null)
+    streak != null || successRate != null || (weeklyTrainedDays != null && weeklyTarget != null)
 
   return (
     <HeroCard eyebrow={isToday ? "Dnešní trénink" : "Další trénink"}>
@@ -311,7 +309,9 @@ export function TodayView({ userName }: TodayViewProps) {
                     metrics?.successRate != null ? `${metrics.successRate} %` : null,
                   ].filter(Boolean)
                   const subtitle =
-                    metricBits.length > 0 ? `${planSubtitle} · ${metricBits.join(" · ")}` : planSubtitle
+                    metricBits.length > 0
+                      ? `${planSubtitle} · ${metricBits.join(" · ")}`
+                      : planSubtitle
                   return (
                     <StripCard
                       key={dog.id}
