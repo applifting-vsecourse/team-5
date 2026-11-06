@@ -11,6 +11,7 @@ export const completeTrainingInputSchema = z.object({
   focus: focusLevelSchema.optional(),
   repeatedMistakes: mistakeLevelSchema.optional(),
   note: z.string().max(2000).optional(),
+  videoUrl: z.string().trim().max(2000).optional(),
 })
 
 export type CompleteTrainingInput = z.infer<typeof completeTrainingInputSchema>
@@ -27,6 +28,7 @@ export const completedActivitySchema = z.object({
   focus: focusLevelSchema.nullable().optional(),
   repeatedMistakes: mistakeLevelSchema.nullable().optional(),
   note: z.string().nullable().optional(),
+  videoUrl: z.string().nullable().optional(),
 })
 
 export type CompletedActivity = z.infer<typeof completedActivitySchema>

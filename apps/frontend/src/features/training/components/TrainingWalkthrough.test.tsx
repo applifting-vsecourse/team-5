@@ -1,6 +1,6 @@
 import type * as Router from "@tanstack/react-router"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { render, screen, within } from "@testing-library/react"
+import { act, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -141,8 +141,29 @@ describe("TrainingWalkthrough", () => {
     renderWalkthrough()
 
     expect(screen.getByRole("button", { name: "Zpět o krok" })).toBeDisabled()
-    expect(screen.getByRole("button", { name: "Zvládnuto, další krok" })).toBeEnabled()
+    expect(screen.getByRole("button", { name: "Zvládnuto" })).toBeEnabled()
     expect(screen.getByRole("button", { name: "Přeskočit" })).toBeEnabled()
+  })
+
+  it("shows a timer while the exercise is on screen", () => {
+    vi.useFakeTimers()
+    renderWalkthrough()
+
+    expect(screen.getByLabelText("Čas na cviku 0:00")).toHaveTextContent("0:00")
+
+    act(() => {
+      vi.advanceTimersByTime(3000)
+    })
+
+    expect(screen.getByLabelText("Čas na cviku 0:03")).toHaveTextContent("0:03")
+    vi.useRealTimers()
+  })
+
+  it("does not list all exercises on the screen", () => {
+    renderWalkthrough()
+
+    expect(screen.queryByText("VŠECHNY CVIKY")).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Obrat vlevo/ })).not.toBeInTheDocument()
   })
 
   it("advances the current step and follows the pointer (#66)", async () => {
@@ -162,7 +183,7 @@ describe("TrainingWalkthrough", () => {
     })
     renderWalkthrough()
 
-    await user.click(screen.getByRole("button", { name: "Zvládnuto, další krok" }))
+    await user.click(screen.getByRole("button", { name: "Zvládnuto" }))
 
     expect(moveCurrentStep).toHaveBeenCalledWith("g1", "advance")
     expect(screen.getByText("CVIK 2 ZE 3")).toBeInTheDocument()
@@ -214,20 +235,6 @@ describe("TrainingWalkthrough", () => {
 
     const finishLink = screen.getByRole("link", { name: "Dokončit trénink" })
     expect(finishLink).toHaveAttribute("href", "/trainings/t1/finish")
-  })
-
-  it("allows jumping directly to an exercise from 'Všechny cviky' list", async () => {
-    const user = userEvent.setup()
-    renderWalkthrough()
-
-    const exercise3Button = screen.getByRole("button", { name: /3.*Obrat vlevo/ })
-    await user.click(exercise3Button)
-
-    expect(screen.getByText("CVIK 3 ZE 3")).toBeInTheDocument()
-    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Obrat vlevo")
-
-    const exercise1Button = screen.getByRole("button", { name: /Sedni u nohy/ })
-    expect(within(exercise1Button).getByLabelText("Hotovo: Sedni u nohy")).toBeInTheDocument()
   })
 
   it("displays fallback text when instruction or criterion is missing", () => {

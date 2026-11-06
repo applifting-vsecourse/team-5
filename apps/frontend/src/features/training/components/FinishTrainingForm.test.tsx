@@ -121,7 +121,7 @@ describe("FinishTrainingForm", () => {
     expect(handleSubmit).toHaveBeenCalledWith({})
   })
 
-  it("submits filled payload with slider, toggles and note", async () => {
+  it("submits filled payload with slider, toggles, video URL and note", async () => {
     const user = userEvent.setup()
     const handleSubmit = vi.fn<(data: CompleteTrainingInput) => void>()
 
@@ -151,6 +151,9 @@ describe("FinishTrainingForm", () => {
     const mistakeNo = within(mistakeGroup).getByRole("radio", { name: "Ne" })
     await user.click(mistakeNo)
 
+    const videoInput = screen.getByLabelText("Odkaz na video")
+    await user.type(videoInput, "  https://youtube.com/watch?v=abc  ")
+
     // Type note
     const textarea = screen.getByLabelText("Poznámka")
     await user.type(textarea, "  Skvělý trénink, pes byl šikovný.  ")
@@ -163,7 +166,27 @@ describe("FinishTrainingForm", () => {
     expect(payload?.successRate).toBeDefined()
     expect(payload?.focus).toBe("YES")
     expect(payload?.repeatedMistakes).toBe("NO")
+    expect(payload?.videoUrl).toBe("https://youtube.com/watch?v=abc")
     expect(payload?.note).toBe("Skvělý trénink, pes byl šikovný.")
+  })
+
+  it("omits empty video URL from the payload", async () => {
+    const user = userEvent.setup()
+    const handleSubmit = vi.fn<(data: CompleteTrainingInput) => void>()
+
+    renderWithClient(
+      <FinishTrainingForm
+        trainingId="t1"
+        dog={defaultDog}
+        goal={defaultGoal}
+        onSubmit={handleSubmit}
+      />,
+    )
+
+    await user.type(screen.getByLabelText("Odkaz na video"), "   ")
+    await user.click(screen.getByRole("button", { name: "Uložit záznam" }))
+
+    expect(handleSubmit).toHaveBeenCalledWith({})
   })
 
   it("allows deselecting toggle items", async () => {

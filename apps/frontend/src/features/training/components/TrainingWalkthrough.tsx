@@ -1,9 +1,8 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Link } from "@tanstack/react-router"
-import { Check, ChevronLeft } from "lucide-react"
+import { ChevronLeft } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
 import { useMoveCurrentStep } from "@/lib/useMoveCurrentStep"
@@ -13,6 +12,34 @@ import { startExerciseIndex } from "@/features/training/lib/startExerciseIndex"
 
 type TrainingWalkthroughProps = {
   training: TrainingDetail
+}
+
+function formatElapsed(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`
+}
+
+/** Remount with a new key when the exercise changes so elapsed time resets without setState-in-effect. */
+function StepTimer() {
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1)
+    }, 1000)
+    return () => window.clearInterval(id)
+  }, [])
+
+  return (
+    <p
+      className="text-timer font-extrabold tabular-nums text-foreground"
+      aria-live="polite"
+      aria-label={`Čas na cviku ${formatElapsed(elapsedSeconds)}`}
+    >
+      {formatElapsed(elapsedSeconds)}
+    </p>
+  )
 }
 
 export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
@@ -25,6 +52,7 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
   const isFirst = currentIndex === 0
   const isLast = currentIndex === totalExercises - 1
   const isBusy = moveStep.isPending
+  const filledCount = exercises.filter((exercise) => exercise.outcome).length
 
   const followPointer = (currentStepId: string | null) => {
     if (!currentStepId) {
@@ -74,99 +102,52 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
         ) : (
           <>
             <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
-                CVIK {currentIndex + 1} ZE {totalExercises}
-              </p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
+                  CVIK {currentIndex + 1} ZE {totalExercises}
+                </p>
+                <StepTimer key={currentExercise?.id ?? currentIndex} />
+              </div>
               <div
                 className="flex gap-1"
                 role="progressbar"
-                aria-valuenow={currentIndex + 1}
+                aria-valuenow={Math.max(filledCount, currentIndex + 1)}
                 aria-valuemin={1}
                 aria-valuemax={totalExercises}
-                aria-label={`Cvik ${currentIndex + 1} ze ${totalExercises}`}
+                aria-label={`Cvik ${currentIndex + 1} ze ${totalExercises}, hotovo ${filledCount}`}
               >
                 {exercises.map((exercise, i) => (
                   <div
                     key={exercise.id}
                     className={cn(
-                      "h-1 flex-1 rounded-sm transition-colors",
-                      i < currentIndex || exercise.outcome
+                      "h-1.5 flex-1 rounded-sm transition-colors",
+                      exercise.outcome || i < currentIndex || i === currentIndex
                         ? "bg-primary"
-                        : i === currentIndex
-                          ? "bg-primary"
-                          : "bg-muted",
+                        : "bg-muted",
                     )}
                   />
                 ))}
               </div>
             </div>
 
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+            <h2 className="text-2xl font-extrabold tracking-tight text-foreground">
               {currentExercise?.title}
             </h2>
 
             <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-muted-foreground">Instrukce</span>
-              <p className="text-base text-foreground">
+              <p className="text-base leading-relaxed text-foreground">
                 {currentExercise?.instruction ?? "K tomuto cviku není zadána žádná instrukce."}
               </p>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-muted-foreground">Hotovo, když…</span>
-              <p className="text-base text-foreground">
+            <div className="rounded-card border border-border bg-card px-4 py-4 text-card-foreground">
+              <span className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
+                Hotovo, když…
+              </span>
+              <p className="mt-2 text-lg font-bold leading-snug text-foreground">
                 {currentExercise?.criterion ?? "Kritérium nebylo specifikováno."}
               </p>
-            </div>
-
-            <Separator />
-
-            <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
-                VŠECHNY CVIKY
-              </p>
-              <div className="flex flex-col">
-                {exercises.map((exercise, i) => {
-                  const isDone = Boolean(exercise.outcome) || i < currentIndex
-                  const isActive = i === currentIndex
-
-                  return (
-                    <button
-                      key={exercise.id}
-                      type="button"
-                      onClick={() => setCurrentIndex(i)}
-                      aria-current={isActive ? "step" : undefined}
-                      className="flex min-h-11 w-full items-center gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
-                    >
-                      {isDone ? (
-                        <Check
-                          className="size-5 shrink-0 text-muted-foreground"
-                          aria-label={`Hotovo: ${exercise.title}`}
-                        />
-                      ) : (
-                        <span
-                          className={cn(
-                            "flex size-5 shrink-0 items-center justify-center text-sm font-medium",
-                            isActive ? "font-semibold text-primary" : "text-muted-foreground",
-                          )}
-                        >
-                          {i + 1}
-                        </span>
-                      )}
-                      <span
-                        className={cn(
-                          "truncate text-base",
-                          isDone && "text-muted-foreground",
-                          isActive && "font-semibold text-foreground",
-                          !isDone && !isActive && "font-normal text-foreground",
-                        )}
-                      >
-                        {exercise.title}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
             </div>
 
             <div className="min-h-6 flex-1" />
@@ -199,7 +180,7 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
                 onClick={() => void runAction("advance")}
                 className="min-h-11 w-full text-base"
               >
-                Zvládnuto, další krok
+                Zvládnuto
               </Button>
               {isLast ? (
                 <Button

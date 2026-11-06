@@ -19,9 +19,13 @@ export function useCompleteTraining(trainingId: string, dogId: string) {
       void queryClient.invalidateQueries({ queryKey: weekKeys.all })
       void queryClient.invalidateQueries({ queryKey: dogKeys.activities(dogId) })
       void queryClient.invalidateQueries({ queryKey: dogKeys.detail(dogId) })
+      void queryClient.invalidateQueries({ queryKey: dogKeys.metrics(dogId) })
       void queryClient.invalidateQueries({ queryKey: dogKeys.all })
       toast.success("Záznam tréninku byl uložen")
-      void navigate({ to: "/week" })
+      void navigate({
+        to: "/trainings/$trainingId/done",
+        params: { trainingId },
+      })
     },
     onError: (error) => {
       const status = error instanceof HTTPError ? error.response.status : undefined

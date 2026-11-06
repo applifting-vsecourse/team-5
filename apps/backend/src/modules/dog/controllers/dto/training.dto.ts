@@ -289,4 +289,14 @@ export class CompleteTrainingDto {
   @IsString()
   @MaxLength(2000)
   note?: string;
+
+  @ApiPropertyOptional({
+    description: 'External video URL (YouTube, Drive, etc.)',
+    example: 'https://youtube.com/watch?v=123',
+    maxLength: 2000,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  videoUrl?: string;
 }
