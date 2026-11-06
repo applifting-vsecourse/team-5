@@ -4,6 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router"
 import { ChevronDown, ChevronRight, ChevronUp, Target } from "lucide-react"
 import { toast } from "sonner"
 
+import { EditorIcon } from "@/components/EditorIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
 import { StatusChip } from "@/components/StatusChip"
@@ -19,7 +20,6 @@ import { createSession, dogPlanQueryOptions } from "@/features/dog/api/trainingE
 import { useCreateGoal } from "@/features/dog/hooks/useCreateGoal"
 import { useUpdateGoal } from "@/features/dog/hooks/useUpdateGoal"
 
-import { EditorIcon } from "./EditorIcon"
 import { EditorSheet } from "./EditorSheet"
 import { GoalForm } from "./GoalForm"
 import { SessionEditor } from "./SessionEditor"

@@ -86,6 +86,7 @@ export class ScheduledTrainingRepository {
                 title: true,
                 instruction: true,
                 criterion: true,
+                durationMinutes: true,
                 outcome: true,
               },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],

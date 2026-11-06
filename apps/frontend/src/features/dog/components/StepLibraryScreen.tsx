@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Target } from "lucide-react"
 
+import { EditorIcon } from "@/components/EditorIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,8 +9,6 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 
 import { stepTemplates } from "@/features/dog/api/trainingEditor"
-
-import { EditorIcon } from "./EditorIcon"
 
 const iconSurfaces = {
   whistle: "bg-success-foreground",

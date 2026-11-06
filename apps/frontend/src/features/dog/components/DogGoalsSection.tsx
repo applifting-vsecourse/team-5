@@ -2,14 +2,13 @@ import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { Check, ChevronRight, Folder, Plus, Target } from "lucide-react"
 
+import { EditorIcon } from "@/components/EditorIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 import { dogPlanQueryOptions, type PlanGoal } from "@/features/dog/api/trainingEditor"
-
-import { EditorIcon } from "./EditorIcon"
 
 export function GoalProgressCard({ goal, dogId }: { goal: PlanGoal; dogId: string }) {
   const completed = goal.sessions.filter((s) =>

@@ -22,6 +22,7 @@ type IconName =
   | "Paw"
   | "Plus1"
   | "X"
+  | "More"
 
 // Original Figma exports retain their intrinsic dimensions and colours.
 export function EditorIcon({ name }: { name: IconName }) {

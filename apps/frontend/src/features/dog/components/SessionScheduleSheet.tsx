@@ -2,6 +2,7 @@ import { useRef, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { cs } from "date-fns/locale"
 
+import { EditorIcon } from "@/components/EditorIcon"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { api } from "@/lib/api-client"
@@ -11,7 +12,6 @@ import { weekKeys } from "@/lib/weekKeys"
 
 import { goalTrainingsQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 
-import { EditorIcon } from "./EditorIcon"
 import { EditorSheet } from "./EditorSheet"
 
 export const localDay = (date: Date) =>

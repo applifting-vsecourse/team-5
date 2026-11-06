@@ -23,6 +23,7 @@ import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
 import { ConfirmDestructiveDialog } from "@/components/ConfirmDestructiveDialog"
+import { EditorIcon } from "@/components/EditorIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { StatusChip } from "@/components/StatusChip"
 import { Button } from "@/components/ui/button"
@@ -53,7 +54,6 @@ import {
 import { deletePlanBlock, updatePlanBlock } from "@/features/dog/api/savePlanBlock"
 import { stepTemplates, type TrainingSession } from "@/features/dog/api/trainingEditor"
 
-import { EditorIcon } from "./EditorIcon"
 import { EditorSheet } from "./EditorSheet"
 import { SessionScheduleSheet } from "./SessionScheduleSheet"
 import { StepLibraryScreen } from "./StepLibraryScreen"

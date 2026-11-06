@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 
+import { EditorIcon } from "@/components/EditorIcon"
 import { QueryState } from "@/components/QueryState"
 import { Seo } from "@/components/Seo"
 import { Button } from "@/components/ui/button"
 
 import { dogDetailQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 import { DogGoalsSection } from "@/features/dog/components/DogGoalsSection"
-import { EditorIcon } from "@/features/dog/components/EditorIcon"
 
 export const Route = createFileRoute("/_ProtectedPages/dogs/$dogId/goals/")({
   component: DogGoalsPage,

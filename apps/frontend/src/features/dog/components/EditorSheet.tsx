@@ -1,5 +1,6 @@
 import { useSyncExternalStore, type ReactNode } from "react"
 
+import { EditorIcon } from "@/components/EditorIcon"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,8 +16,6 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
-
-import { EditorIcon } from "./EditorIcon"
 
 const mediaQuery = "(min-width: 48rem)"
 const subscribe = (change: () => void) => {
