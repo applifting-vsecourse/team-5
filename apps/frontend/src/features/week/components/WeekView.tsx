@@ -6,6 +6,7 @@ import {
   CalendarClock,
   ChevronLeft,
   ChevronRight,
+  Play,
   SkipForward,
   Undo2,
 } from "lucide-react"
@@ -125,7 +126,24 @@ function WeekTrainingCard({ training, today }: WeekTrainingCardProps) {
         </p>
         {isPlanned ? (
           <>
-            <div className="relative mt-2 flex gap-2">
+            <div className="relative mt-2 flex flex-wrap gap-2">
+              <Button
+                asChild
+                size="sm"
+                className="min-h-11"
+              >
+                <Link
+                  to="/trainings/$trainingId"
+                  params={{ trainingId: training.id }}
+                  aria-label={`Začít trénink ${heading}`}
+                >
+                  <Play
+                    className="size-4"
+                    aria-hidden
+                  />
+                  Začít trénink
+                </Link>
+              </Button>
               <Button
                 type="button"
                 variant="outline"

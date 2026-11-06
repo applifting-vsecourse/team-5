@@ -123,7 +123,7 @@ describe("LandingPage", () => {
       expect(getLandingRedirect(null)).toBeNull()
     })
 
-    it("redirects regular users / dog owners to the Week tab", () => {
+    it("redirects regular users / dog owners to Dnes", () => {
       const ownerSession = {
         user: {
           id: "u1",
@@ -133,7 +133,7 @@ describe("LandingPage", () => {
           role: "user",
         },
       }
-      expect(getLandingRedirect(ownerSession)).toBe("/week")
+      expect(getLandingRedirect(ownerSession)).toBe("/dashboard")
     })
 
     it("redirects trainers to the Clients tab", () => {

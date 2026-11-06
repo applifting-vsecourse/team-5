@@ -200,27 +200,4 @@ export const dogNoteFormSchema = z.object({
 
 export type DogNote = z.infer<typeof dogNoteSchema>
 export type DogNoteFormValues = z.infer<typeof dogNoteFormSchema>
-/** Weekly training metrics from GET /dogs/:dogId/metrics. */
-export const dogMetricsSchema = z.object({
-  timeZone: z.string(),
-  asOf: z.string(),
-  weeklyTarget: z.number(),
-  weeklyTrainedDays: z.number(),
-  weeklyTargetReached: z.boolean(),
-  streak: z.number(),
-  successRate: z.number().nullable(),
-  ratedSessions: z.number(),
-  weeklyChange: z.number().nullable(),
-  weeks: z.array(
-    z.object({
-      from: z.string(),
-      to: z.string(),
-      completedSessions: z.number(),
-      trainedDays: z.number(),
-      ratedSessions: z.number(),
-      successRate: z.number().nullable(),
-    }),
-  ),
-})
-
-export type DogMetrics = z.infer<typeof dogMetricsSchema>
+export { dogMetricsSchema, type DogMetrics } from "@/lib/dogMetrics"

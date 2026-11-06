@@ -15,7 +15,7 @@ const training = (overrides: Partial<WeekTraining>): WeekTraining => ({
 })
 
 describe("pickNextTraining", () => {
-  it("returns overdue planned before today and later", () => {
+  it("prefers today and later over overdue", () => {
     expect(
       pickNextTraining(
         [
@@ -26,7 +26,7 @@ describe("pickNextTraining", () => {
         ],
         "2026-11-05",
       )?.id,
-    ).toBe("past")
+    ).toBe("today")
   })
 
   it("prefers today over later when nothing is overdue", () => {
@@ -40,6 +40,18 @@ describe("pickNextTraining", () => {
         "2026-11-05",
       )?.id,
     ).toBe("today")
+  })
+
+  it("falls back to the oldest overdue when nothing is upcoming", () => {
+    expect(
+      pickNextTraining(
+        [
+          training({ id: "older", date: "2026-11-02", status: "PLANNED" }),
+          training({ id: "past", date: "2026-11-04", status: "PLANNED" }),
+        ],
+        "2026-11-05",
+      )?.id,
+    ).toBe("older")
   })
 
   it("returns null when nothing planned remains", () => {

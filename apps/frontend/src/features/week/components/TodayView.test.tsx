@@ -3,6 +3,8 @@ import type * as Router from "@tanstack/react-router"
 import { render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { addCalendarDays } from "@/lib/calendarDate"
+import { dogKeys } from "@/lib/dogKeys"
 import { weekKeys, type WeekTraining } from "@/features/week/api/weekQueryOptions"
 
 import { TodayView } from "./TodayView"
@@ -65,7 +67,13 @@ const renderToday = (trainings: WeekTraining[]) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   })
-  queryClient.setQueryData(weekKeys.week("2026-11-02"), trainings)
+  const weekStart = "2026-11-02"
+  const upcomingFrom = addCalendarDays(weekStart, -7)
+  const upcomingTo = addCalendarDays(upcomingFrom, 41)
+  queryClient.setQueryData(weekKeys.week(weekStart), trainings)
+  queryClient.setQueryData(weekKeys.range(upcomingFrom, upcomingTo), trainings)
+  const dogs = [...new Map(trainings.map((training) => [training.dog.id, training.dog])).values()]
+  queryClient.setQueryData(dogKeys.lists(), dogs)
   render(
     <QueryClientProvider client={queryClient}>
       <TodayView userName="Jan Novák" />
