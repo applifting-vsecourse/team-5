@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useMoveCurrentStep } from "@/lib/useMoveCurrentStep"
 import { cn } from "@/lib/utils"
 
 import type { PlanBlock } from "@/features/dog/api/dogSchemas"
@@ -49,7 +50,6 @@ import { useCreatePlanBlock } from "@/features/dog/hooks/useCreatePlanBlock"
 import { useDeletePlanBlock } from "@/features/dog/hooks/useDeletePlanBlock"
 import { useReorderPlanBlocks } from "@/features/dog/hooks/useReorderPlanBlocks"
 import { useUpdatePlanBlock } from "@/features/dog/hooks/useUpdatePlanBlock"
-import { useMoveCurrentStep } from "@/lib/useMoveCurrentStep"
 
 import { ExerciseDialog, type ExerciseDialogMode } from "./ExerciseDialog"
 
@@ -287,8 +287,10 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
   const moveStep = useMoveCurrentStep(goalId, goalQuery.data?.dogId ?? "")
 
   const blocks = blocksQuery.data ?? []
-  // null pointer means the first step of the plan (#66)
-  const currentStepId = goalQuery.data?.currentStepId ?? blocks[0]?.id ?? null
+  // Wait for the goal so a loading null does not flash the first block as current.
+  const currentStepId = goalQuery.isSuccess
+    ? (goalQuery.data.currentStepId ?? blocks[0]?.id ?? null)
+    : null
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

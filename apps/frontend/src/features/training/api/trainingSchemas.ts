@@ -11,7 +11,7 @@ export const completeTrainingInputSchema = z.object({
   focus: focusLevelSchema.optional(),
   repeatedMistakes: mistakeLevelSchema.optional(),
   note: z.string().max(2000).optional(),
-  videoUrl: z.string().trim().max(2000).optional(),
+  videoUrl: z.string().trim().url().max(500).optional(),
 })
 
 export type CompleteTrainingInput = z.infer<typeof completeTrainingInputSchema>

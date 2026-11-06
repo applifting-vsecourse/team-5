@@ -221,7 +221,7 @@ export function FinishTrainingForm({
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
             placeholder="https://…"
-            maxLength={2000}
+            maxLength={500}
             className="min-h-11"
           />
         </div>

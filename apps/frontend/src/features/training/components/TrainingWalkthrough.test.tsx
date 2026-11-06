@@ -1,5 +1,5 @@
-import type * as Router from "@tanstack/react-router"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import type * as Router from "@tanstack/react-router"
 import { act, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -135,6 +135,18 @@ describe("TrainingWalkthrough", () => {
 
     expect(screen.getByText("CVIK 1 ZE 3")).toBeInTheDocument()
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Sedni u nohy")
+  })
+
+  it("does not move the goal pointer when the current step is in another training (#66)", async () => {
+    const user = userEvent.setup()
+    renderWalkthrough(aTraining({ currentStepId: "other-training-step" }))
+
+    expect(screen.getByRole("button", { name: "Zvládnuto" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Přeskočit" })).toBeDisabled()
+    expect(screen.getByText(/Aktuální krok cíle je v jiném tréninku/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole("button", { name: "Zvládnuto" }))
+    expect(moveCurrentStep).not.toHaveBeenCalled()
   })
 
   it("disables 'Zpět o krok' on the first exercise", () => {

@@ -52,9 +52,7 @@ export function TrainingSavedConfirmation({ trainingId }: TrainingSavedConfirmat
             Záznam byl uložen
           </h1>
           <p className="text-base text-muted-foreground">
-            {dogName
-              ? `Trénink u ${dogName} je zaznamenaný.`
-              : "Trénink je zaznamenaný."}
+            {dogName ? `Trénink u ${dogName} je zaznamenaný.` : "Trénink je zaznamenaný."}
           </p>
         </div>
 

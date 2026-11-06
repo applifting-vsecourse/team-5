@@ -5,8 +5,8 @@ import { describe, expect, it, vi } from "vitest"
 
 import { dogKeys } from "@/lib/dogKeys"
 
-import { trainingKeys } from "@/features/training/api/trainingsQueryOptions"
 import type { TrainingDetail } from "@/features/training/api/trainingSchemas"
+import { trainingKeys } from "@/features/training/api/trainingsQueryOptions"
 
 import { TrainingSavedConfirmation } from "./TrainingSavedConfirmation"
 
