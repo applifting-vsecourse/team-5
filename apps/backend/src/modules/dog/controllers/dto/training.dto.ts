@@ -21,6 +21,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUrl,
   Matches,
   Max,
   MaxLength,
@@ -290,4 +291,14 @@ export class CompleteTrainingDto {
   @IsString()
   @MaxLength(2000)
   note?: string;
+
+  @ApiPropertyOptional({
+    description: 'External video URL (YouTube, Drive, etc.)',
+    example: 'https://youtube.com/watch?v=123',
+    maxLength: 500,
+  })
+  @IsOptional()
+  @IsUrl({ protocols: ['https'], require_protocol: true })
+  @MaxLength(500)
+  videoUrl?: string;
 }

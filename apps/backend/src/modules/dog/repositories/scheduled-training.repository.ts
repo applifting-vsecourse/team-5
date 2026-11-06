@@ -302,6 +302,7 @@ export class ScheduledTrainingRepository {
       focus?: FocusLevel | null;
       repeatedMistakes?: MistakeLevel | null;
       note?: string | null;
+      videoUrl?: string | null;
     },
   ): Promise<WorkoutLog | null> {
     return this.prisma.$transaction(async (tx) => {
@@ -343,6 +344,7 @@ export class ScheduledTrainingRepository {
           focus: data.focus ?? null,
           repeatedMistakes: data.repeatedMistakes ?? null,
           note: data.note?.trim() || null,
+          videoUrl: data.videoUrl?.trim() || null,
         },
       });
     });

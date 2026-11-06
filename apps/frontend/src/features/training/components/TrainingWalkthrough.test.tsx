@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type * as Router from "@tanstack/react-router"
-import { render, screen, within } from "@testing-library/react"
+import { act, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -45,6 +45,20 @@ vi.mock("@tanstack/react-router", async () => {
       )
     },
   }
+})
+
+const aGoal = (currentStepId: string | null) => ({
+  id: "g1",
+  dogId: "d1",
+  createdBy: { id: "u1", name: "Ada" },
+  title: "Chůze u nohy",
+  discipline: null,
+  principle: null,
+  status: "ACTIVE" as const,
+  order: 0,
+  currentStepId,
+  createdAt: new Date(),
+  updatedAt: new Date(),
 })
 
 const aTraining = (overrides: Partial<TrainingDetail> = {}): TrainingDetail => ({
@@ -106,20 +120,15 @@ describe("TrainingWalkthrough", () => {
     const backLink = screen.getByRole("link", { name: "Zpět na týden" })
     expect(backLink).toBeInTheDocument()
     expect(backLink).toHaveAttribute("href", "/week")
-
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Trénink · Rex")
   })
 
-  it("shows initial exercise (1/3) with progress, instructions and criteria", () => {
+  it("shows initial exercise with progress, instructions and criteria", () => {
     renderWalkthrough()
 
     expect(screen.getByText("CVIK 1 ZE 3")).toBeInTheDocument()
     expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "1")
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Sedni u nohy")
-
-    expect(screen.getByText("Instrukce")).toBeInTheDocument()
-    expect(screen.getByText("Sedni rovně u levé nohy psovoda.")).toBeInTheDocument()
-
     expect(screen.getByText("Hotovo, když…")).toBeInTheDocument()
     expect(screen.getByText("Pes sedí do 2 sekund bez povelu.")).toBeInTheDocument()
   })
@@ -138,39 +147,23 @@ describe("TrainingWalkthrough", () => {
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Sedni u nohy")
   })
 
-  it("keeps 'Zpět o krok' available on the first exercise of this training (#66 AC3)", () => {
+  it("keeps goal back available on the first local exercise (#66 AC3)", () => {
     renderWalkthrough()
 
-    // Backend no-ops at the first goal step; FE must not block cross-training back.
     expect(screen.getByRole("button", { name: "Zpět o krok" })).toBeEnabled()
-    expect(screen.getByRole("button", { name: "Zvládnuto, další krok" })).toBeEnabled()
-    expect(screen.getByRole("button", { name: "Přeskočit" })).toBeEnabled()
+    expect(screen.getByRole("button", { name: "Zvládnuto" })).toBeEnabled()
   })
 
-  it("does not move the goal pointer when viewing a non-current exercise (#66)", async () => {
-    const user = userEvent.setup()
-    renderWalkthrough(aTraining({ currentStepId: "b1" }))
+  it("shows a timer while the exercise is on screen", () => {
+    vi.useFakeTimers()
+    renderWalkthrough()
 
-    await user.click(screen.getByRole("button", { name: /3.*Obrat vlevo/ }))
-    expect(screen.getByRole("button", { name: "Zvládnuto, další krok" })).toBeDisabled()
-    expect(screen.getByRole("button", { name: "Přeskočit" })).toBeDisabled()
-
-    await user.click(screen.getByRole("button", { name: "Zvládnuto, další krok" }))
-    expect(moveCurrentStep).not.toHaveBeenCalled()
-  })
-
-  it("does not move the goal pointer when the current step is in another training (#66)", async () => {
-    const user = userEvent.setup()
-    renderWalkthrough(aTraining({ currentStepId: "other-training-step" }))
-
-    expect(screen.getByRole("button", { name: "Zvládnuto, další krok" })).toBeDisabled()
-    expect(screen.getByRole("link", { name: "Dokončit trénink" })).toHaveAttribute(
-      "href",
-      "/trainings/t1/finish",
-    )
-
-    await user.click(screen.getByRole("button", { name: "Zvládnuto, další krok" }))
-    expect(moveCurrentStep).not.toHaveBeenCalled()
+    expect(screen.getByLabelText("Čas na cviku 0:00")).toHaveTextContent("0:00")
+    act(() => {
+      vi.advanceTimersByTime(3000)
+    })
+    expect(screen.getByLabelText("Čas na cviku 0:03")).toHaveTextContent("0:03")
+    vi.useRealTimers()
   })
 
   it("treats an effective pointer from training A as elsewhere when open on B (#66)", async () => {
@@ -202,35 +195,23 @@ describe("TrainingWalkthrough", () => {
       }),
     )
 
-    expect(screen.getByRole("button", { name: "Zvládnuto, další krok" })).toBeDisabled()
-    expect(screen.getByRole("button", { name: "Přeskočit" })).toBeDisabled()
+    expect(screen.queryByRole("button", { name: "Zvládnuto" })).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Dokončit trénink" })).toHaveAttribute(
       "href",
       "/trainings/scheduled-b/finish",
     )
 
-    await user.click(screen.getByRole("button", { name: "Zvládnuto, další krok" }))
+    await user.click(screen.getByRole("button", { name: "Další cvik" }))
+    expect(screen.getByText("CVIK 2 ZE 2")).toBeInTheDocument()
     expect(moveCurrentStep).not.toHaveBeenCalled()
   })
 
   it("advances the current step and follows the pointer (#66)", async () => {
     const user = userEvent.setup()
-    moveCurrentStep.mockResolvedValue({
-      id: "g1",
-      dogId: "d1",
-      createdBy: { id: "u1", name: "Ada" },
-      title: "Chůze u nohy",
-      discipline: null,
-      principle: null,
-      status: "ACTIVE",
-      order: 0,
-      currentStepId: "b2",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
+    moveCurrentStep.mockResolvedValue(aGoal("b2"))
     renderWalkthrough()
 
-    await user.click(screen.getByRole("button", { name: "Zvládnuto, další krok" }))
+    await user.click(screen.getByRole("button", { name: "Zvládnuto" }))
 
     expect(moveCurrentStep).toHaveBeenCalledWith("g1", "advance")
     expect(screen.getByText("CVIK 2 ZE 3")).toBeInTheDocument()
@@ -239,33 +220,7 @@ describe("TrainingWalkthrough", () => {
 
   it("skips and goes back through the current-step API (#66)", async () => {
     const user = userEvent.setup()
-    moveCurrentStep
-      .mockResolvedValueOnce({
-        id: "g1",
-        dogId: "d1",
-        createdBy: { id: "u1", name: "Ada" },
-        title: "Chůze",
-        discipline: null,
-        principle: null,
-        status: "ACTIVE",
-        order: 0,
-        currentStepId: "b2",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .mockResolvedValueOnce({
-        id: "g1",
-        dogId: "d1",
-        createdBy: { id: "u1", name: "Ada" },
-        title: "Chůze",
-        discipline: null,
-        principle: null,
-        status: "ACTIVE",
-        order: 0,
-        currentStepId: "b1",
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+    moveCurrentStep.mockResolvedValueOnce(aGoal("b2")).mockResolvedValueOnce(aGoal("b1"))
     renderWalkthrough()
 
     await user.click(screen.getByRole("button", { name: "Přeskočit" }))
@@ -277,25 +232,28 @@ describe("TrainingWalkthrough", () => {
     expect(screen.getByText("CVIK 1 ZE 3")).toBeInTheDocument()
   })
 
+  it("offers local navigation and finish when the pointer is in another training (#162)", async () => {
+    const user = userEvent.setup()
+    renderWalkthrough(aTraining({ currentStepId: "other-training-step" }))
+
+    expect(screen.queryByRole("button", { name: "Zvládnuto" })).not.toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Dokončit trénink" })).toHaveAttribute(
+      "href",
+      "/trainings/t1/finish",
+    )
+
+    await user.click(screen.getByRole("button", { name: "Další cvik" }))
+    expect(screen.getByText("CVIK 2 ZE 3")).toBeInTheDocument()
+    expect(moveCurrentStep).not.toHaveBeenCalled()
+  })
+
   it("offers Dokončit trénink on the last exercise", () => {
     renderWalkthrough(aTraining({ currentStepId: "b3" }))
 
-    const finishLink = screen.getByRole("link", { name: "Dokončit trénink" })
-    expect(finishLink).toHaveAttribute("href", "/trainings/t1/finish")
-  })
-
-  it("allows jumping directly to an exercise from 'Všechny cviky' list", async () => {
-    const user = userEvent.setup()
-    renderWalkthrough()
-
-    const exercise3Button = screen.getByRole("button", { name: /3.*Obrat vlevo/ })
-    await user.click(exercise3Button)
-
-    expect(screen.getByText("CVIK 3 ZE 3")).toBeInTheDocument()
-    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Obrat vlevo")
-
-    const exercise1Button = screen.getByRole("button", { name: /Sedni u nohy/ })
-    expect(within(exercise1Button).getByLabelText("Hotovo: Sedni u nohy")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Dokončit trénink" })).toHaveAttribute(
+      "href",
+      "/trainings/t1/finish",
+    )
   })
 
   it("displays fallback text when instruction or criterion is missing", () => {

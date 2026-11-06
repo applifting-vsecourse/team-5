@@ -287,8 +287,10 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
   const moveStep = useMoveCurrentStep(goalId, goalQuery.data?.dogId ?? "")
 
   const blocks = blocksQuery.data ?? []
-  // null pointer means the first step of the plan (#66)
-  const currentStepId = goalQuery.data?.currentStepId ?? blocks[0]?.id ?? null
+  // Wait for the goal so a loading null does not flash the first block as current.
+  const currentStepId = goalQuery.isSuccess
+    ? (goalQuery.data.currentStepId ?? blocks[0]?.id ?? null)
+    : null
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

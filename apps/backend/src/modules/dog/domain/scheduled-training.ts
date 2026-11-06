@@ -50,4 +50,5 @@ export type CompleteTrainingData = {
   focus?: FocusLevel;
   repeatedMistakes?: MistakeLevel;
   note?: string;
+  videoUrl?: string;
 };

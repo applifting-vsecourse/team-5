@@ -22,4 +22,22 @@ describe('CompleteTrainingDto', () => {
       'successRate',
     ]);
   });
+
+  it('accepts an optional https video URL up to 500 characters', async () => {
+    await expect(
+      errorsFor({ videoUrl: 'https://youtube.com/watch?v=123' }),
+    ).resolves.toEqual([]);
+  });
+
+  it('rejects a non-https video URL', async () => {
+    await expect(
+      errorsFor({ videoUrl: 'http://youtube.com/watch?v=123' }),
+    ).resolves.toEqual(['videoUrl']);
+  });
+
+  it('rejects a video URL longer than 500 characters', async () => {
+    await expect(
+      errorsFor({ videoUrl: `https://example.com/${'a'.repeat(500)}` }),
+    ).resolves.toEqual(['videoUrl']);
+  });
 });
