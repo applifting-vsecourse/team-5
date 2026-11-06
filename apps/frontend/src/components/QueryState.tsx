@@ -15,6 +15,8 @@ type QueryStateProps = {
   loadingLabel?: string
   errorTitle?: string
   errorDescription?: string
+  /** Uppercase chip on the error EmptyState. Omit to hide. Default: CHYBA. */
+  errorChip?: string | null
   empty: ReactNode
   children: ReactNode
   skeleton?: ReactNode
@@ -30,6 +32,7 @@ export function QueryState({
   loadingLabel = "Načítám",
   errorTitle = "Nepodařilo se načíst data",
   errorDescription = "Zkontroluj připojení a zkus to znovu.",
+  errorChip = "CHYBA",
   empty,
   children,
   skeleton,
@@ -38,6 +41,7 @@ export function QueryState({
   if (isLoading) {
     return (
       <div
+        role="status"
         className={cn("flex flex-col gap-3", className)}
         aria-busy="true"
         aria-label={loadingLabel}
@@ -57,7 +61,7 @@ export function QueryState({
         <StatusChip tone="danger">Chyba</StatusChip>
         <EmptyState
           icon={AlertCircle}
-          chip="BEZ PŘIPOJENÍ"
+          chip={errorChip ?? undefined}
           iconTone="danger"
           title={errorTitle}
           description={error.message || errorDescription}
