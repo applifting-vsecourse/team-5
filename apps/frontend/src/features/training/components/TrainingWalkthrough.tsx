@@ -31,14 +31,11 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
   const currentExercise = exercises[currentIndex]
   const isLast = currentIndex === totalExercises - 1
   const isBusy = moveStep.isPending
+  // Training detail resolves null to the first step of the whole goal, so a
+  // missing id here only means an empty plan — never "this training's first".
   const isPointerInThisTraining =
-    pointerId == null || exercises.some((exercise) => exercise.id === pointerId)
-  // Null means the first step of the whole goal. Only treat index 0 as that
-  // step when the pointer is not known to live in another training (#66 AC6).
-  const isOnCurrentStep =
-    currentExercise != null &&
-    (pointerId === currentExercise.id ||
-      (pointerId == null && isPointerInThisTraining && currentIndex === 0))
+    pointerId != null && exercises.some((exercise) => exercise.id === pointerId)
+  const isOnCurrentStep = pointerId != null && pointerId === currentExercise?.id
 
   const followPointer = (currentStepId: string | null) => {
     setMovedPointer({ basedOn: training.currentStepId, value: currentStepId })

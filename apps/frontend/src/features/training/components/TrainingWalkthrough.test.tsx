@@ -53,7 +53,8 @@ const aTraining = (overrides: Partial<TrainingDetail> = {}): TrainingDetail => (
   status: "PLANNED",
   dog: { id: "d1", name: "Rex", color: 1 },
   goal: { id: "g1", title: "Chůze u nohy" },
-  currentStepId: null,
+  // Detail API resolves a stored null to the first step of the whole goal.
+  currentStepId: "b1",
   exercises: [
     {
       id: "b1",
@@ -166,6 +167,46 @@ describe("TrainingWalkthrough", () => {
     expect(screen.getByRole("link", { name: "Dokončit trénink" })).toHaveAttribute(
       "href",
       "/trainings/t1/finish",
+    )
+
+    await user.click(screen.getByRole("button", { name: "Zvládnuto, další krok" }))
+    expect(moveCurrentStep).not.toHaveBeenCalled()
+  })
+
+  it("treats an effective pointer from training A as elsewhere when open on B (#66)", async () => {
+    // Stored null on the goal becomes a1 via the training detail API; opening B
+    // must not offer advance/skip for b1 (that would mark a1 instead).
+    const user = userEvent.setup()
+    renderWalkthrough(
+      aTraining({
+        id: "scheduled-b",
+        currentStepId: "a1",
+        exercises: [
+          {
+            id: "b1",
+            position: 1,
+            title: "B první",
+            instruction: null,
+            criterion: null,
+            outcome: null,
+          },
+          {
+            id: "b2",
+            position: 2,
+            title: "B druhý",
+            instruction: null,
+            criterion: null,
+            outcome: null,
+          },
+        ],
+      }),
+    )
+
+    expect(screen.getByRole("button", { name: "Zvládnuto, další krok" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Přeskočit" })).toBeDisabled()
+    expect(screen.getByRole("link", { name: "Dokončit trénink" })).toHaveAttribute(
+      "href",
+      "/trainings/scheduled-b/finish",
     )
 
     await user.click(screen.getByRole("button", { name: "Zvládnuto, další krok" }))
