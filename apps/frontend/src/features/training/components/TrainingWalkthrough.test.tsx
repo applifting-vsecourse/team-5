@@ -137,12 +137,39 @@ describe("TrainingWalkthrough", () => {
     expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent("Sedni u nohy")
   })
 
-  it("disables 'Zpět o krok' on the first exercise", () => {
+  it("keeps 'Zpět o krok' available on the first exercise of this training (#66 AC3)", () => {
     renderWalkthrough()
 
-    expect(screen.getByRole("button", { name: "Zpět o krok" })).toBeDisabled()
+    // Backend no-ops at the first goal step; FE must not block cross-training back.
+    expect(screen.getByRole("button", { name: "Zpět o krok" })).toBeEnabled()
     expect(screen.getByRole("button", { name: "Zvládnuto, další krok" })).toBeEnabled()
     expect(screen.getByRole("button", { name: "Přeskočit" })).toBeEnabled()
+  })
+
+  it("does not move the goal pointer when viewing a non-current exercise (#66)", async () => {
+    const user = userEvent.setup()
+    renderWalkthrough(aTraining({ currentStepId: "b1" }))
+
+    await user.click(screen.getByRole("button", { name: /3.*Obrat vlevo/ }))
+    expect(screen.getByRole("button", { name: "Zvládnuto, další krok" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Přeskočit" })).toBeDisabled()
+
+    await user.click(screen.getByRole("button", { name: "Zvládnuto, další krok" }))
+    expect(moveCurrentStep).not.toHaveBeenCalled()
+  })
+
+  it("does not move the goal pointer when the current step is in another training (#66)", async () => {
+    const user = userEvent.setup()
+    renderWalkthrough(aTraining({ currentStepId: "other-training-step" }))
+
+    expect(screen.getByRole("button", { name: "Zvládnuto, další krok" })).toBeDisabled()
+    expect(screen.getByRole("link", { name: "Dokončit trénink" })).toHaveAttribute(
+      "href",
+      "/trainings/t1/finish",
+    )
+
+    await user.click(screen.getByRole("button", { name: "Zvládnuto, další krok" }))
+    expect(moveCurrentStep).not.toHaveBeenCalled()
   })
 
   it("advances the current step and follows the pointer (#66)", async () => {

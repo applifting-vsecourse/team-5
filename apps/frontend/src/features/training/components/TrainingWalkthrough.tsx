@@ -16,16 +16,32 @@ type TrainingWalkthroughProps = {
 
 export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
   const [currentIndex, setCurrentIndex] = useState(() => startExerciseIndex(training))
+  // Optimistic pointer until the parent refetch lands a new currentStepId.
+  const [movedPointer, setMovedPointer] = useState<{
+    basedOn: string | null
+    value: string | null
+  } | null>(null)
   const moveStep = useMoveCurrentStep(training.goal.id, training.dog.id, training.id)
+
+  const pointerId =
+    movedPointer?.basedOn === training.currentStepId ? movedPointer.value : training.currentStepId
 
   const exercises = training.exercises
   const totalExercises = exercises.length
   const currentExercise = exercises[currentIndex]
-  const isFirst = currentIndex === 0
   const isLast = currentIndex === totalExercises - 1
   const isBusy = moveStep.isPending
+  const isPointerInThisTraining =
+    pointerId == null || exercises.some((exercise) => exercise.id === pointerId)
+  // Null means the first step of the whole goal. Only treat index 0 as that
+  // step when the pointer is not known to live in another training (#66 AC6).
+  const isOnCurrentStep =
+    currentExercise != null &&
+    (pointerId === currentExercise.id ||
+      (pointerId == null && isPointerInThisTraining && currentIndex === 0))
 
   const followPointer = (currentStepId: string | null) => {
+    setMovedPointer({ basedOn: training.currentStepId, value: currentStepId })
     if (!currentStepId) {
       setCurrentIndex(0)
       return
@@ -35,6 +51,7 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
   }
 
   const runAction = async (action: "advance" | "skip" | "back") => {
+    if (!isOnCurrentStep) return
     try {
       const goal = await moveStep.mutateAsync(action)
       followPointer(goal.currentStepId)
@@ -170,12 +187,20 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
 
             <div className="min-h-6 flex-1" />
 
+            {!isPointerInThisTraining ? (
+              <p className="text-sm text-muted-foreground">
+                Aktuální krok cíle je v jiném tréninku. Projděte cviky níže nebo trénink dokončete.
+              </p>
+            ) : null}
+
             <div className="flex flex-col gap-2 pt-4">
               <div className="flex gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={isFirst || isBusy}
+                  // Back stays available on the first exercise of this training so
+                  // the goal pointer can cross into the previous training (#66 AC3).
+                  disabled={!isOnCurrentStep || isBusy}
                   onClick={() => void runAction("back")}
                   className="min-h-11 flex-1 text-base"
                 >
@@ -184,7 +209,7 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={isBusy}
+                  disabled={!isOnCurrentStep || isBusy}
                   onClick={() => void runAction("skip")}
                   className="min-h-11 flex-1 text-base"
                 >
@@ -194,13 +219,13 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
               <Button
                 type="button"
                 variant="default"
-                disabled={isBusy}
+                disabled={!isOnCurrentStep || isBusy}
                 onClick={() => void runAction("advance")}
                 className="min-h-11 w-full text-base"
               >
                 Zvládnuto, další krok
               </Button>
-              {isLast ? (
+              {isLast || !isPointerInThisTraining ? (
                 <Button
                   asChild
                   variant="secondary"
