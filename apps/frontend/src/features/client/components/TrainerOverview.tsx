@@ -5,8 +5,6 @@ import { Calendar, ChevronRight, PawPrint, UserPlus, Users } from "lucide-react"
 
 import { ROUTES } from "@/app/routes"
 import { EmptyState } from "@/components/EmptyState"
-import { HeroCard, HeroChip } from "@/components/HeroCard"
-import { Metric } from "@/components/Metric"
 import { PesAvatar } from "@/components/PesAvatar"
 import { QueryState } from "@/components/QueryState"
 import { StripCard } from "@/components/StripCard"
@@ -173,45 +171,73 @@ export function TrainerOverview() {
         errorDescription="Zkontrolujte připojení a zkuste to znovu."
       >
         <div className="flex flex-col gap-6">
-          <HeroCard eyebrow="Pracovní prostor">
-            <div className={cn("grid gap-3", isInvitationsKnown ? "grid-cols-3" : "grid-cols-2")}>
-              <Metric
-                isOnHero
-                value={clients.length}
-                label="klientů"
-              />
-              <Metric
-                isOnHero
-                value={sharedDogs}
-                label="sdílených psů"
-              />
-              {isInvitationsKnown ? (
-                <Metric
-                  isOnHero
-                  value={invitations.length}
-                  label="pozvánek"
-                />
-              ) : null}
-            </div>
-            {isInvitationsKnown && invitations.length > 0 ? (
-              <HeroChip>{invitations.length} čeká na přijetí</HeroChip>
-            ) : null}
-            {isInvitationsFailed ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-medium text-hero-muted">
-                  Počet pozvánek teď nejde načíst.
+          <section
+            aria-label="Metriky"
+            className={cn("grid gap-2", isInvitationsKnown ? "grid-cols-3" : "grid-cols-2")}
+          >
+            <article className="rounded-card border border-border bg-card p-3">
+              <p className="text-label text-muted-foreground">Klienti</p>
+              <p className="text-title font-extrabold tabular-nums">{clients.length}</p>
+              <p className="text-sm text-muted-foreground">klientů</p>
+            </article>
+            <article className="rounded-card border border-border bg-card p-3">
+              <p className="text-label text-muted-foreground">Psi</p>
+              <p className="text-title font-extrabold tabular-nums">{sharedDogs}</p>
+              <p className="text-sm text-muted-foreground">sdílených psů</p>
+            </article>
+            {isInvitationsKnown ? (
+              <article className="rounded-card border border-border bg-card p-3">
+                <p className="text-label text-muted-foreground">Pozvánky</p>
+                <p className="text-title font-extrabold tabular-nums">{invitations.length}</p>
+                <p className="text-sm text-muted-foreground">
+                  {invitations.length === 1
+                    ? "1 čeká na přijetí"
+                    : `${invitations.length} čeká na přijetí`}
                 </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => void invitationsQuery.refetch()}
-                >
-                  Zkusit znovu
-                </Button>
-              </div>
+              </article>
             ) : null}
-          </HeroCard>
+          </section>
+          {isInvitationsFailed ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-medium text-muted-foreground">
+                Počet pozvánek teď nejde načíst.
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void invitationsQuery.refetch()}
+              >
+                Zkusit znovu
+              </Button>
+            </div>
+          ) : null}
+          {isInvitationsKnown && invitations.length > 0 ? (
+            <section
+              aria-labelledby="overview-attention-heading"
+              className="flex flex-col gap-3"
+            >
+              <h2
+                id="overview-attention-heading"
+                className="text-section font-extrabold text-foreground"
+              >
+                Potřebuje pozornost
+              </h2>
+              <ul className="flex flex-col gap-2">
+                {invitations.map((invitation) => (
+                  <li
+                    key={invitation.id}
+                    className="rounded-card border border-border bg-card px-4 py-3"
+                  >
+                    <p className="font-semibold text-foreground">Čekající pozvánka</p>
+                    <p className="text-sm text-muted-foreground">
+                      {invitation.email ?? "Kód bez e-mailu"} · kód {invitation.code}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
 
           <section
             aria-labelledby="overview-clients-heading"

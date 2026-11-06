@@ -116,6 +116,16 @@ export function DogActivitiesSection({
                 <span className="mt-1 block font-semibold text-foreground transition-colors group-hover:text-primary">
                   {item.title}
                 </span>
+                {item.successRate != null ? (
+                  <span className="mt-1 block text-sm text-muted-foreground">
+                    {Math.round(item.successRate)} % úspěšnost
+                  </span>
+                ) : null}
+                {item.note ? (
+                  <span className="mt-1 line-clamp-2 block text-sm text-muted-foreground">
+                    {item.note}
+                  </span>
+                ) : null}
               </div>
 
               <StatusChip tone={isCompleted ? "success" : "muted"}>
