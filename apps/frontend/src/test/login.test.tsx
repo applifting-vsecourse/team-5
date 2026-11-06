@@ -249,7 +249,7 @@ describe("login and logout", () => {
     await act(async () => {
       await queryClient.fetchQuery({ ...authSessionQueryOptions(), staleTime: 0 })
     })
-    expect(await screen.findByRole("heading", { name: "Psi" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Moji psi" })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/dogs")
     expect(screen.queryByRole("link", { name: "Klienti" })).not.toBeInTheDocument()
   })
@@ -333,7 +333,7 @@ describe("login and logout", () => {
   it("uses a remembered session after loading the app with an empty query cache", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
     await openPage("/week")
-    expect(await screen.findByRole("heading", { name: "Týden" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Tento týden" })).toBeInTheDocument()
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     expect(auth.signIn).not.toHaveBeenCalled()
   })
@@ -341,7 +341,7 @@ describe("login and logout", () => {
   it("rechecks an expired session before entering another protected page", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
     const { interaction, router } = await openPage("/dogs")
-    await screen.findByRole("heading", { name: "Psi" })
+    await screen.findByRole("heading", { name: "Moji psi" })
     auth.getSession.mockResolvedValue({ data: null, error: null })
     await interaction.click(
       within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("button", {
@@ -414,7 +414,7 @@ describe("login and logout", () => {
   it("logs out from Account, clears private data, and guards browser-back navigation", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
     const { interaction, router, queryClient } = await openPage("/dogs")
-    await screen.findByRole("heading", { name: "Psi" })
+    await screen.findByRole("heading", { name: "Moji psi" })
     await interaction.click(
       within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("button", {
         name: "Účet",
@@ -437,7 +437,7 @@ describe("login and logout", () => {
       router.history.back()
     })
     expect(await screen.findByRole("dialog", { name: "Přihlášení" })).toBeInTheDocument()
-    expect(screen.queryByRole("heading", { name: "Psi" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "Moji psi" })).not.toBeInTheDocument()
   })
 
   it("does not pretend to sign out when the API fails, and permits retry", async () => {
