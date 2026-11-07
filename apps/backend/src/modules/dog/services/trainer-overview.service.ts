@@ -2,6 +2,7 @@ import {
   fromCalendarDate,
   todayInAppZone,
 } from '@/modules/dog/domain/calendar-date';
+import { clientActivity } from '@/modules/dog/domain/client-activity';
 import { calculateTrainingMetrics } from '@/modules/dog/domain/training-metrics';
 import { TrainerOverviewRepository } from '@/modules/dog/repositories/trainer-overview.repository';
 import { Identity } from '@/shared/auth/domain/identity';
@@ -109,12 +110,44 @@ export class TrainerOverviewService {
       return {
         id: client.id,
         name: client.name,
-        dogs: client.dogs.map((dog) => ({
-          id: dog.id,
-          name: dog.name,
-          color: dog.color,
-        })),
+        dogs: client.dogs.map((dog) => {
+          const dogLogs = dog.workoutLogs.filter(
+            (log) => log.completedAt <= now,
+          );
+          const dogMetrics = calculateTrainingMetrics(dogLogs, 0, now);
+          const latest = dogLogs.find((log) => log.status === 'COMPLETED');
+          return {
+            id: dog.id,
+            name: dog.name,
+            color: dog.color,
+            breed: dog.breed,
+            successRate: dogMetrics.successRate,
+            weeks: dogMetrics.weeks.map(({ from, successRate }) => ({
+              from,
+              successRate,
+            })),
+            goals: dog.goals.map((goal) => ({
+              id: goal.id,
+              title: goal.title,
+              deadline: goal.deadline,
+              totalSteps: goal.blocks.length,
+              masteredSteps: goal.blocks.filter(
+                (block) => block.outcome === 'MASTERED',
+              ).length,
+            })),
+            lastTraining: latest
+              ? {
+                  id: latest.id,
+                  title: latest.title,
+                  completedAt: latest.completedAt,
+                  successRate: latest.successRate,
+                  note: latest.note,
+                }
+              : null,
+          };
+        }),
         successRate: metrics.successRate,
+        activity: clientActivity(logs, now),
         weeks: metrics.weeks.map((week) => ({
           from: week.from,
           successRate: week.successRate,

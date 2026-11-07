@@ -22,6 +22,8 @@ import {
 } from "@/features/client/api/trainerOverview"
 
 import { InviteClientDialog } from "./InviteClientDialog"
+import { TrainerActivityMatrix } from "./TrainerActivityMatrix"
+import { TrainerDogContext } from "./TrainerDogContext"
 
 type Attention = TrainerDashboard["attention"][number]
 type OverviewClient = TrainerDashboard["clients"][number]
@@ -371,6 +373,8 @@ function OverviewShortcuts() {
 export function TrainerOverview({ userName }: { userName?: string }) {
   const [isInviteOpen, setIsInviteOpen] = useState(false)
   const [activityId, setActivityId] = useState<string | null>(null)
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
   const query = useQuery(trainerOverviewQueryOptions())
   const updates = useTrainingUpdates()
   const now = new Date()
@@ -378,9 +382,11 @@ export function TrainerOverview({ userName }: { userName?: string }) {
   const dayHeading = formatDayLong(today)
   const data = query.data
   const metrics = data?.metrics
+  const selectedClient =
+    data?.clients.find((client) => client.id === selectedClientId) ?? data?.clients[0]
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-gutter pt-3 pb-6 md:py-8">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-gutter pt-3 pb-6 md:py-8 lg:max-w-7xl lg:px-gutter-desktop">
       <header className="flex items-center gap-2.5">
         <div className="min-w-0 flex-1 space-y-0.5">
           <p className="text-label font-semibold text-muted-foreground">
@@ -391,6 +397,15 @@ export function TrainerOverview({ userName }: { userName?: string }) {
           </h1>
         </div>
         {updates.bell}
+        {data?.clients.length !== 0 && (
+          <Button
+            className="hidden lg:inline-flex"
+            onClick={() => setIsInviteOpen(true)}
+          >
+            <UserPlus aria-hidden />
+            Pozvat klienta
+          </Button>
+        )}
         <span
           aria-label={userName ?? "Trenér"}
           role="img"
@@ -412,10 +427,10 @@ export function TrainerOverview({ userName }: { userName?: string }) {
         errorDescription="Zkontrolujte připojení a zkuste to znovu."
       >
         {data && metrics && (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-6 lg:grid lg:grid-cols-3 lg:items-start">
             <section
               aria-label="Metriky"
-              className="flex gap-2.5"
+              className="flex gap-2.5 lg:col-span-3"
             >
               <Kpi
                 isOnHero
@@ -457,7 +472,7 @@ export function TrainerOverview({ userName }: { userName?: string }) {
 
             <section
               aria-labelledby="overview-attention-heading"
-              className="flex flex-col gap-2.5"
+              className="flex flex-col gap-2.5 lg:col-span-2"
             >
               <div className="flex items-center gap-3">
                 <h2
@@ -489,9 +504,30 @@ export function TrainerOverview({ userName }: { userName?: string }) {
               )}
             </section>
 
+            {selectedClient && (
+              <TrainerDogContext
+                client={selectedClient}
+                dogId={selectedDogId}
+                onSelectDog={setSelectedDogId}
+                onConversation={setActivityId}
+              />
+            )}
+            {data.clients.length > 0 && (
+              <TrainerActivityMatrix
+                clients={data.clients}
+                selectedClientId={selectedClient?.id ?? null}
+                onSelect={(client) => {
+                  setSelectedClientId(client.id)
+                  setSelectedDogId(null)
+                }}
+              />
+            )}
             <section
               aria-labelledby="overview-clients-heading"
-              className="flex flex-col gap-2.5"
+              className={cn(
+                "flex flex-col gap-2.5",
+                data.clients.length > 0 ? "lg:hidden" : "lg:col-span-3",
+              )}
             >
               <div className="flex items-center justify-between gap-3">
                 <h2
