@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router"
-import { ChevronRight } from "lucide-react"
 
+import { DesignIcon } from "@/components/DesignIcon"
+import { DogTrend } from "@/components/DogTrend"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { dogColorClass } from "@/lib/dogColors"
 import type { DogMetrics } from "@/lib/dogMetrics"
 import { cn } from "@/lib/utils"
@@ -11,133 +13,172 @@ type DogPlayer = {
   color: number
   breed?: string | null
   disciplines?: string[]
+  birthDate?: string | null
+  photoUrl?: string | null
 }
-
-const BAR_HEIGHT = ["h-1", "h-2", "h-3", "h-4", "h-6", "h-8", "h-10"] as const
-
-function barHeight(rate: number | null): string {
-  if (rate == null) return "h-1"
-  const index = Math.min(BAR_HEIGHT.length - 1, Math.round((rate / 100) * (BAR_HEIGHT.length - 1)))
-  return BAR_HEIGHT[index] ?? "h-1"
-}
-
-function dayLabel(days: number): string {
-  if (days === 1) return "1 den"
-  if (days >= 2 && days <= 4) return `${days} dny`
-  return `${days} dní`
-}
-
-function detailLine(dog: Pick<DogPlayer, "breed" | "disciplines">): string | null {
-  const parts = [dog.breed, ...(dog.disciplines ?? [])].filter((part): part is string =>
-    Boolean(part?.trim()),
-  )
-  return parts.length > 0 ? parts.join(" · ") : null
-}
-
 export type DogPlayerCardProps = {
   dog: DogPlayer
   metrics?: DogMetrics | null
-  activeGoalCount?: number | null
+  completedGoalCount?: number | null
   goalCount?: number | null
   nextLabel?: string | null
+  variant?: "full" | "compact"
 }
 
-/** Filled dog-colour card from Figma „Moji psi“ (frame 118:1019). */
+const dogTextClasses = [
+  "text-dog-1",
+  "text-dog-2",
+  "text-dog-3",
+  "text-dog-4",
+  "text-dog-5",
+  "text-dog-6",
+]
+export function dogTextClass(color: number) {
+  return dogTextClasses[color - 1] ?? dogTextClasses[0]
+}
+export function dayLabel(days: number) {
+  return `${days} ${days === 1 ? "den" : days >= 2 && days <= 4 ? "dny" : "dní"}`
+}
+
+function subtitle(dog: DogPlayer) {
+  let age: string | undefined
+  if (dog.birthDate) {
+    const birth = new Date(`${dog.birthDate}T12:00:00`)
+    const now = new Date()
+    const years =
+      now.getFullYear() -
+      birth.getFullYear() -
+      (now.getMonth() < birth.getMonth() ||
+      (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())
+        ? 1
+        : 0)
+    age = years < 1 ? "do 1 roku" : `${years} ${years === 1 ? "rok" : years <= 4 ? "roky" : "let"}`
+  }
+  return [dog.breed, age, ...(dog.disciplines ?? [])].filter(Boolean).join(" · ")
+}
+
 export function DogPlayerCard({
   dog,
   metrics,
-  activeGoalCount,
+  completedGoalCount,
   goalCount,
   nextLabel,
+  variant = "full",
 }: DogPlayerCardProps) {
-  const weeks = (metrics?.weeks ?? []).slice(-8)
-  const hasGoalCounts = activeGoalCount != null && goalCount != null
-  const subtitle = detailLine(dog)
+  const isCompact = variant === "compact"
+  const rate = metrics?.successRate == null ? "—" : `${Math.round(metrics.successRate)} %`
   const initial = dog.name.trim().charAt(0).toUpperCase() || "P"
-
-  return (
-    <article className={cn("rounded-card p-4 text-dog-foreground", dogColorClass(dog.color))}>
+  const detail = subtitle(dog)
+  const nextText = nextLabel === undefined ? "Načítám termín…" : (nextLabel ?? "Zatím bez termínu")
+  const identity = (
+    <Avatar
+      aria-hidden
+      className={cn(
+        "flex shrink-0 items-center justify-center rounded-full bg-card font-extrabold",
+        dogTextClass(dog.color),
+        isCompact ? "size-8 text-sm" : "size-14 text-2xl",
+      )}
+    >
+      <AvatarImage
+        src={dog.photoUrl ?? undefined}
+        alt=""
+      />
+      <AvatarFallback
+        className={cn(
+          "bg-card font-extrabold",
+          dogTextClass(dog.color),
+          isCompact ? "text-sm" : "text-2xl",
+        )}
+      >
+        {initial}
+      </AvatarFallback>
+    </Avatar>
+  )
+  const trend = (
+    <DogTrend
+      weeks={metrics?.weeks ?? []}
+      isCompact={isCompact}
+    />
+  )
+  if (isCompact) {
+    return (
       <Link
         to="/dogs/$dogId"
         params={{ dogId: dog.id }}
-        className="flex items-start justify-between gap-3 rounded-control outline-hidden focus-visible:ring-2 focus-visible:ring-dog-foreground focus-visible:ring-offset-2"
         aria-label={`Detail psa ${dog.name}`}
+        className={cn(
+          "flex min-w-0 flex-col gap-3 rounded-card p-4 text-dog-foreground",
+          dogColorClass(dog.color),
+        )}
       >
-        <span className="flex min-w-0 items-center gap-3">
-          <span
-            aria-hidden
-            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-card text-base font-extrabold text-foreground"
-          >
-            {initial}
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate text-title font-extrabold tracking-tight">
-              {dog.name}
-            </span>
-            {subtitle ? (
-              <span className="block truncate text-sm font-medium">{subtitle}</span>
-            ) : null}
-          </span>
+        <span className="flex items-center justify-between gap-2">
+          {identity}
+          <span className="text-sm font-extrabold tabular-nums">{rate}</span>
         </span>
-        <ChevronRight
-          className="mt-1 size-5 shrink-0"
-          aria-hidden
-        />
+        <span className="min-w-0">
+          <span className="block text-section font-extrabold break-words">{dog.name}</span>
+          <span className="mt-1 block text-xs font-medium">{nextText}</span>
+        </span>
+        <span className="mt-auto block pt-1">{trend}</span>
       </Link>
-
-      {metrics || hasGoalCounts ? (
-        <dl className={cn("mt-4 grid gap-2", hasGoalCounts ? "grid-cols-3" : "grid-cols-2")}>
-          <div className="rounded-lg bg-dog-foreground/15 px-2 py-2">
-            <dt className="text-label">Úspěšnost</dt>
-            <dd className="text-base font-extrabold tabular-nums">
-              {metrics?.successRate != null ? `${Math.round(metrics.successRate)} %` : "—"}
-            </dd>
-          </div>
-          <div className="rounded-lg bg-dog-foreground/15 px-2 py-2">
-            <dt className="text-label">Série</dt>
-            <dd className="text-base font-extrabold tabular-nums">
-              {metrics ? dayLabel(metrics.streak) : "—"}
-            </dd>
-          </div>
-          {hasGoalCounts ? (
-            <div className="rounded-lg bg-dog-foreground/15 px-2 py-2">
-              <dt className="text-label">Cíle</dt>
-              <dd className="text-base font-extrabold tabular-nums">
-                {activeGoalCount}/{goalCount}
-              </dd>
-            </div>
-          ) : null}
-        </dl>
-      ) : null}
-
-      {weeks.length > 0 ? (
-        <div className="mt-4">
-          <p className="text-label">Úspěšnost za 8 týdnů</p>
-          <div
-            className="mt-2 flex h-10 items-end gap-1"
-            role="img"
-            aria-label="Úspěšnost za posledních osm týdnů"
-          >
-            {weeks.map((week) => (
-              <span
-                key={week.from}
-                className={cn(
-                  "w-2 rounded-full bg-dog-foreground",
-                  barHeight(week.successRate),
-                  week.successRate == null && "opacity-40",
-                )}
-              />
-            ))}
-          </div>
+    )
+  }
+  return (
+    <article
+      className={cn("space-y-4 rounded-sheet p-5 text-dog-foreground", dogColorClass(dog.color))}
+    >
+      <Link
+        to="/dogs/$dogId"
+        params={{ dogId: dog.id }}
+        aria-label={`Detail psa ${dog.name}`}
+        className="flex min-h-touch items-center gap-3 rounded-field"
+      >
+        {identity}
+        <span className="min-w-0 flex-1">
+          <span className="block text-dog-name leading-tight font-extrabold break-words">
+            {dog.name}
+          </span>
+          {detail && <span className="block text-xs font-medium break-words">{detail}</span>}
+        </span>
+        <DesignIcon name="dogs-ChevR" />
+      </Link>
+      <dl className="grid grid-cols-3 gap-2">
+        <div className="flex flex-col rounded-field bg-dog-foreground/15 px-3 py-2">
+          <dd className="order-first text-lg font-extrabold tabular-nums">{rate}</dd>
+          <dt className="text-xs font-medium">Úspěšnost</dt>
         </div>
-      ) : null}
-
-      {nextLabel ? (
-        <p className="mt-4 text-sm font-semibold">
-          <span className="text-label font-bold tracking-wide uppercase">Další trénink </span>
-          {nextLabel}
+        <div className="flex flex-col rounded-field bg-dog-foreground/15 px-3 py-2">
+          <dd className="order-first text-lg font-extrabold tabular-nums">
+            {metrics ? (
+              <>
+                {metrics.streak > 0 && <span aria-hidden>🔥 </span>}
+                {dayLabel(metrics.streak)}
+              </>
+            ) : (
+              "—"
+            )}
+          </dd>
+          <dt className="text-xs font-medium">Série</dt>
+        </div>
+        <div className="flex flex-col rounded-field bg-dog-foreground/15 px-3 py-2">
+          <dd className="order-first text-lg font-extrabold tabular-nums">
+            {completedGoalCount != null && goalCount != null
+              ? `${completedGoalCount}/${goalCount}`
+              : "—"}
+          </dd>
+          <dt className="text-xs font-medium">Cíle</dt>
+        </div>
+      </dl>
+      <div className="flex items-end gap-4">
+        <div className="min-w-0 flex-1 space-y-2">
+          <p className="text-xs font-semibold">Úspěšnost za 8 týdnů</p>
+          {trend}
+        </div>
+        <p className="max-w-32 shrink-0 text-sm font-bold">
+          <span className="block text-xs font-extrabold uppercase">Další trénink</span>
+          {nextText}
         </p>
-      ) : null}
+      </div>
     </article>
   )
 }

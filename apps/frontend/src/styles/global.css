@@ -71,6 +71,8 @@
   --radius-card: var(--radius-card);
   --radius-hero: var(--radius-hero);
   --radius-sheet: var(--radius-sheet);
+  --text-dog-name: 2rem;
+  --text-hero-title: 1.625rem;
   --text-page: var(--type-page);
   --text-page--line-height: 1.15;
   --text-page--font-weight: 800;

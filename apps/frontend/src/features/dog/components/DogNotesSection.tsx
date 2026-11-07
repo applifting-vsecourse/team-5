@@ -61,19 +61,21 @@ export function DogNotesSection({ dogId, dogName }: DogNotesSectionProps) {
         >
           Deník
         </h2>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="min-h-11 min-w-11 gap-2"
-          onClick={() => setDialogMode({ kind: "create" })}
-        >
-          <Plus
-            className="size-4"
-            aria-hidden
-          />
-          <span>Nová poznámka</span>
-        </Button>
+        {notes.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-11 min-w-11 gap-2"
+            onClick={() => setDialogMode({ kind: "create" })}
+          >
+            <Plus
+              className="size-4"
+              aria-hidden
+            />
+            <span>Nová poznámka</span>
+          </Button>
+        )}
       </div>
 
       <p className="text-sm text-muted-foreground">

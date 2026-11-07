@@ -48,6 +48,7 @@ const aTrainingDetail = (
         position: 1,
         title: 'Sedni u nohy',
         instruction: 'Sedni rovně u levé nohy.',
+        durationMinutes: 5,
         criterion: '3x za sebou.',
         outcome: null,
       },

@@ -32,14 +32,26 @@ export class ScheduledTrainingRepository {
         dog: { ownerId, isArchived: false },
       },
       include: {
+        workoutLog: { select: { successRate: true } },
         dog: { select: { id: true, name: true, color: true } },
-        goal: { select: { id: true, title: true } },
+        goal: {
+          select: {
+            id: true,
+            title: true,
+            discipline: true,
+            sessions: {
+              where: { isArchived: false },
+              select: { id: true },
+              orderBy: [...planOrder],
+            },
+          },
+        },
         training: {
           select: {
             id: true,
             title: true,
             steps: {
-              select: { id: true, title: true },
+              select: { id: true, title: true, durationMinutes: true },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },
           },
@@ -49,6 +61,16 @@ export class ScheduledTrainingRepository {
     });
     return rows.map((row) => ({
       ...row,
+      training: {
+        ...row.training,
+        position: Math.max(
+          0,
+          row.goal.sessions.findIndex(
+            (session) => session.id === row.training.id,
+          ),
+        ),
+        total: row.goal.sessions.length,
+      },
       goal: { ...row.goal, blocks: row.training.steps },
     }));
   }
@@ -86,6 +108,7 @@ export class ScheduledTrainingRepository {
                 title: true,
                 instruction: true,
                 criterion: true,
+                durationMinutes: true,
                 outcome: true,
               },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
@@ -306,6 +329,10 @@ export class ScheduledTrainingRepository {
     },
   ): Promise<WorkoutLog | null> {
     return this.prisma.$transaction(async (tx) => {
+      // Serialize completion with definition edits before freezing its content.
+      await tx.$queryRaw`SELECT g."id" FROM "training_goal" g
+        JOIN "scheduled_training" s ON s."goalId" = g."id"
+        WHERE s."id" = ${trainingId} FOR UPDATE OF g`;
       // The status check is part of the UPDATE, so of two quick submits
       // (double click, a retry on a weak signal) only one completes the
       // training and writes a record. Null: it is no longer planned.

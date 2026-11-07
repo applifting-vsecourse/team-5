@@ -2,6 +2,19 @@ import { Dog } from '@/modules/dog/domain/dog';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class DogResponseDto {
+  @ApiPropertyOptional({ nullable: true, format: 'date' })
+  birthDate?: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  weightKg?: number | null;
+  @ApiPropertyOptional({
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: { id: { type: 'string' }, name: { type: 'string' } },
+    },
+  })
+  trainers?: { id: string; name: string }[];
+
   @ApiProperty()
   id!: string;
 
@@ -34,6 +47,9 @@ export class DogResponseDto {
       id: dog.id,
       name: dog.name,
       breed: dog.breed ?? null,
+      birthDate: dog.birthDate ?? null,
+      weightKg: dog.weightKg ?? null,
+      trainers: dog.trainers ?? [],
       color: dog.color,
       photoUrl: dog.photoUrl ?? null,
       ownerId: dog.ownerId,

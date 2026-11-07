@@ -80,6 +80,8 @@ export class DogsController {
     const dog = await this.dogsService.createDog(user, {
       name: body.name,
       breed: body.breed,
+      birthDate: body.birthDate,
+      weightKg: body.weightKg,
       color: body.color,
       disciplines: body.disciplines,
     });
