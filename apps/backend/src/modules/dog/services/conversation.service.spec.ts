@@ -55,4 +55,47 @@ describe('training conversations', () => {
     expect(access.getAccessibleDog).toHaveBeenCalledWith(user, 'shared-dog');
     expect(repo.reply).toHaveBeenCalledWith('record', 'trainer', 'Reply');
   });
+
+  it('returns plan blocks when the record is tied to a training', async () => {
+    const repo = mock<ConversationRepository>();
+    const access = mock<DogAccessService>();
+    repo.record.mockResolvedValue({
+      id: 'record',
+      dogId: 'shared-dog',
+      dog: { id: 'shared-dog', name: 'Rex', color: 1 },
+      title: 'Park',
+      completedAt: new Date('2026-11-01'),
+      successRate: 80,
+      note: null,
+      videoUrl: null,
+      mistakeDetails: [],
+      focus: null,
+      repeatedMistakes: null,
+      status: 'COMPLETED',
+      training: {
+        title: 'Přivolání',
+        steps: [
+          { id: 's1', title: 'Píšťalka', outcome: 'MASTERED', position: 0 },
+          { id: 's2', title: 'Sedni', outcome: null, position: 1 },
+        ],
+      },
+      messages: [],
+    } as never);
+    const service = new ConversationService(repo, access);
+    const user = new Identity(
+      'trainer',
+      'trainer@example.test',
+      'Trainer',
+      'trainer',
+    );
+    await expect(service.detail(user, 'record')).resolves.toMatchObject({
+      goal: {
+        title: 'Přivolání',
+        blocks: [
+          { id: 's1', title: 'Píšťalka', outcome: 'MASTERED', position: 0 },
+          { id: 's2', title: 'Sedni', outcome: null, position: 1 },
+        ],
+      },
+    });
+  });
 });

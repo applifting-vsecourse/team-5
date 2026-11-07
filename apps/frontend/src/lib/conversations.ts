@@ -11,6 +11,34 @@ const message = z.object({
   createdAt: z.coerce.date(),
   author: z.object({ id: z.string().nullable(), name: z.string() }),
 })
+const block = z.object({
+  id: z.string(),
+  title: z.string(),
+  outcome: z.enum(["MASTERED", "SKIPPED"]).nullable(),
+  position: z.number(),
+})
+const conversationDetail = z.object({
+  id: z.string(),
+  title: z.string(),
+  dog,
+  completedAt: z.coerce.date(),
+  successRate: z.number().nullable(),
+  note: z.string().nullable(),
+  videoUrl: z.string().nullable(),
+  mistakeDetails: z.array(z.string()).optional(),
+  focus: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
+  repeatedMistakes: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
+  status: z.enum(["COMPLETED", "SKIPPED"]).optional(),
+  goal: z
+    .object({
+      title: z.string(),
+      blocks: z.array(block),
+    })
+    .nullable()
+    .optional(),
+  messages: z.array(message),
+})
+export type ConversationDetail = z.infer<typeof conversationDetail>
 const update = message.extend({ activity: z.object({ id: z.string(), title: z.string(), dog }) })
 export type TrainingUpdate = z.infer<typeof update>
 export const updatesQueryOptions = () =>
@@ -23,20 +51,5 @@ export const conversationQueryOptions = (id: string) =>
     queryKey: ["training-conversation", id],
     enabled: Boolean(id),
     queryFn: async () =>
-      z
-        .object({
-          id: z.string(),
-          title: z.string(),
-          dog,
-          completedAt: z.coerce.date(),
-          successRate: z.number().nullable(),
-          note: z.string().nullable(),
-          videoUrl: z.string().nullable(),
-          mistakeDetails: z.array(z.string()).optional(),
-          focus: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
-          repeatedMistakes: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
-          status: z.enum(["COMPLETED", "SKIPPED"]).optional(),
-          messages: z.array(message),
-        })
-        .parse(await api.get(`activities/${id}`).json()),
+      conversationDetail.parse(await api.get(`activities/${id}`).json()),
   })

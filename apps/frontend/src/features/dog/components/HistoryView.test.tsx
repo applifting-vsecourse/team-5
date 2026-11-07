@@ -7,13 +7,32 @@ import { api } from "@/lib/api-client"
 import { HistoryView } from "./HistoryView"
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children }: { children: React.ReactNode }) => <a href="/dogs">{children}</a>,
+  Link: ({
+    to,
+    params,
+    children,
+    ...props
+  }: {
+    to?: string
+    params?: { dogId?: string; activityId?: string }
+    children?: React.ReactNode
+    [key: string]: unknown
+  }) => {
+    let href = typeof to === "string" ? to : "#"
+    if (params?.dogId) href = href.replace("$dogId", params.dogId)
+    if (params?.activityId) href = href.replace("$activityId", params.activityId)
+    return (
+      <a
+        href={href}
+        {...props}
+      >
+        {children}
+      </a>
+    )
+  },
 }))
 
 vi.mock("@/lib/api-client", () => ({ api: { get: vi.fn() } }))
-vi.mock("@/components/TrainingConversationDialog", () => ({
-  TrainingConversationDialog: () => null,
-}))
 
 afterEach(() => vi.useRealTimers())
 
