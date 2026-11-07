@@ -73,8 +73,8 @@ describe("FinishTrainingForm", () => {
     expect(screen.getByText(/plán 25 min · 3 kroky plánu/)).toBeInTheDocument()
     const mistakes = screen.getByRole("radiogroup", { name: "Opakované chyby" })
     await user.click(within(mistakes).getByRole("radio", { name: "Ano" }))
-    await user.click(screen.getByRole("button", { name: "Předbíhal", exact: true }))
-    await user.click(screen.getByRole("button", { name: "+ vlastní", exact: true }))
+    await user.click(screen.getByRole("button", { name: "Předbíhal" }))
+    await user.click(screen.getByRole("button", { name: "+ vlastní" }))
     await user.type(screen.getByLabelText("Vlastní chyba"), "Padal do strany{Enter}")
     await user.click(screen.getByRole("button", { name: "Uložit záznam" }))
     expect(handleSubmit).toHaveBeenLastCalledWith({
