@@ -1,5 +1,11 @@
 import { useEffect, useRef } from "react"
-import { createFileRoute, Outlet, redirect, useRouter } from "@tanstack/react-router"
+import {
+  createFileRoute,
+  Outlet,
+  redirect,
+  useRouter,
+  useRouterState,
+} from "@tanstack/react-router"
 
 import { ROUTES } from "@/app/routes"
 import { BottomNav } from "@/components/BottomNav/BottomNav"
@@ -30,6 +36,9 @@ export const Route = createFileRoute("/_ProtectedPages")({
 function Layout() {
   const { user } = useSession()
   const router = useRouter()
+  const isTrainingFlow = useRouterState({
+    select: (state) => /^\/trainings\/[^/]+(?:\/finish)?\/?$/.test(state.location.pathname),
+  })
   const identity = user ? `${user.id}:${user.role ?? ""}` : null
   const previousIdentity = useRef(identity)
   useEffect(() => {
@@ -47,6 +56,17 @@ function Layout() {
   }, [identity, router])
   const isTrainer = user?.role === "trainer" || user?.role === "admin"
   if (!user) return null
+  if (isTrainingFlow) {
+    return (
+      <div
+        key={user.id}
+        className="min-h-dvh bg-background"
+      >
+        <Seo />
+        <Outlet />
+      </div>
+    )
+  }
   return (
     <div
       key={user.id}

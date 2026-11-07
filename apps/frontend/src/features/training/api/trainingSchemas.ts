@@ -40,6 +40,7 @@ export const trainingDetailExerciseSchema = z.object({
   id: z.string(),
   position: z.number(),
   title: z.string(),
+  durationMinutes: z.number().int().min(0).max(480).optional(),
   instruction: z.string().nullable(),
   criterion: z.string().nullable(),
   outcome: stepOutcomeSchema.nullable().optional(),
@@ -48,6 +49,7 @@ export const trainingDetailExerciseSchema = z.object({
 export type TrainingDetailExercise = z.infer<typeof trainingDetailExerciseSchema>
 
 export const trainingDetailSchema = z.object({
+  training: z.object({ id: z.string(), title: z.string() }).optional(),
   id: z.string(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   status: z.enum(["PLANNED", "COMPLETED", "SKIPPED"]),

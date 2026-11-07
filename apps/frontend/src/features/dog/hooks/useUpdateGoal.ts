@@ -14,7 +14,7 @@ export function useUpdateGoal(dogId: string, goalId: string) {
     mutationFn: (values: GoalFormValues) => updateGoal(goalId, values),
     onSuccess: (goal) => {
       queryClient.setQueryData(dogKeys.goal(goal.id), goal)
-      void queryClient.invalidateQueries({ queryKey: dogKeys.goals(dogId) })
+      void queryClient.invalidateQueries({ queryKey: dogKeys.detail(dogId) })
       // The week shows goals and their exercises too (#72).
       void queryClient.invalidateQueries({ queryKey: weekKeys.all })
       toast.success("Změny jsou uložené")

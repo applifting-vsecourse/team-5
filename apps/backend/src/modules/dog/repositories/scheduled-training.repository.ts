@@ -86,6 +86,7 @@ export class ScheduledTrainingRepository {
                 title: true,
                 instruction: true,
                 criterion: true,
+                durationMinutes: true,
                 outcome: true,
               },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
@@ -306,6 +307,10 @@ export class ScheduledTrainingRepository {
     },
   ): Promise<WorkoutLog | null> {
     return this.prisma.$transaction(async (tx) => {
+      // Serialize completion with definition edits before freezing its content.
+      await tx.$queryRaw`SELECT g."id" FROM "training_goal" g
+        JOIN "scheduled_training" s ON s."goalId" = g."id"
+        WHERE s."id" = ${trainingId} FOR UPDATE OF g`;
       // The status check is part of the UPDATE, so of two quick submits
       // (double click, a retry on a weak signal) only one completes the
       // training and writes a record. Null: it is no longer planned.

@@ -1,46 +1,60 @@
-import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useState, type ReactNode } from "react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link, useNavigate } from "@tanstack/react-router"
-import { HTTPError } from "ky"
-import { AlertCircle, ChevronLeft, Pencil } from "lucide-react"
+import { ChevronDown, ChevronRight, ChevronUp, Target } from "lucide-react"
+import { toast } from "sonner"
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { EditorIcon } from "@/components/EditorIcon"
+import { EmptyState } from "@/components/EmptyState"
+import { QueryState } from "@/components/QueryState"
+import { StatusChip } from "@/components/StatusChip"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { api } from "@/lib/api-client"
+import { dogKeys } from "@/lib/dogKeys"
 
 import type { GoalFormValues } from "@/features/dog/api/dogSchemas"
 import { dogDetailQueryOptions, goalQueryOptions } from "@/features/dog/api/dogsQueryOptions"
+import { createSession, dogPlanQueryOptions } from "@/features/dog/api/trainingEditor"
 import { useCreateGoal } from "@/features/dog/hooks/useCreateGoal"
 import { useUpdateGoal } from "@/features/dog/hooks/useUpdateGoal"
 
+import { EditorSheet } from "./EditorSheet"
 import { GoalForm } from "./GoalForm"
-import { PlanBlocksSection } from "./PlanBlocksSection"
-import { TrainingScheduleSection } from "./TrainingScheduleSection"
+import { SessionEditor } from "./SessionEditor"
 
-type GoalPageShellProps = {
+function GoalShell({
+  dogId,
+  title,
+  subtitle,
+  children,
+}: {
   dogId: string
-  dogName?: string
   title: string
   subtitle?: string
-  children: React.ReactNode
-}
-
-// "Tvorba tréninku": the goal header now (#62), the plan's blocks below it later (#63).
-function GoalPageShell({ dogId, dogName, title, subtitle, children }: GoalPageShellProps) {
+  children: ReactNode
+}) {
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
-      <header className="mb-8 flex items-center gap-2">
-        <Link
-          to="/dogs/$dogId"
-          params={{ dogId }}
-          aria-label={dogName ? `Zpět na psa ${dogName}` : "Zpět na psa"}
-          className="-ml-3 inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-gutter py-6">
+      <header className="flex items-center gap-3">
+        <Button
+          asChild
+          variant="outline"
+          size="icon"
+          className="shrink-0 rounded-field"
         >
-          <ChevronLeft className="size-5" />
-        </Link>
+          <Link
+            to="/dogs/$dogId/goals"
+            params={{ dogId }}
+            aria-label="Zpět na cíle psa"
+          >
+            <EditorIcon name="ChevL" />
+          </Link>
+        </Button>
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight break-words text-foreground">{title}</h1>
-          {subtitle ? <p className="truncate text-sm text-muted-foreground">{subtitle}</p> : null}
+          <h1 className="text-page font-extrabold tracking-tight break-words">{title}</h1>
+          <p className="text-label text-muted-foreground">{subtitle}</p>
         </div>
       </header>
       {children}
@@ -48,225 +62,383 @@ function GoalPageShell({ dogId, dogName, title, subtitle, children }: GoalPageSh
   )
 }
 
-function GoalPageLoading() {
-  return (
-    <div
-      className="flex flex-col gap-6"
-      aria-busy="true"
-    >
-      <Skeleton className="h-16 w-full" />
-      <Skeleton className="h-16 w-full" />
-      <Skeleton className="h-32 w-full" />
-    </div>
-  )
-}
-
-// "Does not exist or no access" only for a real 404; a network error, a 500 or
-// an unexpected response is worth retrying, so it says so.
-const loadFailureMessage = (errors: (Error | null)[], notFoundMessage: string): string =>
-  errors.some((error) => error && !(error instanceof HTTPError && error.response.status === 404))
-    ? "Nepodařilo se načíst. Zkontrolujte připojení a zkuste to znovu."
-    : notFoundMessage
-
-function GoalPageError({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <Alert variant="destructive">
-      <AlertCircle className="size-4" />
-      <AlertTitle>Nepodařilo se načíst</AlertTitle>
-      <AlertDescription className="space-y-3">
-        <p>{message}</p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={onRetry}
-        >
-          Zkusit znovu
-        </Button>
-      </AlertDescription>
-    </Alert>
-  )
-}
-
 export function NewGoalPage({ dogId }: { dogId: string }) {
-  const navigate = useNavigate()
   const dogQuery = useQuery(dogDetailQueryOptions(dogId))
-  const createGoal = useCreateGoal(dogId)
-
-  const dog = dogQuery.data
-
-  // A failed save is reported by useCreateGoal and keeps the form as it is.
-  // Navigation only runs after a successful save, outside any catch, so a
-  // problem there cannot be mistaken for a failed save.
-  const saveGoal = (values: GoalFormValues, shouldSchedule: boolean) => {
-    createGoal.mutate(values, {
-      onSuccess: (goal) => {
-        // The plan's exercises are added to this goal next, so stay on its page;
-        // "Uložit a naplánovat" also opens the day picker there (#71).
-        void navigate({
-          to: "/dogs/$dogId/goals/$goalId",
-          params: { dogId, goalId: goal.id },
-          search: shouldSchedule ? { naplanovat: true } : {},
-          replace: true,
-        })
-      },
-    })
-  }
-
+  const create = useCreateGoal(dogId)
+  const navigate = useNavigate()
   return (
-    <GoalPageShell
+    <GoalShell
       dogId={dogId}
-      dogName={dog?.name}
-      title="Nový cíl"
-      subtitle={dog ? `Pro psa ${dog.name}` : undefined}
+      title="Cíle psa"
+      subtitle={dogQuery.data?.name}
     >
-      {dogQuery.isLoading ? (
-        <GoalPageLoading />
-      ) : dogQuery.error || !dog ? (
-        <GoalPageError
-          message={loadFailureMessage(
-            [dogQuery.error],
-            "Tento pes neexistuje nebo k němu nemáte přístup.",
-          )}
-          onRetry={() => void dogQuery.refetch()}
-        />
-      ) : (
-        <div className="flex flex-col gap-6">
-          <p className="text-sm text-muted-foreground">
-            Cíl popisuje, čeho chcete dosáhnout. Přidejte princip a cviky; jednotlivé tréninky pak
-            naplánujete na konkrétní dny.
-          </p>
+      <QueryState
+        isLoading={dogQuery.isLoading}
+        error={dogQuery.error}
+        onRetry={() => void dogQuery.refetch()}
+        empty={null}
+      >
+        <EditorSheet
+          isOpen={Boolean(dogQuery.data)}
+          onOpenChange={(isOpen) => {
+            if (!isOpen && !create.isPending) {
+              void navigate({ to: "/dogs/$dogId/goals", params: { dogId } })
+            }
+          }}
+          title="Nový cíl"
+          description={dogQuery.data?.name ?? ""}
+        >
           <GoalForm
-            disciplines={dog.disciplines}
-            isPending={createGoal.isPending}
-            onSubmit={(values) => saveGoal(values, false)}
-            onSubmitAndSchedule={(values) => saveGoal(values, true)}
+            disciplines={dogQuery.data?.disciplines ?? []}
+            isPending={create.isPending}
+            submitLabel="Vytvořit cíl"
+            onSubmit={(values) =>
+              create.mutate(values, {
+                onSuccess: (goal) =>
+                  void navigate({
+                    to: "/dogs/$dogId/goals/$goalId",
+                    params: { dogId, goalId: goal.id },
+                    replace: true,
+                  }),
+              })
+            }
           />
-          <p className="text-sm text-muted-foreground">
-            Cviky k cíli přidáte hned po jeho uložení.
-          </p>
-        </div>
-      )}
-    </GoalPageShell>
+        </EditorSheet>
+      </QueryState>
+    </GoalShell>
   )
-}
-
-type EditGoalPageProps = {
-  dogId: string
-  goalId: string
-  isScheduleRequested?: boolean
-  onScheduleRequestHandled?: () => void
 }
 
 export function EditGoalPage({
   dogId,
   goalId,
+  selectedSessionId,
+  onSessionChange,
   isScheduleRequested,
   onScheduleRequestHandled,
-}: EditGoalPageProps) {
-  const [isEditing, setIsEditing] = useState(false)
+}: {
+  dogId: string
+  goalId: string
+  selectedSessionId?: string
+  onSessionChange?: (id: string | undefined) => void
+  isScheduleRequested?: boolean
+  onScheduleRequestHandled?: () => void
+}) {
   const dogQuery = useQuery(dogDetailQueryOptions(dogId))
   const goalQuery = useQuery(goalQueryOptions(goalId))
+  const planQuery = useQuery(dogPlanQueryOptions(dogId))
+  const client = useQueryClient()
+  const navigate = useNavigate()
+  const [isEditing, setEditing] = useState(false)
+  const [isNewTrainingOpen, setNewTraining] = useState(false)
+  const [title, setTitle] = useState("")
+  const [titleError, setTitleError] = useState("")
+  const [localSessionId, setLocalSessionId] = useState<string | null>(null)
+  const sessionId = selectedSessionId ?? localSessionId
+  const setSessionId = (id: string | null) =>
+    onSessionChange ? onSessionChange(id ?? undefined) : setLocalSessionId(id)
   const updateGoal = useUpdateGoal(dogId, goalId)
-
-  const dog = dogQuery.data
-  // A goal opened under a different dog's URL is treated as not found.
   const goal = goalQuery.data?.dogId === dogId ? goalQuery.data : undefined
-
-  const handleSubmit = async (values: GoalFormValues) => {
+  const membership = planQuery.data?.find((d) => d.goals.some((g) => g.id === goalId))
+  const sessions = membership?.goals.find((g) => g.id === goalId)?.sessions ?? []
+  const selected = sessions.find((s) => s.id === sessionId)
+  const isReadOnly =
+    goal?.status === "ARCHIVED" || goal?.status === "COMPLETED" || membership?.isArchived === true
+  const refresh = () => client.invalidateQueries({ queryKey: dogKeys.all })
+  const create = useMutation({
+    mutationFn: () => createSession(goalId, title.trim()),
+    onSuccess: async (session) => {
+      await refresh()
+      setNewTraining(false)
+      setTitle("")
+      setSessionId(session.id)
+    },
+    onError: () => toast.error("Trénink se nepodařilo vytvořit. Zkus to znovu."),
+  })
+  const reorder = useMutation({
+    mutationFn: (ids: string[]) => api.put(`goals/${goalId}/sessions/order`, { json: { ids } }),
+    onSuccess: refresh,
+    onError: () => toast.error("Pořadí se nepodařilo uložit."),
+  })
+  const status = useMutation({
+    mutationFn: (value: string) => api.patch(`goals/${goalId}`, { json: { status: value } }),
+    onSuccess: refresh,
+    onError: () => toast.error("Stav cíle se nepodařilo změnit."),
+  })
+  const schedulableSession = sessions.find((session) => !session.isArchived)
+  const save = async (values: GoalFormValues, shouldSchedule = false) => {
     try {
       await updateGoal.mutateAsync(values)
-      setIsEditing(false)
+      await refresh()
+      setEditing(false)
+      if (shouldSchedule && schedulableSession) {
+        await navigate({
+          to: "/dogs/$dogId/goals/$goalId",
+          params: { dogId, goalId },
+          search: { session: schedulableSession.id, naplanovat: true },
+        })
+      }
     } catch {
-      // useUpdateGoal already told the user; keep the form as it is.
+      /* Hook reports failure; keep values. */
     }
   }
-
-  const isLoading = dogQuery.isLoading || goalQuery.isLoading
-
+  const failure =
+    dogQuery.error ??
+    goalQuery.error ??
+    planQuery.error ??
+    (selectedSessionId && planQuery.isSuccess && !selected
+      ? new Error("Tento trénink neexistuje nebo nepatří k tomuto cíli.")
+      : !goalQuery.isLoading && !goal
+        ? new Error("Tento cíl neexistuje nebo k němu nemáš přístup.")
+        : null)
+  if (selected && goal && dogQuery.data) {
+    return (
+      <SessionEditor
+        key={selected.id}
+        session={selected}
+        sessions={sessions}
+        dog={dogQuery.data}
+        goal={goal}
+        isReadOnly={
+          isReadOnly ||
+          selected.isArchived ||
+          Boolean(selected.scheduledTrainings?.some((t) => t.status === "COMPLETED"))
+        }
+        canSchedule={!isReadOnly && !selected.isArchived}
+        onBack={() => setSessionId(null)}
+        isScheduleRequested={isScheduleRequested}
+        onScheduleRequestHandled={onScheduleRequestHandled}
+      />
+    )
+  }
   return (
-    <GoalPageShell
+    <GoalShell
       dogId={dogId}
-      dogName={dog?.name}
       title={goal?.title ?? "Cíl"}
-      subtitle={dog && goal ? `Pro psa ${dog.name} · Autor: ${goal.createdBy.name}` : undefined}
+      subtitle={goal ? `${dogQuery.data?.name ?? ""} · ${goal.discipline ?? "Obecné"}` : undefined}
     >
-      {isLoading ? (
-        <GoalPageLoading />
-      ) : !dog || !goal ? (
-        <GoalPageError
-          message={loadFailureMessage(
-            [dogQuery.error, goalQuery.error],
-            "Tento cíl neexistuje nebo k němu nemáte přístup.",
-          )}
-          onRetry={() => {
-            void dogQuery.refetch()
-            void goalQuery.refetch()
-          }}
-        />
-      ) : (
-        <div className="flex flex-col gap-12">
-          <section
-            className="space-y-4"
-            aria-labelledby="goal-principle-heading"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <h2
-                id="goal-principle-heading"
-                className="text-xl font-semibold tracking-tight text-foreground"
-              >
-                Cíl a princip
-              </h2>
-              <Button
-                variant="ghost"
-                className="min-h-11 shrink-0"
-                onClick={() => setIsEditing(!isEditing)}
-                disabled={updateGoal.isPending}
-              >
-                <Pencil
-                  className="size-4"
-                  aria-hidden="true"
-                />
-                {isEditing ? "Zrušit úpravy" : "Upravit cíl"}
-              </Button>
+      <QueryState
+        isLoading={dogQuery.isLoading || goalQuery.isLoading || planQuery.isLoading}
+        error={failure}
+        onRetry={() => {
+          void dogQuery.refetch()
+          void goalQuery.refetch()
+          void planQuery.refetch()
+        }}
+        empty={null}
+      >
+        {goal && (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <StatusChip tone={isReadOnly ? "muted" : "accent"}>
+                {goal.status === "COMPLETED"
+                  ? "Splněný cíl"
+                  : goal.status === "ARCHIVED"
+                    ? "Archiv"
+                    : "Aktivní cíl"}
+              </StatusChip>
+              {!isReadOnly && (
+                <Button
+                  variant="outline"
+                  onClick={() => setEditing(true)}
+                >
+                  <EditorIcon name="Edit" />
+                  Upravit cíl
+                </Button>
+              )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              Společný základ pro všechny tréninky tohoto cíle.
-            </p>
-            {isEditing ? (
+            <section className="space-y-3 rounded-card bg-accent p-4">
+              <h2 className="text-label font-bold text-muted-foreground">Princip tréninku</h2>
+              <p className="leading-relaxed whitespace-pre-wrap">
+                {goal.principle?.trim() ? goal.principle : "Princip zatím není doplněný."}
+              </p>
+            </section>
+            {goal.criterion && (
+              <div className="flex gap-2 rounded-field bg-secondary p-4">
+                <EditorIcon name="Target" />
+                <p className="text-sm whitespace-pre-wrap">Hotovo, když: {goal.criterion}</p>
+              </div>
+            )}
+            {goal.deadline && (
+              <p className="text-sm text-muted-foreground">
+                Termín: {new Date(`${goal.deadline}T12:00:00`).toLocaleDateString("cs-CZ")}
+              </p>
+            )}
+            <section className="space-y-3">
+              <h2 className="text-section font-extrabold">Tréninky · {sessions.length}</h2>
+              {!sessions.length ? (
+                <EmptyState
+                  icon={Target}
+                  title="Přidej první trénink"
+                  description="Každý trénink má vlastní kroky a dá se naplánovat na konkrétní dny."
+                />
+              ) : (
+                <ol className="space-y-3">
+                  {sessions.map((s, index) => (
+                    <li
+                      key={s.id}
+                      className="rounded-card border border-border bg-card p-3"
+                    >
+                      <button
+                        type="button"
+                        className="flex min-h-touch w-full items-center gap-3 text-left"
+                        onClick={() => setSessionId(s.id)}
+                      >
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary font-extrabold">
+                          {index + 1}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-bold break-words">{s.title}</span>
+                          <span className="text-label text-muted-foreground">
+                            {s.steps.length} kroků ·{" "}
+                            {s.steps.reduce((n, step) => n + (step.durationMinutes ?? 0), 0)} min
+                            {s.isArchived ? " · Archiv" : ""}
+                          </span>
+                        </span>
+                        <ChevronRight className="size-5 shrink-0" />
+                      </button>
+                      {!isReadOnly && sessions.length > 1 && (
+                        <div className="flex justify-end gap-1">
+                          {([-1, 1] as const).map((direction) => (
+                            <Button
+                              key={direction}
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Posunout trénink ${s.title} ${direction === -1 ? "nahoru" : "dolů"}`}
+                              disabled={
+                                reorder.isPending ||
+                                index + direction < 0 ||
+                                index + direction >= sessions.length
+                              }
+                              onClick={() => {
+                                const ids = sessions.map((t) => t.id)
+                                const target = ids[index + direction]
+                                const source = ids[index]
+                                if (!target || !source) return
+                                ids[index] = target
+                                ids[index + direction] = source
+                                reorder.mutate(ids)
+                              }}
+                            >
+                              {direction === -1 ? <ChevronUp /> : <ChevronDown />}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+              {!isReadOnly && (
+                <Button
+                  size="lg"
+                  className="w-full"
+                  onClick={() => setNewTraining(true)}
+                >
+                  <EditorIcon name="Plus" />
+                  Přidat trénink
+                </Button>
+              )}
+            </section>
+            {!isReadOnly && (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  disabled={status.isPending}
+                  onClick={() => status.mutate("COMPLETED")}
+                >
+                  Označit cíl jako splněný
+                </Button>
+                <Button
+                  variant="ghost"
+                  disabled={status.isPending}
+                  onClick={() => status.mutate("ARCHIVED")}
+                >
+                  Archivovat cíl
+                </Button>
+              </div>
+            )}
+            {isReadOnly && (
+              <p className="text-sm text-muted-foreground">
+                Tento cíl je uzavřený. Tréninky a záznamy zůstávají dostupné ke čtení.
+              </p>
+            )}
+            <EditorSheet
+              isOpen={isEditing}
+              onOpenChange={(isOpen) => {
+                if (!updateGoal.isPending) setEditing(isOpen)
+              }}
+              title="Upravit cíl"
+              description={`${dogQuery.data?.name} · ${goal.discipline ?? "Obecné"}`}
+            >
               <GoalForm
-                key={goal.id}
-                disciplines={dog.disciplines}
+                key={goal.updatedAt.toISOString()}
+                disciplines={dogQuery.data?.disciplines ?? []}
                 defaultValues={{
                   title: goal.title,
                   discipline: goal.discipline ?? "",
                   principle: goal.principle ?? "",
+                  criterion: goal.criterion ?? "",
+                  deadline: goal.deadline ?? "",
                 }}
                 isPending={updateGoal.isPending}
-                onSubmit={handleSubmit}
+                onSubmit={(values) => save(values)}
+                onSubmitAndSchedule={
+                  schedulableSession ? (values) => save(values, true) : undefined
+                }
+                submitLabel="Uložit změny"
               />
-            ) : (
-              <div className="space-y-3">
-                {goal.discipline && (
-                  <p className="text-sm text-muted-foreground">{goal.discipline}</p>
+            </EditorSheet>
+            <EditorSheet
+              isOpen={isNewTrainingOpen}
+              onOpenChange={(isOpen) => {
+                if (!create.isPending) setNewTraining(isOpen)
+              }}
+              title="Nový trénink"
+              description={goal.title}
+            >
+              <form
+                className="space-y-4"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  if (!title.trim() || title.trim().length > 100) {
+                    setTitleError("Zadej název o 1 až 100 znacích.")
+                    return
+                  }
+                  setTitleError("")
+                  create.mutate()
+                }}
+              >
+                <Label htmlFor="session-title">Název tréninku</Label>
+                <Input
+                  id="session-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="min-h-field rounded-field"
+                  aria-describedby={titleError ? "session-title-error" : undefined}
+                />
+                {titleError && (
+                  <p
+                    id="session-title-error"
+                    role="alert"
+                    className="text-sm text-destructive"
+                  >
+                    {titleError}
+                  </p>
                 )}
-                <p className="text-base leading-relaxed break-words whitespace-pre-wrap text-foreground">
-                  {goal.principle?.trim()
-                    ? goal.principle
-                    : "Doplňte princip: čeho chcete dosáhnout a na co si při cvičení dát pozor."}
-                </p>
-              </div>
-            )}
-          </section>
-          <PlanBlocksSection goalId={goal.id} />
-          <TrainingScheduleSection
-            goalId={goal.id}
-            dogName={dog.name}
-            isScheduleRequested={isScheduleRequested}
-            onScheduleRequestHandled={onScheduleRequestHandled}
-          />
-        </div>
-      )}
-    </GoalPageShell>
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full"
+                  disabled={create.isPending}
+                >
+                  {create.isPending ? "Vytvářím…" : "Vytvořit trénink"}
+                </Button>
+              </form>
+            </EditorSheet>
+          </>
+        )}
+      </QueryState>
+    </GoalShell>
   )
 }

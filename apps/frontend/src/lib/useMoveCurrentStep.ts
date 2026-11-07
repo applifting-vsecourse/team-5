@@ -18,7 +18,7 @@ export function useMoveCurrentStep(goalId: string, dogId: string, trainingId?: s
       void queryClient.invalidateQueries({ queryKey: dogKeys.goal(goalId) })
       void queryClient.invalidateQueries({ queryKey: dogKeys.goalBlocks(goalId) })
       if (dogId) {
-        void queryClient.invalidateQueries({ queryKey: dogKeys.goals(dogId) })
+        void queryClient.invalidateQueries({ queryKey: dogKeys.detail(dogId) })
       }
       void queryClient.invalidateQueries({ queryKey: weekKeys.all })
       if (trainingId) {

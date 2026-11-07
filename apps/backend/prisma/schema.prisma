@@ -166,6 +166,7 @@ model TrainingGoal {
   discipline       String?             @db.VarChar(60)
   disciplineId     String              @default(dbgenerated())
   disciplineEntity DogDiscipline       @relation(fields: [dogId, disciplineId], references: [dogId, disciplineId], onDelete: NoAction, onUpdate: NoAction)
+  deadline         String?             @db.VarChar(10)
   criterion        String?             @db.Text
   sessions         GoalTraining[]
   principle        String?             @db.Text
@@ -187,19 +188,20 @@ model TrainingGoal {
 // One step of a goal's plan, shown top to bottom by position (#63).
 // Sequences (#64) and sub-steps (#67) will build on this model.
 model PlanBlock {
-  id          String         @id @default(cuid())
-  goalId      String
-  goal        TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  trainingId  String         @default(dbgenerated())
-  training    GoalTraining   @relation(fields: [trainingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  position    Int
-  title       String         @db.VarChar(100)
-  instruction String?        @db.Text
-  criterion   String?        @db.Text
-  outcome     StepOutcome?
-  currentOf   TrainingGoal[] @relation("GoalCurrentStep")
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @default(now()) @updatedAt
+  id              String         @id @default(cuid())
+  goalId          String
+  goal            TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  trainingId      String         @default(dbgenerated())
+  training        GoalTraining   @relation(fields: [trainingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  position        Int
+  title           String         @db.VarChar(100)
+  durationMinutes Int            @default(0)
+  instruction     String?        @db.Text
+  criterion       String?        @db.Text
+  outcome         StepOutcome?
+  currentOf       TrainingGoal[] @relation("GoalCurrentStep")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @default(now()) @updatedAt
 
   @@index([goalId, position])
   @@index([trainingId, position])
