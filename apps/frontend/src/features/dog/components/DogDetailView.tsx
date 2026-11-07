@@ -1,15 +1,21 @@
 import { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { ChevronLeft, Pencil } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
+import { HeroCard } from "@/components/HeroCard"
+import { Metric } from "@/components/Metric"
+import { StatusChip } from "@/components/StatusChip"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 
 import type { Dog } from "@/features/dog/api/dogSchemas"
+import { dogMetricsQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 
 import { DogActivitiesSection } from "./DogActivitiesSection"
 import { DogGoalsSection } from "./DogGoalsSection"
+import { DogNotesSection } from "./DogNotesSection"
 import { EditDogDialog } from "./EditDogDialog"
 import { DOG_COLOR_CLASSES, PesAvatar } from "./PesAvatar"
 import { PlannedTrainingsList } from "./PlannedTrainingsList"
@@ -21,6 +27,7 @@ type DogDetailViewProps = {
 
 export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const metricsQuery = useQuery(dogMetricsQueryOptions(dog.id))
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
@@ -60,7 +67,7 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h1 className="truncate text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="truncate text-page font-extrabold tracking-tight text-foreground">
               {dog.name}
             </h1>
             <span
@@ -87,17 +94,67 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
           {dog.disciplines && dog.disciplines.length > 0 && (
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {dog.disciplines.map((discipline) => (
-                <Badge
+                <StatusChip
                   key={discipline}
-                  variant="secondary"
+                  tone="muted"
                 >
                   {discipline}
-                </Badge>
+                </StatusChip>
               ))}
             </div>
           )}
         </div>
       </header>
+
+      {metricsQuery.isLoading ? (
+        <Skeleton
+          className="mb-8 h-28 w-full rounded-hero"
+          aria-label="Načítání metrik"
+        />
+      ) : metricsQuery.isError ? (
+        <div className="mb-8 space-y-2">
+          <p className="text-sm text-muted-foreground">Týdenní metriky se nepodařilo načíst.</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-11"
+            onClick={() => void metricsQuery.refetch()}
+          >
+            Zkusit znovu
+          </Button>
+        </div>
+      ) : metricsQuery.isSuccess ? (
+        <HeroCard
+          className="mb-8"
+          eyebrow="Tento týden"
+        >
+          <div
+            className={cn(
+              "grid gap-3",
+              metricsQuery.data.successRate !== null ? "grid-cols-3" : "grid-cols-2",
+            )}
+          >
+            <Metric
+              isOnHero
+              value={`${metricsQuery.data.weeklyTrainedDays}/${metricsQuery.data.weeklyTarget}`}
+              label="dní tento týden"
+            />
+            <Metric
+              isOnHero
+              value={metricsQuery.data.streak}
+              label="série"
+            />
+            {metricsQuery.data.successRate !== null ? (
+              <Metric
+                isOnHero
+                value={`${metricsQuery.data.successRate} %`}
+                label="% úspěšnost"
+              />
+            ) : null}
+          </div>
+        </HeroCard>
+      ) : null}
 
       {isOwner && (
         <EditDogDialog
@@ -107,8 +164,7 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
         />
       )}
 
-      {/* Sections: Aktivní cíle + Naplánováno + Aktivity (latest, the rest
-          on the history page) */}
+      {/* Sections: cíle, naplánováno, aktivity; notes only for the owner (#70) */}
       <div className="space-y-8">
         <DogGoalsSection
           dogId={dog.id}
@@ -123,6 +179,12 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
           dogName={dog.name}
           isCompact
         />
+        {isOwner ? (
+          <DogNotesSection
+            dogId={dog.id}
+            dogName={dog.name}
+          />
+        ) : null}
       </div>
     </div>
   )

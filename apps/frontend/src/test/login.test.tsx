@@ -101,7 +101,7 @@ function acceptLogin(role = "user") {
 }
 
 describe("login and logout", () => {
-  it.each(["Uživatelské menu", "Účet a odhlášení"])(
+  it.each(["Uživatelské menu", "Účet"])(
     "logs out directly from %s without opening account settings",
     async (menuName) => {
       auth.getSession.mockResolvedValue({ data: { user }, error: null })
@@ -219,7 +219,7 @@ describe("login and logout", () => {
     acceptLogin()
     await fillForm(interaction)
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-    await screen.findByRole("heading", { name: "Týden" })
+    await screen.findByRole("heading", { name: /Ahoj Jana|Dnes/ })
     await act(async () => {
       finish({ data: { user: otherUser }, error: null })
       await pending
@@ -295,8 +295,8 @@ describe("login and logout", () => {
   )
 
   it.each([
-    ["user", "Týden", "/week"],
-    ["trainer", "Vaši klienti", "/clients"],
+    ["user", /Ahoj Jana|Dnes/, "/dashboard"],
+    ["trainer", /Klienti|Přehled/, "/clients"],
   ])(
     "logs in a %s with a persistent session and the correct destination",
     async (role, heading, path) => {
@@ -345,7 +345,7 @@ describe("login and logout", () => {
     auth.getSession.mockResolvedValue({ data: null, error: null })
     await interaction.click(
       within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("button", {
-        name: "Účet a odhlášení",
+        name: "Účet",
       }),
     )
     await interaction.click(screen.getByRole("menuitem", { name: "Účet" }))
@@ -357,7 +357,7 @@ describe("login and logout", () => {
   it("redirects an already signed-in trainer from login to Clients", async () => {
     auth.getSession.mockResolvedValue({ data: { user: { ...user, role: "trainer" } }, error: null })
     const { router } = await openPage()
-    expect(await screen.findByRole("heading", { name: "Vaši klienti" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Klienti" })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/clients")
   })
 
@@ -369,8 +369,8 @@ describe("login and logout", () => {
     await screen.findByRole("dialog")
     await fillForm(interaction)
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-    expect(await screen.findByRole("heading", { name: "Týden" })).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe("/week")
+    expect(await screen.findByRole("heading", { name: /Ahoj Jana|Dnes/ })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe("/dashboard")
   })
 
   it("keeps the form usable after a network failure", async () => {
@@ -386,7 +386,7 @@ describe("login and logout", () => {
     expect(screen.getByRole("button", { name: "Přihlásit se" })).toBeEnabled()
     acceptLogin()
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-    expect(await screen.findByRole("heading", { name: "Týden" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: /Ahoj Jana|Dnes/ })).toBeInTheDocument()
   })
 
   it("prevents duplicate submissions and closing while login is pending", async () => {
@@ -417,7 +417,7 @@ describe("login and logout", () => {
     await screen.findByRole("heading", { name: "Psi" })
     await interaction.click(
       within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("button", {
-        name: "Účet a odhlášení",
+        name: "Účet",
       }),
     )
     await interaction.click(screen.getByRole("menuitem", { name: "Účet" }))

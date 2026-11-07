@@ -1,12 +1,14 @@
 import { keepPreviousData, queryOptions } from "@tanstack/react-query"
 
 import { api } from "@/lib/api-client"
+import { dogMetricsQueryOptions as sharedDogMetricsQueryOptions } from "@/lib/dogMetrics"
 
 import { dogKeys } from "./dogKeys"
 import {
   dogActivityPageSchema,
   dogGoalSchema,
   dogGoalsSchema,
+  dogNotesSchema,
   dogSchema,
   dogsSchema,
   planBlocksSchema,
@@ -91,6 +93,18 @@ export function dogPlannedTrainingsQueryOptions(dogId: string) {
   })
 }
 
+// Owner-only diary notes for a dog (#70), newest lesson day first.
+export function dogNotesQueryOptions(dogId: string) {
+  return queryOptions({
+    queryKey: dogKeys.notes(dogId),
+    queryFn: async () => {
+      const json = await api.get(`dogs/${dogId}/notes`).json()
+      return dogNotesSchema.parse(json)
+    },
+    enabled: Boolean(dogId),
+  })
+}
+
 // One page of the dog's records, newest first (#79). The key sits under
 // dogKeys.activities(dogId), so invalidating that refreshes every page.
 export function dogActivitiesQueryOptions(dogId: string, page = 1, pageSize = 3) {
@@ -106,4 +120,8 @@ export function dogActivitiesQueryOptions(dogId: string, page = 1, pageSize = 3)
     // Keep the current page on screen while the next one loads.
     placeholderData: keepPreviousData,
   })
+}
+
+export function dogMetricsQueryOptions(dogId: string) {
+  return sharedDogMetricsQueryOptions(dogId)
 }

@@ -190,7 +190,7 @@ function InvitePage() {
           footer={null}
         >
           <div className="space-y-4 py-4 text-center">
-            <CheckCircle2 className="mx-auto size-12 text-green-600" />
+            <CheckCircle2 className="mx-auto size-12 text-success-foreground" />
             <p className="text-sm text-muted-foreground">Přesměrovávám do aplikace…</p>
           </div>
         </AuthLayout>

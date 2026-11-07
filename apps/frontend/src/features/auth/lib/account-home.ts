@@ -7,5 +7,5 @@ export function accountHome(user: Pick<SessionUser, "role">) {
 }
 
 export function loginHome(user: Pick<SessionUser, "role">) {
-  return user.role === "trainer" ? ROUTES.clients : ROUTES.week
+  return user.role === "trainer" ? ROUTES.clients : ROUTES.dashboard
 }

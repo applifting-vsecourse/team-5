@@ -92,7 +92,12 @@ for (const deletedRole of ['owner', 'trainer']) {
         },
       });
       const note = await prisma.dogNote.create({
-        data: { dogId: dog.id, text: 'Private diary note' },
+        data: {
+          dogId: dog.id,
+          date: new Date('2026-10-18'),
+          title: 'Lesson note',
+          text: 'Private diary note',
+        },
       });
       const trainerMessage = await prisma.trainingMessage.create({
         data: {

@@ -309,7 +309,7 @@ describe("trainer registration", () => {
       return Promise.resolve({ data: { user: trainer }, error: null })
     })
     await interaction.click(screen.getByRole("button", { name: "Zaregistrovat se" }))
-    expect(await screen.findByRole("heading", { name: "Vaši klienti" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Klienti" })).toBeInTheDocument()
     expect(screen.getByText("Pozvěte prvního klienta")).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/clients")
     expect(queryClient.getQueryData(authKeys.session())).toMatchObject({ user: trainer })
@@ -324,7 +324,8 @@ describe("trainer registration", () => {
       "aria-current",
       "page",
     )
-    await interaction.click(within(nav).getByRole("link", { name: "Psi" }))
+    // Trainer tab bar uses Cíle (still routes to /dogs until #164).
+    await interaction.click(within(nav).getByRole("link", { name: "Cíle" }))
     await screen.findByRole("heading", { name: "Psi" })
     await interaction.click(within(nav).getByRole("link", { name: "Klienti" }))
     expect(await screen.findByText("Pozvěte prvního klienta")).toBeInTheDocument()

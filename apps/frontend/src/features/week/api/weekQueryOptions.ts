@@ -32,3 +32,19 @@ export function weekTrainingsQueryOptions(weekStart: CalendarDate) {
     },
   })
 }
+
+/** Up to 42 days of trainings for Dnes “next” beyond the current week. */
+export function upcomingTrainingsQueryOptions(from: CalendarDate) {
+  const to = addCalendarDays(from, 41)
+  return queryOptions({
+    queryKey: weekKeys.range(from, to),
+    queryFn: async () => {
+      const json = await api
+        .get("trainings", {
+          searchParams: { from, to },
+        })
+        .json()
+      return z.array(weekTrainingSchema).parse(json)
+    },
+  })
+}

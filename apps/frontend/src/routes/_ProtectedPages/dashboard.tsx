@@ -2,16 +2,31 @@ import { createFileRoute } from "@tanstack/react-router"
 
 import { Seo } from "@/components/Seo"
 
+import { useSession } from "@/features/auth/hooks/useSession"
+import { TrainerOverview } from "@/features/client/components/TrainerOverview"
+import { TodayView } from "@/features/week/components/TodayView"
+
 export const Route = createFileRoute("/_ProtectedPages/dashboard")({
   component: DashboardPage,
 })
 
-function DashboardPage() {
+export function DashboardPage() {
+  const { user } = useSession()
+  const isTrainer = user?.role === "trainer" || user?.role === "admin"
+
+  if (isTrainer) {
+    return (
+      <>
+        <Seo title="Přehled" />
+        <TrainerOverview />
+      </>
+    )
+  }
+
   return (
-    <div className="container mx-auto px-4 py-8 text-center">
-      <Seo title="Dashboard" />
-      <h1 className="text-2xl font-bold tracking-tight">TrainLoop</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Vítejte v aplikaci TrainLoop.</p>
-    </div>
+    <>
+      <Seo title="Dnes" />
+      <TodayView userName={user?.name} />
+    </>
   )
 }

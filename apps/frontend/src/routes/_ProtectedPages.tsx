@@ -57,7 +57,7 @@ function Layout() {
         nav={<HeaderNav isTrainer={isTrainer} />}
         userMenu={<HeaderMenu />}
       />
-      <main className="flex-1 pb-20 md:pb-8">
+      <main className="flex-1 pb-[calc(var(--spacing-tab-bar)+var(--spacing-safe-bottom)+1rem)] md:pb-8">
         <Outlet />
       </main>
       <BottomNav

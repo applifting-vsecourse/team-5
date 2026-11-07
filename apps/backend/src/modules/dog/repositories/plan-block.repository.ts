@@ -1,7 +1,12 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
 import { Prisma } from '@/generated/prisma/client';
 import { PlanBlock } from '@/modules/dog/domain/plan-block';
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
+import { resolveTraining } from './hierarchy.repository';
 
 const inPlanOrder = [
   { position: 'asc' },
@@ -27,9 +32,18 @@ export class PlanBlockRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async getBlocksByGoalId(goalId: string): Promise<PlanBlock[]> {
-    return this.prisma.planBlock.findMany({
-      where: { goalId },
-      orderBy: inPlanOrder,
+    return this.prisma.$transaction(async (tx) => {
+      // Serialize against structural writes without applying edit restrictions:
+      // archived plans remain readable, and GET never creates a training.
+      await tx.$queryRaw`SELECT "id" FROM "training_goal" WHERE "id" = ${goalId} FOR UPDATE`;
+      const trainings = await tx.goalTraining.findMany({ where: { goalId } });
+      if (trainings.length > 1)
+        throw new ConflictException('Select a concrete training');
+      if (!trainings[0]) return [];
+      return tx.planBlock.findMany({
+        where: { trainingId: trainings[0].id },
+        orderBy: inPlanOrder,
+      });
     });
   }
 
@@ -47,8 +61,9 @@ export class PlanBlockRepository {
     insertAt?: number;
   }): Promise<PlanBlock> {
     return this.prisma.$transaction(async (tx) => {
+      const training = await resolveTraining(tx, data.goalId);
       const existing = await tx.planBlock.findMany({
-        where: { goalId: data.goalId },
+        where: { trainingId: training.id },
         orderBy: inPlanOrder,
         select: { id: true },
       });
@@ -57,6 +72,7 @@ export class PlanBlockRepository {
       const created = await tx.planBlock.create({
         data: {
           goal: { connect: { id: data.goalId } },
+          training: { connect: { id: training.id } },
           position: index,
           title: data.title,
           instruction: data.instruction,
@@ -80,23 +96,29 @@ export class PlanBlockRepository {
       criterion?: string | null;
     },
   ): Promise<PlanBlock> {
-    return this.prisma.planBlock.update({
-      where: { id },
-      data: {
-        ...(data.title !== undefined && { title: data.title }),
-        ...(data.instruction !== undefined && {
-          instruction: data.instruction,
-        }),
-        ...(data.criterion !== undefined && { criterion: data.criterion }),
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const block = await tx.planBlock.findUniqueOrThrow({ where: { id } });
+      await resolveTraining(tx, block.goalId, block.trainingId);
+      return tx.planBlock.update({
+        where: { id },
+        data: {
+          ...(data.title !== undefined && { title: data.title }),
+          ...(data.instruction !== undefined && {
+            instruction: data.instruction,
+          }),
+          ...(data.criterion !== undefined && { criterion: data.criterion }),
+        },
+      });
     });
   }
 
   async deleteBlock(id: string, goalId: string): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
+      const block = await tx.planBlock.findUniqueOrThrow({ where: { id } });
+      await resolveTraining(tx, goalId, block.trainingId);
       await tx.planBlock.delete({ where: { id } });
       const remaining = await tx.planBlock.findMany({
-        where: { goalId },
+        where: { trainingId: block.trainingId },
         orderBy: inPlanOrder,
         select: { id: true },
       });
@@ -112,9 +134,24 @@ export class PlanBlockRepository {
     blockIds: string[],
   ): Promise<PlanBlock[]> {
     return this.prisma.$transaction(async (tx) => {
+      const training = await resolveTraining(tx, goalId);
+      const current = await tx.planBlock.findMany({
+        where: { trainingId: training.id },
+        select: { id: true },
+      });
+      const allowed = new Set(current.map((block) => block.id));
+      if (
+        blockIds.length !== allowed.size ||
+        new Set(blockIds).size !== blockIds.length ||
+        blockIds.some((id) => !allowed.has(id))
+      ) {
+        throw new BadRequestException(
+          'List every step of this training exactly once',
+        );
+      }
       await writePositions(tx, blockIds);
       return tx.planBlock.findMany({
-        where: { goalId },
+        where: { trainingId: training.id },
         orderBy: inPlanOrder,
       });
     });

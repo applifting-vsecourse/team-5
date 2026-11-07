@@ -188,6 +188,6 @@ describe("forgot password and reset password flows", () => {
     expect(toastMock.success).toHaveBeenCalledWith(
       "Heslo bylo úspěšně změněno. Byli jste přihlášeni.",
     )
-    await waitFor(() => expect(router.state.location.pathname).toBe("/week"))
+    await waitFor(() => expect(router.state.location.pathname).toBe("/dashboard"))
   })
 })

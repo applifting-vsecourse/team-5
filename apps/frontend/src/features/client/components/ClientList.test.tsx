@@ -139,7 +139,7 @@ describe("ClientList", () => {
     render(<ClientList />, { wrapper: createWrapper() })
 
     // Header
-    expect(screen.getByRole("heading", { level: 1, name: "Vaši klienti" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 1, name: "Klienti" })).toBeInTheDocument()
 
     // Clients
     await waitFor(() => {

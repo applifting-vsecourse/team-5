@@ -121,7 +121,7 @@ export class TrainingsService {
     }
     if (moved === 'day-taken') {
       throw new ConflictException(
-        'This goal already has a planned training on this day',
+        'This training is already planned on this day',
       );
     }
     return moved;
@@ -173,7 +173,7 @@ export class TrainingsService {
       );
     if (result === 'day-taken') {
       throw new ConflictException(
-        'This goal already has a planned training on this day',
+        'This training is already planned on this day',
       );
     }
     if (result === 'not-skipped') {
@@ -251,6 +251,7 @@ export class TrainingsService {
     goalId: string,
     date: string,
     now: Date = new Date(),
+    trainingId?: string,
   ): Promise<ScheduledTraining> {
     const goal = await this.goalsService.getGoal(user, goalId);
 
@@ -261,6 +262,7 @@ export class TrainingsService {
 
     const training =
       await this.scheduledTrainingRepository.createPlannedTraining({
+        trainingId,
         goalId,
         dogId: goal.dogId,
         createdById: user.id,
@@ -268,7 +270,7 @@ export class TrainingsService {
       });
     if (!training) {
       throw new ConflictException(
-        'This goal already has a planned training on this day',
+        'This training is already planned on this day',
       );
     }
     return training;

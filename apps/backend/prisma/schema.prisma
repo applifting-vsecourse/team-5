@@ -101,22 +101,24 @@ model User {
 }
 
 model Dog {
-  id          String              @id @default(cuid())
-  name        String              @db.VarChar(40)
-  breed       String?             @db.VarChar(100)
-  color       Int
-  photoUrl    String?             @db.VarChar(500)
-  ownerId     String
-  owner       User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  isArchived  Boolean             @default(false)
-  disciplines String[]            @default([])
-  goals       TrainingGoal[]
-  workoutLogs WorkoutLog[]
-  shares      DogShare[]
-  notes       DogNote[]
-  trainings   ScheduledTraining[]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @default(now()) @updatedAt
+  id                 String              @id @default(cuid())
+  name               String              @db.VarChar(40)
+  breed              String?             @db.VarChar(100)
+  color              Int
+  photoUrl           String?             @db.VarChar(500)
+  ownerId            String
+  owner              User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  isArchived         Boolean             @default(false)
+  disciplines        String[]            @default([])
+  disciplineEntities DogDiscipline[]
+  weeklyTarget       Int                 @default(3)
+  goals              TrainingGoal[]
+  workoutLogs        WorkoutLog[]
+  shares             DogShare[]
+  notes              DogNote[]
+  trainings          ScheduledTraining[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @default(now()) @updatedAt
 
   @@index([ownerId])
   @@map("dog")
@@ -155,21 +157,27 @@ enum MistakeLevel {
 }
 
 model TrainingGoal {
-  id          String              @id @default(cuid())
-  dogId       String
-  dog         Dog                 @relation(fields: [dogId], references: [id], onDelete: Cascade)
-  createdById String?
-  createdBy   User?               @relation("GoalCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  title       String              @db.VarChar(100)
-  discipline  String?             @db.VarChar(60)
-  principle   String?             @db.Text
-  status      GoalStatus          @default(ACTIVE)
-  order       Int                 @default(0)
-  workoutLogs WorkoutLog[]
-  blocks      PlanBlock[]
-  trainings   ScheduledTraining[]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @default(now()) @updatedAt
+  id               String              @id @default(cuid())
+  dogId            String
+  dog              Dog                 @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  createdById      String?
+  createdBy        User?               @relation("GoalCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  title            String              @db.VarChar(100)
+  discipline       String?             @db.VarChar(60)
+  disciplineId     String              @default(dbgenerated())
+  disciplineEntity DogDiscipline       @relation(fields: [dogId, disciplineId], references: [dogId, disciplineId], onDelete: NoAction, onUpdate: NoAction)
+  criterion        String?             @db.Text
+  sessions         GoalTraining[]
+  principle        String?             @db.Text
+  status           GoalStatus          @default(ACTIVE)
+  order            Int                 @default(0)
+  workoutLogs      WorkoutLog[]
+  blocks           PlanBlock[]
+  currentStepId    String?
+  currentStep      PlanBlock?          @relation("GoalCurrentStep", fields: [currentStepId], references: [id], onDelete: SetNull)
+  trainings        ScheduledTraining[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @default(now()) @updatedAt
 
   @@index([dogId, status])
   @@index([dogId, order])
@@ -179,18 +187,31 @@ model TrainingGoal {
 // One step of a goal's plan, shown top to bottom by position (#63).
 // Sequences (#64) and sub-steps (#67) will build on this model.
 model PlanBlock {
-  id          String       @id @default(cuid())
+  id          String         @id @default(cuid())
   goalId      String
-  goal        TrainingGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  goal        TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  trainingId  String         @default(dbgenerated())
+  training    GoalTraining   @relation(fields: [trainingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   position    Int
-  title       String       @db.VarChar(100)
-  instruction String?      @db.Text
-  criterion   String?      @db.Text
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @default(now()) @updatedAt
+  title       String         @db.VarChar(100)
+  instruction String?        @db.Text
+  criterion   String?        @db.Text
+  outcome     StepOutcome?
+  currentOf   TrainingGoal[] @relation("GoalCurrentStep")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @default(now()) @updatedAt
 
   @@index([goalId, position])
+  @@index([trainingId, position])
   @@map("plan_block")
+}
+
+// How a step was left behind by the current-step pointer (#66).
+enum StepOutcome {
+  MASTERED
+  SKIPPED
+
+  @@map("step_outcome")
 }
 
 enum TrainingStatus {
@@ -209,6 +230,8 @@ model ScheduledTraining {
   id          String         @id @default(cuid())
   goalId      String
   goal        TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  trainingId  String         @default(dbgenerated())
+  training    GoalTraining   @relation(fields: [trainingId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   dogId       String
   dog         Dog            @relation(fields: [dogId], references: [id], onDelete: Cascade)
   createdById String?
@@ -221,6 +244,7 @@ model ScheduledTraining {
 
   @@index([dogId, date])
   @@index([goalId, status])
+  @@index([trainingId, date])
   @@map("scheduled_training")
 }
 
@@ -230,6 +254,8 @@ model WorkoutLog {
   dog                 Dog                @relation(fields: [dogId], references: [id], onDelete: Cascade)
   goalId              String?
   goal                TrainingGoal?      @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  trainingId          String?
+  training            GoalTraining?      @relation(fields: [trainingId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   authorId            String?
   author              User?              @relation("LogAuthor", fields: [authorId], references: [id], onDelete: SetNull)
   title               String             @db.VarChar(120)
@@ -253,6 +279,46 @@ model WorkoutLog {
 
   @@index([dogId, completedAt(sort: Desc)])
   @@map("workout_log")
+}
+
+model Discipline {
+  id   String          @id @default(cuid())
+  name String          @unique @db.VarChar(60)
+  dogs DogDiscipline[]
+
+  @@map("discipline")
+}
+
+model DogDiscipline {
+  id           String         @id @default(cuid())
+  dogId        String
+  dog          Dog            @relation(fields: [dogId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  disciplineId String
+  discipline   Discipline     @relation(fields: [disciplineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  isArchived   Boolean        @default(false)
+  goals        TrainingGoal[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @default(now()) @updatedAt
+
+  @@unique([dogId, disciplineId])
+  @@map("dog_discipline")
+}
+
+model GoalTraining {
+  id                 String              @id @default(cuid())
+  goalId             String
+  goal               TrainingGoal        @relation(fields: [goalId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  title              String              @db.VarChar(100)
+  position           Int                 @default(0)
+  isArchived         Boolean             @default(false)
+  steps              PlanBlock[]
+  scheduledTrainings ScheduledTraining[]
+  workoutLogs        WorkoutLog[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @default(now()) @updatedAt
+
+  @@index([goalId, position])
+  @@map("goal_training")
 }
 
 model ClientConnection {
@@ -298,15 +364,18 @@ model Invitation {
 }
 
 // Private diary notes belong to the dog, so deleting its owner removes them.
+// Only the owner reads and writes them (#70); trainers never see them.
 model DogNote {
   id        String   @id @default(cuid())
   dogId     String
   dog       Dog      @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  title     String   @db.VarChar(100)
   text      String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  @@index([dogId])
+  @@index([dogId, date(sort: Desc)])
   @@map("dog_note")
 }
 

@@ -21,7 +21,7 @@ function DogsPage() {
       <section className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
         <header className="mb-6 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Psi</h1>
+            <h1 className="text-page font-extrabold tracking-tight text-foreground">Psi</h1>
             <p className="text-sm text-muted-foreground">
               Správa psů a jejich tréninkových profilů
             </p>

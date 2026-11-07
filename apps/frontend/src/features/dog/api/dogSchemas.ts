@@ -57,6 +57,9 @@ export type Dog = z.infer<typeof dogSchema>
 export type CreateDogInput = z.infer<typeof createDogInputSchema>
 export type UpdateDogInput = z.infer<typeof updateDogInputSchema>
 
+export const stepOutcomeSchema = z.enum(["MASTERED", "SKIPPED"])
+export type StepOutcome = z.infer<typeof stepOutcomeSchema>
+
 export const dogGoalSchema = z.object({
   id: z.string(),
   dogId: z.string(),
@@ -66,6 +69,8 @@ export const dogGoalSchema = z.object({
   principle: z.string().nullable(),
   status: z.enum(["ACTIVE", "COMPLETED", "PAUSED", "ARCHIVED"]),
   order: z.number(),
+  // null = first step of the plan (#66)
+  currentStepId: z.string().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
@@ -93,6 +98,7 @@ export const planBlockSchema = z.object({
   title: z.string(),
   instruction: z.string().nullable(),
   criterion: z.string().nullable(),
+  outcome: stepOutcomeSchema.nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
@@ -178,3 +184,26 @@ export const dogActivityPageSchema = z.object({
 })
 
 export type DogActivity = z.infer<typeof dogActivitySchema>
+
+// Private lesson / seminar notes (#70). Only the dog owner sees them.
+export const dogNoteSchema = z.object({
+  id: z.string(),
+  dogId: z.string(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  title: z.string().min(1),
+  text: z.string().min(1),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+})
+
+export const dogNotesSchema = z.array(dogNoteSchema)
+
+export const dogNoteFormSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Zadejte datum ve formátu RRRR-MM-DD"),
+  title: z.string().trim().min(1, "Název je povinný").max(100, "Název může mít nejvýš 100 znaků"),
+  text: z.string().trim().min(1, "Text je povinný").max(2000, "Text může mít nejvýš 2000 znaků"),
+})
+
+export type DogNote = z.infer<typeof dogNoteSchema>
+export type DogNoteFormValues = z.infer<typeof dogNoteFormSchema>
+export { dogMetricsSchema, type DogMetrics } from "@/lib/dogMetrics"

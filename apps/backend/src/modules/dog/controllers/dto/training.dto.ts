@@ -1,6 +1,7 @@
 import {
   FocusLevel,
   MistakeLevel,
+  StepOutcome,
   TrainingStatus,
 } from '@/generated/prisma/client';
 import {
@@ -20,6 +21,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUrl,
   Matches,
   Max,
   MaxLength,
@@ -66,6 +68,8 @@ export class WeekTrainingExerciseDto {
 }
 
 export class WeekTrainingResponseDto {
+  @ApiProperty({ type: WeekTrainingGoalDto })
+  training!: WeekTrainingGoalDto;
   @ApiProperty()
   id!: string;
 
@@ -86,6 +90,7 @@ export class WeekTrainingResponseDto {
 
   static fromDomain(training: WeekTraining): WeekTrainingResponseDto {
     return {
+      training: { id: training.training.id, title: training.training.title },
       id: training.id,
       date: toCalendarDate(training.date),
       status: training.status,
@@ -120,6 +125,8 @@ export class MoveTrainingDto {
 
 export class TrainingResponseDto {
   @ApiProperty()
+  trainingId!: string;
+  @ApiProperty()
   id!: string;
 
   @ApiProperty()
@@ -139,6 +146,7 @@ export class TrainingResponseDto {
 
   static fromDomain(training: ScheduledTraining): TrainingResponseDto {
     return {
+      trainingId: training.trainingId,
       id: training.id,
       goalId: training.goalId,
       dogId: training.dogId,
@@ -178,9 +186,14 @@ export class TrainingDetailExerciseDto {
 
   @ApiPropertyOptional({ nullable: true })
   criterion!: string | null;
+
+  @ApiProperty({ enum: StepOutcome, nullable: true })
+  outcome!: StepOutcome | null;
 }
 
 export class TrainingDetailResponseDto {
+  @ApiProperty({ type: WeekTrainingGoalDto })
+  training!: WeekTrainingGoalDto;
   @ApiProperty()
   id!: string;
 
@@ -196,6 +209,14 @@ export class TrainingDetailResponseDto {
   @ApiProperty({ type: WeekTrainingGoalDto })
   goal!: WeekTrainingGoalDto;
 
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Effective current step of the goal (null only when the plan has no steps)',
+  })
+  currentStepId!: string | null;
+
   @ApiProperty({ type: [TrainingDetailExerciseDto] })
   exercises!: TrainingDetailExerciseDto[];
 
@@ -203,6 +224,7 @@ export class TrainingDetailResponseDto {
     training: ScheduledTrainingDetail,
   ): TrainingDetailResponseDto {
     return {
+      training: { id: training.training.id, title: training.training.title },
       id: training.id,
       date: toCalendarDate(training.date),
       status: training.status,
@@ -218,12 +240,14 @@ export class TrainingDetailResponseDto {
         id: training.goal.id,
         title: training.goal.title,
       },
+      currentStepId: training.goal.currentStepId,
       exercises: training.goal.blocks.map((block) => ({
         id: block.id,
         position: block.position,
         title: block.title,
         instruction: block.instruction,
         criterion: block.criterion,
+        outcome: block.outcome,
       })),
     };
   }
@@ -267,4 +291,14 @@ export class CompleteTrainingDto {
   @IsString()
   @MaxLength(2000)
   note?: string;
+
+  @ApiPropertyOptional({
+    description: 'External video URL (YouTube, Drive, etc.)',
+    example: 'https://youtube.com/watch?v=123',
+    maxLength: 500,
+  })
+  @IsOptional()
+  @IsUrl({ protocols: ['https'], require_protocol: true })
+  @MaxLength(500)
+  videoUrl?: string;
 }

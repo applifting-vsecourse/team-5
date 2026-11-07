@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router"
 import { ChevronLeft } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Textarea } from "@/components/ui/textarea"
@@ -48,6 +49,7 @@ export function FinishTrainingForm({
   const [successRate, setSuccessRate] = useState<number | null>(null)
   const [focus, setFocus] = useState<FocusLevel | null>(null)
   const [repeatedMistakes, setRepeatedMistakes] = useState<MistakeLevel | null>(null)
+  const [videoUrl, setVideoUrl] = useState("")
   const [note, setNote] = useState("")
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -62,6 +64,10 @@ export function FinishTrainingForm({
     }
     if (repeatedMistakes) {
       payload.repeatedMistakes = repeatedMistakes
+    }
+    const trimmedVideoUrl = videoUrl.trim()
+    if (trimmedVideoUrl.length > 0) {
+      payload.videoUrl = trimmedVideoUrl
     }
     const trimmedNote = note.trim()
     if (trimmedNote.length > 0) {
@@ -120,7 +126,7 @@ export function FinishTrainingForm({
                 <button
                   type="button"
                   onClick={() => setSuccessRate(null)}
-                  className="text-xs text-muted-foreground hover:text-foreground"
+                  className="min-h-11 px-1 text-xs text-muted-foreground hover:text-foreground"
                   aria-label="Zrušit nastavení úspěšnosti"
                 >
                   Zrušit
@@ -151,19 +157,19 @@ export function FinishTrainingForm({
           >
             <ToggleGroupItem
               value="YES"
-              className="flex-1 rounded py-2 text-sm text-muted-foreground data-[state=on]:bg-background data-[state=on]:font-medium data-[state=on]:text-foreground"
+              className="min-h-11 flex-1 rounded text-sm text-muted-foreground data-[state=on]:bg-background data-[state=on]:font-medium data-[state=on]:text-foreground"
             >
               Ano
             </ToggleGroupItem>
             <ToggleGroupItem
               value="PARTIALLY"
-              className="flex-1 rounded py-2 text-sm text-muted-foreground data-[state=on]:bg-background data-[state=on]:font-medium data-[state=on]:text-foreground"
+              className="min-h-11 flex-1 rounded text-sm text-muted-foreground data-[state=on]:bg-background data-[state=on]:font-medium data-[state=on]:text-foreground"
             >
               Částečně
             </ToggleGroupItem>
             <ToggleGroupItem
               value="NO"
-              className="flex-1 rounded py-2 text-sm text-muted-foreground data-[state=on]:bg-background data-[state=on]:font-medium data-[state=on]:text-foreground"
+              className="min-h-11 flex-1 rounded text-sm text-muted-foreground data-[state=on]:bg-background data-[state=on]:font-medium data-[state=on]:text-foreground"
             >
               Ne
             </ToggleGroupItem>
@@ -182,23 +188,42 @@ export function FinishTrainingForm({
           >
             <ToggleGroupItem
               value="YES"
-              className="flex-1 rounded py-2 text-sm text-muted-foreground data-[state=on]:bg-background data-[state=on]:font-medium data-[state=on]:text-foreground"
+              className="min-h-11 flex-1 rounded text-sm text-muted-foreground data-[state=on]:bg-background data-[state=on]:font-medium data-[state=on]:text-foreground"
             >
               Ano
             </ToggleGroupItem>
             <ToggleGroupItem
               value="PARTIALLY"
-              className="flex-1 rounded py-2 text-sm text-muted-foreground data-[state=on]:bg-background data-[state=on]:font-medium data-[state=on]:text-foreground"
+              className="min-h-11 flex-1 rounded text-sm text-muted-foreground data-[state=on]:bg-background data-[state=on]:font-medium data-[state=on]:text-foreground"
             >
               Částečně
             </ToggleGroupItem>
             <ToggleGroupItem
               value="NO"
-              className="flex-1 rounded py-2 text-sm text-muted-foreground data-[state=on]:bg-background data-[state=on]:font-medium data-[state=on]:text-foreground"
+              className="min-h-11 flex-1 rounded text-sm text-muted-foreground data-[state=on]:bg-background data-[state=on]:font-medium data-[state=on]:text-foreground"
             >
               Ne
             </ToggleGroupItem>
           </ToggleGroup>
+        </div>
+
+        <div className="space-y-2">
+          <Label
+            htmlFor="training-video-url"
+            className="text-sm font-medium text-foreground"
+          >
+            Odkaz na video
+          </Label>
+          <Input
+            id="training-video-url"
+            type="url"
+            inputMode="url"
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            placeholder="https://…"
+            maxLength={500}
+            className="min-h-11"
+          />
         </div>
 
         {/* Poznámka (Textarea) */}
@@ -232,7 +257,7 @@ export function FinishTrainingForm({
         {/* Submit button */}
         <Button
           type="submit"
-          className="h-11 w-full text-sm font-medium"
+          className="min-h-11 w-full text-base font-medium"
           disabled={isPending}
         >
           {isPending ? "Ukládám…" : "Uložit záznam"}

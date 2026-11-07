@@ -1,5 +1,4 @@
 @import "@fontsource-variable/plus-jakarta-sans";
-@import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
@@ -32,10 +31,66 @@
   --color-dog-4: var(--dog-4);
   --color-dog-5: var(--dog-5);
   --color-dog-6: var(--dog-6);
+  --color-dog-foreground: var(--dog-foreground);
+  --color-hero: var(--hero);
+  --color-hero-foreground: var(--hero-foreground);
+  --color-hero-muted: var(--hero-muted);
+  --color-hero-accent: var(--hero-accent);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-danger-surface: var(--danger-surface);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-overlay: var(--overlay);
+  --color-sidebar: var(--hero);
+  --color-sidebar-foreground: var(--hero-foreground);
+  --color-sidebar-muted: var(--hero-muted);
+  --color-sidebar-accent: var(--hero-accent);
+  --color-hero-positive: var(--hero-positive);
+  --color-performance-low: var(--performance-low);
+  --color-performance-medium: var(--performance-medium);
+  --color-performance-high: var(--performance-high);
+  --color-performance-top: var(--success-foreground);
+  --color-performance-empty: var(--secondary);
+  --color-chart-track: var(--secondary);
+  --spacing-touch: var(--control-min);
+  --spacing-action: var(--control-action);
+  --spacing-field: var(--control-field);
+  --spacing-gutter: var(--gutter-mobile);
+  --spacing-gutter-desktop: var(--gutter-desktop);
+  --spacing-sidebar: var(--sidebar-width);
+  --spacing-context: var(--context-width);
+  --spacing-tab-bar: var(--tab-bar-height);
+  --spacing-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --radius-control: var(--radius-control);
+  --radius-field: var(--radius-field);
+  --radius-item: var(--radius-item);
+  --radius-card: var(--radius-card);
+  --radius-hero: var(--radius-hero);
+  --radius-sheet: var(--radius-sheet);
+  --text-page: var(--type-page);
+  --text-page--line-height: 1.15;
+  --text-page--font-weight: 800;
+  --text-title: var(--type-title);
+  --text-title--line-height: 1.15;
+  --text-title--font-weight: 800;
+  --text-section: var(--type-section);
+  --text-section--line-height: 1.4;
+  --text-section--font-weight: 800;
+  --text-action: var(--type-action);
+  --text-action--line-height: 1.4;
+  --text-action--font-weight: 700;
+  --text-label: var(--type-label);
+  --text-label--line-height: 1.4;
+  --text-timer: var(--type-timer);
+  --text-timer--line-height: 1.15;
+  --text-timer--font-weight: 800;
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --font-serif: var(--font-serif);
 
   --shadow-2xs: var(--shadow-2xs);
   --shadow-xs: var(--shadow-xs);
@@ -49,11 +104,12 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+  --radius-xl: var(--radius-card);
+  --radius-2xl: var(--radius-hero);
 }
 
 :root {
-  --font-sans: "Plus Jakarta Sans Variable", "Geist Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: Georgia, serif;
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
   /* Warm linen canvas for field/outdoor aesthetic with crisp card surface */
   --background: #faf8f5;
@@ -76,6 +132,47 @@
   --input: #e6dfd3;
   --ring: #c2410c;
   --radius: 0.625rem;
+  --radius-control: 1rem;
+  --radius-field: 0.875rem;
+  --radius-item: 1.125rem;
+  --radius-card: 1.25rem;
+  --radius-hero: 1.5rem;
+  --radius-sheet: 1.75rem;
+  --control-min: 2.75rem;
+  --control-field: 3.25rem;
+  --control-action: 3.5rem;
+  --gutter-mobile: 1.25rem;
+  --gutter-desktop: 2rem;
+  --sidebar-width: 15.5rem;
+  --context-width: 18.75rem;
+  --tab-bar-height: 5.25rem;
+  --type-page: 1.75rem;
+  --type-title: 2.125rem;
+  --type-section: 1.125rem;
+  --type-action: 1.0625rem;
+  --type-label: 0.8125rem;
+  --type-timer: 2.75rem;
+  --dog-foreground: #ffffff;
+  --hero: #1c2628;
+  --hero-foreground: #ffffff;
+  --hero-muted: #a9b4b8;
+  --hero-accent: #333f41;
+  --hero-positive: #86efac;
+  --danger-surface: #fdeaea;
+  --danger-foreground: #b91c1c;
+  --overlay: rgb(28 38 40 / 55%);
+  /* Heatmap bands: <50%, 50–65%, 65–80%, 80%+, no training.
+     Intermediate fills reproduce the mockup blends on the card surface.
+     These are chart marks, never text colours. */
+  --performance-low: #e7b0b0;
+  --performance-medium: #ddb290;
+  --performance-high: #7eb994;
+  --success: #dcfce7;
+  --success-foreground: #15803d;
+  --warning: #fef3c7;
+  --warning-foreground: #92400e;
+  --info: #e0f2fe;
+  --info-foreground: #075985;
   --shadow-2xs: 0px 2px 10px 0px hsl(0 0% 0% / 0.05);
   --shadow-xs: 0px 2px 10px 0px hsl(0 0% 0% / 0.05);
   --shadow-sm: 0px 2px 10px 0px hsl(0 0% 0% / 0.1), 0px 1px 2px -1px hsl(0 0% 0% / 0.1);
@@ -113,13 +210,53 @@
   --border: #283337;
   --input: #283337;
   --ring: #f97316;
+  --hero: #1c2628;
+  --hero-foreground: #ffffff;
+  --hero-muted: #a9b4b8;
+  --hero-accent: #333f41;
+  --success: #143322;
+  --success-foreground: #86efac;
+  --warning: #392b14;
+  --warning-foreground: #fcd34d;
+  --info: #142e3d;
+  --info-foreground: #7dd3fc;
+  --danger-surface: #3b1919;
+  --danger-foreground: #fca5a5;
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring;
   }
   body {
     @apply bg-background text-foreground antialiased;
   }
+}
+
+@layer components {
+  [data-slot="button"] {
+    min-width: var(--control-min);
+    min-height: var(--control-min);
+  }
+  [data-slot="button"][data-size="lg"] {
+    min-height: var(--control-action);
+    border-radius: var(--radius-control);
+  }
+}
+
+/* Outside layers so kit outline-none utilities cannot hide keyboard focus. */
+/* An opaque, offset outline stays visible on both light and dark surfaces,
+   even when a kit component also renders a translucent focus ring. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+/* A contrasting gap separates focus from coloured dog/hero surfaces. */
+:where(.bg-hero, .bg-sidebar, [class*="bg-dog-"]) :focus-visible {
+  outline-color: var(--dog-foreground);
+}
+/* Card-wide hit targets that draw their own inset ring (StripCard links). */
+.focus-ring-custom:focus-visible {
+  outline: none;
+  outline-offset: 0;
 }

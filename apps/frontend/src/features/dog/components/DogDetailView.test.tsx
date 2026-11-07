@@ -4,10 +4,65 @@ import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
-import type { Dog } from "@/features/dog/api/dogSchemas"
+import { dogKeys } from "@/lib/dogKeys"
+
+import type { Dog, DogActivity } from "@/features/dog/api/dogSchemas"
 
 import { DogActivitiesSection } from "./DogActivitiesSection"
 import { DogDetailView } from "./DogDetailView"
+
+const demoActivities: DogActivity[] = [
+  {
+    id: "act-1",
+    date: "18. října 2026",
+    title: "Poslušnost v parku",
+    status: "completed",
+    successRate: 95,
+    rating: 5,
+    note: "Soustředil se skvěle, jen u druhého cviku byl trochu rozptýlený kolemjdoucím psem. Odložení za pohybu zvládl napoprvé.",
+  },
+  {
+    id: "act-2",
+    date: "16. října 2026",
+    title: "Canicross intervaly",
+    status: "completed",
+    successRate: 88,
+    rating: 4,
+    note: "Pěkné tempo v první polovině trasy, pak mírná únava na štěrku. Celkově velmi dobré nasazení.",
+  },
+  {
+    id: "act-3",
+    date: "15. října 2026",
+    title: "Trénink odložení",
+    status: "skipped",
+    note: "Pršelo a pes byl unavený po návštěvě veterináře. Trénink jsme po dohodě přeskočili.",
+  },
+  {
+    id: "act-4",
+    date: "13. října 2026",
+    title: "Nosework – vyhledávání skořice",
+    status: "completed",
+    successRate: 100,
+    rating: 5,
+    note: "Všechny 3 vzorky našel do 40 sekund. Perfektní označení čumákem bez škrábání.",
+  },
+  {
+    id: "act-5",
+    date: "11. října 2026",
+    title: "Socializace na nádraží",
+    status: "completed",
+    successRate: 80,
+    rating: 4,
+    note: "Hluk přijíždějícího vlaku zvládl s pamlsky, u eskalátoru ještě váhal.",
+  },
+  {
+    id: "act-6",
+    date: "9. října 2026",
+    title: "Klid v kavárně",
+    status: "skipped",
+    note: "Přesunuto z důvodu nemoci psovoda.",
+  },
+]
 
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof Router>("@tanstack/react-router")
@@ -55,20 +110,22 @@ const aDog: Dog = {
   updatedAt: new Date(),
 }
 
-const createWrapper = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  })
+const createWrapper = (queryClient?: QueryClient) => {
+  const client =
+    queryClient ??
+    new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    return <QueryClientProvider client={client}>{children}</QueryClientProvider>
   }
 }
 
 describe("DogDetailView", () => {
-  it("renders dog profile matching Figma node 51-386 with badges and edit button", () => {
+  it("renders dog profile matching Figma node 51-386 with discipline chips and edit button", () => {
     render(<DogDetailView dog={aDog} />, { wrapper: createWrapper() })
 
     // Dog name and breed & disciplines
@@ -94,6 +151,7 @@ describe("DogDetailView", () => {
     // Sections
     expect(screen.getByRole("heading", { name: "Aktivní cíle" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Aktivity" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Deník" })).toBeInTheDocument()
     // "+ Nový cíl" opens Tvorba tréninku (#62)
     expect(screen.getByRole("link", { name: /nový cíl/i })).toHaveAttribute(
       "href",
@@ -138,6 +196,8 @@ describe("DogDetailView", () => {
 
     // Edit button must NOT be rendered
     expect(screen.queryByRole("button", { name: /upravit psa/i })).not.toBeInTheDocument()
+    // Private notes stay with the owner (#70)
+    expect(screen.queryByRole("heading", { name: "Deník" })).not.toBeInTheDocument()
 
     // Back button links to client detail
     const backLink = screen.getByRole("link", { name: /zpět na detail klienta/i })
@@ -145,11 +205,80 @@ describe("DogDetailView", () => {
     expect(backLink).toHaveAttribute("href", `/clients/${aDog.ownerId}`)
     expect(screen.getByText("Klient")).toBeInTheDocument()
   })
+
+  it("shows hero metrics when loaded from the API", () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, staleTime: Infinity },
+      },
+    })
+    queryClient.setQueryData(dogKeys.metrics(aDog.id), {
+      timeZone: "Europe/Prague",
+      asOf: "2026-10-20T12:00:00Z",
+      weeklyTarget: 3,
+      weeklyTrainedDays: 2,
+      weeklyTargetReached: false,
+      streak: 0,
+      successRate: 80,
+      ratedSessions: 4,
+      weeklyChange: null,
+      weeks: [],
+    })
+
+    render(<DogDetailView dog={aDog} />, { wrapper: createWrapper(queryClient) })
+
+    expect(screen.getByText("2/3")).toBeInTheDocument()
+    expect(screen.getByText("dní tento týden")).toBeInTheDocument()
+    expect(screen.getByText("0")).toBeInTheDocument()
+    expect(screen.getByText("série")).toBeInTheDocument()
+    expect(screen.getByText("80 %")).toBeInTheDocument()
+    expect(screen.getByText("% úspěšnost")).toBeInTheDocument()
+  })
+
+  it("shows a hero-sized skeleton while metrics are loading", () => {
+    render(<DogDetailView dog={aDog} />, { wrapper: createWrapper() })
+
+    expect(screen.getByLabelText("Načítání metrik")).toBeInTheDocument()
+    expect(screen.queryByText("Tento týden")).not.toBeInTheDocument()
+  })
+
+  it("shows retry when metrics fail to load", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false, staleTime: Infinity },
+      },
+    })
+    queryClient.setQueryData(dogKeys.notes(aDog.id), [])
+    queryClient.setQueryData(dogKeys.goals(aDog.id), [])
+    queryClient.setQueryData(dogKeys.plannedTrainings(aDog.id), [])
+    queryClient.setQueryData([...dogKeys.activities(aDog.id), { page: 1, pageSize: 3 }], {
+      items: [],
+      total: 0,
+      page: 1,
+      pageSize: 3,
+    })
+
+    render(<DogDetailView dog={aDog} />, {
+      wrapper: createWrapper(queryClient),
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText("Týdenní metriky se nepodařilo načíst.")).toBeInTheDocument()
+    })
+    expect(screen.getByRole("button", { name: /zkusit znovu/i })).toBeInTheDocument()
+    expect(screen.queryByText("dní tento týden")).not.toBeInTheDocument()
+  })
 })
 
 describe("DogActivitiesSection", () => {
   it("lists workout records by their header only: date, title and status", () => {
-    render(<DogActivitiesSection dogName="Baryk" />, { wrapper: createWrapper() })
+    render(
+      <DogActivitiesSection
+        dogName="Baryk"
+        activities={demoActivities}
+      />,
+      { wrapper: createWrapper() },
+    )
 
     expect(screen.getByText("Poslušnost v parku")).toBeInTheDocument()
     expect(screen.getAllByText("Odcvičeno").length).toBeGreaterThan(0)
@@ -187,7 +316,13 @@ describe("DogActivitiesSection", () => {
 
   it("paginates activities page by page", async () => {
     const user = userEvent.setup()
-    render(<DogActivitiesSection dogName="Baryk" />, { wrapper: createWrapper() })
+    render(
+      <DogActivitiesSection
+        dogName="Baryk"
+        activities={demoActivities}
+      />,
+      { wrapper: createWrapper() },
+    )
 
     // Page 1 shows first 3 activities
     expect(screen.getByText("Poslušnost v parku")).toBeInTheDocument()
@@ -206,7 +341,13 @@ describe("DogActivitiesSection", () => {
 
   it("opens detail dialog when workout record is clicked", async () => {
     const user = userEvent.setup()
-    render(<DogActivitiesSection dogName="Baryk" />, { wrapper: createWrapper() })
+    render(
+      <DogActivitiesSection
+        dogName="Baryk"
+        activities={demoActivities}
+      />,
+      { wrapper: createWrapper() },
+    )
 
     const workout = screen.getByRole("button", {
       name: /otevřít detail aktivity poslušnost v parku/i,

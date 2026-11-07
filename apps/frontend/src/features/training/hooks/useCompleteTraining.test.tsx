@@ -47,7 +47,7 @@ beforeEach(() => {
 })
 
 describe("useCompleteTraining", () => {
-  it("invalidates weekKeys and dogKeys, toasts and navigates to /week", async () => {
+  it("invalidates weekKeys and dogKeys, toasts and navigates to confirmation", async () => {
     vi.mocked(completeTraining).mockResolvedValue({
       id: "log1",
       dogId: "d1",
@@ -66,8 +66,12 @@ describe("useCompleteTraining", () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: weekKeys.all })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: dogKeys.activities("d1") })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: dogKeys.detail("d1") })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: dogKeys.metrics("d1") })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: dogKeys.all })
-    expect(mockNavigate).toHaveBeenCalledWith({ to: "/week" })
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: "/trainings/$trainingId/done",
+      params: { trainingId: "t1" },
+    })
   })
 
   it("on 409 says the training is already done and goes back to the week", async () => {
