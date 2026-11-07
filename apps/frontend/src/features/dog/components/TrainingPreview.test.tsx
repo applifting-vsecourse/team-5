@@ -6,6 +6,9 @@ import type { PlanBlock } from "@/features/dog/api/dogSchemas"
 
 import { TrainingPreview } from "./TrainingPreview"
 
+const { moveCurrentStep } = vi.hoisted(() => ({ moveCurrentStep: vi.fn() }))
+vi.mock("@/lib/moveCurrentStep", () => ({ moveCurrentStep }))
+
 const steps: PlanBlock[] = ["Přivolání", "Chůze u nohy"].map((title, index) => ({
   id: `step-${index}`,
   goalId: "goal",
@@ -39,7 +42,37 @@ describe("training preview", () => {
     await user.click(screen.getByRole("button", { name: "Dokončit náhled" }))
     expect(close).toHaveBeenCalledWith(false)
     expect(fetch).not.toHaveBeenCalled()
+    expect(moveCurrentStep).not.toHaveBeenCalled()
     fetch.mockRestore()
+  })
+  it("restarts at the first step with a fresh timer when reopened after editing", async () => {
+    const user = userEvent.setup()
+    const props = {
+      dog: { name: "Rex", color: 2 },
+      title: "V parku",
+      steps,
+      isOpen: true,
+      onOpenChange: vi.fn(),
+    }
+    const { rerender } = render(<TrainingPreview {...props} />)
+    await user.click(screen.getByRole("button", { name: "Hotovo, další krok" }))
+    await user.click(screen.getByRole("button", { name: "Zavřít náhled" }))
+    expect(props.onOpenChange).toHaveBeenCalledWith(false)
+    rerender(
+      <TrainingPreview
+        {...props}
+        isOpen={false}
+      />,
+    )
+    rerender(
+      <TrainingPreview
+        {...props}
+        steps={steps.slice(0, 1)}
+      />,
+    )
+    expect(screen.getByRole("heading", { name: "Přivolání" })).toBeInTheDocument()
+    expect(screen.getByRole("timer")).toHaveTextContent("1:00")
+    expect(screen.getByRole("button", { name: "Zpět" })).toBeDisabled()
   })
   it("starts, pauses and resets the timer", async () => {
     const user = userEvent.setup()

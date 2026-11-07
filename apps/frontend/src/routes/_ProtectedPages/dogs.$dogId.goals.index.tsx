@@ -17,7 +17,7 @@ function DogGoalsPage() {
   const { dogId } = Route.useParams()
   const dog = useQuery(dogDetailQueryOptions(dogId))
   return (
-    <main className="mx-auto w-full max-w-2xl space-y-6 px-gutter py-6">
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-gutter py-6">
       <Seo title="Cíle psa" />
       <header className="flex items-center gap-3">
         <Button
@@ -50,6 +50,6 @@ function DogGoalsPage() {
           />
         )}
       </QueryState>
-    </main>
+    </div>
   )
 }

@@ -9,19 +9,19 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 
 import type { Dog, PlanBlock } from "@/features/dog/api/dogSchemas"
 
-export function TrainingPreview({
-  dog,
-  title,
-  steps,
-  isOpen,
-  onOpenChange,
-}: {
+type TrainingPreviewProps = {
   dog: Pick<Dog, "name" | "color">
   title: string
   steps: PlanBlock[]
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
-}) {
+}
+
+export function TrainingPreview(props: TrainingPreviewProps) {
+  return props.isOpen ? <TrainingPreviewContent {...props} /> : null
+}
+
+function TrainingPreviewContent({ dog, title, steps, isOpen, onOpenChange }: TrainingPreviewProps) {
   const [index, setIndex] = useState(0)
   const next = () => {
     if (index + 1 < steps.length) setIndex((value) => value + 1)

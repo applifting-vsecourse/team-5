@@ -276,7 +276,7 @@ export function SessionEditor({
   const [deleting, setDeleting] = useState<PlanBlock | null>(null)
   const [isLibraryOpen, setLibrary] = useState(false)
   const [isPreviewOpen, setPreview] = useState(false)
-  const [isScheduleOpen, setSchedule] = useState(Boolean(isScheduleRequested))
+  const [isScheduleOpen, setSchedule] = useState(false)
   const [isRenaming, setRenaming] = useState(false)
   const [title, setTitle] = useState(session.title)
   const [selected, setSelected] = useState<string[]>([])
@@ -402,7 +402,7 @@ export function SessionEditor({
     )
   }
   return (
-    <main className="mx-auto w-full max-w-2xl space-y-6 px-gutter py-6">
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-gutter py-6">
       <header className="flex items-center gap-3">
         <Button
           variant="outline"
@@ -655,12 +655,12 @@ export function SessionEditor({
         goalId={goal.id}
         dogId={dog.id}
         description={`${dog.name} · ${goal.title} · trénink ${session.position + 1}`}
-        isOpen={isScheduleOpen}
+        isOpen={canSchedule && (isScheduleOpen || Boolean(isScheduleRequested))}
         onOpenChange={(isOpen) => {
           setSchedule(isOpen)
           if (!isOpen) onScheduleRequestHandled?.()
         }}
       />
-    </main>
+    </div>
   )
 }

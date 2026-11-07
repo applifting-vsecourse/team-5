@@ -36,7 +36,7 @@ function GoalShell({
   children: ReactNode
 }) {
   return (
-    <main className="mx-auto w-full max-w-2xl space-y-6 px-gutter py-6">
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-gutter py-6">
       <header className="flex items-center gap-3">
         <Button
           asChild
@@ -58,7 +58,7 @@ function GoalShell({
         </div>
       </header>
       {children}
-    </main>
+    </div>
   )
 }
 
@@ -128,6 +128,7 @@ export function EditGoalPage({
   const goalQuery = useQuery(goalQueryOptions(goalId))
   const planQuery = useQuery(dogPlanQueryOptions(dogId))
   const client = useQueryClient()
+  const navigate = useNavigate()
   const [isEditing, setEditing] = useState(false)
   const [isNewTrainingOpen, setNewTraining] = useState(false)
   const [title, setTitle] = useState("")
@@ -164,11 +165,19 @@ export function EditGoalPage({
     onSuccess: refresh,
     onError: () => toast.error("Stav cíle se nepodařilo změnit."),
   })
-  const save = async (values: GoalFormValues) => {
+  const schedulableSession = sessions.find((session) => !session.isArchived)
+  const save = async (values: GoalFormValues, shouldSchedule = false) => {
     try {
       await updateGoal.mutateAsync(values)
       await refresh()
       setEditing(false)
+      if (shouldSchedule && schedulableSession) {
+        await navigate({
+          to: "/dogs/$dogId/goals/$goalId",
+          params: { dogId, goalId },
+          search: { session: schedulableSession.id, naplanovat: true },
+        })
+      }
     } catch {
       /* Hook reports failure; keep values. */
     }
@@ -373,7 +382,10 @@ export function EditGoalPage({
                   deadline: goal.deadline ?? "",
                 }}
                 isPending={updateGoal.isPending}
-                onSubmit={save}
+                onSubmit={(values) => save(values)}
+                onSubmitAndSchedule={
+                  schedulableSession ? (values) => save(values, true) : undefined
+                }
                 submitLabel="Uložit změny"
               />
             </EditorSheet>

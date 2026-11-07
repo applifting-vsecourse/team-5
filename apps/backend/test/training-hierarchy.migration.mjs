@@ -211,6 +211,36 @@ try {
     'Obecné',
   );
 
+  for (const name of (await readdir(migrations))
+    .filter((name) => name > latest && name.startsWith('20'))
+    .sort()) {
+    await db.exec(
+      await readFile(new URL(`${name}/migration.sql`, migrations), 'utf8'),
+    );
+  }
+  for (const deadline of ['2028-02-29', '2026-11-07']) {
+    await db.query('UPDATE training_goal SET deadline=$1 WHERE id=$2', [
+      deadline,
+      'g1',
+    ]);
+  }
+  for (const deadline of [
+    'nonsense',
+    '2026-1-07',
+    '2026-02-29',
+    '2026-13-01',
+  ]) {
+    await assert.rejects(
+      db.query('UPDATE training_goal SET deadline=$1 WHERE id=$2', [
+        deadline,
+        'g1',
+      ]),
+      undefined,
+      `reject invalid deadline ${deadline}`,
+    );
+  }
+  await db.exec(`UPDATE training_goal SET deadline=NULL WHERE id='g1'`);
+
   await db.exec(`DELETE FROM "user" WHERE id='owner'`);
   for (const table of [
     'dog',

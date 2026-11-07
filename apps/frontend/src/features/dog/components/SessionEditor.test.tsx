@@ -25,7 +25,15 @@ vi.mock("./EditorSheet", () => ({
     children: ReactNode
   }) => (isOpen ? <section aria-label={title}>{children}</section> : null),
 }))
-vi.mock("./SessionScheduleSheet", () => ({ SessionScheduleSheet: () => null }))
+vi.mock("./SessionScheduleSheet", () => ({
+  SessionScheduleSheet: ({
+    isOpen,
+    onOpenChange,
+  }: {
+    isOpen: boolean
+    onOpenChange: (isOpen: boolean) => void
+  }) => (isOpen ? <button onClick={() => onOpenChange(false)}>Zavřít plánování</button> : null),
+}))
 vi.mock("@/components/ConfirmDestructiveDialog", () => ({ ConfirmDestructiveDialog: () => null }))
 
 const dog = {
@@ -158,5 +166,31 @@ describe("training editor", () => {
     expect(screen.queryByRole("button", { name: "Z knihovny" })).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Naplánovat" })).toBeDisabled()
     expect(screen.getByRole("button", { name: "Náhled" })).toBeEnabled()
+  })
+  it("opens scheduling when a request arrives without remounting the editor", async () => {
+    const user = userEvent.setup()
+    const client = new QueryClient()
+    const handled = vi.fn()
+    const view = (isScheduleRequested: boolean) => (
+      <QueryClientProvider client={client}>
+        <SessionEditor
+          session={session}
+          sessions={[session]}
+          dog={dog}
+          goal={goal}
+          isReadOnly={false}
+          onBack={vi.fn()}
+          isScheduleRequested={isScheduleRequested}
+          onScheduleRequestHandled={handled}
+        />
+      </QueryClientProvider>
+    )
+    const { rerender } = render(view(false))
+    expect(screen.queryByRole("button", { name: "Zavřít plánování" })).not.toBeInTheDocument()
+    rerender(view(true))
+    await user.click(screen.getByRole("button", { name: "Zavřít plánování" }))
+    expect(handled).toHaveBeenCalledOnce()
+    rerender(view(false))
+    expect(screen.queryByRole("button", { name: "Zavřít plánování" })).not.toBeInTheDocument()
   })
 })

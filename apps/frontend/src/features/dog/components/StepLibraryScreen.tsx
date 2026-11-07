@@ -45,7 +45,7 @@ export function StepLibraryScreen({
       `${t.title} ${t.criterion}`.toLocaleLowerCase("cs").includes(search.toLocaleLowerCase("cs")),
   )
   return (
-    <main className="mx-auto w-full max-w-2xl space-y-6 px-gutter pt-6 pb-32">
+    <div className="mx-auto w-full max-w-2xl space-y-6 px-gutter pt-6 pb-32">
       <header className="flex items-center gap-3">
         <Button
           variant="outline"
@@ -173,7 +173,7 @@ export function StepLibraryScreen({
           {error}
         </p>
       )}
-      <div className="fixed right-gutter bottom-tab-bar left-gutter z-20 mx-auto mb-4 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-card bg-hero p-4 text-hero-foreground md:bottom-4">
+      <div className="fixed right-gutter bottom-[calc(var(--spacing-tab-bar)+var(--spacing-safe-bottom))] left-gutter z-20 mx-auto mb-4 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-card bg-hero p-4 text-hero-foreground md:bottom-4">
         <span className="text-sm font-bold">{selected.length} vybrané</span>
         <Button
           disabled={isPending || !selected.length}
@@ -182,6 +182,6 @@ export function StepLibraryScreen({
           {isPending ? "Vkládám…" : "+ Přidat do tréninku"}
         </Button>
       </div>
-    </main>
+    </div>
   )
 }
