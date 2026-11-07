@@ -56,7 +56,6 @@ export function BottomNav({ isTrainer = false }: BottomNavProps) {
     >
       <div className="mx-auto flex min-h-tab-bar max-w-md items-stretch justify-around px-2 pt-2">
         {items.map((item) => {
-          const Icon = item.icon
           const isActive =
             currentPath === item.matchPrefix || currentPath.startsWith(`${item.matchPrefix}/`)
 
@@ -74,16 +73,23 @@ export function BottomNav({ isTrainer = false }: BottomNavProps) {
             >
               <span
                 className={cn(
-                  "flex size-8 items-center justify-center rounded-2xl",
+                  "flex h-8 w-14 items-center justify-center rounded-full transition-colors",
                   isActive && "bg-accent",
                 )}
               >
-                {!isTrainer &&
-                (!isActive || item.to === ROUTES.dashboard || item.to === ROUTES.dogs) &&
-                (item.to === ROUTES.dashboard ||
-                  item.to === ROUTES.dogs ||
-                  item.to === ROUTES.week ||
-                  item.to === ROUTES.account) ? (
+                {isTrainer ? (
+                  <DesignIcon
+                    name={
+                      item.to === ROUTES.dashboard
+                        ? "trainer-Home"
+                        : item.to === ROUTES.clients
+                          ? "trainer-Users"
+                          : item.to === ROUTES.dogs
+                            ? "trainer-List"
+                            : "trainer-User"
+                    }
+                  />
+                ) : (
                   <DesignIcon
                     name={
                       item.to === ROUTES.dashboard
@@ -98,11 +104,6 @@ export function BottomNav({ isTrainer = false }: BottomNavProps) {
                             ? "today-Calendar"
                             : "today-User"
                     }
-                  />
-                ) : (
-                  <Icon
-                    className="size-5"
-                    aria-hidden
                   />
                 )}
               </span>

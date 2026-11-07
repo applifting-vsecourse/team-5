@@ -33,6 +33,9 @@ export const conversationQueryOptions = (id: string) =>
           note: z.string().nullable(),
           videoUrl: z.string().nullable(),
           mistakeDetails: z.array(z.string()).optional(),
+          focus: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
+          repeatedMistakes: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
+          status: z.enum(["COMPLETED", "SKIPPED"]).optional(),
           messages: z.array(message),
         })
         .parse(await api.get(`activities/${id}`).json()),

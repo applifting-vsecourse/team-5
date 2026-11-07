@@ -17,6 +17,8 @@ import { api } from "@/lib/api-client"
 import { conversationQueryOptions } from "@/lib/conversations"
 import { dogKeys } from "@/lib/dogKeys"
 
+const ANSWER_LABELS = { YES: "Ano", PARTIALLY: "Částečně", NO: "Ne" } as const
+
 function Thread({ activityId }: { activityId: string }) {
   const client = useQueryClient()
   const detail = useQuery(conversationQueryOptions(activityId))
@@ -57,9 +59,29 @@ function Thread({ activityId }: { activityId: string }) {
               {detail.data.note}
             </p>
           )}
+          {detail.data.focus && (
+            <p className="text-sm">
+              <strong>Soustředění:</strong> {ANSWER_LABELS[detail.data.focus]}
+            </p>
+          )}
+          {detail.data.repeatedMistakes && (
+            <p className="text-sm">
+              <strong>Opakované chyby:</strong> {ANSWER_LABELS[detail.data.repeatedMistakes]}
+            </p>
+          )}
+          {detail.data.videoUrl?.startsWith("https://") && (
+            <a
+              href={detail.data.videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-touch items-center text-sm font-bold text-primary underline"
+            >
+              Otevřít video ↗
+            </a>
+          )}
           {Boolean(detail.data.mistakeDetails?.length) && (
             <p className="text-sm">
-              <strong>Opakované chyby:</strong> {detail.data.mistakeDetails?.join(", ")}
+              <strong>Které chyby:</strong> {detail.data.mistakeDetails?.join(", ")}
             </p>
           )}
           <ol
