@@ -6,7 +6,41 @@ on:
 env:
   COURSE_DOMAIN: vsepractical.applifting.dev
   REGISTRY: registry.vsepractical.applifting.dev
+# Read by GitHub Actions on push to main. Effect: staging deploy waits for
+# backend+frontend unit tests (#87). No secrets in plain text (uses secrets.*).
+# User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
 jobs:
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.11-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: trainloop_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d trainloop_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: pnpm/action-setup@v6.1.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm env:check
+      - run: pnpm backend prisma:generate
+      - run: pnpm backend test
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/trainloop_test
+      - run: pnpm frontend test:ci
+
   security-audit:
     runs-on: ubuntu-latest
     permissions:
@@ -22,7 +56,7 @@ jobs:
       - run: pnpm security:audit
 
   build-and-deploy:
-    needs: security-audit
+    needs: [security-audit, tests]
     runs-on: ubuntu-latest
     env:
       COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
