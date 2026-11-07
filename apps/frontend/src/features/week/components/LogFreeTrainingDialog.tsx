@@ -161,11 +161,11 @@ function FreeTrainingForm({ dogs, onSaved }: { dogs: DogOption[]; onSaved: () =>
 }
 
 export function LogFreeTrainingDialog({ dogs }: { dogs: DogOption[] }) {
-  const [open, setOpen] = useState(false)
+  const [isOpen, setOpen] = useState(false)
   return (
     <Dialog
-      open={open}
-      onOpenChange={(value) => setOpen(value)}
+      open={isOpen}
+      onOpenChange={setOpen}
     >
       <DialogTrigger asChild>
         <Button
@@ -184,7 +184,7 @@ export function LogFreeTrainingDialog({ dogs }: { dogs: DogOption[] }) {
             Trénink mimo plán se uloží do historie psa a započítá do jeho metrik.
           </DialogDescription>
         </DialogHeader>
-        {open && (
+        {isOpen && (
           <FreeTrainingForm
             dogs={dogs}
             onSaved={() => setOpen(false)}
