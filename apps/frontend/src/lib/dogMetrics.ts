@@ -7,6 +7,7 @@ import { weekKeys } from "@/lib/weekKeys"
 
 /** Weekly training metrics from GET /dogs/:dogId/metrics. Shared across features. */
 export const dogMetricsSchema = z.object({
+  completedSessions: z.number().optional(),
   timeZone: z.string(),
   asOf: z.string(),
   weeklyTarget: z.number(),

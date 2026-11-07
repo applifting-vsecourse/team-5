@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type * as Router from "@tanstack/react-router"
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
@@ -125,7 +125,7 @@ const createWrapper = (queryClient?: QueryClient) => {
 }
 
 describe("DogDetailView", () => {
-  it("renders dog profile matching Figma node 51-386 with discipline chips and edit button", () => {
+  it("renders the current Figma dog profile with working section links and edit action", () => {
     render(<DogDetailView dog={aDog} />, { wrapper: createWrapper() })
 
     // Dog name and breed & disciplines
@@ -134,10 +134,10 @@ describe("DogDetailView", () => {
     expect(screen.getByText("Agility")).toBeInTheDocument()
     expect(screen.getByText("Canicross")).toBeInTheDocument()
 
-    // 56px PesAvatar
+    // The current design uses a 72px identity avatar.
     const avatar = screen.getByRole("img", { name: "Avatar psa Baryk" })
     expect(avatar).toBeInTheDocument()
-    expect(avatar).toHaveClass("size-14")
+    expect(avatar).toHaveClass("size-18")
 
     // Edit button exists
     const editBtn = screen.getByRole("button", { name: /upravit psa/i })
@@ -150,12 +150,14 @@ describe("DogDetailView", () => {
 
     // Sections
     expect(screen.getByRole("heading", { name: "Cíle" })).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "Aktivity" })).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "Deník" })).toBeInTheDocument()
-    // "+ Nový cíl" opens Tvorba tréninku (#62)
-    expect(screen.getByRole("link", { name: /nový cíl/i })).toHaveAttribute(
+    expect(screen.getByRole("heading", { name: "Zvládnuté dovednosti" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /Poznámky/ })).toHaveAttribute(
       "href",
-      "/dogs/d-123/goals/new",
+      "/dogs/d-123/notes",
+    )
+    expect(screen.getByRole("link", { name: "Všechny" })).toHaveAttribute(
+      "href",
+      "/dogs/d-123/goals",
     )
   })
 
@@ -198,6 +200,7 @@ describe("DogDetailView", () => {
     expect(screen.queryByRole("button", { name: /upravit psa/i })).not.toBeInTheDocument()
     // Private notes stay with the owner (#70)
     expect(screen.queryByRole("heading", { name: "Deník" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: /Poznámky/ })).not.toBeInTheDocument()
 
     // Back button links to client detail
     const backLink = screen.getByRole("link", { name: /zpět na detail klienta/i })
@@ -213,6 +216,7 @@ describe("DogDetailView", () => {
       },
     })
     queryClient.setQueryData(dogKeys.metrics(aDog.id), {
+      completedSessions: 12,
       timeZone: "Europe/Prague",
       asOf: "2026-10-20T12:00:00Z",
       weeklyTarget: 3,
@@ -227,12 +231,11 @@ describe("DogDetailView", () => {
 
     render(<DogDetailView dog={aDog} />, { wrapper: createWrapper(queryClient) })
 
-    expect(screen.getByText("2/3")).toBeInTheDocument()
-    expect(screen.getByText("dní tento týden")).toBeInTheDocument()
-    expect(screen.getByText("0")).toBeInTheDocument()
-    expect(screen.getByText("série")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Historie tréninků" })).toHaveTextContent("12")
+    expect(within(screen.getByRole("banner")).getByText("0")).toBeInTheDocument()
+    expect(screen.getByText("Série dní")).toBeInTheDocument()
     expect(screen.getByText("80 %")).toBeInTheDocument()
-    expect(screen.getByText("% úspěšnost")).toBeInTheDocument()
+    expect(screen.getByText("Úspěšnost")).toBeInTheDocument()
   })
 
   it("shows a hero-sized skeleton while metrics are loading", () => {
@@ -264,7 +267,7 @@ describe("DogDetailView", () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByText("Týdenní metriky se nepodařilo načíst.")).toBeInTheDocument()
+      expect(screen.getByText("Metriky se nepodařilo načíst.")).toBeInTheDocument()
     })
     expect(screen.getByRole("button", { name: /zkusit znovu/i })).toBeInTheDocument()
     expect(screen.queryByText("dní tento týden")).not.toBeInTheDocument()

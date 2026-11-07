@@ -196,6 +196,7 @@ describe("DogNotesSection", () => {
     expect(screen.getByText("BEZ POZNÁMEK")).toBeInTheDocument()
 
     const emptyTitle = await screen.findByText(/Rex zatím nemá žádnou poznámku/i)
+    expect(screen.getAllByRole("button", { name: /nová poznámka/i })).toHaveLength(1)
     const emptyRegion = emptyTitle.closest("[class*='rounded-card']")
     expect(emptyRegion).toBeTruthy()
     await user.click(

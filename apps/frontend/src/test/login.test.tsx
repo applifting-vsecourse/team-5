@@ -336,7 +336,7 @@ describe("login and logout", () => {
   it("uses a remembered session after loading the app with an empty query cache", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
     await openPage("/week")
-    expect(await screen.findByRole("heading", { name: "Týden" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Tento týden" })).toBeInTheDocument()
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     expect(auth.signIn).not.toHaveBeenCalled()
   })

@@ -6,6 +6,7 @@ import { addCalendarDays, type CalendarDate } from "@/lib/calendarDate"
 import { weekKeys } from "@/lib/weekKeys"
 
 export const weekTrainingSchema = z.object({
+  successRate: z.number().nullable().optional(),
   training: z
     .object({
       id: z.string(),
@@ -23,10 +24,26 @@ export const weekTrainingSchema = z.object({
     title: z.string(),
     discipline: z.string().nullable().optional(),
   }),
-  exercises: z.array(z.object({ id: z.string(), title: z.string() })),
+  exercises: z.array(
+    z.object({ id: z.string(), title: z.string(), durationMinutes: z.number().optional() }),
+  ),
 })
 
 export type WeekTraining = z.infer<typeof weekTrainingSchema>
+
+export function weekMetricsQueryOptions(weekStart: CalendarDate) {
+  return queryOptions({
+    queryKey: [...weekKeys.week(weekStart), "metrics"],
+    queryFn: async () =>
+      z.object({ weeklyTarget: z.number(), weeklyTrainedDays: z.number() }).parse(
+        await api
+          .get("overview/week-metrics", {
+            searchParams: { from: weekStart, to: addCalendarDays(weekStart, 6) },
+          })
+          .json(),
+      ),
+  })
+}
 
 export { weekKeys }
 

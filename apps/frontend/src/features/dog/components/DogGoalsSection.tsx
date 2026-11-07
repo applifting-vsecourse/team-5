@@ -108,13 +108,17 @@ export function DogGoalsSection({
   dogId,
   dogName,
   shouldHideTitle = false,
+  discipline,
 }: {
   dogId: string
   dogName: string
   shouldHideTitle?: boolean
+  discipline?: string
 }) {
   const query = useQuery(dogPlanQueryOptions(dogId))
-  const groups = (query.data ?? []).filter((d) => d.goals.length > 0)
+  const groups = (query.data ?? []).filter(
+    (d) => d.goals.length > 0 && (!discipline || d.discipline.name === discipline),
+  )
   return (
     <section
       className="space-y-6"
