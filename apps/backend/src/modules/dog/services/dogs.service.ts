@@ -39,14 +39,48 @@ export class DogsService {
   ) {}
 
   // The user's own dogs. A trainer reaches the dogs shared with them through
-  // their clients (#81), not through this list.
-  async getDogs(user: Identity): Promise<Dog[]> {
-    return this.dogRepository.getDogsByOwnerId(user.id);
+  // their clients (#81), not through this list. Archived dogs are listed only
+  // when asked for (#57).
+  async getDogs(
+    user: Identity,
+    options: { archived?: boolean } = {},
+  ): Promise<Dog[]> {
+    return this.dogRepository.getDogsByOwnerId(user.id, options);
   }
 
   // The owner, or a trainer the dog is shared with (#85).
   async getDogById(user: Identity, id: string): Promise<Dog> {
     return this.dogAccess.getAccessibleDog(user, id);
+  }
+
+  // Callers: DogsController POST :id/archive|restore. Existing DogsService.
+  // Dog.isArchived soft flag. User asked to split PRs and re-review.
+  async archiveDog(user: Identity, dogId: string): Promise<Dog> {
+    const dog = await this.dogAccess.getOwnedDog(user, dogId);
+    if (dog.isArchived) {
+      throw new BadRequestException('Pes už je v archivu');
+    }
+    const archived = await this.dogRepository.setArchived(dogId, user.id, true);
+    if (!archived) {
+      throw new NotFoundException(`Dog with ID ${dogId} not found`);
+    }
+    return archived;
+  }
+
+  async restoreDog(user: Identity, dogId: string): Promise<Dog> {
+    const dog = await this.dogAccess.getOwnedDog(user, dogId);
+    if (!dog.isArchived) {
+      throw new BadRequestException('Pes není v archivu');
+    }
+    const restored = await this.dogRepository.setArchived(
+      dogId,
+      user.id,
+      false,
+    );
+    if (!restored) {
+      throw new NotFoundException(`Dog with ID ${dogId} not found`);
+    }
+    return restored;
   }
 
   async createDog(

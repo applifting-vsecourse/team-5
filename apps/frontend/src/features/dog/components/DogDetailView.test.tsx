@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type * as Router from "@tanstack/react-router"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { beforeAll, describe, expect, it, vi } from "vitest"
 
 import { dogKeys } from "@/lib/dogKeys"
 
@@ -10,6 +10,22 @@ import type { Dog, DogActivity } from "@/features/dog/api/dogSchemas"
 
 import { DogActivitiesSection } from "./DogActivitiesSection"
 import { DogDetailView } from "./DogDetailView"
+
+beforeAll(() => {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    }),
+  })
+})
 
 const demoActivities: DogActivity[] = [
   {
@@ -105,6 +121,7 @@ const aDog: Dog = {
   color: 1,
   photoUrl: null,
   ownerId: "u1",
+  isArchived: false,
   disciplines: ["Agility", "Canicross"],
   createdAt: new Date(),
   updatedAt: new Date(),
