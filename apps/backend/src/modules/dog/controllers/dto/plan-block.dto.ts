@@ -12,6 +12,7 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 
 // Title mirrors the plan_block column; instruction and criterion are TEXT,
@@ -52,6 +53,12 @@ export class CreatePlanBlockDto {
   @IsString()
   @MaxLength(CRITERION_MAX_LENGTH)
   criterion?: string;
+  @ApiPropertyOptional({ minimum: 0, maximum: 480 })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsInt()
+  @Min(0)
+  @Max(480)
+  durationMinutes?: number;
 
   @ApiPropertyOptional({
     description:
@@ -95,6 +102,12 @@ export class UpdatePlanBlockDto {
   @IsString()
   @MaxLength(CRITERION_MAX_LENGTH)
   criterion?: string;
+  @ApiPropertyOptional({ minimum: 0, maximum: 480 })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsInt()
+  @Min(0)
+  @Max(480)
+  durationMinutes?: number;
 }
 
 export class ReorderPlanBlocksDto {
@@ -111,6 +124,8 @@ export class ReorderPlanBlocksDto {
 export class PlanBlockResponseDto {
   @ApiProperty()
   trainingId!: string;
+  @ApiProperty()
+  durationMinutes!: number;
   @ApiProperty()
   id!: string;
 
@@ -141,6 +156,7 @@ export class PlanBlockResponseDto {
   static fromDomain(block: PlanBlock): PlanBlockResponseDto {
     return {
       trainingId: block.trainingId,
+      durationMinutes: block.durationMinutes,
       id: block.id,
       goalId: block.goalId,
       position: block.position,

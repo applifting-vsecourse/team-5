@@ -9,6 +9,7 @@ import { PlanBlocksService } from './plan-blocks.service';
 
 const aBlock = (overrides: Partial<PlanBlock> = {}): PlanBlock => ({
   trainingId: 'session-1',
+  durationMinutes: 0,
   id: 'b1',
   goalId: 'g1',
   position: 0,

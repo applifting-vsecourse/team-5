@@ -149,7 +149,7 @@ describe("DogDetailView", () => {
     expect(backLink).toHaveAttribute("href", "/dogs")
 
     // Sections
-    expect(screen.getByRole("heading", { name: "Aktivní cíle" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Cíle" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Aktivity" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Deník" })).toBeInTheDocument()
     // "+ Nový cíl" opens Tvorba tréninku (#62)
@@ -250,6 +250,7 @@ describe("DogDetailView", () => {
     })
     queryClient.setQueryData(dogKeys.notes(aDog.id), [])
     queryClient.setQueryData(dogKeys.goals(aDog.id), [])
+    queryClient.setQueryData([...dogKeys.detail(aDog.id), "plan"], [])
     queryClient.setQueryData(dogKeys.plannedTrainings(aDog.id), [])
     queryClient.setQueryData([...dogKeys.activities(aDog.id), { page: 1, pageSize: 3 }], {
       items: [],

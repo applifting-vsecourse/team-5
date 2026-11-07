@@ -61,6 +61,9 @@ export class PlanBlocksService {
       goalId,
       title: data.title.trim(),
       instruction: optionalText(data.instruction) ?? null,
+      ...(data.durationMinutes !== undefined && {
+        durationMinutes: data.durationMinutes,
+      }),
       criterion: optionalText(data.criterion) ?? null,
       insertAt: data.insertAt,
     });
@@ -75,6 +78,9 @@ export class PlanBlocksService {
     return this.planBlockRepository.updateBlock(blockId, {
       title: data.title?.trim(),
       instruction: optionalText(data.instruction),
+      ...(data.durationMinutes !== undefined && {
+        durationMinutes: data.durationMinutes,
+      }),
       criterion: optionalText(data.criterion),
     });
   }

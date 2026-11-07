@@ -172,6 +172,9 @@ export class TrainingDetailDogDto {
 }
 
 export class TrainingDetailExerciseDto {
+  @ApiProperty({ minimum: 0, maximum: 480 })
+  durationMinutes!: number;
+
   @ApiProperty()
   id!: string;
 
@@ -242,6 +245,7 @@ export class TrainingDetailResponseDto {
       },
       currentStepId: training.goal.currentStepId,
       exercises: training.goal.blocks.map((block) => ({
+        durationMinutes: block.durationMinutes,
         id: block.id,
         position: block.position,
         title: block.title,

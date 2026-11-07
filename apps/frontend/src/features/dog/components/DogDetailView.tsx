@@ -170,6 +170,18 @@ export function DogDetailView({ dog, isOwner = true }: DogDetailViewProps) {
           dogId={dog.id}
           dogName={dog.name}
         />
+        <Button
+          asChild
+          variant="outline"
+          className="w-full"
+        >
+          <Link
+            to="/dogs/$dogId/goals"
+            params={{ dogId: dog.id }}
+          >
+            Všechny cíle
+          </Link>
+        </Button>
         <PlannedTrainingsList
           dogId={dog.id}
           dogName={dog.name}

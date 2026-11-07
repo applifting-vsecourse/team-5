@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { goalFormSchema, type GoalFormValues } from "@/features/dog/api/dogSchemas"
 
 type GoalFormProps = {
+  submitLabel?: string
   disciplines: string[]
   defaultValues?: Partial<GoalFormValues>
   isPending: boolean
@@ -43,6 +44,7 @@ export function GoalForm({
   isPending,
   onSubmit,
   onSubmitAndSchedule,
+  submitLabel = "Uložit",
 }: GoalFormProps) {
   // Keep a discipline the goal already has selectable even if the dog no
   // longer lists it, so opening the form never silently changes the goal.
@@ -59,6 +61,8 @@ export function GoalForm({
       // goal keeps what it has, including "" (no discipline).
       discipline: defaultValues?.discipline ?? disciplineOptions[0] ?? "",
       principle: defaultValues?.principle ?? "",
+      criterion: defaultValues?.criterion,
+      deadline: defaultValues?.deadline,
     },
   })
 
@@ -67,7 +71,7 @@ export function GoalForm({
       <form
         noValidate
         onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col gap-6"
+        className="flex flex-col gap-4"
       >
         <FormField
           control={form.control}
@@ -78,7 +82,7 @@ export function GoalForm({
               <FormControl>
                 <Input
                   placeholder="např. Spolehlivá chůze u nohy"
-                  className="h-11"
+                  className="min-h-field rounded-field"
                   {...field}
                 />
               </FormControl>
@@ -99,7 +103,7 @@ export function GoalForm({
                   onValueChange={(value) => field.onChange(value === NO_DISCIPLINE ? "" : value)}
                 >
                   <FormControl>
-                    <SelectTrigger className="w-full data-[size=default]:h-11">
+                    <SelectTrigger className="min-h-field w-full rounded-field">
                       <SelectValue placeholder="Vyberte disciplínu" />
                     </SelectTrigger>
                   </FormControl>
@@ -134,7 +138,7 @@ export function GoalForm({
               <FormControl>
                 <Textarea
                   placeholder="např. Pes jde u levé nohy s hlavou u kolena. Pozor na předbíhání v zatáčkách."
-                  className="min-h-24"
+                  className="min-h-field rounded-field"
                   {...field}
                 />
               </FormControl>
@@ -144,6 +148,42 @@ export function GoalForm({
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="criterion"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Hotovo, když…</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  value={field.value ?? ""}
+                  placeholder="Pes udrží pozici 30 s mezi psy a lidmi."
+                  className="min-h-20 rounded-field"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="deadline"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Termín (nepovinný)</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  value={field.value ?? ""}
+                  type="date"
+                  className="min-h-field rounded-field"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         {onSubmitAndSchedule ? (
           <div className="grid grid-cols-2 gap-2">
             <Button
@@ -174,7 +214,7 @@ export function GoalForm({
             disabled={isPending}
           >
             {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-            Uložit
+            {submitLabel}
           </Button>
         )}
       </form>

@@ -24,6 +24,20 @@ import {
 
 export const planOrder = [{ position: 'asc' }, { id: 'asc' }] as const;
 
+// A dated completion preserves this definition's steps for historical reads.
+// Reusing the definition on another date remains allowed; editing needs a new training.
+export async function assertTrainingContentEditable(
+  tx: Prisma.TransactionClient,
+  trainingId: string,
+): Promise<void> {
+  const completed = await tx.scheduledTraining.count({
+    where: { trainingId, status: 'COMPLETED' },
+  });
+  if (completed > 0) {
+    throw new ConflictException('Completed training content is read-only');
+  }
+}
+
 // All structural writes serialize on the goal, including legacy endpoints.
 export async function lockEditableGoal(
   tx: Prisma.TransactionClient,
@@ -105,7 +119,13 @@ export class HierarchyRepository {
           include: {
             sessions: {
               orderBy: [...planOrder],
-              include: { steps: { orderBy: [...planOrder] } },
+              include: {
+                steps: { orderBy: [...planOrder] },
+                scheduledTrainings: {
+                  select: { id: true, date: true, status: true },
+                  orderBy: { date: 'asc' },
+                },
+              },
             },
           },
         },
@@ -222,6 +242,7 @@ export class HierarchyRepository {
       const training = await tx.goalTraining.findUniqueOrThrow({
         where: { id },
       });
+      if (data.title !== undefined) await assertTrainingContentEditable(tx, id);
       if (
         training.isArchived &&
         data.isArchived !== false &&
@@ -254,11 +275,13 @@ export class HierarchyRepository {
       title: string;
       instruction?: string;
       criterion?: string;
+      durationMinutes?: number;
       insertAt?: number;
     },
   ): Promise<PlanBlock> {
     return this.prisma.$transaction(async (tx) => {
       await resolveTraining(tx, goalId, trainingId);
+      await assertTrainingContentEditable(tx, trainingId);
       const siblings = await tx.planBlock.findMany({
         where: { trainingId },
         orderBy: [...planOrder],
@@ -275,6 +298,7 @@ export class HierarchyRepository {
           title: data.title.trim(),
           instruction: data.instruction?.trim() || null,
           criterion: data.criterion?.trim() || null,
+          durationMinutes: data.durationMinutes ?? 0,
         },
       });
       siblings.splice(position, 0, created);
@@ -294,6 +318,7 @@ export class HierarchyRepository {
   ): Promise<PlanBlock[]> {
     return this.prisma.$transaction(async (tx) => {
       await resolveTraining(tx, goalId, trainingId);
+      await assertTrainingContentEditable(tx, trainingId);
       const current = await tx.planBlock.findMany({ where: { trainingId } });
       validateOrder(current, ids);
       for (const [position, id] of ids.entries())
