@@ -24,7 +24,7 @@ export const api = ky.create({
       async ({ error }) => {
         if (!(error instanceof HTTPError)) return error
         try {
-          const body = (await error.response.clone().json()) as { message?: string | string[] }
+          const body = await error.response.clone().json<{ message?: string | string[] }>()
           const message = Array.isArray(body.message) ? body.message.join(", ") : body.message
           if (message) error.message = message
         } catch {
