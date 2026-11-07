@@ -4,6 +4,8 @@ import { dogSchema, type Dog, type UpdateDogInput } from "./dogSchemas"
 
 export async function updateDog(id: string, input: UpdateDogInput): Promise<Dog> {
   const patchPayload: Record<string, unknown> = {}
+  if (input.birthDate !== undefined) patchPayload.birthDate = input.birthDate
+  if (input.weightKg !== undefined) patchPayload.weightKg = input.weightKg
   if (input.name !== undefined) patchPayload.name = input.name
   if (input.breed !== undefined) patchPayload.breed = input.breed ? input.breed.trim() : ""
   if (input.color !== undefined) patchPayload.color = input.color

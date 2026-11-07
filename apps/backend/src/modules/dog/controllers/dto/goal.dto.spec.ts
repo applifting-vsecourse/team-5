@@ -11,6 +11,27 @@ const errorsFor = async <T extends object>(
 };
 
 describe('goal DTOs', () => {
+  it.each(['2026-02-31', '2026-13-01', '2026-1-1', null, 1])(
+    'rejects an invalid deadline %p',
+    async (deadline) => {
+      expect(
+        await errorsFor(CreateGoalDto, { title: 'Cíl', deadline }),
+      ).toContain('deadline');
+      expect(await errorsFor(UpdateGoalDto, { deadline })).toContain(
+        'deadline',
+      );
+    },
+  );
+  it('accepts a calendar deadline and permits clearing it', async () => {
+    expect(
+      await errorsFor(CreateGoalDto, {
+        title: 'Cíl',
+        criterion: 'Vrátí se na povel',
+        deadline: '2026-11-30',
+      }),
+    ).toEqual([]);
+    expect(await errorsFor(UpdateGoalDto, { deadline: '' })).toEqual([]);
+  });
   describe('ListGoalsQueryDto', () => {
     it('accepts a known status', async () => {
       await expect(

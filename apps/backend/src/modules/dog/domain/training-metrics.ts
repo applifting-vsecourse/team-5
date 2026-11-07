@@ -20,6 +20,7 @@ export type MetricWeek = {
   successRate: number | null;
 };
 export type TrainingMetrics = {
+  completedSessions: number;
   timeZone: string;
   asOf: string;
   weeklyTarget: number;
@@ -38,6 +39,39 @@ const average = (values: number[]): number | null =>
     ? Math.round((values.reduce((sum, n) => sum + n, 0) / values.length) * 10) /
       10
     : null;
+
+// Owner progress sums dog-days: two dogs trained today count twice, repeated
+// sessions of one dog today count once. Rate and streak still use real logs.
+export function calculateOwnerMetrics(
+  inputs: { weeklyTarget: number; workoutLogs: MetricLog[] }[],
+  now = new Date(),
+): TrainingMetrics {
+  const perDog = inputs.map((input) =>
+    calculateTrainingMetrics(input.workoutLogs, input.weeklyTarget, now),
+  );
+  const target = inputs.reduce((sum, input) => sum + input.weeklyTarget, 0);
+  const combined = calculateTrainingMetrics(
+    inputs.flatMap((input) => input.workoutLogs),
+    target,
+    now,
+  );
+  const days = perDog.reduce(
+    (sum, metrics) => sum + metrics.weeklyTrainedDays,
+    0,
+  );
+  return {
+    ...combined,
+    weeklyTrainedDays: days,
+    weeklyTargetReached: target > 0 && days >= target,
+    weeks: combined.weeks.map((week, index) => ({
+      ...week,
+      trainedDays: perDog.reduce(
+        (sum, metrics) => sum + metrics.weeks[index].trainedDays,
+        0,
+      ),
+    })),
+  };
+}
 
 export function calculateTrainingMetrics(
   logs: MetricLog[],
@@ -78,6 +112,7 @@ export function calculateTrainingMetrics(
   return {
     timeZone: APP_TIME_ZONE,
     asOf: today,
+    completedSessions: completed.length,
     weeklyTarget,
     weeklyTrainedDays: current.trainedDays,
     weeklyTargetReached: current.trainedDays >= weeklyTarget,

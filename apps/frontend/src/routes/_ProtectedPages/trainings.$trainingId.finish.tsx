@@ -82,13 +82,43 @@ function TrainingFinishPage() {
 
   const training = trainingQuery.data
 
+  if (training.canTrain === false || training.status !== "PLANNED") {
+    return (
+      <div className="mx-auto max-w-2xl space-y-4 px-gutter py-6">
+        <h1 className="text-page font-extrabold">
+          {training.canTrain === false ? "Náhled tréninku" : "Trénink je uzavřený"}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Záznam může uložit pouze psovod u naplánovaného tréninku.
+        </p>
+        <Button
+          asChild
+          variant="outline"
+        >
+          <Link
+            to="/trainings/$trainingId"
+            params={{ trainingId: training.id }}
+          >
+            Zpět k tréninku
+          </Link>
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <>
       <Seo title={`Záznam po tréninku · ${training.dog.name}`} />
       <FinishTrainingForm
         trainingId={training.id}
         dog={training.dog}
-        goal={training.goal}
+        goal={training.training ?? training.goal}
+        stepCount={training.exercises.length}
+        plannedDurationMinutes={
+          training.exercises.every((step) => step.durationMinutes !== undefined)
+            ? training.exercises.reduce((sum, step) => sum + (step.durationMinutes ?? 0), 0)
+            : undefined
+        }
       />
     </>
   )

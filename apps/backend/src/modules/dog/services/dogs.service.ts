@@ -1,4 +1,5 @@
 import 'multer';
+import { todayInAppZone } from '@/modules/dog/domain/calendar-date';
 import { Dog } from '@/modules/dog/domain/dog';
 import { DogRepository } from '@/modules/dog/repositories/dog.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
@@ -53,10 +54,14 @@ export class DogsService {
     dogData: {
       name: string;
       breed?: string;
+      birthDate?: string;
+      weightKg?: number | null;
       color: number;
       disciplines?: string[];
     },
   ): Promise<Dog> {
+    if (dogData.birthDate && dogData.birthDate > todayInAppZone())
+      throw new BadRequestException('Datum narození nesmí být v budoucnosti.');
     const sanitizedDisciplines = dogData.disciplines
       ? (sanitizeDisciplines(dogData.disciplines) ?? [])
       : [];
@@ -64,6 +69,10 @@ export class DogsService {
     return this.dogRepository.createDog({
       name: dogData.name.trim(),
       breed: dogData.breed?.trim() || null,
+      ...(dogData.birthDate !== undefined && {
+        birthDate: dogData.birthDate || null,
+      }),
+      ...(dogData.weightKg !== undefined && { weightKg: dogData.weightKg }),
       color: dogData.color,
       ownerId: user.id,
       disciplines: sanitizedDisciplines,
@@ -76,6 +85,8 @@ export class DogsService {
     updateData: {
       name?: string;
       breed?: string;
+      birthDate?: string;
+      weightKg?: number | null;
       color?: number;
       disciplines?: string[];
     },
@@ -85,12 +96,19 @@ export class DogsService {
     // can never touch someone else's dog.
     await this.dogAccess.getOwnedDog(user, id);
 
+    if (updateData.birthDate && updateData.birthDate > todayInAppZone())
+      throw new BadRequestException('Datum narození nesmí být v budoucnosti.');
     const sanitizedDisciplines =
       updateData.disciplines !== undefined
         ? sanitizeDisciplines(updateData.disciplines)
         : undefined;
 
     const updated = await this.dogRepository.updateDog(id, user.id, {
+      birthDate:
+        updateData.birthDate === undefined
+          ? undefined
+          : updateData.birthDate || null,
+      weightKg: updateData.weightKg,
       name: updateData.name?.trim(),
       breed:
         updateData.breed !== undefined

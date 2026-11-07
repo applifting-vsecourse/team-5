@@ -15,10 +15,14 @@ import {
 } from '@/modules/dog/domain/scheduled-training';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
+  ArrayUnique,
+  IsArray,
   IsDateString,
   IsDivisibleBy,
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   IsUrl,
@@ -52,6 +56,14 @@ export class WeekTrainingDogDto {
 }
 
 export class WeekTrainingGoalDto {
+  @ApiPropertyOptional({ nullable: true })
+  discipline?: string | null;
+
+  @ApiPropertyOptional()
+  position?: number;
+
+  @ApiPropertyOptional()
+  total?: number;
   @ApiProperty()
   id!: string;
 
@@ -60,6 +72,8 @@ export class WeekTrainingGoalDto {
 }
 
 export class WeekTrainingExerciseDto {
+  @ApiPropertyOptional()
+  durationMinutes?: number;
   @ApiProperty()
   id!: string;
 
@@ -68,6 +82,8 @@ export class WeekTrainingExerciseDto {
 }
 
 export class WeekTrainingResponseDto {
+  @ApiPropertyOptional({ nullable: true })
+  successRate?: number | null;
   @ApiProperty({ type: WeekTrainingGoalDto })
   training!: WeekTrainingGoalDto;
   @ApiProperty()
@@ -90,12 +106,22 @@ export class WeekTrainingResponseDto {
 
   static fromDomain(training: WeekTraining): WeekTrainingResponseDto {
     return {
-      training: { id: training.training.id, title: training.training.title },
+      successRate: training.workoutLog?.successRate ?? null,
+      training: {
+        id: training.training.id,
+        title: training.training.title,
+        position: training.training.position,
+        total: training.training.total,
+      },
       id: training.id,
       date: toCalendarDate(training.date),
       status: training.status,
       dog: training.dog,
-      goal: { id: training.goal.id, title: training.goal.title },
+      goal: {
+        id: training.goal.id,
+        title: training.goal.title,
+        discipline: training.goal.discipline,
+      },
       exercises: training.goal.blocks,
     };
   }
@@ -172,6 +198,9 @@ export class TrainingDetailDogDto {
 }
 
 export class TrainingDetailExerciseDto {
+  @ApiProperty({ minimum: 0, maximum: 480 })
+  durationMinutes!: number;
+
   @ApiProperty()
   id!: string;
 
@@ -192,6 +221,8 @@ export class TrainingDetailExerciseDto {
 }
 
 export class TrainingDetailResponseDto {
+  @ApiPropertyOptional()
+  canTrain?: boolean;
   @ApiProperty({ type: WeekTrainingGoalDto })
   training!: WeekTrainingGoalDto;
   @ApiProperty()
@@ -222,8 +253,12 @@ export class TrainingDetailResponseDto {
 
   static fromDomain(
     training: ScheduledTrainingDetail,
+    viewerId?: string,
   ): TrainingDetailResponseDto {
     return {
+      ...(viewerId && training.dog.ownerId
+        ? { canTrain: viewerId === training.dog.ownerId }
+        : {}),
       training: { id: training.training.id, title: training.training.title },
       id: training.id,
       date: toCalendarDate(training.date),
@@ -242,6 +277,7 @@ export class TrainingDetailResponseDto {
       },
       currentStepId: training.goal.currentStepId,
       exercises: training.goal.blocks.map((block) => ({
+        durationMinutes: block.durationMinutes,
         id: block.id,
         position: block.position,
         title: block.title,
@@ -254,6 +290,15 @@ export class TrainingDetailResponseDto {
 }
 
 export class CompleteTrainingDto {
+  @ApiPropertyOptional({ type: [String], maxItems: 10 })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  @MaxLength(60, { each: true })
+  mistakeDetails?: string[];
   @ApiPropertyOptional({
     description: 'Success rate in % (0-100, step 10)',
     example: 70,

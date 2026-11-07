@@ -8,6 +8,25 @@ const errorsFor = async (plain: Record<string, unknown>): Promise<string[]> => {
 };
 
 describe('CompleteTrainingDto', () => {
+  it('validates persisted mistake details without allowing duplicate or oversized tags', async () => {
+    await expect(
+      errorsFor({
+        repeatedMistakes: 'YES',
+        mistakeDetails: ['Předbíhal', 'Vlastní chyba'],
+      }),
+    ).resolves.toEqual([]);
+    for (const mistakeDetails of [
+      [''],
+      ['Stejné', 'Stejné'],
+      ['x'.repeat(61)],
+      Array.from({ length: 11 }, (_, index) => String(index)),
+      'not-an-array',
+    ]) {
+      await expect(errorsFor({ mistakeDetails })).resolves.toEqual([
+        'mistakeDetails',
+      ]);
+    }
+  });
   it('accepts an empty record: every field is optional', async () => {
     await expect(errorsFor({})).resolves.toEqual([]);
   });

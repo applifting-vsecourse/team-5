@@ -6,6 +6,19 @@ import { Injectable } from '@nestjs/common';
 export class MetricsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  getOwnerInputs(ownerId: string) {
+    return this.prisma.dog.findMany({
+      where: { ownerId, isArchived: false },
+      select: {
+        weeklyTarget: true,
+        workoutLogs: {
+          where: { status: 'COMPLETED' },
+          select: { completedAt: true, successRate: true, status: true },
+        },
+      },
+    });
+  }
+
   async getInputs(
     dogId: string,
   ): Promise<{ weeklyTarget: number; workoutLogs: MetricLog[] }> {
