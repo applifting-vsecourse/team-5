@@ -37,6 +37,9 @@ export class ConversationService {
       note: row.note,
       videoUrl: row.videoUrl,
       mistakeDetails: row.mistakeDetails,
+      focus: row.focus,
+      repeatedMistakes: row.repeatedMistakes,
+      status: row.status,
       messages: row.messages.map(presentTrainingMessage),
     };
   }

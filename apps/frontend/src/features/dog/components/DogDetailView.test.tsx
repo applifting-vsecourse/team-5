@@ -275,7 +275,7 @@ describe("DogDetailView", () => {
 })
 
 describe("DogActivitiesSection", () => {
-  it("lists workout records by their header only: date, title and status", () => {
+  it("lists workout records with their success rate and note (Figma history)", () => {
     render(
       <DogActivitiesSection
         dogName="Baryk"
@@ -286,9 +286,8 @@ describe("DogActivitiesSection", () => {
 
     expect(screen.getByText("Poslušnost v parku")).toBeInTheDocument()
     expect(screen.getAllByText("Odcvičeno").length).toBeGreaterThan(0)
-    // Results and notes are in the detail, not in the list.
-    expect(screen.queryByText(/Úspěšnost/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Soustředil se skvěle/)).not.toBeInTheDocument()
+    expect(screen.getByText("95 % úspěšnost")).toBeInTheDocument()
+    expect(screen.getByText(/Soustředil se skvěle/)).toBeInTheDocument()
   })
 
   it("shows only the latest records on the dog's page, with a link to the history", () => {

@@ -18,7 +18,7 @@ export function DashboardPage() {
     return (
       <>
         <Seo title="Přehled" />
-        <TrainerOverview />
+        <TrainerOverview userName={user?.name} />
       </>
     )
   }
