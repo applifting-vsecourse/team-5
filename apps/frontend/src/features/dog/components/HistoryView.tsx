@@ -1,8 +1,6 @@
 import { useState } from "react"
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { format } from "date-fns"
-import { cs } from "date-fns/locale"
 import { History } from "lucide-react"
 
 import { DesignIcon } from "@/components/DesignIcon"
@@ -19,18 +17,15 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { todayCalendarDate } from "@/lib/calendarDate"
 import { dogColorClass } from "@/lib/dogColors"
 import { accessibleDogsQueryOptions, historyQueryOptions, type HistoryItem } from "@/lib/history"
+import {
+  formatHistoryDay,
+  formatHistoryMonth,
+  formatHistoryTime,
+  historyCalendarDate,
+} from "@/lib/historyDate"
 import { cn } from "@/lib/utils"
-
-const WEEKDAY_ABBR = ["NE", "PO", "ÚT", "ST", "ČT", "PÁ", "SO"]
-
-function formatDayGroupHeader(date: Date, isToday: boolean): string {
-  const wd = WEEKDAY_ABBR[date.getDay()] ?? ""
-  const dayAndMonth = format(date, "d. M.")
-  return isToday ? `DNES · ${wd} ${dayAndMonth}` : `${wd} ${dayAndMonth}`
-}
 
 function formatMonthInCzechLocative(monthStr: string): string {
   const monthNum = parseInt(monthStr.slice(5, 7), 10)
@@ -94,7 +89,7 @@ function HistoryRecord({ record, onOpen }: { record: HistoryItem; onOpen: () => 
           </span>
         </span>
         <span className="text-xs font-normal text-muted-foreground">
-          {record.dog.name} · {format(record.completedAt, "HH:mm")}
+          {record.dog.name} · {formatHistoryTime(record.completedAt)}
           {record.status === "SKIPPED"
             ? " · —"
             : record.plannedDurationMinutes !== null
@@ -140,7 +135,7 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
   ]
   const groups = new Map<string, HistoryItem[]>()
   items.forEach((item) => {
-    const day = format(item.completedAt, "yyyy-MM-dd")
+    const day = historyCalendarDate(item.completedAt)
     groups.set(day, [...(groups.get(day) ?? []), item])
   })
   return (
@@ -174,9 +169,7 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
           {first && (
             <p className="text-xs text-muted-foreground">
               {first.total} záznamů
-              {first.firstRecordedAt
-                ? ` · od ${format(first.firstRecordedAt, "MMMM yyyy", { locale: cs })}`
-                : ""}
+              {first.firstRecordedAt ? ` · od ${formatHistoryMonth(first.firstRecordedAt)}` : ""}
             </p>
           )}
         </div>
@@ -308,7 +301,7 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
                 id={`history-${day}`}
                 className="mb-3 text-xs font-extrabold tracking-wide text-muted-foreground uppercase"
               >
-                {formatDayGroupHeader(records[0]!.completedAt, day === todayCalendarDate())}
+                {formatHistoryDay(records[0]!.completedAt)}
               </h2>
               <ol>
                 {records.map((record) => (
