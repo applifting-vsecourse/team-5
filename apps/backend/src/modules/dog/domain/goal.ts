@@ -14,6 +14,7 @@ export type Goal = TrainingGoal & {
 };
 
 export type CreateGoalData = {
+  deadline?: string;
   criterion?: string;
   title: string;
   discipline?: string;
@@ -23,6 +24,7 @@ export type CreateGoalData = {
 };
 
 export type UpdateGoalData = {
+  deadline?: string;
   criterion?: string;
   title?: string;
   discipline?: string;

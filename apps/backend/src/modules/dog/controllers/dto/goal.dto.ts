@@ -4,11 +4,13 @@ import { presentAuthor } from '@/shared/auth/domain/present-author';
 import { Trim } from '@/shared/validation/trim';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsDateString,
   IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   Max,
   MaxLength,
   Min,
@@ -35,6 +37,14 @@ export class CreateGoalDto {
   @IsString()
   @MaxLength(1000)
   criterion?: string;
+
+  @ApiPropertyOptional({
+    description: 'Target date YYYY-MM-DD; empty clears it',
+  })
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsDateString({ strict: true })
+  deadline?: string;
   @ApiProperty({
     description: 'Title of the training goal',
     example: 'Spolehlivá chůze u nohy',
@@ -93,6 +103,14 @@ export class UpdateGoalDto {
   @IsString()
   @MaxLength(1000)
   criterion?: string;
+
+  @ApiPropertyOptional({
+    description: 'Target date YYYY-MM-DD; empty clears it',
+  })
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsDateString({ strict: true })
+  deadline?: string;
   @ApiPropertyOptional({
     description: 'Title of the training goal',
     maxLength: TITLE_MAX_LENGTH,
@@ -162,6 +180,8 @@ export class GoalResponseDto {
 
   @ApiPropertyOptional({ nullable: true })
   criterion!: string | null;
+  @ApiPropertyOptional({ nullable: true })
+  deadline!: string | null;
   @ApiProperty()
   id!: string;
 
@@ -197,6 +217,7 @@ export class GoalResponseDto {
       disciplineId: goal.disciplineId,
       currentStepId: goal.currentStepId,
       criterion: goal.criterion,
+      deadline: goal.deadline,
       id: goal.id,
       dogId: goal.dogId,
       createdBy: presentAuthor(goal.createdBy),

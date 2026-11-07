@@ -3,6 +3,7 @@ import { z } from "zod"
 
 import { api } from "@/lib/api-client"
 import { dogKeys } from "@/lib/dogKeys"
+import { weekKeys } from "@/lib/weekKeys"
 
 /** Weekly training metrics from GET /dogs/:dogId/metrics. Shared across features. */
 export const dogMetricsSchema = z.object({
@@ -28,6 +29,13 @@ export const dogMetricsSchema = z.object({
 })
 
 export type DogMetrics = z.infer<typeof dogMetricsSchema>
+
+export function ownerMetricsQueryOptions() {
+  return queryOptions({
+    queryKey: [...weekKeys.all, "owner-metrics"],
+    queryFn: async () => dogMetricsSchema.parse(await api.get("overview/owner-metrics").json()),
+  })
+}
 
 export function dogMetricsQueryOptions(dogId: string) {
   return queryOptions({

@@ -30,6 +30,7 @@ export class GoalRepository {
   }
 
   async createGoal(data: {
+    deadline?: string | null;
     criterion?: string | null;
     dogId: string;
     createdById: string;
@@ -41,6 +42,7 @@ export class GoalRepository {
   }): Promise<Goal> {
     return this.prisma.trainingGoal.create({
       data: {
+        deadline: data.deadline,
         criterion: data.criterion ?? null,
         dogId: data.dogId,
         createdById: data.createdById,
@@ -57,6 +59,7 @@ export class GoalRepository {
   async updateGoal(
     id: string,
     data: {
+      deadline?: string | null;
       criterion?: string | null;
       title?: string;
       discipline?: string | null;
@@ -68,6 +71,7 @@ export class GoalRepository {
     return this.prisma.trainingGoal.update({
       where: { id },
       data: {
+        deadline: data.deadline,
         criterion: data.criterion,
         ...(data.title !== undefined && { title: data.title }),
         ...(data.discipline !== undefined && { discipline: data.discipline }),

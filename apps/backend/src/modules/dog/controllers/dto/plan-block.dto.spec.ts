@@ -11,6 +11,22 @@ const errorsFor = async <T extends object>(
 };
 
 describe('plan block DTOs', () => {
+  it.each([-1, 481, 1.5, '5', null])(
+    'rejects an invalid duration %p',
+    async (durationMinutes) => {
+      expect(
+        await errorsFor(CreatePlanBlockDto, { title: 'Krok', durationMinutes }),
+      ).toContain('durationMinutes');
+      expect(
+        await errorsFor(UpdatePlanBlockDto, { durationMinutes }),
+      ).toContain('durationMinutes');
+    },
+  );
+  it.each([0, 8, 480])('accepts duration %p', async (durationMinutes) => {
+    expect(
+      await errorsFor(CreatePlanBlockDto, { title: 'Krok', durationMinutes }),
+    ).toEqual([]);
+  });
   describe('UpdatePlanBlockDto', () => {
     it('rejects renaming an exercise to spaces only (#65)', async () => {
       await expect(

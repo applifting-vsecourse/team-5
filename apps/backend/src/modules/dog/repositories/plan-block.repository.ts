@@ -6,7 +6,10 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
-import { resolveTraining } from './hierarchy.repository';
+import {
+  assertTrainingContentEditable,
+  resolveTraining,
+} from './hierarchy.repository';
 
 const inPlanOrder = [
   { position: 'asc' },
@@ -57,11 +60,13 @@ export class PlanBlockRepository {
     goalId: string;
     title: string;
     instruction: string | null;
+    durationMinutes?: number;
     criterion: string | null;
     insertAt?: number;
   }): Promise<PlanBlock> {
     return this.prisma.$transaction(async (tx) => {
       const training = await resolveTraining(tx, data.goalId);
+      await assertTrainingContentEditable(tx, training.id);
       const existing = await tx.planBlock.findMany({
         where: { trainingId: training.id },
         orderBy: inPlanOrder,
@@ -76,6 +81,7 @@ export class PlanBlockRepository {
           position: index,
           title: data.title,
           instruction: data.instruction,
+          durationMinutes: data.durationMinutes,
           criterion: data.criterion,
         },
       });
@@ -93,18 +99,23 @@ export class PlanBlockRepository {
     data: {
       title?: string;
       instruction?: string | null;
+      durationMinutes?: number;
       criterion?: string | null;
     },
   ): Promise<PlanBlock> {
     return this.prisma.$transaction(async (tx) => {
       const block = await tx.planBlock.findUniqueOrThrow({ where: { id } });
       await resolveTraining(tx, block.goalId, block.trainingId);
+      await assertTrainingContentEditable(tx, block.trainingId);
       return tx.planBlock.update({
         where: { id },
         data: {
           ...(data.title !== undefined && { title: data.title }),
           ...(data.instruction !== undefined && {
             instruction: data.instruction,
+          }),
+          ...(data.durationMinutes !== undefined && {
+            durationMinutes: data.durationMinutes,
           }),
           ...(data.criterion !== undefined && { criterion: data.criterion }),
         },
@@ -116,6 +127,7 @@ export class PlanBlockRepository {
     await this.prisma.$transaction(async (tx) => {
       const block = await tx.planBlock.findUniqueOrThrow({ where: { id } });
       await resolveTraining(tx, goalId, block.trainingId);
+      await assertTrainingContentEditable(tx, block.trainingId);
       await tx.planBlock.delete({ where: { id } });
       const remaining = await tx.planBlock.findMany({
         where: { trainingId: block.trainingId },
@@ -135,6 +147,7 @@ export class PlanBlockRepository {
   ): Promise<PlanBlock[]> {
     return this.prisma.$transaction(async (tx) => {
       const training = await resolveTraining(tx, goalId);
+      await assertTrainingContentEditable(tx, training.id);
       const current = await tx.planBlock.findMany({
         where: { trainingId: training.id },
         select: { id: true },

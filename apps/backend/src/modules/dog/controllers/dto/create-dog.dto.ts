@@ -3,16 +3,36 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   IsArray,
+  IsDateString,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
+  Matches,
   Max,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 
 export class CreateDogDto {
+  @ApiPropertyOptional({
+    format: 'date',
+    description: 'Date of birth; empty clears it',
+  })
+  @ValidateIf((_, value) => value !== undefined && value !== '')
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsDateString({ strict: true })
+  birthDate?: string;
+
+  @ApiPropertyOptional({ nullable: true, minimum: 0.1, maximum: 200 })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.1)
+  @Max(200)
+  weightKg?: number | null;
+
   @ApiProperty({
     description: 'Name of the dog',
     example: 'Rex',

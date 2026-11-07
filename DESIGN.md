@@ -68,6 +68,18 @@ small-text default. A name or initials must identify the dog too. Charts need
 labels and values so hue is not the only way to read them. Dog colours never mean
 success, failure or actions.
 
+Exception requested in the implementation review on 6 November 2026: numbered step badges
+in the training editor cycle through dog-1 to dog-6 by position, repeating after
+six steps. These colours identify positions. The editor does not highlight the
+dog's current step or show progress-specific hints; progress belongs to the
+training walkthrough.
+
+Review decisions, 7 November 2026: Moji psi has one add-dog action, the bottom
+Přidat psa card; omit the duplicate header plus. Dog cards show completed goals
+out of all goals. Dnes aggregates all owned active dogs: sum each dog's weekly
+goal and trained days (a dog counts once per day), calculate the streak across
+the owner's training days and weight success rates by actual rated records.
+
 ## Typography and spacing
 
 Use `font-sans` (Plus Jakarta Sans with the existing fallback stack) for headings,
@@ -108,13 +120,13 @@ Keep actions reachable outdoors with one hand. Full-width main actions sit near
 the bottom of their flow, clear of navigation and safe areas. Reserve space for
 fixed controls; the native phone status bar in Figma is not an app component.
 
-| Width / role           | Behaviour                                                                                                                                                    |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Below md / handler     | Single column; bottom bar Dnes · Týden · Psi · Účet. Dnes is the default overview.                                                                           |
-| Below md / trainer     | Single column; bottom bar Přehled · Klienti · Cíle · Účet, matching the trainer tab-bar reference. Own dogs and calendar remain reachable from the overview. |
-| md to lg / both        | Existing header navigation, with content reflowing to two columns where space permits. Preserve destinations and active state.                               |
-| lg and above / trainer | Dark persistent sidebar, flexible main workspace and contextual dog/client panel. Editor/calendar can use wider workspaces.                                  |
-| lg and above / handler | Sidebar and overview grid for next training, progress and dogs. Constrain reading/form widths.                                                               |
+| Width / role           | Behaviour                                                                                                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Below md / handler     | Single column; bottom bar Dnes · Týden · Psi · Účet. Dnes is the default overview.                                                                                    |
+| Below md / trainer     | Single column; bottom bar Přehled · Klienti · Cíle · Účet, matching the trainer tab-bar reference. Own dogs and calendar remain reachable from the overview.          |
+| md to lg / both        | Sidebar navigation, with content reflowing where space permits. Preserve destinations and active state; the global top bar was removed by user request on 7 November. |
+| lg and above / trainer | Dark persistent sidebar, flexible main workspace and contextual dog/client panel. Editor/calendar can use wider workspaces.                                           |
+| lg and above / handler | Sidebar and overview grid for next training, progress and dogs. Constrain reading/form widths.                                                                        |
 
 Use Tailwind md (48rem) and lg (64rem) transition points. Reading/forms use
 max-w-2xl, calendars max-w-4xl, dashboards can expand to max-w-7xl. The 1440px

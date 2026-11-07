@@ -75,6 +75,19 @@ const renderToday = (trainings: WeekTraining[]) => {
   queryClient.setQueryData(weekKeys.range(upcomingFrom, upcomingTo), trainings)
   const dogs = [...new Map(trainings.map((training) => [training.dog.id, training.dog])).values()]
   queryClient.setQueryData(dogsListSummaryKey, dogs)
+  queryClient.setQueryData(["training-updates"], [])
+  queryClient.setQueryData([...weekKeys.all, "owner-metrics"], {
+    timeZone: "Europe/Prague",
+    asOf: "2026-11-05",
+    weeklyTarget: 6,
+    weeklyTrainedDays: 3,
+    weeklyTargetReached: false,
+    streak: 2,
+    successRate: 75,
+    ratedSessions: 4,
+    weeklyChange: 5,
+    weeks: [],
+  })
   render(
     <QueryClientProvider client={queryClient}>
       <TodayView userName="Jan Novák" />
@@ -87,6 +100,20 @@ describe("TodayView", () => {
     vi.clearAllMocks()
   })
 
+  it("shows the owner summary independently of the dog in the hero", () => {
+    renderToday([
+      aTraining(),
+      aTraining({ id: "other", dog: { id: "d2", name: "Bára", color: 2 } }),
+    ])
+    expect(screen.getByRole("progressbar", { name: "Týdenní cíl" })).toHaveAttribute(
+      "aria-valuenow",
+      "3",
+    )
+    expect(screen.getByText("3/6")).toBeInTheDocument()
+    expect(screen.getByText("75 %")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Všichni psi" })).toHaveAttribute("href", "/dogs")
+  })
+
   it("greets the handler and offers Začít trénink for today's plan", () => {
     renderToday([aTraining()])
 
@@ -97,8 +124,10 @@ describe("TodayView", () => {
       "href",
       "/trainings/t1",
     )
-    expect(screen.getByText("1 Přivolání na píšťalku")).toBeInTheDocument()
-    expect(screen.getByText("2 Sedni – zůstaň")).toBeInTheDocument()
+    expect(screen.getByText("Přivolání na píšťalku").closest("li")).toHaveTextContent(
+      "1Přivolání na píšťalku",
+    )
+    expect(screen.getByText("Sedni – zůstaň").closest("li")).toHaveTextContent("2Sedni – zůstaň")
   })
 
   it("shows empty state when the week has no trainings", () => {
@@ -153,6 +182,6 @@ describe("TodayView", () => {
       "href",
       "/dogs/d2",
     )
-    expect(screen.getByText(/sobota 7\. 11\. · Áčko/)).toBeInTheDocument()
+    expect(screen.getByText(/Další trénink sobota 7\. 11\./)).toBeInTheDocument()
   })
 })
