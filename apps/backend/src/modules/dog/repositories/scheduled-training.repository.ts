@@ -32,6 +32,7 @@ export class ScheduledTrainingRepository {
         dog: { ownerId, isArchived: false },
       },
       include: {
+        workoutLog: { select: { successRate: true } },
         dog: { select: { id: true, name: true, color: true } },
         goal: {
           select: {
@@ -50,7 +51,7 @@ export class ScheduledTrainingRepository {
             id: true,
             title: true,
             steps: {
-              select: { id: true, title: true },
+              select: { id: true, title: true, durationMinutes: true },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },
           },

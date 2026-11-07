@@ -20,6 +20,7 @@ export type MetricWeek = {
   successRate: number | null;
 };
 export type TrainingMetrics = {
+  completedSessions: number;
   timeZone: string;
   asOf: string;
   weeklyTarget: number;
@@ -111,6 +112,7 @@ export function calculateTrainingMetrics(
   return {
     timeZone: APP_TIME_ZONE,
     asOf: today,
+    completedSessions: completed.length,
     weeklyTarget,
     weeklyTrainedDays: current.trainedDays,
     weeklyTargetReached: current.trainedDays >= weeklyTarget,

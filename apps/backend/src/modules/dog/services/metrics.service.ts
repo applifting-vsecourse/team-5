@@ -1,4 +1,8 @@
 import {
+  fromCalendarDate,
+  todayInAppZone,
+} from '@/modules/dog/domain/calendar-date';
+import {
   calculateOwnerMetrics,
   calculateTrainingMetrics,
   TrainingMetrics,
@@ -6,7 +10,7 @@ import {
 import { MetricsRepository } from '@/modules/dog/repositories/metrics.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { Identity } from '@/shared/auth/domain/identity';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MetricsService {
@@ -23,6 +27,36 @@ export class MetricsService {
       await this.repository.getOwnerInputs(user.id),
       now,
     );
+  }
+
+  async getOwnerWeekMetrics(
+    user: Identity,
+    from: string,
+    to: string,
+    now = new Date(),
+  ): Promise<{ weeklyTarget: number; weeklyTrainedDays: number }> {
+    if (
+      fromCalendarDate(to).getTime() - fromCalendarDate(from).getTime() !==
+      6 * 86400000
+    )
+      throw new BadRequestException('Vyber celý týden.');
+    const inputs = await this.repository.getOwnerInputs(user.id);
+    return {
+      weeklyTarget: inputs.reduce((sum, dog) => sum + dog.weeklyTarget, 0),
+      weeklyTrainedDays: inputs.reduce(
+        (sum, dog) =>
+          sum +
+          new Set(
+            dog.workoutLogs
+              .filter(
+                (log) => log.status === 'COMPLETED' && log.completedAt <= now,
+              )
+              .map((log) => todayInAppZone(log.completedAt))
+              .filter((day) => day >= from && day <= to),
+          ).size,
+        0,
+      ),
+    };
   }
 
   async getMetrics(
