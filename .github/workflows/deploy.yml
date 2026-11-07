@@ -6,9 +6,6 @@ on:
 env:
   COURSE_DOMAIN: vsepractical.applifting.dev
   REGISTRY: registry.vsepractical.applifting.dev
-# Read by GitHub Actions on push to main. Effect: staging deploy waits for
-# backend+frontend unit tests (#87). No secrets in plain text (uses secrets.*).
-# User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
 jobs:
   tests:
     runs-on: ubuntu-latest

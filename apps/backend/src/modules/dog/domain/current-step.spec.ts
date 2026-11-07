@@ -66,8 +66,6 @@ describe('moveCurrentStep', () => {
     expect(moveCurrentStep(steps, null, 'back')?.currentStepId).toBe('a');
   });
 
-  // Behaviour: moveCurrentStep across GoalTraining boundary (#160 / #87).
-  // Existing current-step.spec.ts. User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
   it('advances and returns across a training boundary (#160)', () => {
     const acrossTrainings = ['t1-s1', 't1-s2', 't2-s1', 't2-s2'];
     expect(moveCurrentStep(acrossTrainings, 't1-s2', 'advance')).toEqual({

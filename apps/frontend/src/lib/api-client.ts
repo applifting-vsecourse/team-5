@@ -24,8 +24,6 @@ export const api = ky.create({
       async ({ error }) => {
         if (!(error instanceof HTTPError)) return error
         try {
-          // Callers: every api.* request. Existing api-client. No secrets.
-          // User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
           const body = (await error.response.clone().json()) as {
             message?: string | string[]
           }
