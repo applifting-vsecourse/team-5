@@ -26,6 +26,16 @@ export function dogsQueryOptions() {
   })
 }
 
+export function archivedDogsQueryOptions() {
+  return queryOptions({
+    queryKey: dogKeys.archivedList(),
+    queryFn: async () => {
+      const json = await api.get("dogs", { searchParams: { archived: "true" } }).json()
+      return dogsSchema.parse(json)
+    },
+  })
+}
+
 export function dogDetailQueryOptions(dogId: string) {
   return queryOptions({
     queryKey: dogKeys.detail(dogId),

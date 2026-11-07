@@ -33,6 +33,9 @@ export class DogResponseDto {
   @ApiProperty()
   ownerId!: string;
 
+  @ApiProperty()
+  isArchived!: boolean;
+
   @ApiProperty({ type: [String] })
   disciplines!: string[];
 
@@ -53,6 +56,7 @@ export class DogResponseDto {
       color: dog.color,
       photoUrl: dog.photoUrl ?? null,
       ownerId: dog.ownerId,
+      isArchived: dog.isArchived,
       disciplines: dog.disciplines ?? [],
       createdAt: dog.createdAt,
       updatedAt: dog.updatedAt,

@@ -28,12 +28,18 @@ const mapPrismaDogToDomain = (
 export class DogRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getDogsByOwnerId(ownerId: string): Promise<Dog[]> {
+  // Callers: DogsService.getDogs / archiveDog / restoreDog; DogAccessService.
+  // Existing DogRepository (not a new module). Soft-archive via Dog.isArchived.
+  // User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
+  async getDogsByOwnerId(
+    ownerId: string,
+    options: { archived?: boolean } = {},
+  ): Promise<Dog[]> {
     const dogs = await this.prisma.dog.findMany({
       include: dogRelations,
       where: {
         ownerId,
-        isArchived: false,
+        isArchived: options.archived ?? false,
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -46,22 +52,46 @@ export class DogRepository {
       where: {
         id,
         ownerId,
-        isArchived: false,
       },
     });
     return dog ? mapPrismaDogToDomain(dog) : null;
   }
 
+  // Owner sees archived dogs (history / restore). Trainer shares only active.
   async getDogByIdWithAccess(id: string, userId: string): Promise<Dog | null> {
     const dog = await this.prisma.dog.findFirst({
       include: dogRelations,
       where: {
         id,
-        isArchived: false,
-        OR: [{ ownerId: userId }, { shares: { some: { trainerId: userId } } }],
+        OR: [
+          { ownerId: userId },
+          {
+            isArchived: false,
+            shares: { some: { trainerId: userId } },
+          },
+        ],
       },
     });
     return dog ? mapPrismaDogToDomain(dog) : null;
+  }
+
+  async setArchived(
+    id: string,
+    ownerId: string,
+    isArchived: boolean,
+  ): Promise<Dog | null> {
+    const existing = await this.prisma.dog.findFirst({
+      include: dogRelations,
+      where: { id, ownerId, isArchived: !isArchived },
+    });
+    if (!existing) return null;
+
+    const dog = await this.prisma.dog.update({
+      include: dogRelations,
+      where: { id },
+      data: { isArchived },
+    });
+    return mapPrismaDogToDomain(dog);
   }
 
   async createDog(createDogData: {
@@ -104,7 +134,7 @@ export class DogRepository {
       include: dogRelations,
       where: { id, ownerId, isArchived: false },
     });
-    if (!existing) return null;
+    if (!existing) return null; // archived dogs are restored before editing
 
     const dog = await this.prisma.dog.update({
       include: dogRelations,

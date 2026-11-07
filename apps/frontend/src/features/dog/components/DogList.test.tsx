@@ -38,12 +38,15 @@ vi.mock("@tanstack/react-router", async () => {
   }
 })
 
+// Behaviour: DogList fixtures need Dog.isArchived (#57). Existing DogList.test.
+// User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
 const aDog = (overrides: Partial<Dog> = {}): Dog => ({
   id: "dog-1",
   name: "Baryk",
   breed: "Zlatý retrívr",
   color: 1,
   ownerId: "u1",
+  isArchived: false,
   disciplines: [],
   createdAt: new Date("2026-01-01T10:00:00Z"),
   updatedAt: new Date("2026-01-01T10:00:00Z"),

@@ -1,3 +1,6 @@
+// Callers: GoalsController PATCH /goals/:id. Existing GoalsService.
+// Schema: TrainingGoal.status (ACTIVE|COMPLETED|ARCHIVED|PAUSED), ScheduledTraining PLANNED rows.
+// User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
 import { GoalStatus } from '@/generated/prisma/client';
 import { Dog } from '@/modules/dog/domain/dog';
 import {
@@ -6,6 +9,7 @@ import {
   UpdateGoalData,
 } from '@/modules/dog/domain/goal';
 import { GoalRepository } from '@/modules/dog/repositories/goal.repository';
+import { ScheduledTrainingRepository } from '@/modules/dog/repositories/scheduled-training.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import {
@@ -14,11 +18,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+const INACTIVE_GOAL_STATUSES: GoalStatus[] = [
+  GoalStatus.COMPLETED,
+  GoalStatus.ARCHIVED,
+];
+
 @Injectable()
 export class GoalsService {
   constructor(
     private readonly goalRepository: GoalRepository,
     private readonly dogAccess: DogAccessService,
+    private readonly scheduledTrainings: ScheduledTrainingRepository,
   ) {}
 
   // A goal is visible exactly when its dog is. A goal of someone else's dog
@@ -107,7 +117,7 @@ export class GoalsService {
   ): Promise<Goal> {
     const { goal, dog } = await this.getAccessibleGoal(user, goalId);
 
-    return this.goalRepository.updateGoal(goalId, {
+    const updated = await this.goalRepository.updateGoal(goalId, {
       ...(data.deadline !== undefined && { deadline: data.deadline || null }),
       criterion:
         data.criterion === undefined
@@ -126,6 +136,17 @@ export class GoalsService {
       status: data.status,
       order: data.order,
     });
+
+    // Completed / archived goals leave the week; history keeps finished rows (#69).
+    if (
+      data.status &&
+      INACTIVE_GOAL_STATUSES.includes(data.status) &&
+      goal.status === GoalStatus.ACTIVE
+    ) {
+      await this.scheduledTrainings.deletePlannedForGoal(goalId);
+    }
+
+    return updated;
   }
 
   async deleteGoal(user: Identity, goalId: string): Promise<Goal> {
