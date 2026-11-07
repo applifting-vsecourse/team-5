@@ -6,11 +6,23 @@ import { addCalendarDays, type CalendarDate } from "@/lib/calendarDate"
 import { weekKeys } from "@/lib/weekKeys"
 
 export const weekTrainingSchema = z.object({
+  training: z
+    .object({
+      id: z.string(),
+      title: z.string(),
+      position: z.number().optional(),
+      total: z.number().optional(),
+    })
+    .optional(),
   id: z.string(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   status: z.enum(["PLANNED", "COMPLETED", "SKIPPED"]),
   dog: z.object({ id: z.string(), name: z.string(), color: z.number() }),
-  goal: z.object({ id: z.string(), title: z.string() }),
+  goal: z.object({
+    id: z.string(),
+    title: z.string(),
+    discipline: z.string().nullable().optional(),
+  }),
   exercises: z.array(z.object({ id: z.string(), title: z.string() })),
 })
 

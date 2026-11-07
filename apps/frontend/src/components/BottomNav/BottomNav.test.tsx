@@ -54,12 +54,12 @@ describe("BottomNav", () => {
     expect(container).toBeEmptyDOMElement()
   })
 
-  it("replaces the Účet link with accountMenu when provided", () => {
+  it("keeps Účet a page destination even if a legacy menu slot is provided", () => {
     currentPath = "/week"
     render(<BottomNav accountMenu={<button type="button">Účet</button>} />)
 
-    expect(screen.queryByRole("link", { name: "Účet" })).not.toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Účet" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Účet" })).toHaveAttribute("href", "/account")
+    expect(screen.queryByRole("button", { name: "Účet" })).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Dnes" })).toBeInTheDocument()
   })
 })

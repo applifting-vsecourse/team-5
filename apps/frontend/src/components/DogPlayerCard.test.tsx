@@ -72,7 +72,7 @@ describe("DogPlayerCard", () => {
           disciplines: ["Canicross"],
         }}
         metrics={metrics}
-        activeGoalCount={2}
+        completedGoalCount={2}
         goalCount={3}
         nextLabel="Dnes · Přivolání v parku"
       />,

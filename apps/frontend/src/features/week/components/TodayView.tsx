@@ -1,11 +1,13 @@
 import { useQueries, useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { Calendar, Play } from "lucide-react"
+import { Calendar } from "lucide-react"
 
-import { DogPlayerCard } from "@/components/DogPlayerCard"
+import { DesignIcon } from "@/components/DesignIcon"
+import { dayLabel, DogPlayerCard } from "@/components/DogPlayerCard"
 import { EmptyState } from "@/components/EmptyState"
-import { HeroCard, HeroChip } from "@/components/HeroCard"
+import { ProgressRing } from "@/components/ProgressRing"
 import { QueryState } from "@/components/QueryState"
+import { useTrainingUpdates } from "@/components/TrainingUpdates"
 import { Button } from "@/components/ui/button"
 import {
   addCalendarDays,
@@ -15,7 +17,7 @@ import {
   type CalendarDate,
 } from "@/lib/calendarDate"
 import { dogColorClass } from "@/lib/dogColors"
-import { dogMetricsQueryOptions } from "@/lib/dogMetrics"
+import { dogMetricsQueryOptions, ownerMetricsQueryOptions } from "@/lib/dogMetrics"
 import { dogsListQueryOptions } from "@/lib/dogsListQueryOptions"
 import { cn } from "@/lib/utils"
 
@@ -24,6 +26,8 @@ import {
   weekTrainingsQueryOptions,
   type WeekTraining,
 } from "@/features/week/api/weekQueryOptions"
+import { LogFreeTrainingDialog } from "@/features/week/components/LogFreeTrainingDialog"
+import { TodayWeekPreview } from "@/features/week/components/TodayWeekPreview"
 import { pickNextTraining } from "@/features/week/lib/pickNextTraining"
 
 function firstName(fullName: string): string {
@@ -45,59 +49,74 @@ function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
   const isToday = training.date === today
 
   return (
-    <HeroCard eyebrow={isToday ? "Dnešní trénink" : "Další trénink"}>
-      <div className="flex flex-wrap items-center gap-2">
-        <HeroChip>
-          <span className="inline-flex items-center gap-1.5">
-            <span
-              aria-hidden
-              className={cn("size-2 rounded-full", dogColorClass(training.dog.color))}
-            />
-            {training.dog.name}
-          </span>
-        </HeroChip>
-        {!isToday ? (
+    <section
+      className="grid gap-4 rounded-hero bg-hero p-5 text-hero-foreground xl:grid-cols-2 xl:gap-x-7 xl:rounded-sheet xl:p-7"
+      aria-label={isToday ? "Dnešní trénink" : "Další trénink"}
+    >
+      <div className="flex flex-wrap items-center gap-2 xl:col-start-1">
+        <span className="rounded-full bg-primary px-3 py-1.5 text-xs font-extrabold uppercase">
+          {isToday ? "Dnešní trénink" : "Další trénink"}
+        </span>
+        <span className="flex items-center gap-1.5 rounded-full bg-hero-accent px-3 py-1.5 text-xs font-semibold">
+          <span
+            aria-hidden
+            className={cn("size-2 rounded-full", dogColorClass(training.dog.color))}
+          />
+          {training.dog.name}
+        </span>
+        {!isToday && (
           <span className="text-xs font-semibold text-hero-muted">
             {formatDayLong(training.date)}
           </span>
-        ) : null}
+        )}
       </div>
-
-      <h2 className="text-xl font-extrabold tracking-tight text-hero-foreground">
-        {training.goal.title}
-      </h2>
-      {training.exercises.length > 0 ? (
-        <ol className="flex flex-col gap-2">
+      <div className="space-y-1.5 xl:col-start-1">
+        <h2 className="text-hero-title leading-tight font-extrabold tracking-tight break-words xl:text-title">
+          {training.training?.title ?? training.goal.title}
+        </h2>
+        <p className="text-sm font-medium text-hero-muted">
+          {[
+            training.goal.discipline,
+            training.training?.title !== training.goal.title ? training.goal.title : null,
+          ]
+            .filter(Boolean)
+            .join(" › ")}
+          {training.training?.total
+            ? ` · trénink ${(training.training.position ?? 0) + 1}/${training.training.total}`
+            : ""}
+        </p>
+      </div>
+      {training.exercises.length ? (
+        <ol className="flex flex-wrap gap-2 xl:col-start-2 xl:row-span-3 xl:row-start-1 xl:flex-col">
           {training.exercises.map((exercise, index) => (
             <li
               key={exercise.id}
-              className="rounded-full bg-hero-accent px-3 py-2 text-sm font-semibold text-hero-foreground"
+              className="flex max-w-full items-start gap-2 rounded-full bg-hero-accent py-1.5 pr-3 pl-1.5 text-xs font-semibold"
             >
-              {index + 1} {exercise.title}
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-hero-muted/30 text-xs font-extrabold">
+                {index + 1}
+              </span>
+              <span className="min-w-0 break-words">{exercise.title}</span>
             </li>
           ))}
         </ol>
       ) : (
-        <p className="text-sm font-medium text-hero-muted">Plán zatím nemá žádný cvik.</p>
+        <p className="text-sm text-hero-muted">Plán zatím nemá žádný cvik.</p>
       )}
-
       <Button
         asChild
         size="lg"
-        className="mt-1 w-full"
+        className="w-full text-action font-bold xl:col-start-1"
       >
         <Link
           to="/trainings/$trainingId"
           params={{ trainingId: training.id }}
         >
-          <Play
-            className="size-4"
-            aria-hidden
-          />
+          <DesignIcon name="today-Play" />
           Začít trénink
         </Link>
       </Button>
-    </HeroCard>
+    </section>
   )
 }
 
@@ -106,6 +125,7 @@ type TodayViewProps = {
 }
 
 export function TodayView({ userName }: TodayViewProps) {
+  const updates = useTrainingUpdates()
   const today = todayCalendarDate()
   const weekStart = startOfWeekOf(today)
   const upcomingFrom = addCalendarDays(weekStart, -7)
@@ -113,6 +133,7 @@ export function TodayView({ userName }: TodayViewProps) {
   const weekQuery = useQuery(weekTrainingsQueryOptions(weekStart))
   const upcomingQuery = useQuery(upcomingTrainingsQueryOptions(upcomingFrom))
   const dogsQuery = useQuery(dogsListQueryOptions())
+  const ownerMetrics = useQuery(ownerMetricsQueryOptions())
 
   const weekTrainings = weekQuery.data ?? []
   const upcomingTrainings = upcomingQuery.data ?? weekTrainings
@@ -127,19 +148,33 @@ export function TodayView({ userName }: TodayViewProps) {
   const metricsByDogId = new Map(
     dogs.map((dog, index) => [dog.id, metricsQueries[index]?.data] as const),
   )
-  const nextMetrics = nextTraining ? metricsByDogId.get(nextTraining.dog.id) : undefined
+  const nextMetrics = ownerMetrics.data
 
-  const isLoading = weekQuery.isLoading || dogsQuery.isLoading
+  const isLoading = weekQuery.isLoading || dogsQuery.isLoading || upcomingQuery.isLoading
   const error = weekQuery.error ?? dogsQuery.error ?? upcomingQuery.error
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-6 md:py-8">
-      <header className="space-y-1">
-        <p className="text-sm font-semibold text-muted-foreground">{formatDayHeading(today)}</p>
-        <h1 className="text-page font-extrabold tracking-tight text-foreground">
-          {userName ? `Ahoj ${firstName(userName)}` : "Dnes"}
-        </h1>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-gutter pt-4 pb-6 md:px-gutter-desktop md:py-8">
+      <header className="flex items-center gap-3">
+        <div className="min-w-0 flex-1 space-y-0.5">
+          <p className="text-label font-semibold text-muted-foreground">
+            {formatDayHeading(today)}
+          </p>
+          <h1 className="text-page font-extrabold tracking-tight xl:text-title">
+            {userName ? `Ahoj ${firstName(userName)}` : "Dnes"}
+            <span aria-hidden> 👋</span>
+          </h1>
+        </div>
+        {updates.bell}
+        <LogFreeTrainingDialog dogs={dogs} />
+        <span
+          aria-label={userName ?? "Psovod"}
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-extrabold text-primary-foreground xl:hidden"
+        >
+          {firstName(userName ?? "Psovod").charAt(0)}
+        </span>
       </header>
+      {updates.notifications}
 
       <QueryState
         isLoading={isLoading}
@@ -169,7 +204,7 @@ export function TodayView({ userName }: TodayViewProps) {
           />
         }
       >
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start xl:gap-5">
           {nextTraining ? (
             <NextTrainingHero
               training={nextTraining}
@@ -203,50 +238,95 @@ export function TodayView({ userName }: TodayViewProps) {
             />
           )}
 
-          {nextMetrics ? (
-            <section
-              aria-label="Metriky"
-              className="grid grid-cols-3 gap-2"
-            >
-              <article className="rounded-card border border-border bg-card p-3">
-                <p className="text-label text-muted-foreground">Týdenní cíl</p>
-                <p className="text-title font-extrabold tabular-nums">
-                  {nextMetrics.weeklyTrainedDays}/{nextMetrics.weeklyTarget}
-                </p>
-              </article>
-              <article className="rounded-card border border-border bg-card p-3">
-                <p className="text-label text-muted-foreground">Série</p>
-                <p className="text-title font-extrabold tabular-nums">{nextMetrics.streak}</p>
-              </article>
-              <article className="rounded-card border border-border bg-card p-3">
-                <p className="text-label text-muted-foreground">Úspěšnost</p>
-                <p className="text-title font-extrabold tabular-nums">
-                  {nextMetrics.successRate != null
-                    ? `${Math.round(nextMetrics.successRate)} %`
-                    : "—"}
-                </p>
-                {nextMetrics.weeklyChange != null ? (
-                  <p className="text-sm font-semibold text-success-foreground">
-                    {nextMetrics.weeklyChange > 0 ? "+" : ""}
-                    {nextMetrics.weeklyChange} b.
+          <QueryState
+            className="xl:col-start-2 xl:row-start-1"
+            isLoading={ownerMetrics.isLoading}
+            error={ownerMetrics.error}
+            onRetry={() => void ownerMetrics.refetch()}
+            empty={null}
+          >
+            {nextMetrics && nextMetrics.weeklyTarget > 0 && (
+              <section
+                aria-label="Metriky"
+                className="grid grid-cols-3 gap-3 xl:grid-cols-1 xl:[&>article]:flex-row xl:[&>article]:items-center xl:[&>article]:p-4"
+              >
+                <article className="flex flex-col items-start gap-3 rounded-card border border-border bg-card p-3">
+                  <ProgressRing
+                    value={nextMetrics.weeklyTrainedDays}
+                    target={nextMetrics.weeklyTarget}
+                    label="Týdenní cíl"
+                  />
+                  <div>
+                    <h2 className="text-xs font-medium text-muted-foreground">Týdenní cíl</h2>
+                    <p className="mt-1 text-sm font-bold">
+                      {nextMetrics.weeklyTargetReached
+                        ? "Splněno"
+                        : `ještě ${Math.max(0, nextMetrics.weeklyTarget - nextMetrics.weeklyTrainedDays)}`}
+                    </p>
+                  </div>
+                </article>
+                <article className="flex flex-col items-start gap-3 rounded-card border border-border bg-card p-3">
+                  <span className="flex size-12 items-center justify-center rounded-field bg-accent">
+                    <DesignIcon name="today-Flame" />
+                  </span>
+                  <div>
+                    <h2 className="text-xs font-medium text-muted-foreground">Série</h2>
+                    <p className="mt-1 text-sm font-bold">
+                      {nextMetrics.streak > 0 && <span aria-hidden>🔥 </span>}
+                      {dayLabel(nextMetrics.streak)}
+                    </p>
+                  </div>
+                </article>
+                <article className="flex flex-col justify-between gap-3 rounded-card border border-border bg-card p-3">
+                  <p className="flex h-12 items-center text-xl font-extrabold tabular-nums">
+                    {nextMetrics.successRate == null
+                      ? "—"
+                      : `${Math.round(nextMetrics.successRate)} %`}
                   </p>
-                ) : null}
-              </article>
-            </section>
-          ) : null}
+                  <div>
+                    <h2 className="text-xs font-medium text-muted-foreground">Úspěšnost</h2>
+                    <p
+                      className={cn(
+                        "mt-1 text-sm font-bold",
+                        nextMetrics.weeklyChange != null && nextMetrics.weeklyChange < 0
+                          ? "text-danger-foreground"
+                          : "text-success-foreground",
+                      )}
+                    >
+                      {nextMetrics.weeklyChange == null
+                        ? "Bez srovnání"
+                        : `${nextMetrics.weeklyChange > 0 ? "↗ +" : nextMetrics.weeklyChange < 0 ? "↘ " : ""}${nextMetrics.weeklyChange} b.`}
+                    </p>
+                  </div>
+                </article>
+              </section>
+            )}
+          </QueryState>
 
+          <TodayWeekPreview
+            weekStart={weekStart}
+            today={today}
+          />
           {dogs.length > 0 ? (
             <section
               aria-labelledby="today-dogs-heading"
-              className="flex flex-col gap-3"
+              className="flex flex-col gap-3 xl:col-start-2 xl:row-start-2"
             >
-              <h2
-                id="today-dogs-heading"
-                className="text-section font-extrabold tracking-tight text-foreground"
-              >
-                Tvoji psi
-              </h2>
-              <ul className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <h2
+                  id="today-dogs-heading"
+                  className="text-section font-extrabold tracking-tight text-foreground"
+                >
+                  Tvoji psi
+                </h2>
+                <Link
+                  to="/dogs"
+                  className="inline-flex min-h-touch items-center text-sm font-bold text-primary"
+                >
+                  Všichni psi
+                </Link>
+              </div>
+              <ul className="grid grid-cols-2 gap-3">
                 {dogs.map((dog) => {
                   const nextForDog = pickNextTraining(
                     upcomingTrainings.filter((training) => training.dog.id === dog.id),
@@ -254,12 +334,13 @@ export function TodayView({ userName }: TodayViewProps) {
                   )
                   const nextLabel = nextForDog
                     ? nextForDog.date === today
-                      ? `Dnes · ${nextForDog.goal.title}`
-                      : `${formatDayLong(nextForDog.date)} · ${nextForDog.goal.title}`
+                      ? "Trénink dnes"
+                      : `Další trénink ${formatDayLong(nextForDog.date)}`
                     : null
                   return (
                     <li key={dog.id}>
                       <DogPlayerCard
+                        variant="compact"
                         dog={dog}
                         metrics={metricsByDogId.get(dog.id) ?? null}
                         nextLabel={nextLabel}
@@ -270,6 +351,7 @@ export function TodayView({ userName }: TodayViewProps) {
               </ul>
             </section>
           ) : null}
+          <div className="xl:col-start-2 xl:row-start-3">{updates.message}</div>
         </div>
       </QueryState>
     </div>

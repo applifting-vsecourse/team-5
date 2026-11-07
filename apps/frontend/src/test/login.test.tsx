@@ -101,36 +101,39 @@ function acceptLogin(role = "user") {
 }
 
 describe("login and logout", () => {
-  it.each(["Uživatelské menu", "Účet"])(
-    "logs out directly from %s without opening account settings",
-    async (menuName) => {
-      auth.getSession.mockResolvedValue({ data: { user }, error: null })
-      const { router, queryClient, interaction } = await openPage("/dogs")
-      await interaction.click(await screen.findByRole("button", { name: menuName }))
-      expect(router.state.location.pathname).toBe("/dogs")
-      auth.signOut.mockImplementation(() => {
-        auth.getSession.mockResolvedValue({ data: null, error: null })
-        return Promise.resolve({ data: {}, error: null })
-      })
-      await interaction.click(screen.getByRole("menuitem", { name: "Odhlásit se" }))
-      await waitFor(() => expect(router.state.location.pathname).toBe("/"))
-      expect(auth.signOut).toHaveBeenCalledTimes(1)
-      expect(queryClient.getQueryData(authKeys.session())).toBeNull()
-    },
-  )
+  it.each(["user", "trainer"])("logs out through Account navigation for %s", async (role) => {
+    auth.getSession.mockResolvedValue({ data: { user: { ...user, role } }, error: null })
+    const { router, queryClient, interaction } = await openPage("/dogs")
+    await interaction.click(
+      within(await screen.findByRole("navigation", { name: "Spodní navigace" })).getByRole("link", {
+        name: "Účet",
+      }),
+    )
+    await screen.findByRole("heading", { name: "Účet" })
+    expect(router.state.location.pathname).toBe("/account")
+    auth.signOut.mockImplementation(() => {
+      auth.getSession.mockResolvedValue({ data: null, error: null })
+      return Promise.resolve({ data: {}, error: null })
+    })
+    await interaction.click(screen.getByRole("button", { name: "Odhlásit se" }))
+    await waitFor(() => expect(router.state.location.pathname).toBe("/"))
+    expect(auth.signOut).toHaveBeenCalledTimes(1)
+    expect(queryClient.getQueryData(authKeys.session())).toBeNull()
+  })
 
-  it("keeps the menu usable when logout fails", async () => {
+  it("keeps Account usable when logout fails", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
     auth.signOut.mockResolvedValue({ data: null, error: { message: "Offline" } })
     const { router, interaction } = await openPage("/dogs")
-    await interaction.click(await screen.findByRole("button", { name: "Uživatelské menu" }))
-    await interaction.click(screen.getByRole("menuitem", { name: "Odhlásit se" }))
-    await waitFor(() =>
-      expect(screen.getByRole("menuitem", { name: "Odhlásit se" })).not.toHaveAttribute(
-        "data-disabled",
-      ),
+    await interaction.click(
+      within(await screen.findByRole("navigation", { name: "Spodní navigace" })).getByRole("link", {
+        name: "Účet",
+      }),
     )
-    expect(router.state.location.pathname).toBe("/dogs")
+    await interaction.click(await screen.findByRole("button", { name: "Odhlásit se" }))
+    await waitFor(() => expect(screen.getByRole("button", { name: "Odhlásit se" })).toBeEnabled())
+    expect(auth.signOut).toHaveBeenCalledTimes(1)
+    expect(router.state.location.pathname).toBe("/account")
   })
   const oldDog = {
     id: "dog-a",
@@ -344,11 +347,10 @@ describe("login and logout", () => {
     await screen.findByRole("heading", { name: "Moji psi" })
     auth.getSession.mockResolvedValue({ data: null, error: null })
     await interaction.click(
-      within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("button", {
+      within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("link", {
         name: "Účet",
       }),
     )
-    await interaction.click(screen.getByRole("menuitem", { name: "Účet" }))
     expect(await screen.findByRole("dialog", { name: "Přihlášení" })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/login")
     expect(screen.queryByText(user.email)).not.toBeInTheDocument()
@@ -416,11 +418,10 @@ describe("login and logout", () => {
     const { interaction, router, queryClient } = await openPage("/dogs")
     await screen.findByRole("heading", { name: "Moji psi" })
     await interaction.click(
-      within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("button", {
+      within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("link", {
         name: "Účet",
       }),
     )
-    await interaction.click(screen.getByRole("menuitem", { name: "Účet" }))
     await screen.findByRole("heading", { name: "Účet" })
     queryClient.setQueryData(["private-dogs"], [{ name: "Private dog" }])
     auth.signOut.mockImplementation(() => {

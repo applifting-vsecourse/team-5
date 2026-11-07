@@ -1,8 +1,13 @@
 import { z } from "zod"
 
+import { todayCalendarDate } from "@/lib/calendarDate"
+
 export const dogColorSchema = z.number().int().min(1).max(6)
 
 export const dogSchema = z.object({
+  birthDate: z.string().nullable().optional(),
+  weightKg: z.number().nullable().optional(),
+  trainers: z.array(z.object({ id: z.string(), name: z.string() })).optional(),
   id: z.string(),
   name: z.string().min(1, "Jméno je povinné").max(40, "Jméno může mít maximálně 40 znaků"),
   breed: z.string().max(100).nullable().optional(),
@@ -16,7 +21,21 @@ export const dogSchema = z.object({
 
 export const dogsSchema = z.array(dogSchema)
 
+const profileFields = {
+  birthDate: z.iso
+    .date("Zadej platné datum.")
+    .refine((value) => value <= todayCalendarDate(), "Datum narození nesmí být v budoucnosti.")
+    .optional()
+    .or(z.literal("")),
+  weightKg: z
+    .number()
+    .min(0.1, "Váha musí být alespoň 0,1 kg.")
+    .max(200, "Maximální váha je 200 kg.")
+    .nullable()
+    .optional(),
+}
 export const createDogInputSchema = z.object({
+  ...profileFields,
   name: z
     .string()
     .trim()
@@ -34,6 +53,7 @@ export const createDogInputSchema = z.object({
 })
 
 export const updateDogInputSchema = z.object({
+  ...profileFields,
   name: z
     .string()
     .trim()

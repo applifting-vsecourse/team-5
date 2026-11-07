@@ -73,11 +73,18 @@ export function CreateDogDialog({
 
   const [name, setName] = useState("")
   const [breed, setBreed] = useState("")
+  const [birthDate, setBirthDate] = useState("")
+  const [weight, setWeight] = useState("")
   const [color, setColor] = useState<number>(defaultColor)
   const [disciplines, setDisciplines] = useState<string[]>([])
   const [customDiscipline, setCustomDiscipline] = useState("")
   const [customDisciplineError, setCustomDisciplineError] = useState<string | null>(null)
-  const [errors, setErrors] = useState<{ name?: string; breed?: string }>({})
+  const [errors, setErrors] = useState<{
+    name?: string
+    breed?: string
+    birthDate?: string
+    weightKg?: string
+  }>({})
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
@@ -94,6 +101,8 @@ export function CreateDogDialog({
 
   const resetForm = useCallback(() => {
     setName("")
+    setBirthDate("")
+    setWeight("")
     setBreed("")
     setColor(defaultColor)
     setDisciplines([])
@@ -198,16 +207,23 @@ export function CreateDogDialog({
     const parseResult = createDogInputSchema.safeParse({
       name,
       breed,
+      birthDate,
+      weightKg: weight.trim() ? Number(weight) : null,
       color,
       disciplines,
       photo: photoFile,
     })
 
     if (!parseResult.success) {
-      const fieldErrors: { name?: string; breed?: string } = {}
+      const fieldErrors: { name?: string; breed?: string; birthDate?: string; weightKg?: string } =
+        {}
       for (const issue of parseResult.error.issues) {
         if (issue.path[0] === "name") {
           fieldErrors.name = issue.message
+        } else if (issue.path[0] === "birthDate") {
+          fieldErrors.birthDate = issue.message
+        } else if (issue.path[0] === "weightKg") {
+          fieldErrors.weightKg = issue.message
         } else if (issue.path[0] === "breed") {
           fieldErrors.breed = issue.message
         }
@@ -353,6 +369,49 @@ export function CreateDogDialog({
                 disabled={isPending}
               />
               {errors.breed && <p className="text-xs text-destructive">{errors.breed}</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="dog-birth-date">Datum narození</Label>
+                <Input
+                  id="dog-birth-date"
+                  type="date"
+                  value={birthDate}
+                  onChange={(event) => setBirthDate(event.target.value)}
+                  aria-invalid={Boolean(errors.birthDate)}
+                  aria-describedby={errors.birthDate ? "dog-birth-error" : undefined}
+                />
+                {errors.birthDate && (
+                  <p
+                    id="dog-birth-error"
+                    className="text-xs text-destructive"
+                  >
+                    {errors.birthDate}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dog-weight">Váha (kg)</Label>
+                <Input
+                  id="dog-weight"
+                  type="number"
+                  min="0.1"
+                  max="200"
+                  step="0.1"
+                  value={weight}
+                  onChange={(event) => setWeight(event.target.value)}
+                  aria-invalid={Boolean(errors.weightKg)}
+                  aria-describedby={errors.weightKg ? "dog-weight-error" : undefined}
+                />
+                {errors.weightKg && (
+                  <p
+                    id="dog-weight-error"
+                    className="text-xs text-destructive"
+                  >
+                    {errors.weightKg}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
