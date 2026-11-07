@@ -4,6 +4,13 @@ import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeAll, describe, expect, it, vi } from "vitest"
 
+import { dogKeys } from "@/lib/dogKeys"
+
+import type { Dog, DogActivity } from "@/features/dog/api/dogSchemas"
+
+import { DogActivitiesSection } from "./DogActivitiesSection"
+import { DogDetailView } from "./DogDetailView"
+
 beforeAll(() => {
   Object.defineProperty(window, "matchMedia", {
     writable: true,
@@ -19,13 +26,6 @@ beforeAll(() => {
     }),
   })
 })
-
-import { dogKeys } from "@/lib/dogKeys"
-
-import type { Dog, DogActivity } from "@/features/dog/api/dogSchemas"
-
-import { DogActivitiesSection } from "./DogActivitiesSection"
-import { DogDetailView } from "./DogDetailView"
 
 const demoActivities: DogActivity[] = [
   {

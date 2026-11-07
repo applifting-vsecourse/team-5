@@ -3,10 +3,7 @@ import { createFileRoute } from "@tanstack/react-router"
 
 import { Seo } from "@/components/Seo"
 
-import {
-  archivedDogsQueryOptions,
-  dogsQueryOptions,
-} from "@/features/dog/api/dogsQueryOptions"
+import { archivedDogsQueryOptions, dogsQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 import { DogList } from "@/features/dog/components/DogList"
 
 function dogCountLabel(count: number): string {
@@ -35,9 +32,7 @@ function DogsPage() {
             {!dogsQuery.isLoading ? (
               <p className="text-xs font-semibold text-muted-foreground">
                 {dogCountLabel(dogs.length)}
-                {archivedDogs.length
-                  ? ` · ${archivedDogs.length} v archivu`
-                  : ""}
+                {archivedDogs.length ? ` · ${archivedDogs.length} v archivu` : ""}
                 {dogs.some((dog) => dog.trainers?.length)
                   ? ` · Sdílení: ${[...new Set(dogs.flatMap((dog) => dog.trainers?.map((trainer) => trainer.name) ?? []))].join(", ")}`
                   : ""}

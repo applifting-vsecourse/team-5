@@ -1,15 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
+import { weekKeys } from "@/lib/weekKeys"
+
 import { dogKeys } from "@/features/dog/api/dogKeys"
 import type { Dog, UpdateDogInput } from "@/features/dog/api/dogSchemas"
 import { archiveDog, restoreDog, updateDog } from "@/features/dog/api/updateDog"
-import { weekKeys } from "@/lib/weekKeys"
 
-function invalidateAfterArchiveChange(
-  queryClient: ReturnType<typeof useQueryClient>,
-  dog: Dog,
-) {
+function invalidateAfterArchiveChange(queryClient: ReturnType<typeof useQueryClient>, dog: Dog) {
   queryClient.setQueryData(dogKeys.detail(dog.id), dog)
   void queryClient.invalidateQueries({ queryKey: dogKeys.lists() })
   void queryClient.invalidateQueries({ queryKey: dogKeys.archivedList() })
