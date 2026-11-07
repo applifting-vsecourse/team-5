@@ -35,8 +35,8 @@ function profileFacts(dog: Dog) {
   }
   return [
     dog.breed,
-    age,
-    dog.weightKg != null ? `${dog.weightKg.toLocaleString("cs-CZ")} kg` : null,
+    age ?? "Věk neuveden",
+    dog.weightKg != null ? `${dog.weightKg.toLocaleString("cs-CZ")} kg` : "Váha neuvedena",
   ]
     .filter(Boolean)
     .join(" · ")

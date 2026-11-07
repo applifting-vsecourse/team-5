@@ -4,13 +4,18 @@ import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import type { Dog } from "@/features/dog/api/dogSchemas"
+import { updateDog } from "@/features/dog/api/updateDog"
 
 import { EditDogDialog } from "./EditDogDialog"
+
+vi.mock("@/features/dog/api/updateDog", () => ({ updateDog: vi.fn() }))
 
 const aDog: Dog = {
   id: "dog-1",
   name: "Baryk",
   breed: "Border kolie",
+  birthDate: "2020-01-01",
+  weightKg: 21.5,
   color: 2,
   photoUrl: "https://example.com/baryk.jpg",
   ownerId: "u1",
@@ -55,6 +60,8 @@ describe("EditDogDialog", () => {
     expect(screen.getByRole("heading", { name: "Upravit psa" })).toBeInTheDocument()
     expect(screen.getByLabelText(/jméno psa \*/i)).toHaveValue("Baryk")
     expect(screen.getByLabelText(/plemeno/i)).toHaveValue("Border kolie")
+    expect(screen.getByLabelText(/datum narození/i)).toHaveValue("2020-01-01")
+    expect(screen.getByLabelText(/váha/i)).toHaveValue(21.5)
 
     // Color 2 is checked
     const color2Radio = screen.getByRole("radio", { name: "Barva 2" })
@@ -70,6 +77,26 @@ describe("EditDogDialog", () => {
 
     // Photo remove button is available
     expect(screen.getByRole("button", { name: /odstranit fotku/i })).toBeInTheDocument()
+  })
+
+  it("sends edited birth date and weight to the API", async () => {
+    const user = userEvent.setup()
+    vi.mocked(updateDog).mockResolvedValue({ ...aDog, weightKg: 22.4 })
+    render(
+      <EditDogDialog
+        dog={aDog}
+        isOpen
+        onOpenChange={vi.fn()}
+      />,
+      { wrapper: createWrapper() },
+    )
+    await user.clear(screen.getByLabelText(/váha/i))
+    await user.type(screen.getByLabelText(/váha/i), "22.4")
+    await user.click(screen.getByRole("button", { name: /uložit změny/i }))
+    expect(updateDog).toHaveBeenCalledWith(
+      aDog.id,
+      expect.objectContaining({ birthDate: "2020-01-01", weightKg: 22.4 }),
+    )
   })
 
   it("allows removing existing photo", async () => {

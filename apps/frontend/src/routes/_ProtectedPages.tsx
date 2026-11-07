@@ -35,7 +35,8 @@ function Layout() {
   const { user } = useSession()
   const router = useRouter()
   const isTrainingFlow = useRouterState({
-    select: (state) => /^\/trainings\/[^/]+(?:\/finish)?\/?$/.test(state.location.pathname),
+    select: (state) =>
+      /^\/trainings\/[^/]+(?:\/(?:finish|done))?\/?$/.test(state.location.pathname),
   })
   const identity = user ? `${user.id}:${user.role ?? ""}` : null
   const previousIdentity = useRef(identity)

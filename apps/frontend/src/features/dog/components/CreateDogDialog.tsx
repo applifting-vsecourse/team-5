@@ -397,7 +397,7 @@ export function CreateDogDialog({
                   type="number"
                   min="0.1"
                   max="200"
-                  step="0.1"
+                  step="0.01"
                   value={weight}
                   onChange={(event) => setWeight(event.target.value)}
                   aria-invalid={Boolean(errors.weightKg)}

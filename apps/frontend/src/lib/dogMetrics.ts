@@ -17,6 +17,8 @@ export const dogMetricsSchema = z.object({
   weeklyTrainedDays: z.number(),
   weeklyTargetReached: z.boolean(),
   streak: z.number(),
+  longestStreak: z.number().int().nonnegative().optional(),
+  trainedDates: z.array(z.string()).optional(),
   successRate: z.number().nullable(),
   ratedSessions: z.number(),
   weeklyChange: z.number().nullable(),

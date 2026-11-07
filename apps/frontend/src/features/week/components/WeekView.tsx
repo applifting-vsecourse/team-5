@@ -35,7 +35,6 @@ import {
   type WeekTraining,
 } from "@/features/week/api/weekQueryOptions"
 import { MoveTrainingDialog } from "@/features/week/components/MoveTrainingDialog"
-import { SkipTrainingDialog } from "@/features/week/components/SkipTrainingDialog"
 import { WeekPickerDialog } from "@/features/week/components/WeekPickerDialog"
 import { useUndoSkip } from "@/features/week/hooks/useSkipTraining"
 
@@ -139,13 +138,14 @@ function WeekTrainingCard({ training, today }: { training: WeekTraining; today: 
       </div>
       <MoveTrainingDialog
         training={training}
-        isOpen={isMoveOpen}
-        onOpenChange={setMoveOpen}
-      />
-      <SkipTrainingDialog
-        training={training}
-        isOpen={isSkipOpen}
-        onOpenChange={setSkipOpen}
+        isOpen={isMoveOpen || isSkipOpen}
+        initialAction={isSkipOpen ? "skip" : "move"}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setMoveOpen(false)
+            setSkipOpen(false)
+          }
+        }}
       />
     </StripCard>
   )
@@ -296,6 +296,7 @@ export function WeekView({
         onRetry={() => void query.refetch()}
         errorTitle="Týden se nepodařilo načíst"
         empty={null}
+        className="flex flex-col gap-6"
       >
         {!trainings.length && (
           <EmptyState

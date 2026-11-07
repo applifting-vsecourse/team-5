@@ -125,12 +125,19 @@ const createWrapper = (queryClient?: QueryClient) => {
 }
 
 describe("DogDetailView", () => {
+  it("shows age calculated from birth date and stored decimal weight", () => {
+    render(<DogDetailView dog={{ ...aDog, birthDate: "2020-01-01", weightKg: 21.5 }} />, {
+      wrapper: createWrapper(),
+    })
+    const years = new Date().getFullYear() - 2020
+    expect(screen.getByText(`Border kolie · ${years} let · 21,5 kg`)).toBeInTheDocument()
+  })
   it("renders the current Figma dog profile with working section links and edit action", () => {
     render(<DogDetailView dog={aDog} />, { wrapper: createWrapper() })
 
     // Dog name and breed & disciplines
     expect(screen.getByRole("heading", { level: 1, name: "Baryk" })).toBeInTheDocument()
-    expect(screen.getByText("Border kolie")).toBeInTheDocument()
+    expect(screen.getByText("Border kolie · Věk neuveden · Váha neuvedena")).toBeInTheDocument()
     expect(screen.getByText("Agility")).toBeInTheDocument()
     expect(screen.getByText("Canicross")).toBeInTheDocument()
 

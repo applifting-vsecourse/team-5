@@ -13,6 +13,8 @@ describe('training metrics', () => {
     const result = calculateTrainingMetrics([], 3, now);
     expect(result).toMatchObject({
       streak: 0,
+      longestStreak: 0,
+      trainedDates: [],
       weeklyTrainedDays: 0,
       successRate: null,
       weeklyChange: null,
@@ -44,6 +46,8 @@ describe('training metrics', () => {
       successRate: 50,
       ratedSessions: 2,
       streak: 1,
+      longestStreak: 1,
+      trainedDates: ['2026-11-02', '2026-11-04'],
     });
     expect(result.weeks[7]).toMatchObject({
       completedSessions: 3,
@@ -74,6 +78,25 @@ describe('training metrics', () => {
     );
     expect(result.streak).toBe(2);
     expect(result.weeks[6].trainedDays).toBe(2);
+  });
+
+  it('keeps the historical record when the current streak is shorter', () => {
+    const result = calculateTrainingMetrics(
+      [
+        log('2026-10-21T12:00:00Z'),
+        log('2026-10-20T12:00:00Z'),
+        log('2026-10-22T12:00:00Z'),
+        log('2026-10-22T14:00:00Z'),
+        log('2026-11-04T12:00:00Z'),
+      ],
+      3,
+      now,
+    );
+    expect(result).toMatchObject({
+      streak: 1,
+      longestStreak: 3,
+      trainedDates: ['2026-11-04'],
+    });
   });
 
   it('uses an inclusive 28-day range and compares scored weeks only', () => {
