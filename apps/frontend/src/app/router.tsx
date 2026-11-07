@@ -13,7 +13,12 @@ export const router = createRouter({
   defaultPreloadStaleTime: 0,
   scrollRestoration: true,
   defaultNotFoundComponent: NotFound,
-  defaultErrorComponent: ({ error }) => <RootErrorBoundary error={error} />,
+  defaultErrorComponent: ({ error, reset }) => (
+    <RootErrorBoundary
+      error={error}
+      reset={reset}
+    />
+  ),
   defaultPendingComponent: AppLoadingScreen,
 })
 

@@ -3,6 +3,7 @@ import { toast } from "sonner"
 import { z } from "zod"
 
 import { api } from "@/lib/api-client"
+import { dogKeys } from "@/lib/dogKeys"
 
 import { clientKeys } from "@/features/client/api/clientKeys"
 
@@ -10,6 +11,7 @@ export const verifyInvitationSchema = z.object({
   valid: z.boolean(),
   code: z.string(),
   trainerName: z.string(),
+  expiresAt: z.string().optional(),
   email: z.string().nullable().optional(),
   isExistingUser: z.boolean().default(false),
 })
@@ -38,6 +40,7 @@ export function useAcceptInvitation() {
     onSuccess: () => {
       toast.success("Pozvánka byla úspěšně přijata")
       void queryClient.invalidateQueries({ queryKey: clientKeys.all })
+      void queryClient.invalidateQueries({ queryKey: dogKeys.all })
     },
   })
 }

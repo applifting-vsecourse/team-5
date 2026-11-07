@@ -1,8 +1,32 @@
-import { render, screen } from "@testing-library/react"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { render as renderOriginal, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { AccountPage } from "./account"
+
+function render(element: React.ReactNode) {
+  return renderOriginal(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      {element}
+    </QueryClientProvider>,
+  )
+}
+
+vi.mock("@/lib/api-client", () => ({
+  api: {
+    get: (path: string) => ({
+      json: () =>
+        Promise.resolve(
+          path.startsWith("invitations/")
+            ? { valid: true, code: "K7M2PQ", trainerName: "Marek Trenér" }
+            : [],
+        ),
+    }),
+  },
+}))
 
 const mockMutate = vi.fn()
 const mockNavigate = vi.fn()
@@ -53,7 +77,7 @@ describe("AccountPage", () => {
     }
   })
 
-  it("renders page title and user details without card containers", () => {
+  it("renders page title and actual user details", () => {
     render(<AccountPage />)
 
     expect(screen.getByRole("heading", { name: "Účet", level: 1 })).toBeInTheDocument()
@@ -111,7 +135,7 @@ describe("AccountPage", () => {
     expect(screen.queryByRole("button", { name: /odhlásit se/i })).not.toBeInTheDocument()
   })
 
-  it("shows 'Mám kód od trenéra' for dog owners and navigates to /invite with code", async () => {
+  it("shows the trainer after verifying a code from Account", async () => {
     const user = userEvent.setup()
     mockUser = {
       name: "Jan Psovod",
@@ -129,13 +153,10 @@ describe("AccountPage", () => {
     const input = screen.getByLabelText(/kód pozvánky/i)
     await user.type(input, "K7M2PQ")
 
-    const submitBtn = screen.getByRole("button", { name: /pokračovat/i })
+    const submitBtn = screen.getByRole("button", { name: /ověřit kód/i })
     await user.click(submitBtn)
 
-    expect(mockNavigate).toHaveBeenCalledWith({
-      to: "/invite",
-      search: { code: "K7M2PQ" },
-    })
+    expect(await screen.findByText("Marek Trenér")).toBeInTheDocument()
   })
 
   it("does not show 'Mám kód od trenéra' for trainers", () => {

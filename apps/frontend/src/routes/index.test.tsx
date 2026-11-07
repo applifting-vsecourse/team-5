@@ -54,24 +54,22 @@ describe("LandingPage", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: /zadání z lekce, které klient nezapomene/i,
+        name: /trénink psa, který nekončí na lekci./i,
         level: 1,
       }),
     ).toBeInTheDocument()
 
-    expect(
-      screen.getByText(/trenér zapíše cíl a cviky s instrukcí a kritériem/i),
-    ).toBeInTheDocument()
+    expect(screen.getByText(/zadání od trenéra máš v telefonu/i)).toBeInTheDocument()
   })
 
   it("renders CTA buttons for registration, trainer code, and sign-in", () => {
     render(<LandingPage />)
 
-    const registerLink = screen.getByRole("link", { name: /zaregistrovat se/i })
+    const registerLink = screen.getByRole("link", { name: /začít zdarma/i })
     expect(registerLink).toBeInTheDocument()
     expect(registerLink).toHaveAttribute("href", "/signup")
 
-    const codeButton = screen.getByRole("button", { name: /mám kód od trenéra/i })
+    const codeButton = screen.getByRole("button", { name: /mám pozvánku od trenéra/i })
     expect(codeButton).toBeInTheDocument()
 
     const loginLink = screen.getByRole("link", { name: /přihlásit se/i })
@@ -79,33 +77,24 @@ describe("LandingPage", () => {
     expect(loginLink).toHaveAttribute("href", "/login")
   })
 
-  it("renders sections for trainer and dog owner with all points", () => {
+  it("explains the three steps using a product preview", () => {
     render(<LandingPage />)
-
-    expect(screen.getByRole("heading", { name: /pro trenéra/i, level: 2 })).toBeInTheDocument()
-    expect(screen.getByText(/zadání mezi lekcemi máte písemně u psa klienta/i)).toBeInTheDocument()
-    expect(screen.getByText(/klienta připojíte kódem, který mu dáte na lekci/i)).toBeInTheDocument()
-    expect(screen.getByText(/vidíte jen své klienty a jejich psy/i)).toBeInTheDocument()
-
-    expect(screen.getByRole("heading", { name: /pro psovoda/i, level: 2 })).toBeInTheDocument()
-    expect(screen.getByText(/v týdnu vidíte, co máte kdy cvičit/i)).toBeInTheDocument()
-    expect(screen.getByText(/trénink projdete cvik po cviku s kritériem/i)).toBeInTheDocument()
-    expect(
-      screen.getByText(/po tréninku zapíšete, jak to šlo, trenér to uvidí/i),
-    ).toBeInTheDocument()
+    expect(screen.getByText("Trenér nastaví cíle a tréninky psa")).toBeInTheDocument()
+    expect(screen.getByText("Trénuješ venku podle kroků")).toBeInTheDocument()
+    expect(screen.getByText("Zapíšeš výsledek, trenér odpoví")).toBeInTheDocument()
   })
 
   it("opens trainer code dialog and navigates to signup with the code on submit", async () => {
     const user = userEvent.setup()
     render(<LandingPage />)
 
-    const codeButton = screen.getByRole("button", { name: /mám kód od trenéra/i })
+    const codeButton = screen.getByRole("button", { name: /mám pozvánku od trenéra/i })
     await user.click(codeButton)
 
     expect(screen.getByRole("heading", { name: /mám kód od trenéra/i })).toBeInTheDocument()
 
     const input = screen.getByLabelText(/kód pozvánky/i)
-    await user.type(input, "ABC123XYZ")
+    await user.type(input, "ABC123")
 
     const submitButton = screen.getByRole("button", {
       name: /pokračovat/i,
@@ -114,7 +103,7 @@ describe("LandingPage", () => {
 
     expect(mockNavigate).toHaveBeenCalledWith({
       to: "/invite",
-      search: { code: "ABC123XYZ" },
+      search: { code: "ABC123" },
     })
   })
 

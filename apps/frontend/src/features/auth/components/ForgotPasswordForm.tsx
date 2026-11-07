@@ -3,6 +3,8 @@ import { Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
+import { DesignIcon } from "@/components/DesignIcon"
+import { IconInput } from "@/components/IconInput"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 
 const schema = z.object({
   email: z.string().trim().min(1, "Vyplňte e-mail.").email("Zadejte platný e-mail."),
@@ -40,7 +41,7 @@ export function ForgotPasswordForm({ isLoading, errorMessage, onSubmit }: Forgot
       <form
         noValidate
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-4"
+        className="space-y-6"
         aria-busy={isLoading}
       >
         {errorMessage ? (
@@ -56,7 +57,8 @@ export function ForgotPasswordForm({ isLoading, errorMessage, onSubmit }: Forgot
             <FormItem>
               <FormLabel>E-mail</FormLabel>
               <FormControl>
-                <Input
+                <IconInput
+                  icon="auth-142-1449-IconMail"
                   type="email"
                   autoComplete="email"
                   required
@@ -81,7 +83,10 @@ export function ForgotPasswordForm({ isLoading, errorMessage, onSubmit }: Forgot
               className="size-4 animate-spin"
             />
           ) : (
-            "Odeslat odkaz pro obnovu"
+            <>
+              <DesignIcon name="auth-142-1449-IconMail1" />
+              Poslat odkaz
+            </>
           )}
         </Button>
       </form>

@@ -71,6 +71,9 @@
   --radius-card: var(--radius-card);
   --radius-hero: var(--radius-hero);
   --radius-sheet: var(--radius-sheet);
+  --text-brand: 1.375rem;
+  --text-public-body: var(--type-public-body);
+  --radius-brand: 0.75rem;
   --text-dog-name: 2rem;
   --text-hero-title: 1.625rem;
   --text-page: var(--type-page);
@@ -153,6 +156,7 @@
   --type-section: 1.125rem;
   --type-action: 1.0625rem;
   --type-label: 0.8125rem;
+  --type-public-body: 0.9375rem;
   --type-timer: 2.75rem;
   --dog-foreground: #ffffff;
   --hero: #1c2628;
@@ -261,4 +265,23 @@
 .focus-ring-custom:focus-visible {
   outline: none;
   outline-offset: 0;
+}
+
+/* Public/account flows match the Figma controls while composing the shared kit.
+   These token rules follow utilities so the kit's compact defaults do not win. */
+.public-flow :is(button, a)[data-size="lg"] {
+  min-height: var(--control-action);
+  border-radius: var(--radius-control);
+  font-size: var(--type-action);
+  font-weight: 700;
+}
+.public-flow :is(button, a)[data-size="lg"][data-variant="outline"] {
+  background: var(--card);
+}
+.public-flow label {
+  font-size: var(--type-label);
+  font-weight: 700;
+}
+.public-flow [data-slot="input"] {
+  font-size: var(--type-public-body);
 }

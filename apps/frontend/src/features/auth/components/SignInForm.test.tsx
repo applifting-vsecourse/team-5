@@ -4,6 +4,12 @@ import { afterEach, expect, it, vi } from "vitest"
 
 import { SignInForm } from "./SignInForm"
 
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
+}))
+
 afterEach(cleanup)
 
 it("preserves surrounding spaces in a password accepted at registration", async () => {
@@ -16,7 +22,7 @@ it("preserves surrounding spaces in a password accepted at registration", async 
   )
   const interaction = userEvent.setup()
   await interaction.type(screen.getByLabelText(/e-?mail/i), "owner@example.com")
-  await interaction.type(screen.getByLabelText(/password|heslo/i), " space password ")
+  await interaction.type(screen.getByLabelText("Heslo", { exact: true }), " space password ")
   await interaction.click(screen.getByRole("button", { name: /sign in|přihlásit se/i }))
   await waitFor(() => expect(submit).toHaveBeenCalled())
   expect(submit.mock.calls[0]?.[0]).toEqual({
