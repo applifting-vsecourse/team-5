@@ -85,5 +85,10 @@ jobs:
           pnpm backend migrate
           pnpm backend test:auth:postgres
 
+      - name: Test demo seed in PostgreSQL
+        env:
+          DEMO_TEST_DATABASE_URL: postgresql://test:test@localhost:5432/trainloop_test
+        run: pnpm backend test:seed:postgres
+
       - name: Build frontend
         run: pnpm frontend build
