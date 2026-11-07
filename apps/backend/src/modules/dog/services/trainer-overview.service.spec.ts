@@ -37,8 +37,9 @@ const dog = (id: string, logs: Log[]) => ({
   id,
   name: id,
   color: 1,
+  breed: null,
   createdAt: daysAgo(60),
-  goals: [{ id: `goal-${id}` }],
+  goals: [{ id: `goal-${id}`, title: 'Přivolání', deadline: null, blocks: [] }],
   workoutLogs: logs,
 });
 
@@ -127,6 +128,19 @@ describe('TrainerOverviewService', () => {
       weeklyRateChange: 20,
     });
     expect(result.clients[0].lastTraining?.id).toBe('r1');
+    expect(result.clients[0].activity.days.at(-1)).toMatchObject({
+      date: '2026-10-28',
+      completedSessions: 1,
+      successRate: 80,
+    });
+    expect(result.clients[0].dogs[0]).toMatchObject({
+      breed: null,
+      successRate: 63.3,
+      lastTraining: { id: 'r1', successRate: 80, note: null },
+      goals: [
+        { id: 'goal-Rex', title: 'Přivolání', totalSteps: 0, masteredSteps: 0 },
+      ],
+    });
     expect(result.clients[1]).toMatchObject({
       name: 'Petr',
       successRate: null,

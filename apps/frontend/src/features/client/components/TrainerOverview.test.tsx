@@ -76,7 +76,8 @@ const overview: TrainerDashboard = {
   clients: [
     {
       ...jan,
-      dogs: [dog],
+      dogs: [{ ...dog, breed: null, successRate: 80, weeks: [], goals: [], lastTraining: null }],
+      activity: { days: [], successRate: null },
       successRate: 80,
       weeks: [
         { from: "2026-10-12", successRate: 70 },
@@ -199,6 +200,64 @@ describe("TrainerOverview", () => {
     expect(await screen.findByText("Zatím nemáte žádné klienty")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /pozvat klienta/i })).toBeInTheDocument()
     expect(screen.queryByRole("heading", { name: "Čekající pozvánky" })).not.toBeInTheDocument()
+  })
+
+  it("selects a client's dog and opens that dog's goal and conversation", async () => {
+    const initialClient = overview.clients[0]
+    const initialDog = initialClient?.dogs[0]
+    if (!initialClient || !initialDog) throw new Error("Missing overview fixture")
+    const second = {
+      ...initialClient,
+      id: "c-2",
+      name: "Eva Malá",
+      dogs: [
+        { ...initialDog, id: "d-2", name: "Luna" },
+        {
+          ...initialDog,
+          id: "d-3",
+          name: "Max",
+          goals: [
+            { id: "g-3", title: "Klidné čekání", deadline: null, totalSteps: 4, masteredSteps: 2 },
+          ],
+          lastTraining: {
+            id: "a-3",
+            title: "Čekání",
+            completedAt: new Date(),
+            successRate: 0,
+            note: "Procvičit v parku",
+          },
+        },
+      ],
+      activity: {
+        successRate: 0,
+        days: [
+          { date: "2026-10-28", completedSessions: 1, ratedSessions: 1, successRate: 0 },
+          { date: "2026-10-29", completedSessions: 1, ratedSessions: 0, successRate: null },
+          { date: "2026-10-30", completedSessions: 0, ratedSessions: 0, successRate: null },
+        ],
+      },
+    }
+    respond({
+      "overview/trainer": () =>
+        Promise.resolve({ ...overview, clients: [...overview.clients, second] }),
+      "clients/invitations": () => Promise.resolve([]),
+      updates: () => Promise.resolve([]),
+    })
+    render(<TrainerOverview />, { wrapper: createWrapper() })
+    await userEvent.click(await screen.findByRole("button", { name: "Eva Malá" }))
+    expect(
+      screen.getByRole("complementary", { name: "Detail klienta Eva Malá" }),
+    ).toBeInTheDocument()
+    await userEvent.click(screen.getByRole("button", { name: "Max" }))
+    expect(screen.getByRole("link", { name: "Klidné čekání" })).toHaveAttribute(
+      "href",
+      "/dogs/d-3/goals/g-3",
+    )
+    expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "50")
+    expect(screen.getByLabelText(/29\. 10\.: trénink bez hodnocení/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/30\. 10\.: bez tréninku/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole("button", { name: "Otevřít konverzaci" }))
+    expect(screen.getByText("Konverzace a-3")).toBeInTheDocument()
   })
 
   it("keeps the shortcuts when the overview fails to load", async () => {
