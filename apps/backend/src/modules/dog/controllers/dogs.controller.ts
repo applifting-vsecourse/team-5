@@ -48,9 +48,6 @@ import { UpdateDogDto } from './dto/update-dog.dto';
 export class DogsController {
   constructor(private readonly dogsService: DogsService) {}
 
-  // Callers: frontend dogsQueryOptions / archive+restore hooks via HTTP.
-  // Existing DogsController. Soft archive Dog.isArchived boolean.
-  // User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
   @Get()
   @ApiOperation({ summary: 'List dogs of authenticated user' })
   @ApiQuery({

@@ -1,5 +1,3 @@
-// Callers: dogs.index. Existing DogList. Soft-archive Dog.isArchived (#57).
-// User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
 import { Link } from "@tanstack/react-router"
 import { Archive, PawPrint } from "lucide-react"
 

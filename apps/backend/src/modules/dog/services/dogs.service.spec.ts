@@ -23,8 +23,6 @@ const aDog = (overrides: Partial<Dog> = {}): Dog => ({
 });
 
 describe('DogsService', () => {
-  // Behaviour under test: DogsService archive/restore/list (#57).
-  // Existing dogs.service.spec.ts. User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
   it('returns dogs from the repository for the given user', async () => {
     const dogs = [aDog()];
     const repository = mock<DogRepository>();

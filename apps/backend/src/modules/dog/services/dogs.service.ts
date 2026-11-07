@@ -53,8 +53,13 @@ export class DogsService {
     return this.dogAccess.getAccessibleDog(user, id);
   }
 
+  // Callers: DogsController POST :id/archive|restore. Existing DogsService.
+  // Dog.isArchived soft flag. User asked to split PRs and re-review.
   async archiveDog(user: Identity, dogId: string): Promise<Dog> {
-    await this.dogAccess.getOwnedDog(user, dogId);
+    const dog = await this.dogAccess.getOwnedDog(user, dogId);
+    if (dog.isArchived) {
+      throw new BadRequestException('Pes už je v archivu');
+    }
     const archived = await this.dogRepository.setArchived(dogId, user.id, true);
     if (!archived) {
       throw new NotFoundException(`Dog with ID ${dogId} not found`);
@@ -63,7 +68,10 @@ export class DogsService {
   }
 
   async restoreDog(user: Identity, dogId: string): Promise<Dog> {
-    await this.dogAccess.getOwnedDog(user, dogId);
+    const dog = await this.dogAccess.getOwnedDog(user, dogId);
+    if (!dog.isArchived) {
+      throw new BadRequestException('Pes není v archivu');
+    }
     const restored = await this.dogRepository.setArchived(
       dogId,
       user.id,

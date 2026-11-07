@@ -114,8 +114,6 @@ vi.mock("@tanstack/react-router", async () => {
   }
 })
 
-// Behaviour: DogDetailView archive UI (#57). Existing DogDetailView.test.
-// User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
 const aDog: Dog = {
   id: "d-123",
   name: "Baryk",

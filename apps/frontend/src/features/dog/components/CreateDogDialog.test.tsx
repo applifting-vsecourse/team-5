@@ -7,8 +7,6 @@ import type { Dog } from "@/features/dog/api/dogSchemas"
 
 import { CreateDogDialog, DEFAULT_DISCIPLINES, getFirstUnusedColor } from "./CreateDogDialog"
 
-// Behaviour: CreateDogDialog color helper fixtures (#57 isArchived on Dog).
-// Existing CreateDogDialog.test. User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
 const aDog = (color: number): Dog => ({
   id: `d-${color}`,
   name: `Dog ${color}`,

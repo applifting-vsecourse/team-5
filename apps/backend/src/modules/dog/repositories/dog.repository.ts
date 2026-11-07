@@ -28,9 +28,6 @@ const mapPrismaDogToDomain = (
 export class DogRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Callers: DogsService.getDogs / archiveDog / restoreDog; DogAccessService.
-  // Existing DogRepository (not a new module). Soft-archive via Dog.isArchived.
-  // User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
   async getDogsByOwnerId(
     ownerId: string,
     options: { archived?: boolean } = {},
