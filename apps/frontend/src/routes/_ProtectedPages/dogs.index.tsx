@@ -20,7 +20,8 @@ function DogsPage() {
   const dogsQuery = useQuery(dogsQueryOptions())
   const archivedQuery = useQuery(archivedDogsQueryOptions())
   const dogs = dogsQuery.data ?? []
-  const archivedDogs = archivedQuery.data ?? []
+  // Ignore active dogs if a generic /dogs mock also answered ?archived=true.
+  const archivedDogs = (archivedQuery.data ?? []).filter((dog) => dog.isArchived)
 
   return (
     <>
