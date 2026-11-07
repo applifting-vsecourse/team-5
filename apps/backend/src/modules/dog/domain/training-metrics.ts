@@ -19,6 +19,11 @@ export type MetricWeek = {
   ratedSessions: number;
   successRate: number | null;
 };
+export type WeeklyPlanSummary = {
+  weeklyPlannedSessions: number;
+  weeklyCompletedSessions: number;
+  weeklySkippedSessions: number;
+};
 export type TrainingMetrics = {
   completedSessions: number;
   timeZone: string;

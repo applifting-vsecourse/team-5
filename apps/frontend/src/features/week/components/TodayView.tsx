@@ -245,23 +245,25 @@ export function TodayView({ userName }: TodayViewProps) {
             onRetry={() => void ownerMetrics.refetch()}
             empty={null}
           >
-            {nextMetrics && nextMetrics.weeklyTarget > 0 && (
+            {nextMetrics && (
               <section
                 aria-label="Metriky"
                 className="grid grid-cols-3 gap-3 xl:grid-cols-1 xl:[&>article]:flex-row xl:[&>article]:items-center xl:[&>article]:p-4"
               >
                 <article className="flex flex-col items-start gap-3 rounded-card border border-border bg-card p-3">
                   <ProgressRing
-                    value={nextMetrics.weeklyTrainedDays}
-                    target={nextMetrics.weeklyTarget}
-                    label="Týdenní cíl"
+                    value={nextMetrics.weeklyCompletedSessions ?? 0}
+                    target={nextMetrics.weeklyPlannedSessions ?? 0}
+                    label="Týdenní plán"
                   />
                   <div>
-                    <h2 className="text-xs font-medium text-muted-foreground">Týdenní cíl</h2>
+                    <h2 className="text-xs font-medium text-muted-foreground">Týdenní plán</h2>
                     <p className="mt-1 text-sm font-bold">
-                      {nextMetrics.weeklyTargetReached
-                        ? "Splněno"
-                        : `ještě ${Math.max(0, nextMetrics.weeklyTarget - nextMetrics.weeklyTrainedDays)}`}
+                      {nextMetrics.weeklyPlannedSessions == null
+                        ? "Načítám plán…"
+                        : nextMetrics.weeklyPlannedSessions === 0
+                          ? "Zatím bez plánu"
+                          : `hotové ${nextMetrics.weeklyCompletedSessions} z ${nextMetrics.weeklyPlannedSessions}`}
                     </p>
                   </div>
                 </article>

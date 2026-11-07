@@ -35,13 +35,21 @@ export function weekMetricsQueryOptions(weekStart: CalendarDate) {
   return queryOptions({
     queryKey: [...weekKeys.week(weekStart), "metrics"],
     queryFn: async () =>
-      z.object({ weeklyTarget: z.number(), weeklyTrainedDays: z.number() }).parse(
-        await api
-          .get("overview/week-metrics", {
-            searchParams: { from: weekStart, to: addCalendarDays(weekStart, 6) },
-          })
-          .json(),
-      ),
+      z
+        .object({
+          weeklyTarget: z.number(),
+          weeklyTrainedDays: z.number(),
+          weeklyPlannedSessions: z.number().optional(),
+          weeklyCompletedSessions: z.number().optional(),
+          weeklySkippedSessions: z.number().optional(),
+        })
+        .parse(
+          await api
+            .get("overview/week-metrics", {
+              searchParams: { from: weekStart, to: addCalendarDays(weekStart, 6) },
+            })
+            .json(),
+        ),
   })
 }
 

@@ -67,6 +67,9 @@ const renderWeek = (trainings: WeekTraining[], weekStart = "2026-10-19") => {
   queryClient.setQueryData(weekKeys.week(weekStart), trainings)
   queryClient.setQueryData([...weekKeys.week(weekStart), "metrics"], {
     weeklyTarget: 6,
+    weeklyPlannedSessions: 6,
+    weeklyCompletedSessions: 3,
+    weeklySkippedSessions: 0,
     weeklyTrainedDays: 3,
   })
   const onWeekChange = vi.fn()

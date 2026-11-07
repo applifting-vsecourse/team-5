@@ -51,6 +51,9 @@ const metrics = {
   timeZone: "Europe/Prague",
   asOf: "2026-10-22",
   weeklyTarget: 3,
+  weeklyPlannedSessions: 3,
+  weeklyCompletedSessions: 2,
+  weeklySkippedSessions: 0,
   weeklyTrainedDays: 2,
   weeklyTargetReached: false,
   streak: 4,
@@ -83,7 +86,7 @@ describe("TrainingSavedConfirmation", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Záznam byl uložen" })).toBeInTheDocument()
     expect(screen.getByText("Trénink u Rex je zaznamenaný.")).toBeInTheDocument()
-    expect(screen.queryByText("týdenní cíl")).not.toBeInTheDocument()
+    expect(screen.queryByText("hotové z týdenního plánu")).not.toBeInTheDocument()
     expect(screen.queryByText("série")).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Zpět na týden" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Na přehled" })).toBeInTheDocument()
@@ -93,7 +96,7 @@ describe("TrainingSavedConfirmation", () => {
   it("shows streak and weekly target only when metrics exist", () => {
     renderConfirmation({ withMetrics: true })
 
-    expect(screen.getByText("týdenní cíl")).toBeInTheDocument()
+    expect(screen.getByText("hotové z týdenního plánu")).toBeInTheDocument()
     expect(screen.getByText("2/3")).toBeInTheDocument()
     expect(screen.getByText("série")).toBeInTheDocument()
     expect(screen.getByText("4")).toBeInTheDocument()

@@ -80,6 +80,9 @@ const renderToday = (trainings: WeekTraining[]) => {
     timeZone: "Europe/Prague",
     asOf: "2026-11-05",
     weeklyTarget: 6,
+    weeklyPlannedSessions: 6,
+    weeklyCompletedSessions: 3,
+    weeklySkippedSessions: 0,
     weeklyTrainedDays: 3,
     weeklyTargetReached: false,
     streak: 2,
@@ -105,7 +108,7 @@ describe("TodayView", () => {
       aTraining(),
       aTraining({ id: "other", dog: { id: "d2", name: "Bára", color: 2 } }),
     ])
-    expect(screen.getByRole("progressbar", { name: "Týdenní cíl" })).toHaveAttribute(
+    expect(screen.getByRole("progressbar", { name: "Týdenní plán" })).toHaveAttribute(
       "aria-valuenow",
       "3",
     )

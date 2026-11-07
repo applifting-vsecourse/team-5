@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
+import { PasswordInput } from "@/components/PasswordInput"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,7 +14,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 
 const schema = z
   .object({
@@ -49,7 +49,7 @@ export function ResetPasswordForm({ isLoading, errorMessage, onSubmit }: ResetPa
       <form
         noValidate
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-4"
+        className="space-y-6"
         aria-busy={isLoading}
       >
         {errorMessage ? (
@@ -65,8 +65,7 @@ export function ResetPasswordForm({ isLoading, errorMessage, onSubmit }: ResetPa
             <FormItem>
               <FormLabel>Nové heslo</FormLabel>
               <FormControl>
-                <Input
-                  type="password"
+                <PasswordInput
                   autoComplete="new-password"
                   required
                   disabled={isLoading}
@@ -85,8 +84,7 @@ export function ResetPasswordForm({ isLoading, errorMessage, onSubmit }: ResetPa
             <FormItem>
               <FormLabel>Potvrzení nového hesla</FormLabel>
               <FormControl>
-                <Input
-                  type="password"
+                <PasswordInput
                   autoComplete="new-password"
                   required
                   disabled={isLoading}
@@ -98,6 +96,9 @@ export function ResetPasswordForm({ isLoading, errorMessage, onSubmit }: ResetPa
           )}
         />
 
+        <p className="text-sm text-muted-foreground">
+          Alespoň 8 znaků. Obě hesla se musí shodovat.
+        </p>
         <Button
           type="submit"
           size="lg"
@@ -110,7 +111,7 @@ export function ResetPasswordForm({ isLoading, errorMessage, onSubmit }: ResetPa
               className="size-4 animate-spin"
             />
           ) : (
-            "Uložit heslo a přihlásit se"
+            "Uložit nové heslo"
           )}
         </Button>
       </form>

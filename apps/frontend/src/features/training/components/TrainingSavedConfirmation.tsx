@@ -59,8 +59,12 @@ export function TrainingSavedConfirmation({ trainingId }: TrainingSavedConfirmat
         {metrics ? (
           <div className="grid w-full grid-cols-2 gap-4 rounded-card border border-border bg-card p-4 text-card-foreground">
             <Metric
-              value={`${metrics.weeklyTrainedDays}/${metrics.weeklyTarget}`}
-              label="týdenní cíl"
+              value={
+                !metrics.weeklyPlannedSessions
+                  ? "—"
+                  : `${metrics.weeklyCompletedSessions}/${metrics.weeklyPlannedSessions}`
+              }
+              label="hotové z týdenního plánu"
             />
             <Metric
               value={metrics.streak}
