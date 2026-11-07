@@ -1,6 +1,3 @@
-// Callers: GoalsController PATCH /goals/:id. Existing GoalsService.
-// Schema: TrainingGoal.status (ACTIVE|COMPLETED|ARCHIVED|PAUSED), ScheduledTraining PLANNED rows.
-// User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
 import { GoalStatus } from '@/generated/prisma/client';
 import { Dog } from '@/modules/dog/domain/dog';
 import {

@@ -1,6 +1,3 @@
-// Callers: GoalsService.updateGoal (deletePlannedForGoal); TrainingsService week.
-// Existing ScheduledTrainingRepository. Fields: goalId, status PLANNED|COMPLETED|SKIPPED, date DATE.
-// User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
 import { PrismaService } from '@/core/prisma/prisma.service';
 import {
   FocusLevel,

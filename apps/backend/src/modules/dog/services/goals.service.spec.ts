@@ -1,5 +1,3 @@
-// Behaviour: GoalsService updateGoal clears PLANNED trainings when completing/archiving (#69).
-// Existing goals.service.spec.ts. User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
 import { Dog } from '@/modules/dog/domain/dog';
 import { Goal } from '@/modules/dog/domain/goal';
 import { GoalRepository } from '@/modules/dog/repositories/goal.repository';
