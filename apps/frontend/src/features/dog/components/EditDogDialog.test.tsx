@@ -7,6 +7,8 @@ import type { Dog } from "@/features/dog/api/dogSchemas"
 
 import { EditDogDialog } from "./EditDogDialog"
 
+// Behaviour: EditDogDialog fixtures need Dog.isArchived (#57).
+// Existing EditDogDialog.test. User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
 const aDog: Dog = {
   id: "dog-1",
   name: "Baryk",
@@ -14,6 +16,7 @@ const aDog: Dog = {
   color: 2,
   photoUrl: "https://example.com/baryk.jpg",
   ownerId: "u1",
+  isArchived: false,
   disciplines: ["Canicross", "Agility"],
   createdAt: new Date(),
   updatedAt: new Date(),

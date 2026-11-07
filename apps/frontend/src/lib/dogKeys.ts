@@ -1,6 +1,7 @@
 export const dogKeys = {
   all: ["dogs"] as const,
   lists: () => [...dogKeys.all, "list"] as const,
+  archivedList: () => [...dogKeys.all, "list", "archived"] as const,
   details: () => [...dogKeys.all, "detail"] as const,
   detail: (id: string) => [...dogKeys.details(), id] as const,
   goals: (dogId: string) => [...dogKeys.detail(dogId), "goals"] as const,

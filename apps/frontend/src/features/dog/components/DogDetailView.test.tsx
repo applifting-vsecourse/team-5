@@ -2,7 +2,23 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type * as Router from "@tanstack/react-router"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { beforeAll, describe, expect, it, vi } from "vitest"
+
+beforeAll(() => {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    }),
+  })
+})
 
 import { dogKeys } from "@/lib/dogKeys"
 
@@ -98,6 +114,8 @@ vi.mock("@tanstack/react-router", async () => {
   }
 })
 
+// Behaviour: DogDetailView archive UI (#57). Existing DogDetailView.test.
+// User: "zpracuj stories 57,69 a 87 nad soucasnym dev"
 const aDog: Dog = {
   id: "d-123",
   name: "Baryk",
@@ -105,6 +123,7 @@ const aDog: Dog = {
   color: 1,
   photoUrl: null,
   ownerId: "u1",
+  isArchived: false,
   disciplines: ["Agility", "Canicross"],
   createdAt: new Date(),
   updatedAt: new Date(),
