@@ -36,6 +36,7 @@ export class ConversationService {
       successRate: row.successRate,
       note: row.note,
       videoUrl: row.videoUrl,
+      mistakeDetails: row.mistakeDetails,
       messages: row.messages.map(presentTrainingMessage),
     };
   }

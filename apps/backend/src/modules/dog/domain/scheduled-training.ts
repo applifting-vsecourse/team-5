@@ -27,6 +27,7 @@ export type WeekTraining = ScheduledTraining & {
 export type ScheduledTrainingDetail = ScheduledTraining & {
   training: { id: string; title: string };
   dog: {
+    ownerId?: string;
     id: string;
     name: string;
     color: number;
@@ -49,6 +50,7 @@ export type ScheduledTrainingDetail = ScheduledTraining & {
 };
 
 export type CompleteTrainingData = {
+  mistakeDetails?: string[];
   successRate?: number;
   focus?: FocusLevel;
   repeatedMistakes?: MistakeLevel;

@@ -57,6 +57,11 @@ function Thread({ activityId }: { activityId: string }) {
               {detail.data.note}
             </p>
           )}
+          {Boolean(detail.data.mistakeDetails?.length) && (
+            <p className="text-sm">
+              <strong>Opakované chyby:</strong> {detail.data.mistakeDetails?.join(", ")}
+            </p>
+          )}
           <ol
             className="space-y-3"
             aria-label="Zprávy u tréninku"

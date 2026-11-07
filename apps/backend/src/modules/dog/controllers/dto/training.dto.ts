@@ -15,10 +15,14 @@ import {
 } from '@/modules/dog/domain/scheduled-training';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMaxSize,
+  ArrayUnique,
+  IsArray,
   IsDateString,
   IsDivisibleBy,
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   IsUrl,
@@ -217,6 +221,8 @@ export class TrainingDetailExerciseDto {
 }
 
 export class TrainingDetailResponseDto {
+  @ApiPropertyOptional()
+  canTrain?: boolean;
   @ApiProperty({ type: WeekTrainingGoalDto })
   training!: WeekTrainingGoalDto;
   @ApiProperty()
@@ -247,8 +253,12 @@ export class TrainingDetailResponseDto {
 
   static fromDomain(
     training: ScheduledTrainingDetail,
+    viewerId?: string,
   ): TrainingDetailResponseDto {
     return {
+      ...(viewerId && training.dog.ownerId
+        ? { canTrain: viewerId === training.dog.ownerId }
+        : {}),
       training: { id: training.training.id, title: training.training.title },
       id: training.id,
       date: toCalendarDate(training.date),
@@ -280,6 +290,15 @@ export class TrainingDetailResponseDto {
 }
 
 export class CompleteTrainingDto {
+  @ApiPropertyOptional({ type: [String], maxItems: 10 })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  @MaxLength(60, { each: true })
+  mistakeDetails?: string[];
   @ApiPropertyOptional({
     description: 'Success rate in % (0-100, step 10)',
     example: 70,

@@ -224,6 +224,7 @@ describe('TrainingsService', () => {
 
   describe('completeTraining', () => {
     const fakeLog = {
+      mistakeDetails: [],
       trainingId: 'session-1',
       id: 'log1',
       dogId: 'd1',

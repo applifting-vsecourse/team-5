@@ -32,6 +32,7 @@ export const conversationQueryOptions = (id: string) =>
           successRate: z.number().nullable(),
           note: z.string().nullable(),
           videoUrl: z.string().nullable(),
+          mistakeDetails: z.array(z.string()).optional(),
           messages: z.array(message),
         })
         .parse(await api.get(`activities/${id}`).json()),

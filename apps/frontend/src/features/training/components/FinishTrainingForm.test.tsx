@@ -57,6 +57,34 @@ function renderWithClient(ui: ReactElement) {
 }
 
 describe("FinishTrainingForm", () => {
+  it("persists chosen and custom mistake details only while repeated mistakes are Yes", async () => {
+    const user = userEvent.setup()
+    const handleSubmit = vi.fn<(data: CompleteTrainingInput) => void>()
+    renderWithClient(
+      <FinishTrainingForm
+        trainingId="t1"
+        dog={defaultDog}
+        goal={defaultGoal}
+        onSubmit={handleSubmit}
+        plannedDurationMinutes={25}
+        stepCount={3}
+      />,
+    )
+    expect(screen.getByText(/plán 25 min · 3 kroky plánu/)).toBeInTheDocument()
+    const mistakes = screen.getByRole("radiogroup", { name: "Opakované chyby" })
+    await user.click(within(mistakes).getByRole("radio", { name: "Ano" }))
+    await user.click(screen.getByRole("button", { name: "Předbíhal" }))
+    await user.click(screen.getByRole("button", { name: "+ vlastní" }))
+    await user.type(screen.getByLabelText("Vlastní chyba"), "Padal do strany{Enter}")
+    await user.click(screen.getByRole("button", { name: "Uložit záznam" }))
+    expect(handleSubmit).toHaveBeenLastCalledWith({
+      repeatedMistakes: "YES",
+      mistakeDetails: ["Předbíhal", "Padal do strany"],
+    })
+    await user.click(within(mistakes).getByRole("radio", { name: "Ne" }))
+    await user.click(screen.getByRole("button", { name: "Uložit záznam" }))
+    expect(handleSubmit).toHaveBeenLastCalledWith({ repeatedMistakes: "NO" })
+  })
   it("renders header, h1, controls and default empty state", () => {
     renderWithClient(
       <FinishTrainingForm
@@ -66,10 +94,8 @@ describe("FinishTrainingForm", () => {
       />,
     )
 
-    expect(screen.getByText("Jak to šlo?")).toBeInTheDocument()
-    expect(
-      screen.getByRole("heading", { level: 1, name: "Rex · Chůze u nohy" }),
-    ).toBeInTheDocument()
+    expect(screen.getByText("Rex · Chůze u nohy")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 1, name: "Odcvičeno!" })).toBeInTheDocument()
     expect(screen.getByTestId("success-rate-value")).toHaveTextContent("— %")
     expect(screen.getByRole("button", { name: "Uložit záznam" })).toBeInTheDocument()
   })

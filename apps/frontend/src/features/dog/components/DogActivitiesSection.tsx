@@ -247,6 +247,11 @@ export function DogActivitiesSection({
               </DialogHeader>
 
               <div className="space-y-4 py-2">
+                {Boolean(selectedActivity.mistakeDetails?.length) && (
+                  <p className="text-sm">
+                    <strong>Opakované chyby:</strong> {selectedActivity.mistakeDetails?.join(", ")}
+                  </p>
+                )}
                 {selectedActivity.status === "completed" && (
                   <div className="flex items-center justify-between gap-4 rounded-lg bg-secondary/50 p-4">
                     {selectedActivity.successRate !== undefined && (

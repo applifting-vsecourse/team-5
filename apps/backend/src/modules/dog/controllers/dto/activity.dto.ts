@@ -159,6 +159,8 @@ export class ActivitiesQueryDto {
 }
 
 export class ActivityResponseDto {
+  @ApiProperty({ type: [String] })
+  mistakeDetails!: string[];
   @ApiProperty({ type: [TrainingMessageResponseDto] })
   messages!: TrainingMessageResponseDto[];
 

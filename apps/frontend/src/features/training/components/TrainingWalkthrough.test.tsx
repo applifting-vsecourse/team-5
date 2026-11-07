@@ -316,3 +316,14 @@ it("only browses completed training steps without writing progress", async () =>
   expect(screen.getByRole("heading", { name: "Krok vpřed" })).toBeInTheDocument()
   expect(moveCurrentStep).not.toHaveBeenCalled()
 })
+
+it("keeps a shared trainer read-only even when viewing the current planned step", async () => {
+  moveCurrentStep.mockReset()
+  const user = userEvent.setup()
+  renderWalkthrough(aTraining({ canTrain: false, currentStepId: "b1" }))
+  expect(screen.getByText(/Náhled tréninku/)).toBeInTheDocument()
+  expect(screen.queryByRole("button", { name: "Hotovo, další krok" })).not.toBeInTheDocument()
+  expect(screen.queryByRole("button", { name: "Přeskočit krok" })).not.toBeInTheDocument()
+  await user.click(screen.getByRole("button", { name: "Další krok" }))
+  expect(moveCurrentStep).not.toHaveBeenCalled()
+})

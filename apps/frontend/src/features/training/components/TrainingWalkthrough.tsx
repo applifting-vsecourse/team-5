@@ -40,7 +40,7 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
   const isFirstLocal = currentIndex === 0
   const isLastLocal = currentIndex === totalExercises - 1
   const isBusy = moveStep.isPending
-  const isPlanned = training.status === "PLANNED"
+  const isPlanned = training.status === "PLANNED" && training.canTrain !== false
   // Training detail resolves null to the first step of the whole goal, so a
   // missing id here only means an empty plan — never "this training's first".
   const isPointerInThisTraining =
@@ -140,7 +140,9 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
       notice={
         !isPlanned ? (
           <p className="text-sm text-muted-foreground">
-            Trénink je uzavřený. Kroky si můžeš prohlédnout bez změny postupu.
+            {training.canTrain === false
+              ? "Náhled tréninku. Záznam a postup v průchodu ovládá psovod."
+              : "Trénink je uzavřený. Kroky si můžeš prohlédnout bez změny postupu."}
           </p>
         ) : isPointerElsewhere ? (
           <p className="text-sm text-muted-foreground">
