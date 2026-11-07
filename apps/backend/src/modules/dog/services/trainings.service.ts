@@ -65,6 +65,15 @@ export class TrainingsService {
     trainingId: string,
     data: CompleteTrainingData,
   ): Promise<WorkoutLog> {
+    if (
+      data.mistakeDetails?.length &&
+      (data.repeatedMistakes !== 'YES' ||
+        data.mistakeDetails.some((detail) => !detail.trim()))
+    ) {
+      throw new BadRequestException(
+        'Podrobnosti chyb vyplň pouze při opakovaných chybách.',
+      );
+    }
     const training =
       await this.scheduledTrainingRepository.getTrainingById(trainingId);
     if (!training) {

@@ -81,7 +81,7 @@ export class TrainingsController {
     @Param('trainingId') trainingId: string,
   ): Promise<TrainingDetailResponseDto> {
     const training = await this.trainingsService.getTraining(user, trainingId);
-    return TrainingDetailResponseDto.fromDomain(training);
+    return TrainingDetailResponseDto.fromDomain(training, user.id);
   }
 
   @Patch('trainings/:trainingId')
@@ -213,6 +213,7 @@ export class TrainingsController {
       rating: a.rating,
       focus: a.focus,
       repeatedMistakes: a.repeatedMistakes,
+      mistakeDetails: a.mistakeDetails,
       note: a.note,
       videoUrl: a.videoUrl,
       skipReason: a.skipReason,

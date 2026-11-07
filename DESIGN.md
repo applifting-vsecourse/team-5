@@ -80,6 +80,13 @@ out of all goals. Dnes aggregates all owned active dogs: sum each dog's weekly
 goal and trained days (a dog counts once per day), calculate the streak across
 the owner's training days and weight success rates by actual rated records.
 
+Week day selection scrolls and focuses that day's agenda; it does not outline
+an otherwise unchanged section. An empty dog diary has only its empty-state
+create action; the header action appears once there are notes. Completion
+summaries show the planned duration and number of plan steps, labelled as such.
+Shared trainers browse the walkthrough without changing progress there; the
+shared plan editor keeps its editing permissions.
+
 ## Typography and spacing
 
 Use `font-sans` (Plus Jakarta Sans with the existing fallback stack) for headings,

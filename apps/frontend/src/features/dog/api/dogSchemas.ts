@@ -172,6 +172,7 @@ export type PlannedTraining = z.infer<typeof plannedTrainingSchema>
 export type ExerciseFormValues = z.infer<typeof exerciseFormSchema>
 
 export const dogActivitySchema = z.object({
+  mistakeDetails: z.array(z.string()).optional(),
   id: z.string(),
   dogId: z.string().optional(),
   title: z.string(),

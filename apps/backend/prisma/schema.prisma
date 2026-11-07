@@ -253,6 +253,7 @@ model ScheduledTraining {
 }
 
 model WorkoutLog {
+  mistakeDetails String[] @default([])
   id                  String             @id @default(cuid())
   dogId               String
   dog                 Dog                @relation(fields: [dogId], references: [id], onDelete: Cascade)

@@ -25,6 +25,7 @@ describe('TrainingsController', () => {
       const controller = new TrainingsController(service);
 
       const fakeLog: WorkoutLog = {
+        mistakeDetails: [],
         trainingId: 'session-1',
         id: 'log1',
         dogId: 'dog1',
@@ -59,6 +60,7 @@ describe('TrainingsController', () => {
 
       expect(service.completeTraining).toHaveBeenCalledWith(user, 't1', dto);
       expect(result).toEqual({
+        mistakeDetails: [],
         id: 'log1',
         dogId: 'dog1',
         authorId: 'u1',

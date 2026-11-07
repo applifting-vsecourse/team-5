@@ -91,6 +91,7 @@ export class ScheduledTrainingRepository {
             id: true,
             name: true,
             color: true,
+            ownerId: true,
             shares: {
               select: { id: true, trainerId: true },
             },
@@ -324,6 +325,7 @@ export class ScheduledTrainingRepository {
       successRate?: number | null;
       focus?: FocusLevel | null;
       repeatedMistakes?: MistakeLevel | null;
+      mistakeDetails?: string[];
       note?: string | null;
       videoUrl?: string | null;
     },
@@ -370,6 +372,11 @@ export class ScheduledTrainingRepository {
           successRate: data.successRate ?? null,
           focus: data.focus ?? null,
           repeatedMistakes: data.repeatedMistakes ?? null,
+          ...(data.mistakeDetails !== undefined && {
+            mistakeDetails: [
+              ...new Set(data.mistakeDetails.map((detail) => detail.trim())),
+            ],
+          }),
           note: data.note?.trim() || null,
           videoUrl: data.videoUrl?.trim() || null,
         },

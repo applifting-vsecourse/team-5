@@ -7,6 +7,7 @@ export const mistakeLevelSchema = z.enum(["YES", "PARTIALLY", "NO"])
 export type MistakeLevel = z.infer<typeof mistakeLevelSchema>
 
 export const completeTrainingInputSchema = z.object({
+  mistakeDetails: z.array(z.string().trim().min(1).max(60)).max(10).optional(),
   successRate: z.number().int().min(0).max(100).optional(),
   focus: focusLevelSchema.optional(),
   repeatedMistakes: mistakeLevelSchema.optional(),
@@ -17,6 +18,7 @@ export const completeTrainingInputSchema = z.object({
 export type CompleteTrainingInput = z.infer<typeof completeTrainingInputSchema>
 
 export const completedActivitySchema = z.object({
+  mistakeDetails: z.array(z.string()).optional(),
   id: z.string(),
   dogId: z.string().optional(),
   title: z.string(),
@@ -49,6 +51,7 @@ export const trainingDetailExerciseSchema = z.object({
 export type TrainingDetailExercise = z.infer<typeof trainingDetailExerciseSchema>
 
 export const trainingDetailSchema = z.object({
+  canTrain: z.boolean().optional(),
   training: z.object({ id: z.string(), title: z.string() }).optional(),
   id: z.string(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
