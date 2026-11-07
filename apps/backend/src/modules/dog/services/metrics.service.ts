@@ -1,4 +1,5 @@
 import {
+  calculateOwnerMetrics,
   calculateTrainingMetrics,
   TrainingMetrics,
 } from '@/modules/dog/domain/training-metrics';
@@ -13,6 +14,16 @@ export class MetricsService {
     private readonly repository: MetricsRepository,
     private readonly dogAccess: DogAccessService,
   ) {}
+
+  async getOwnerMetrics(
+    user: Identity,
+    now = new Date(),
+  ): Promise<TrainingMetrics> {
+    return calculateOwnerMetrics(
+      await this.repository.getOwnerInputs(user.id),
+      now,
+    );
+  }
 
   async getMetrics(
     user: Identity,

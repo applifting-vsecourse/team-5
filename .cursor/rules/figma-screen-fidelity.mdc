@@ -1,0 +1,40 @@
+---
+description: Redesign screens must match the Figma page nový návrh, not only tokens
+alwaysApply: true
+---
+
+# Figma screen fidelity
+
+The approved redesign is the Figma file `Trainloop-wireframe`
+(`IjEnmXXeJB8YBOWPjWiFu3`), page **nový návrh**, section **TrainLoop – nový vzhled**.
+`DESIGN.md` tokens are necessary and not sufficient. A screen ticket is not done
+when colours match but the layout does not.
+
+Before changing or closing a screen, open the matching frame and copy its
+structure: one primary action, dog colour as a filled card or header, metrics as
+their own cards, real data only.
+
+| Screen | Frame |
+| --- | --- |
+| Dnes | `114:864` |
+| Týden | `114:1038` |
+| Průchod | `117:864` |
+| Jak to šlo | `117:940` |
+| Oslava | `118:896` |
+| Moji psi | `118:1019` |
+| Profil psa | `119:1028` |
+| Historie | `119:1168` |
+| Záznam + vlákno | `120:1023` |
+| Cíle psa | `120:1151` |
+| Účet | `120:1291` |
+| Trenér přehled / klienti / detail | `122:1257` / `122:1382` / `122:1507` |
+| Editor / knihovna / plánování | `125:1404` / `125:1567` / `123:1356` |
+| Desktop | `128:1684` / `132:1670` / `136:1551` |
+| Veřejné a účet | řada od `141:1459` a `235:752` |
+
+Řada 05 (tmavý režim, wrapped, odznaky) is out of scope. Do not invent age, clock
+times or trainer copy the API does not return.
+
+Audit 6. 11. 2026: #161 #162 #163 were Ready for Testing but still used white
+list rows, metrics inside the hero, and a simpler week. Follow-up PRs close that
+gap and say `Refs #…`, not `Closes`.

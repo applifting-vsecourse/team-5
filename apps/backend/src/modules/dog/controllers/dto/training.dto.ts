@@ -52,6 +52,14 @@ export class WeekTrainingDogDto {
 }
 
 export class WeekTrainingGoalDto {
+  @ApiPropertyOptional({ nullable: true })
+  discipline?: string | null;
+
+  @ApiPropertyOptional()
+  position?: number;
+
+  @ApiPropertyOptional()
+  total?: number;
   @ApiProperty()
   id!: string;
 
@@ -90,12 +98,21 @@ export class WeekTrainingResponseDto {
 
   static fromDomain(training: WeekTraining): WeekTrainingResponseDto {
     return {
-      training: { id: training.training.id, title: training.training.title },
+      training: {
+        id: training.training.id,
+        title: training.training.title,
+        position: training.training.position,
+        total: training.training.total,
+      },
       id: training.id,
       date: toCalendarDate(training.date),
       status: training.status,
       dog: training.dog,
-      goal: { id: training.goal.id, title: training.goal.title },
+      goal: {
+        id: training.goal.id,
+        title: training.goal.title,
+        discipline: training.goal.discipline,
+      },
       exercises: training.goal.blocks,
     };
   }

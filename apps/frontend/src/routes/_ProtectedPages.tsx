@@ -8,13 +8,11 @@ import {
 } from "@tanstack/react-router"
 
 import { ROUTES } from "@/app/routes"
+import { AppSidebar } from "@/components/AppSidebar"
 import { BottomNav } from "@/components/BottomNav/BottomNav"
-import { Header } from "@/components/Header/Header"
-import { HeaderNav } from "@/components/Header/HeaderNav"
 import { Seo } from "@/components/Seo"
 
 import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
-import { HeaderMenu } from "@/features/auth/components/HeaderMenu"
 import { useSession } from "@/features/auth/hooks/useSession"
 import { encodeRedirectUri } from "@/features/auth/lib/redirect"
 
@@ -70,20 +68,17 @@ function Layout() {
   return (
     <div
       key={user.id}
-      className="flex min-h-svh flex-col"
+      className="min-h-dvh md:flex"
     >
       <Seo />
-      <Header
-        nav={<HeaderNav isTrainer={isTrainer} />}
-        userMenu={<HeaderMenu />}
+      <AppSidebar
+        user={{ name: user.name }}
+        isTrainer={isTrainer}
       />
-      <main className="flex-1 pb-[calc(var(--spacing-tab-bar)+var(--spacing-safe-bottom)+1rem)] md:pb-8">
+      <main className="min-w-0 flex-1 pb-[calc(var(--spacing-tab-bar)+var(--spacing-safe-bottom)+1rem)] md:pb-8">
         <Outlet />
       </main>
-      <BottomNav
-        isTrainer={isTrainer}
-        accountMenu={<HeaderMenu isNavigation />}
-      />
+      <BottomNav isTrainer={isTrainer} />
     </div>
   )
 }

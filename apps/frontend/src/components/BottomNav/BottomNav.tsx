@@ -3,6 +3,7 @@ import { Link, useLocation } from "@tanstack/react-router"
 import { Calendar, Home, ListChecks, PawPrint, User, Users } from "lucide-react"
 
 import { ROUTES } from "@/app/routes"
+import { DesignIcon } from "@/components/DesignIcon"
 import { cn } from "@/lib/utils"
 
 type NavItem = {
@@ -36,7 +37,7 @@ type BottomNavProps = {
   accountMenu?: ReactNode
 }
 
-export function BottomNav({ isTrainer = false, accountMenu }: BottomNavProps) {
+export function BottomNav({ isTrainer = false }: BottomNavProps) {
   const location = useLocation()
   const currentPath = location.pathname
 
@@ -55,16 +56,6 @@ export function BottomNav({ isTrainer = false, accountMenu }: BottomNavProps) {
     >
       <div className="mx-auto flex min-h-tab-bar max-w-md items-stretch justify-around px-2 pt-2">
         {items.map((item) => {
-          if (item.to === ROUTES.account && accountMenu) {
-            return (
-              <div
-                key="account"
-                className="flex flex-1 items-stretch justify-center"
-              >
-                {accountMenu}
-              </div>
-            )
-          }
           const Icon = item.icon
           const isActive =
             currentPath === item.matchPrefix || currentPath.startsWith(`${item.matchPrefix}/`)
@@ -87,10 +78,33 @@ export function BottomNav({ isTrainer = false, accountMenu }: BottomNavProps) {
                   isActive && "bg-accent",
                 )}
               >
-                <Icon
-                  className="size-5"
-                  aria-hidden
-                />
+                {!isTrainer &&
+                (!isActive || item.to === ROUTES.dashboard || item.to === ROUTES.dogs) &&
+                (item.to === ROUTES.dashboard ||
+                  item.to === ROUTES.dogs ||
+                  item.to === ROUTES.week ||
+                  item.to === ROUTES.account) ? (
+                  <DesignIcon
+                    name={
+                      item.to === ROUTES.dashboard
+                        ? isActive
+                          ? "today-Home"
+                          : "dogs-Home"
+                        : item.to === ROUTES.dogs
+                          ? isActive
+                            ? "dogs-Paw"
+                            : "today-Paw"
+                          : item.to === ROUTES.week
+                            ? "today-Calendar"
+                            : "today-User"
+                    }
+                  />
+                ) : (
+                  <Icon
+                    className="size-5"
+                    aria-hidden
+                  />
+                )}
               </span>
               <span>{item.label}</span>
             </Link>

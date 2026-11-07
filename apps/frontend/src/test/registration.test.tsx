@@ -157,7 +157,7 @@ describe("owner registration", () => {
       screen.getByRole("checkbox", { name: "Souhlasím se zpracováním osobních údajů." }),
     )
     await interaction.click(screen.getByRole("button", { name: "Zaregistrovat se" }))
-    expect(await screen.findByRole("heading", { name: "Psi" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Moji psi" })).toBeInTheDocument()
     expect(await screen.findByText("Přidejte prvního psa")).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/dogs")
     expect(queryClient.getQueryData(authKeys.session())).toMatchObject({ user })
@@ -326,7 +326,7 @@ describe("trainer registration", () => {
     )
     // Trainer tab bar uses Cíle (still routes to /dogs until #164).
     await interaction.click(within(nav).getByRole("link", { name: "Cíle" }))
-    await screen.findByRole("heading", { name: "Psi" })
+    await screen.findByRole("heading", { name: "Moji psi" })
     await interaction.click(within(nav).getByRole("link", { name: "Klienti" }))
     expect(await screen.findByText("Pozvěte prvního klienta")).toBeInTheDocument()
   })
@@ -377,7 +377,7 @@ describe("trainer registration", () => {
   it("does not let owners open Clients by URL", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
     const { router } = await openPage("/clients")
-    expect(await screen.findByRole("heading", { name: "Psi" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Moji psi" })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/dogs")
     expect(screen.queryByRole("link", { name: "Klienti" })).not.toBeInTheDocument()
     expect(screen.queryByText("Pozvěte prvního klienta")).not.toBeInTheDocument()

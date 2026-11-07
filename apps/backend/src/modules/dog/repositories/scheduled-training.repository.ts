@@ -33,7 +33,18 @@ export class ScheduledTrainingRepository {
       },
       include: {
         dog: { select: { id: true, name: true, color: true } },
-        goal: { select: { id: true, title: true } },
+        goal: {
+          select: {
+            id: true,
+            title: true,
+            discipline: true,
+            sessions: {
+              where: { isArchived: false },
+              select: { id: true },
+              orderBy: [...planOrder],
+            },
+          },
+        },
         training: {
           select: {
             id: true,
@@ -49,6 +60,16 @@ export class ScheduledTrainingRepository {
     });
     return rows.map((row) => ({
       ...row,
+      training: {
+        ...row.training,
+        position: Math.max(
+          0,
+          row.goal.sessions.findIndex(
+            (session) => session.id === row.training.id,
+          ),
+        ),
+        total: row.goal.sessions.length,
+      },
       goal: { ...row.goal, blocks: row.training.steps },
     }));
   }

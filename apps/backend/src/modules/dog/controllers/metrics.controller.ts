@@ -46,3 +46,16 @@ export class MetricsController {
     return this.service.setTarget(user, dogId, body.weeklyTarget);
   }
 }
+
+@ApiTags('training metrics')
+@ApiCookieAuth()
+@Controller('overview')
+@UseGuards(AuthenticatedUserGuard)
+export class OwnerMetricsController {
+  constructor(private readonly service: MetricsService) {}
+
+  @Get('owner-metrics')
+  get(@User() user: Identity): ReturnType<MetricsService['getOwnerMetrics']> {
+    return this.service.getOwnerMetrics(user);
+  }
+}
