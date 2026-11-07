@@ -53,6 +53,8 @@ classDiagram
 
 ## Database Configuration
 
+For a larger dataset covering screens and manual flows, see the [demo seed guide](../../docs/demo-seed.md). Run `pnpm backend seed:demo` after migrations; it adds 25 dogs, multiple owner/trainer accounts, plans, history, messages and diary notes.
+
 This project uses PostgreSQL running in Docker Compose for both development and production-like environments.
 
 1. Start the database (`pnpm dev` from the repo root does this for you):
@@ -208,12 +210,12 @@ Keep in mind that there are 2 better auth configurations, one in the src/shared/
 The rules are enforced in the API, in one place: `DogAccessService`. Services never
 decide on their own who may see a dog.
 
-| | owner | trainer with a share | anyone else |
-| --- | --- | --- | --- |
-| read the dog | yes | yes | 404 |
-| goals, plan blocks, trainings (read and edit) | yes | yes | 404 |
-| read activity records | yes | yes | 404 |
-| edit the dog, log a workout, private notes (#70) | yes | 403 | 404 |
+|                                                  | owner | trainer with a share | anyone else |
+| ------------------------------------------------ | ----- | -------------------- | ----------- |
+| read the dog                                     | yes   | yes                  | 404         |
+| goals, plan blocks, trainings (read and edit)    | yes   | yes                  | 404         |
+| read activity records                            | yes   | yes                  | 404         |
+| edit the dog, log a workout, private notes (#70) | yes   | 403                  | 404         |
 
 A dog the user may not see is reported as missing (404), never as forbidden, so the
 API does not reveal that it exists. A trainer who can see the dog but may not do

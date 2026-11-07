@@ -52,6 +52,8 @@ The ports are deliberately odd — 3050, 4050, and Postgres on 5433 rather than 
 
 ### Seeded users
 
+Pro rozsáhlejší kontrolu obrazovek spusťte `pnpm backend seed:demo`: přidá 25 psů, 15 účtů a osm týdnů historie. [Přihlašovací údaje a scénáře](docs/demo-seed.md). Velký seed se spouští samostatně a obnovuje své demo záznamy.
+
 | Email                      | Password        | Role / Note                             |
 | -------------------------- | --------------- | --------------------------------------- |
 | `trener@trainloop.cz`      | `password1`     | Trenér (Marek Trenér, vlastní pes Argo) |
