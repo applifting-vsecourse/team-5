@@ -203,6 +203,8 @@ export const seedDogData = async (
         {
           id: 'act-1',
           dogId: rex.id,
+          goalId: 'goal-1',
+          trainingId: 'training-goal-1',
           authorId: userId,
           title: 'Chůze u nohy',
           discipline: 'Poslušnost',
@@ -217,6 +219,8 @@ export const seedDogData = async (
         {
           id: 'act-2',
           dogId: rex.id,
+          goalId: 'goal-2',
+          trainingId: 'training-goal-2',
           authorId: userId,
           title: 'Start na povel',
           discipline: 'Canicross',
@@ -231,6 +235,8 @@ export const seedDogData = async (
         {
           id: 'act-3',
           dogId: rex.id,
+          goalId: 'goal-3',
+          trainingId: 'training-goal-3',
           authorId: userId,
           title: 'Trénink odložení',
           discipline: 'Poslušnost',
@@ -856,6 +862,8 @@ const seedClientActivity = async (
     {
       id: 'client-act-rex-1',
       dogId: 'dog-rex-1',
+      goalId: 'goal-1',
+      trainingId: 'training-goal-1',
       authorId: jan.id,
       title: 'Přivolání v parku',
       discipline: 'Poslušnost',
@@ -866,6 +874,8 @@ const seedClientActivity = async (
     {
       id: 'client-act-rex-2',
       dogId: 'dog-rex-1',
+      goalId: 'goal-1',
+      trainingId: 'training-goal-1',
       authorId: jan.id,
       title: 'Chůze u nohy',
       discipline: 'Poslušnost',
@@ -876,6 +886,8 @@ const seedClientActivity = async (
     {
       id: 'client-act-rex-3',
       dogId: 'dog-rex-1',
+      goalId: 'goal-2',
+      trainingId: 'training-goal-2',
       authorId: jan.id,
       title: 'Přivolání na píšťalku',
       discipline: 'Poslušnost',
@@ -886,6 +898,8 @@ const seedClientActivity = async (
     {
       id: 'client-act-rex-4',
       dogId: 'dog-rex-1',
+      goalId: 'goal-2',
+      trainingId: 'training-goal-2',
       authorId: jan.id,
       title: 'Start na povel',
       discipline: 'Canicross',
@@ -897,6 +911,8 @@ const seedClientActivity = async (
     {
       id: 'client-act-baryk-1',
       dogId: 'dog-baryk-1',
+      goalId: 'goal-baryk-1',
+      trainingId: 'training-goal-baryk-1',
       authorId: jan.id,
       title: 'Náběh na áčko',
       discipline: 'Agility',
@@ -907,6 +923,8 @@ const seedClientActivity = async (
     {
       id: 'client-act-baryk-2',
       dogId: 'dog-baryk-1',
+      goalId: 'goal-baryk-1',
+      trainingId: 'training-goal-baryk-1',
       authorId: jan.id,
       title: 'Zóna 2on/2off',
       discipline: 'Agility',
@@ -917,6 +935,8 @@ const seedClientActivity = async (
     {
       id: 'client-act-baryk-3',
       dogId: 'dog-baryk-1',
+      goalId: 'goal-baryk-1',
+      trainingId: 'training-goal-baryk-1',
       authorId: jan.id,
       title: 'Náběh na áčko',
       discipline: 'Agility',
@@ -986,6 +1006,8 @@ const seedClientActivity = async (
         completedAt,
         successRate: record.successRate,
         note: record.note,
+        trainingId: (record as { trainingId?: string }).trainingId,
+        goalId: (record as { goalId?: string }).goalId,
       },
       create: { ...record, status: 'COMPLETED', completedAt },
     });

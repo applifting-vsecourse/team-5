@@ -49,7 +49,7 @@ function Trend({ change, unit, isOnHero }: { change: number; unit: string; isOnH
     <p
       className={cn(
         "flex items-center gap-1 text-xs font-bold",
-        isDown ? "text-destructive" : isOnHero ? "text-hero-foreground" : "text-success-foreground",
+        isDown ? "text-destructive" : isOnHero ? "text-hero-positive" : "text-success-foreground",
       )}
     >
       <DesignIcon name={isDown ? "trainer-Down" : isOnHero ? "trainer-Trend" : "trainer-Trend1"} />
@@ -208,10 +208,10 @@ function Sparkline({ client }: { client: OverviewClient }) {
         .join(", ")}`}
       className="flex h-6 shrink-0 items-end gap-0.5"
     >
-      {weeks.map((week, index) => (
+      {weeks.map((week) => (
         <span
           key={week.from}
-          className={cn("w-1.5 rounded-full", color, index < weeks.length - 1 && "opacity-45")}
+          className={cn("w-1.5 rounded-full", color)}
           style={{ height: `${Math.max(12, week.successRate ?? 12)}%` }}
         />
       ))}
@@ -467,7 +467,7 @@ export function TrainerOverview({ userName }: { userName?: string }) {
                   Potřebuje pozornost
                 </h2>
                 {data.attention.length > 0 && (
-                  <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-extrabold text-primary-foreground">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-extrabold text-primary-foreground">
                     {data.attention.length}
                   </span>
                 )}

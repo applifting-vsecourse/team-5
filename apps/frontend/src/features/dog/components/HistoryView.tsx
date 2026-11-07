@@ -24,37 +24,66 @@ import { dogColorClass } from "@/lib/dogColors"
 import { accessibleDogsQueryOptions, historyQueryOptions, type HistoryItem } from "@/lib/history"
 import { cn } from "@/lib/utils"
 
+const WEEKDAY_ABBR = ["NE", "PO", "ÚT", "ST", "ČT", "PÁ", "SO"]
+
+function formatDayGroupHeader(date: Date, isToday: boolean): string {
+  const wd = WEEKDAY_ABBR[date.getDay()] ?? ""
+  const dayAndMonth = format(date, "d. M.")
+  return isToday ? `DNES · ${wd} ${dayAndMonth}` : `${wd} ${dayAndMonth}`
+}
+
+function formatMonthInCzechLocative(monthStr: string): string {
+  const monthNum = parseInt(monthStr.slice(5, 7), 10)
+  const locatives = [
+    "v lednu",
+    "v únoru",
+    "v březnu",
+    "v dubnu",
+    "v květnu",
+    "v červnu",
+    "v červenci",
+    "v srpnu",
+    "v září",
+    "v říjnu",
+    "v listopadu",
+    "v prosinci",
+  ]
+  const locative = locatives[monthNum - 1]
+  return locative ?? `· ${monthStr}`
+}
+
+function formatTotalDuration(minutes: number): string {
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  if (hours > 0 && mins > 0) return `${hours} h ${mins} min`
+  if (hours > 0) return `${hours} h`
+  return `${mins} min`
+}
+
 function HistoryRecord({ record, onOpen }: { record: HistoryItem; onOpen: () => void }) {
   return (
-    <li className="relative flex min-w-0 gap-3 pb-3 last:pb-0">
+    <li className="relative flex min-w-0 items-start gap-3 pb-3 last:pb-0">
       <span
         aria-hidden
-        className="absolute top-6 bottom-0 left-2 border-l border-border"
-      />
-      <span
-        aria-hidden
-        className={cn(
-          "relative mt-4 size-4 shrink-0 rounded-full border-3 border-card",
-          dogColorClass(record.dog.color),
-        )}
+        className={cn("mt-5 size-2.5 shrink-0 rounded-full", dogColorClass(record.dog.color))}
       />
       <Button
         type="button"
         variant="ghost"
         onClick={onOpen}
         aria-label={`Otevřít záznam ${record.title}`}
-        className="h-auto min-w-0 flex-1 flex-col items-stretch gap-2 rounded-card border border-border bg-card p-4 text-left whitespace-normal"
+        className="h-auto min-w-0 flex-1 flex-col items-stretch gap-2 rounded-card border border-border bg-card p-4 text-left whitespace-normal hover:bg-card/90"
       >
         <span className="flex items-start justify-between gap-3">
           <span className="text-sm font-extrabold break-words">{record.title}</span>
           <span
             className={cn(
-              "shrink-0 rounded-full px-2 py-1 text-xs",
+              "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-extrabold",
               record.status === "SKIPPED"
-                ? "bg-secondary font-semibold text-muted-foreground"
+                ? "bg-secondary text-muted-foreground"
                 : record.successRate !== null && record.successRate < 75
-                  ? "bg-warning font-extrabold text-warning-foreground"
-                  : "bg-success font-extrabold text-success-foreground",
+                  ? "bg-warning text-warning-foreground"
+                  : "bg-success text-success-foreground",
             )}
           >
             {record.status === "SKIPPED"
@@ -66,9 +95,11 @@ function HistoryRecord({ record, onOpen }: { record: HistoryItem; onOpen: () => 
         </span>
         <span className="text-xs font-normal text-muted-foreground">
           {record.dog.name} · {format(record.completedAt, "HH:mm")}
-          {record.plannedDurationMinutes !== null
-            ? ` · plán ${record.plannedDurationMinutes} min`
-            : ""}
+          {record.status === "SKIPPED"
+            ? " · —"
+            : record.plannedDurationMinutes !== null
+              ? ` · ${record.plannedDurationMinutes} min`
+              : ""}
         </span>
         {record.note && (
           <span className="line-clamp-2 text-sm leading-relaxed font-normal">{record.note}</span>
@@ -144,7 +175,7 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
             <p className="text-xs text-muted-foreground">
               {first.total} záznamů
               {first.firstRecordedAt
-                ? ` · od ${format(first.firstRecordedAt, "LLLL yyyy", { locale: cs })}`
+                ? ` · od ${format(first.firstRecordedAt, "MMMM yyyy", { locale: cs })}`
                 : ""}
             </p>
           )}
@@ -234,18 +265,26 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
             aria-label="Měsíční souhrn"
           >
             <div>
-              <p className="text-lg font-extrabold">{first.summary.completedSessions}</p>
-              <p className="mt-1 text-xs text-hero-muted">tréninků · {first.summary.month}</p>
+              <p className="text-2xl font-extrabold">{first.summary.completedSessions}</p>
+              <p className="mt-1 text-xs text-hero-muted">
+                tréninků {formatMonthInCzechLocative(first.summary.month)}
+              </p>
             </div>
             <div>
-              <p className="text-lg font-extrabold">
+              <p className="text-2xl font-extrabold">
                 {first.summary.successRate === null ? "—" : `${first.summary.successRate} %`}
               </p>
               <p className="mt-1 text-xs text-hero-muted">průměr</p>
             </div>
             <div>
-              <p className="text-lg font-extrabold">{first.summary.trainedDays}</p>
-              <p className="mt-1 text-xs text-hero-muted">aktivních dní</p>
+              <p className="text-2xl font-extrabold">
+                {first.summary.plannedDurationMinutes
+                  ? formatTotalDuration(first.summary.plannedDurationMinutes)
+                  : first.summary.trainedDays}
+              </p>
+              <p className="mt-1 text-xs text-hero-muted">
+                {first.summary.plannedDurationMinutes ? "celkem" : "aktivních dní"}
+              </p>
             </div>
           </section>
         )}
@@ -269,8 +308,7 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
                 id={`history-${day}`}
                 className="mb-3 text-xs font-extrabold tracking-wide text-muted-foreground uppercase"
               >
-                {day === todayCalendarDate() ? "Dnes · " : ""}
-                {format(records[0]!.completedAt, "EEE d. M.", { locale: cs })}
+                {formatDayGroupHeader(records[0]!.completedAt, day === todayCalendarDate())}
               </h2>
               <ol>
                 {records.map((record) => (

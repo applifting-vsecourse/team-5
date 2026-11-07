@@ -43,6 +43,8 @@ const historyPageSchema = z.object({
     completedSessions: z.number(),
     trainedDays: z.number(),
     successRate: z.number().nullable(),
+    plannedDurationMinutes: z.number().nullable().optional(),
+    knownDurationSessions: z.number().optional(),
   }),
 })
 export function historyQueryOptions(filters: {
