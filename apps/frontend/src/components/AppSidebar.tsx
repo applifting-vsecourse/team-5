@@ -10,6 +10,8 @@ export function AppSidebar({ user, isTrainer }: { user: { name: string }; isTrai
     ...(isTrainer ? [{ to: "/clients" as const, label: "Klienti", icon: "Users" }] : []),
     { to: "/week", label: isTrainer ? "Kalendář" : "Týden", icon: "Cal" },
     { to: "/dogs", label: "Moji psi", icon: "Paw1" },
+    { to: "/history", label: "Historie", icon: "List" },
+    { to: "/messages", label: "Zprávy", icon: "Msg" },
     { to: "/account", label: "Účet", icon: "User" },
   ] as const
   return (

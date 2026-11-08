@@ -21,6 +21,7 @@ import { Route as ProtectedPagesAccountRouteImport } from './routes/_ProtectedPa
 import { Route as ProtectedPagesClientsRouteImport } from './routes/_ProtectedPages/clients'
 import { Route as ProtectedPagesDashboardRouteImport } from './routes/_ProtectedPages/dashboard'
 import { Route as ProtectedPagesHistoryRouteImport } from './routes/_ProtectedPages/history'
+import { Route as ProtectedPagesMessagesRouteImport } from './routes/_ProtectedPages/messages'
 import { Route as ProtectedPagesWeekRouteImport } from './routes/_ProtectedPages/week'
 import { Route as ProtectedPagesClientsIndexRouteImport } from './routes/_ProtectedPages/clients.index'
 import { Route as ProtectedPagesClientsClientIdRouteImport } from './routes/_ProtectedPages/clients.$clientId'
@@ -93,6 +94,11 @@ const ProtectedPagesDashboardRoute = ProtectedPagesDashboardRouteImport.update({
 const ProtectedPagesHistoryRoute = ProtectedPagesHistoryRouteImport.update({
   id: '/history',
   path: '/history',
+  getParentRoute: () => ProtectedPagesRoute,
+} as any)
+const ProtectedPagesMessagesRoute = ProtectedPagesMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => ProtectedPagesRoute,
 } as any)
 const ProtectedPagesWeekRoute = ProtectedPagesWeekRouteImport.update({
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/clients': typeof ProtectedPagesClientsRouteWithChildren
   '/dashboard': typeof ProtectedPagesDashboardRoute
   '/history': typeof ProtectedPagesHistoryRoute
+  '/messages': typeof ProtectedPagesMessagesRoute
   '/week': typeof ProtectedPagesWeekRoute
   '/clients/$clientId': typeof ProtectedPagesClientsClientIdRoute
   '/clients/': typeof ProtectedPagesClientsIndexRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/account': typeof ProtectedPagesAccountRoute
   '/dashboard': typeof ProtectedPagesDashboardRoute
   '/history': typeof ProtectedPagesHistoryRoute
+  '/messages': typeof ProtectedPagesMessagesRoute
   '/week': typeof ProtectedPagesWeekRoute
   '/clients/$clientId': typeof ProtectedPagesClientsClientIdRoute
   '/clients': typeof ProtectedPagesClientsIndexRoute
@@ -245,6 +253,7 @@ export interface FileRoutesById {
   '/_ProtectedPages/clients': typeof ProtectedPagesClientsRouteWithChildren
   '/_ProtectedPages/dashboard': typeof ProtectedPagesDashboardRoute
   '/_ProtectedPages/history': typeof ProtectedPagesHistoryRoute
+  '/_ProtectedPages/messages': typeof ProtectedPagesMessagesRoute
   '/_ProtectedPages/week': typeof ProtectedPagesWeekRoute
   '/_ProtectedPages/clients/$clientId': typeof ProtectedPagesClientsClientIdRoute
   '/_ProtectedPages/clients/': typeof ProtectedPagesClientsIndexRoute
@@ -274,6 +283,7 @@ export interface FileRouteTypes {
     | '/clients'
     | '/dashboard'
     | '/history'
+    | '/messages'
     | '/week'
     | '/clients/$clientId'
     | '/clients/'
@@ -300,6 +310,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/dashboard'
     | '/history'
+    | '/messages'
     | '/week'
     | '/clients/$clientId'
     | '/clients'
@@ -328,6 +339,7 @@ export interface FileRouteTypes {
     | '/_ProtectedPages/clients'
     | '/_ProtectedPages/dashboard'
     | '/_ProtectedPages/history'
+    | '/_ProtectedPages/messages'
     | '/_ProtectedPages/week'
     | '/_ProtectedPages/clients/$clientId'
     | '/_ProtectedPages/clients/'
@@ -439,6 +451,13 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof ProtectedPagesHistoryRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
+    '/_ProtectedPages/messages': {
+      id: '/_ProtectedPages/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof ProtectedPagesMessagesRouteImport
       parentRoute: typeof ProtectedPagesRoute
     }
     '/_ProtectedPages/week': {
@@ -562,6 +581,7 @@ interface ProtectedPagesRouteChildren {
   ProtectedPagesClientsRoute: typeof ProtectedPagesClientsRouteWithChildren
   ProtectedPagesDashboardRoute: typeof ProtectedPagesDashboardRoute
   ProtectedPagesHistoryRoute: typeof ProtectedPagesHistoryRoute
+  ProtectedPagesMessagesRoute: typeof ProtectedPagesMessagesRoute
   ProtectedPagesWeekRoute: typeof ProtectedPagesWeekRoute
   ProtectedPagesDogsIndexRoute: typeof ProtectedPagesDogsIndexRoute
   ProtectedPagesDogsDogIdNotesRoute: typeof ProtectedPagesDogsDogIdNotesRoute
@@ -581,6 +601,7 @@ const ProtectedPagesRouteChildren: ProtectedPagesRouteChildren = {
   ProtectedPagesClientsRoute: ProtectedPagesClientsRouteWithChildren,
   ProtectedPagesDashboardRoute: ProtectedPagesDashboardRoute,
   ProtectedPagesHistoryRoute: ProtectedPagesHistoryRoute,
+  ProtectedPagesMessagesRoute: ProtectedPagesMessagesRoute,
   ProtectedPagesWeekRoute: ProtectedPagesWeekRoute,
   ProtectedPagesDogsIndexRoute: ProtectedPagesDogsIndexRoute,
   ProtectedPagesDogsDogIdNotesRoute: ProtectedPagesDogsDogIdNotesRoute,
