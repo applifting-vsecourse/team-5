@@ -13,6 +13,7 @@ const aDog = (color: number): Dog => ({
   breed: "Retriever",
   color,
   ownerId: "u1",
+  isArchived: false,
   disciplines: [],
   createdAt: new Date(),
   updatedAt: new Date(),

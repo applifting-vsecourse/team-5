@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router"
 
 import { Seo } from "@/components/Seo"
 
-import { dogsQueryOptions } from "@/features/dog/api/dogsQueryOptions"
+import { archivedDogsQueryOptions, dogsQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 import { DogList } from "@/features/dog/components/DogList"
 
 function dogCountLabel(count: number): string {
@@ -18,7 +18,10 @@ export const Route = createFileRoute("/_ProtectedPages/dogs/")({
 
 function DogsPage() {
   const dogsQuery = useQuery(dogsQueryOptions())
+  const archivedQuery = useQuery(archivedDogsQueryOptions())
   const dogs = dogsQuery.data ?? []
+  // Ignore active dogs if a generic /dogs mock also answered ?archived=true.
+  const archivedDogs = (archivedQuery.data ?? []).filter((dog) => dog.isArchived)
 
   return (
     <>
@@ -30,6 +33,7 @@ function DogsPage() {
             {!dogsQuery.isLoading ? (
               <p className="text-xs font-semibold text-muted-foreground">
                 {dogCountLabel(dogs.length)}
+                {archivedDogs.length ? ` · ${archivedDogs.length} v archivu` : ""}
                 {dogs.some((dog) => dog.trainers?.length)
                   ? ` · Sdílení: ${[...new Set(dogs.flatMap((dog) => dog.trainers?.map((trainer) => trainer.name) ?? []))].join(", ")}`
                   : ""}
@@ -40,9 +44,13 @@ function DogsPage() {
 
         <DogList
           dogs={dogs}
+          archivedDogs={archivedDogs}
           isLoading={dogsQuery.isLoading}
           error={dogsQuery.error}
-          onReload={() => void dogsQuery.refetch()}
+          onReload={() => {
+            void dogsQuery.refetch()
+            void archivedQuery.refetch()
+          }}
         />
       </section>
     </>

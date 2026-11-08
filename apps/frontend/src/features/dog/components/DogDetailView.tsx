@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { getISOWeek, parseISO } from "date-fns"
 
+import { ConfirmDestructiveDialog } from "@/components/ConfirmDestructiveDialog"
 import { DesignIcon } from "@/components/DesignIcon"
 import { dogTextClass } from "@/components/DogPlayerCard"
 import { PesAvatar } from "@/components/PesAvatar"
@@ -18,6 +19,7 @@ import type { Dog } from "@/features/dog/api/dogSchemas"
 import { dogMetricsQueryOptions, dogNotesQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 import { dogPlanQueryOptions } from "@/features/dog/api/trainingEditor"
 import { EditDogDialog } from "@/features/dog/components/EditDogDialog"
+import { useArchiveDog, useRestoreDog } from "@/features/dog/hooks/useUpdateDog"
 
 function profileFacts(dog: Dog) {
   let age: string | undefined
@@ -109,6 +111,8 @@ function WeeklySuccessChart({ metrics, dog }: { metrics: DogMetrics; dog: Dog })
 export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boolean }) {
   const [isEditOpen, setEditOpen] = useState(false)
   const [shouldShowAllSkills, setShowAllSkills] = useState(false)
+  const archive = useArchiveDog(dog.id)
+  const restore = useRestoreDog(dog.id)
   const metrics = useQuery(dogMetricsQueryOptions(dog.id))
   const plan = useQuery(dogPlanQueryOptions(dog.id))
   const notes = useQuery({ ...dogNotesQueryOptions(dog.id), enabled: isOwner })
@@ -167,7 +171,7 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
             )}
           </Button>
           <p className="text-sm font-bold">Profil psa</p>
-          {isOwner ? (
+          {isOwner && !dog.isArchived ? (
             <Button
               variant="ghost"
               size="icon"
@@ -181,6 +185,11 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
             <span className="size-11" />
           )}
         </nav>
+        {dog.isArchived && (
+          <p className="rounded-control bg-dog-foreground/15 px-3 py-2 text-sm font-semibold">
+            Pes je v archivu. Historie zůstává, v Psech a Týdnu se neukazuje.
+          </p>
+        )}
         <div className="flex items-center gap-4">
           <PesAvatar
             name={dog.name}
@@ -265,7 +274,7 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
           )
         )}
       </header>
-      {isOwner && (
+      {isOwner && !dog.isArchived && (
         <EditDogDialog
           dog={dog}
           isOpen={isEditOpen}
@@ -410,6 +419,30 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
             )}
           </QueryState>
         </section>
+        <Link
+          to="/dogs/$dogId/activities"
+          params={{ dogId: dog.id }}
+          className="flex min-h-touch items-center gap-3 rounded-card border border-border bg-card p-4"
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-field bg-accent">
+            <DesignIcon name="profile-Calendar" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold">Historie tréninků</span>
+            <span className="block text-xs text-muted-foreground">
+              {metrics.data?.completedSessions != null
+                ? `${metrics.data.completedSessions} ${
+                    metrics.data.completedSessions === 1
+                      ? "trénink"
+                      : metrics.data.completedSessions >= 2 && metrics.data.completedSessions <= 4
+                        ? "tréninky"
+                        : "tréninků"
+                  }`
+                : "Záznamy a zprávy"}
+            </span>
+          </span>
+          <DesignIcon name="profile-ChevR" />
+        </Link>
         {isOwner && (
           <Link
             to="/dogs/$dogId/notes"
@@ -428,6 +461,34 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
             </span>
             <DesignIcon name="profile-ChevR" />
           </Link>
+        )}
+        {isOwner && !dog.isArchived && (
+          <ConfirmDestructiveDialog
+            title="Archivovat psa?"
+            description={`${dog.name} zmizí ze seznamu Psů i z Týdne. Historie cílů, tréninků a záznamů zůstane a psa půjde kdykoli vrátit.`}
+            confirmLabel="Archivovat"
+            onConfirm={() => archive.mutate()}
+            trigger={
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={archive.isPending}
+              >
+                Archivovat psa
+              </Button>
+            }
+          />
+        )}
+        {isOwner && dog.isArchived && (
+          <Button
+            type="button"
+            className="w-full"
+            disabled={restore.isPending}
+            onClick={() => restore.mutate()}
+          >
+            Vrátit z archivu
+          </Button>
         )}
       </div>
     </div>

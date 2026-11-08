@@ -14,6 +14,7 @@ const aDog: Dog = {
   color: 2,
   photoUrl: "https://example.com/baryk.jpg",
   ownerId: "u1",
+  isArchived: false,
   disciplines: ["Canicross", "Agility"],
   createdAt: new Date(),
   updatedAt: new Date(),
