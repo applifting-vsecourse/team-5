@@ -10,11 +10,11 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
 import { useCancelInvitation } from "@/features/client/api/cancelInvitation"
+import type { Invitation } from "@/features/client/api/clientSchemas"
 import {
   clientInvitationsQueryOptions,
   clientsQueryOptions,
 } from "@/features/client/api/clientsQueryOptions"
-import type { Invitation } from "@/features/client/api/clientSchemas"
 import { trainerOverviewQueryOptions } from "@/features/client/api/trainerOverview"
 
 import { ClientCard, type ClientListExtras } from "./ClientCard"
@@ -86,10 +86,7 @@ export function ClientList() {
   const invitations = invitationsQuery.data ?? []
   const overview = overviewQuery.data
   const attentionByClient = useMemo(() => {
-    const map = new Map<
-      string,
-      { kind: "reply" | "inactive" | "low-success"; label: string }
-    >()
+    const map = new Map<string, { kind: "reply" | "inactive" | "low-success"; label: string }>()
     for (const item of overview?.attention ?? []) {
       if (!map.has(item.client.id)) {
         map.set(item.client.id, { kind: item.kind, label: item.label })

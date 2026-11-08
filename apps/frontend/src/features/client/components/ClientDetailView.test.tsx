@@ -3,8 +3,9 @@ import type * as Router from "@tanstack/react-router"
 import { render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import type { Client } from "@/features/client/api/clientSchemas"
 import { api } from "@/lib/api-client"
+
+import type { Client } from "@/features/client/api/clientSchemas"
 
 import { ClientDetailView } from "./ClientDetailView"
 
