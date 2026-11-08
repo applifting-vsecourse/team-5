@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Camera, Check, Plus, Trash2, X } from "lucide-react"
 
+import { StatusChip } from "@/components/StatusChip"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -16,6 +18,8 @@ import { validateDogPhoto } from "@/lib/dogPhoto"
 import { cn } from "@/lib/utils"
 
 import { updateDogInputSchema, type Dog } from "@/features/dog/api/dogSchemas"
+import { dogPlanQueryOptions } from "@/features/dog/api/trainingEditor"
+import { useSetDogDiscipline } from "@/features/dog/hooks/useSetDogDiscipline"
 import { useUpdateDog } from "@/features/dog/hooks/useUpdateDog"
 
 import { DEFAULT_DISCIPLINES, DOG_COLORS } from "./CreateDogDialog"
@@ -36,12 +40,25 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
   const [disciplines, setDisciplines] = useState<string[]>(dog.disciplines ?? [])
   const [customDiscipline, setCustomDiscipline] = useState("")
   const [customDisciplineError, setCustomDisciplineError] = useState<string | null>(null)
+  const [localArchived, setLocalArchived] = useState<string[]>([])
+  const [disciplineToArchive, setDisciplineToArchive] = useState<string | null>(null)
   const [errors, setErrors] = useState<{
     name?: string
     breed?: string
     birthDate?: string
     weightKg?: string
   }>({})
+
+  const planQuery = useQuery(dogPlanQueryOptions(dog.id))
+  const setDisciplineMutation = useSetDogDiscipline(dog.id)
+
+  const planArchivedNames = (planQuery.data ?? [])
+    .filter((item) => item.isArchived)
+    .map((item) => item.discipline.name)
+
+  const archivedDisciplines = Array.from(new Set([...planArchivedNames, ...localArchived])).filter(
+    (disc) => !disciplines.some((d) => d.toLowerCase() === disc.toLowerCase()),
+  )
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
@@ -90,6 +107,31 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
+  const handleRestoreDiscipline = async (disc: string) => {
+    try {
+      await setDisciplineMutation.mutateAsync({ name: disc, isArchived: false })
+    } catch {
+      // Soft-fail fallback for local state
+    }
+    setDisciplines((prev) =>
+      prev.some((d) => d.toLowerCase() === disc.toLowerCase()) ? prev : [...prev, disc],
+    )
+    setLocalArchived((prev) => prev.filter((d) => d.toLowerCase() !== disc.toLowerCase()))
+  }
+
+  const handleConfirmArchive = async (disc: string) => {
+    try {
+      await setDisciplineMutation.mutateAsync({ name: disc, isArchived: true })
+    } catch {
+      // Soft-fail fallback for local state
+    }
+    setDisciplines((prev) => prev.filter((d) => d.toLowerCase() !== disc.toLowerCase()))
+    setLocalArchived((prev) =>
+      prev.some((d) => d.toLowerCase() === disc.toLowerCase()) ? prev : [...prev, disc],
+    )
+    setDisciplineToArchive(null)
+  }
+
   const handleAddCustomDiscipline = () => {
     const trimmed = customDiscipline.trim()
     if (!trimmed) return
@@ -105,23 +147,42 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
       return
     }
 
-    setDisciplines((prev) => [...prev, trimmed])
+    const isArchived = archivedDisciplines.some((d) => d.toLowerCase() === trimmed.toLowerCase())
+    if (isArchived) {
+      void handleRestoreDiscipline(trimmed)
+    } else {
+      setDisciplines((prev) => [...prev, trimmed])
+    }
     setCustomDiscipline("")
     setCustomDisciplineError(null)
   }
 
   const handleToggleDefaultDiscipline = (disc: string) => {
-    setDisciplines((prev) => {
-      const isSelected = prev.some((d) => d.toLowerCase() === disc.toLowerCase())
-      if (isSelected) {
-        return prev.filter((d) => d.toLowerCase() !== disc.toLowerCase())
+    const isSelected = disciplines.some((d) => d.toLowerCase() === disc.toLowerCase())
+    if (isSelected) {
+      const isSavedOnDog = dog.disciplines?.some((d) => d.toLowerCase() === disc.toLowerCase())
+      if (isSavedOnDog) {
+        setDisciplineToArchive(disc)
+        return
       }
-      return [...prev, disc]
-    })
+      setDisciplines((prev) => prev.filter((d) => d.toLowerCase() !== disc.toLowerCase()))
+    } else {
+      const isArchived = archivedDisciplines.some((d) => d.toLowerCase() === disc.toLowerCase())
+      if (isArchived) {
+        void handleRestoreDiscipline(disc)
+      } else {
+        setDisciplines((prev) => [...prev, disc])
+      }
+    }
   }
 
   const handleRemoveDiscipline = (disc: string) => {
-    setDisciplines((prev) => prev.filter((d) => d !== disc))
+    const isSavedOnDog = dog.disciplines?.some((d) => d.toLowerCase() === disc.toLowerCase())
+    if (isSavedOnDog) {
+      setDisciplineToArchive(disc)
+    } else {
+      setDisciplines((prev) => prev.filter((d) => d.toLowerCase() !== disc.toLowerCase()))
+    }
   }
 
   const customDisciplines = disciplines.filter(
@@ -399,14 +460,52 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
                   <button
                     type="button"
                     aria-label={`Odebrat disciplínu ${disc}`}
+                    title="Ukončit disciplínu"
                     onClick={() => handleRemoveDiscipline(disc)}
-                    disabled={isPending}
+                    disabled={isPending || setDisciplineMutation.isPending}
                     className="relative ml-1 inline-flex size-6 items-center justify-center rounded-full text-primary-foreground after:absolute after:-inset-2 hover:bg-black/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                   >
                     <X className="size-3.5" />
                   </button>
                 </span>
               ))}
+            </div>
+          )}
+
+          {disciplineToArchive && (
+            <div
+              role="alert"
+              className="space-y-2 rounded-card border border-destructive/30 bg-destructive/5 p-3 text-xs"
+            >
+              <p className="font-semibold text-destructive">
+                Ukončit disciplínu <strong>{disciplineToArchive}</strong>?
+              </p>
+              <p className="text-muted-foreground">
+                Disciplína se přesune do archivu. Všechny její cíle, tréninky a historie zůstanou
+                zachovány a můžete ji kdykoliv znovu obnovit.
+              </p>
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={setDisciplineMutation.isPending}
+                  onClick={() => void handleConfirmArchive(disciplineToArchive)}
+                  className="min-h-9"
+                >
+                  {setDisciplineMutation.isPending ? "Ukončuji..." : "Ukončit disciplínu"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={setDisciplineMutation.isPending}
+                  onClick={() => setDisciplineToArchive(null)}
+                  className="min-h-9"
+                >
+                  Zrušit
+                </Button>
+              </div>
             </div>
           )}
 
@@ -442,6 +541,41 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
           </div>
           {customDisciplineError && (
             <p className="text-xs text-destructive">{customDisciplineError}</p>
+          )}
+
+          {archivedDisciplines.length > 0 && (
+            <div className="space-y-2 border-t border-border/50 pt-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold text-muted-foreground">
+                  Ukončené disciplíny
+                </Label>
+                <StatusChip tone="muted">Archiv</StatusChip>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Disciplíny ukončené pro tohoto psa. Jejich historie a cíle zůstávají zachovány.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {archivedDisciplines.map((disc) => (
+                  <span
+                    key={disc}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full border border-dashed border-border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground"
+                  >
+                    <span>{disc}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void handleRestoreDiscipline(disc)}
+                      disabled={isPending || setDisciplineMutation.isPending}
+                      className="h-7 px-2 text-xs font-semibold text-primary hover:bg-primary/10"
+                      aria-label={`Obnovit disciplínu ${disc}`}
+                    >
+                      Obnovit
+                    </Button>
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       </div>
