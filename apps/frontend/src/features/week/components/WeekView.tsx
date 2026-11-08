@@ -194,14 +194,16 @@ export function WeekView({
         <div className="min-w-0 flex-1">
           <h1 className="text-page font-extrabold tracking-tight">Tento týden</h1>
           <Button
-            variant="ghost"
-            className="h-auto min-h-touch max-w-full justify-start px-0 text-xs font-normal text-muted-foreground"
+            variant="outline"
+            size="sm"
+            className="mt-1 h-auto min-h-touch max-w-full justify-between gap-2 rounded-field border-border bg-card/60 px-3 py-1.5 text-xs font-semibold text-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
             aria-label={`Vybrat týden, aktuálně ${formatWeekRange(weekStart)}`}
             onClick={() => setPickerOpen(true)}
           >
-            <span className="break-words whitespace-normal">
+            <span className="text-left break-words">
               {formatWeekRange(weekStart)} · {completed} z {trainings.length} tréninků
             </span>
+            <DesignIcon name="history-ChevD" />
           </Button>
         </div>
         <Button
