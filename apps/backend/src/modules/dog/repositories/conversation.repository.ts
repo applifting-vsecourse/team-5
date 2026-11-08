@@ -49,6 +49,20 @@ export class ConversationRepository {
       where: { id },
       include: {
         dog: { select: { id: true, name: true, color: true } },
+        training: {
+          select: {
+            title: true,
+            steps: {
+              orderBy: { position: 'asc' },
+              select: {
+                id: true,
+                title: true,
+                outcome: true,
+                position: true,
+              },
+            },
+          },
+        },
         messages: {
           include: messageInclude,
           orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],

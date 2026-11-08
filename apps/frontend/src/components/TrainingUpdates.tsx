@@ -1,11 +1,11 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { Link, useNavigate } from "@tanstack/react-router"
 import { formatDistanceToNow } from "date-fns"
 import { cs } from "date-fns/locale"
 
 import { DesignIcon } from "@/components/DesignIcon"
 import { QueryState } from "@/components/QueryState"
-import { TrainingConversationDialog } from "@/components/TrainingConversationDialog"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -18,10 +18,17 @@ import { updatesQueryOptions } from "@/lib/conversations"
 
 export function useTrainingUpdates() {
   const query = useQuery(updatesQueryOptions())
+  const navigate = useNavigate()
   const [isOpen, setOpen] = useState(false)
-  const [activityId, setActivityId] = useState<string | null>(null)
   const latest = query.data?.[0]
   const time = latest ? formatDistanceToNow(latest.createdAt, { locale: cs, addSuffix: true }) : ""
+  const openRecord = (dogId: string, activityId: string) => {
+    setOpen(false)
+    void navigate({
+      to: "/dogs/$dogId/activities/$activityId",
+      params: { dogId, activityId },
+    })
+  }
   const bell = (
     <Button
       type="button"
@@ -35,54 +42,45 @@ export function useTrainingUpdates() {
     </Button>
   )
   const notifications = (
-    <>
-      <Dialog
-        open={isOpen}
-        onOpenChange={setOpen}
-      >
-        <DialogContent className="max-h-[90dvh] overflow-y-auto bg-background">
-          <DialogHeader>
-            <DialogTitle>Oznámení</DialogTitle>
-            <DialogDescription>Posledních 30 zpráv z tvých tréninků.</DialogDescription>
-          </DialogHeader>
-          <QueryState
-            isLoading={query.isLoading}
-            error={query.error}
-            onRetry={() => void query.refetch()}
-            empty={null}
-          >
-            {query.data?.length ? (
-              <ul className="space-y-2">
-                {query.data.map((message) => (
-                  <li key={message.id}>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="h-auto w-full flex-col items-start gap-1 px-3 py-3 text-left whitespace-normal"
-                      onClick={() => {
-                        setOpen(false)
-                        setActivityId(message.workoutLogId)
-                      }}
-                    >
-                      <span className="font-bold">
-                        {message.author.name} · {message.activity.dog.name}
-                      </span>
-                      <span className="text-sm font-normal">{message.text}</span>
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">Zatím žádné zprávy.</p>
-            )}
-          </QueryState>
-        </DialogContent>
-      </Dialog>
-      <TrainingConversationDialog
-        activityId={activityId}
-        onClose={() => setActivityId(null)}
-      />
-    </>
+    <Dialog
+      open={isOpen}
+      onOpenChange={setOpen}
+    >
+      <DialogContent className="max-h-[90dvh] overflow-y-auto bg-background">
+        <DialogHeader>
+          <DialogTitle>Oznámení</DialogTitle>
+          <DialogDescription>Posledních 30 zpráv z tvých tréninků.</DialogDescription>
+        </DialogHeader>
+        <QueryState
+          isLoading={query.isLoading}
+          error={query.error}
+          onRetry={() => void query.refetch()}
+          empty={null}
+        >
+          {query.data?.length ? (
+            <ul className="space-y-2">
+              {query.data.map((message) => (
+                <li key={message.id}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-auto w-full flex-col items-start gap-1 px-3 py-3 text-left whitespace-normal"
+                    onClick={() => openRecord(message.activity.dog.id, message.workoutLogId)}
+                  >
+                    <span className="font-bold">
+                      {message.author.name} · {message.activity.dog.name}
+                    </span>
+                    <span className="text-sm font-normal">{message.text}</span>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">Zatím žádné zprávy.</p>
+          )}
+        </QueryState>
+      </DialogContent>
+    </Dialog>
   )
   const message = (
     <section
@@ -117,12 +115,19 @@ export function useTrainingUpdates() {
                 {latest.text}
               </p>
               <Button
-                type="button"
+                asChild
                 variant="link"
                 className="min-h-touch px-0 font-bold"
-                onClick={() => setActivityId(latest.workoutLogId)}
               >
-                Odpovědět
+                <Link
+                  to="/dogs/$dogId/activities/$activityId"
+                  params={{
+                    dogId: latest.activity.dog.id,
+                    activityId: latest.workoutLogId,
+                  }}
+                >
+                  Odpovědět
+                </Link>
               </Button>
             </div>
           </div>

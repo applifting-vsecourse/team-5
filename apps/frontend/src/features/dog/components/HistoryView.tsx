@@ -6,7 +6,6 @@ import { History } from "lucide-react"
 import { DesignIcon } from "@/components/DesignIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
-import { TrainingConversationDialog } from "@/components/TrainingConversationDialog"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -55,19 +54,18 @@ function formatTotalDuration(minutes: number): string {
   return `${mins} min`
 }
 
-function HistoryRecord({ record, onOpen }: { record: HistoryItem; onOpen: () => void }) {
+function HistoryRecord({ record }: { record: HistoryItem }) {
   return (
     <li className="relative flex min-w-0 items-start gap-3 pb-3 last:pb-0">
       <span
         aria-hidden
         className={cn("mt-5 size-2.5 shrink-0 rounded-full", dogColorClass(record.dog.color))}
       />
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={onOpen}
+      <Link
+        to="/dogs/$dogId/activities/$activityId"
+        params={{ dogId: record.dog.id, activityId: record.id }}
         aria-label={`Otevřít záznam ${record.title}`}
-        className="h-auto min-w-0 flex-1 flex-col items-stretch gap-2 rounded-card border border-border bg-card p-4 text-left whitespace-normal hover:bg-card/90"
+        className="flex h-auto min-h-touch min-w-0 flex-1 flex-col items-stretch gap-2 rounded-card border border-border bg-card p-4 text-left whitespace-normal outline-hidden transition-colors hover:bg-card/90 focus-visible:ring-2 focus-visible:ring-ring"
       >
         <span className="flex items-start justify-between gap-3">
           <span className="text-sm font-extrabold break-words">{record.title}</span>
@@ -111,7 +109,7 @@ function HistoryRecord({ record, onOpen }: { record: HistoryItem; onOpen: () => 
                 : "komentářů"}
           </span>
         )}
-      </Button>
+      </Link>
     </li>
   )
 }
@@ -122,7 +120,6 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
   const [isCommentsOnly, setCommentsOnly] = useState(false)
   const [isFilterOpen, setFilterOpen] = useState(false)
   const [draftMonth, setDraftMonth] = useState("")
-  const [activityId, setActivity] = useState<string | null>(null)
   const dogs = useQuery(accessibleDogsQueryOptions())
   const history = useInfiniteQuery(
     historyQueryOptions({ dogId, month, commentsOnly: isCommentsOnly }),
@@ -308,7 +305,6 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
                   <HistoryRecord
                     key={record.id}
                     record={record}
-                    onOpen={() => setActivity(record.id)}
                   />
                 ))}
               </ol>
@@ -374,10 +370,6 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
           </Button>
         </DialogContent>
       </Dialog>
-      <TrainingConversationDialog
-        activityId={activityId}
-        onClose={() => setActivity(null)}
-      />
     </div>
   )
 }
