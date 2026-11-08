@@ -419,6 +419,30 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
             )}
           </QueryState>
         </section>
+        <Link
+          to="/dogs/$dogId/activities"
+          params={{ dogId: dog.id }}
+          className="flex min-h-touch items-center gap-3 rounded-card border border-border bg-card p-4"
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-field bg-accent">
+            <DesignIcon name="profile-Calendar" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold">Historie tréninků</span>
+            <span className="block text-xs text-muted-foreground">
+              {metrics.data?.completedSessions != null
+                ? `${metrics.data.completedSessions} ${
+                    metrics.data.completedSessions === 1
+                      ? "trénink"
+                      : metrics.data.completedSessions >= 2 && metrics.data.completedSessions <= 4
+                        ? "tréninky"
+                        : "tréninků"
+                  }`
+                : "Záznamy a zprávy"}
+            </span>
+          </span>
+          <DesignIcon name="profile-ChevR" />
+        </Link>
         {isOwner && (
           <Link
             to="/dogs/$dogId/notes"

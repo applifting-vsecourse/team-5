@@ -168,6 +168,10 @@ describe("DogDetailView", () => {
     // Sections
     expect(screen.getByRole("heading", { name: "Cíle" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Zvládnuté dovednosti" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /Historie tréninků/ })).toHaveAttribute(
+      "href",
+      "/dogs/d-123/activities",
+    )
     expect(screen.getByRole("link", { name: /Poznámky/ })).toHaveAttribute(
       "href",
       "/dogs/d-123/notes",

@@ -24,9 +24,16 @@ export const api = ky.create({
       async ({ error }) => {
         if (!(error instanceof HTTPError)) return error
         try {
-          const body = await error.response.clone().json<{ message?: string | string[] }>()
-          const message = Array.isArray(body.message) ? body.message.join(", ") : body.message
-          if (message) error.message = message
+          const raw: unknown = await error.response.clone().json()
+          if (raw && typeof raw === "object") {
+            const rawMessage: unknown = Reflect.get(raw, "message")
+            const message = Array.isArray(rawMessage)
+              ? rawMessage.filter((part): part is string => typeof part === "string").join(", ")
+              : typeof rawMessage === "string"
+                ? rawMessage
+                : null
+            if (message) error.message = message
+          }
         } catch {
           // response had no JSON body — keep ky's default message
         }
