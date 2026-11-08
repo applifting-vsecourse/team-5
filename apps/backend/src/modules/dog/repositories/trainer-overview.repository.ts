@@ -22,10 +22,19 @@ export class TrainerOverviewRepository {
                 id: true,
                 name: true,
                 color: true,
+                breed: true,
                 createdAt: true,
                 goals: {
                   where: { status: 'ACTIVE' },
-                  select: { id: true },
+                  select: {
+                    id: true,
+                    title: true,
+                    deadline: true,
+                    blocks: {
+                      where: { training: { isArchived: false } },
+                      select: { outcome: true },
+                    },
+                  },
                   orderBy: [{ order: 'asc' }, { id: 'asc' }],
                 },
                 workoutLogs: {
