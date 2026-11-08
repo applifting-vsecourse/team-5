@@ -1,6 +1,7 @@
 import { Dog } from '@/modules/dog/domain/dog';
 import { Goal } from '@/modules/dog/domain/goal';
 import { GoalRepository } from '@/modules/dog/repositories/goal.repository';
+import { ScheduledTrainingRepository } from '@/modules/dog/repositories/scheduled-training.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -47,17 +48,23 @@ const setup = (): {
   service: GoalsService;
   goalRepository: MockProxy<GoalRepository>;
   dogAccess: MockProxy<DogAccessService>;
+  scheduledTrainings: MockProxy<ScheduledTrainingRepository>;
 } => {
   const goalRepository = mock<GoalRepository>();
   const dogAccess = mock<DogAccessService>();
+  const scheduledTrainings = mock<ScheduledTrainingRepository>();
   // The owner sees dog d1; anyone else gets the same 404 as for a missing dog.
   dogAccess.getAccessibleDog.mockImplementation((user, dogId) =>
     (user.id === 'u1' || user.id === 'u9') && dogId === 'd1'
       ? Promise.resolve(aDog())
       : Promise.reject(new NotFoundException()),
   );
-  const service = new GoalsService(goalRepository, dogAccess);
-  return { service, goalRepository, dogAccess };
+  const service = new GoalsService(
+    goalRepository,
+    dogAccess,
+    scheduledTrainings,
+  );
+  return { service, goalRepository, dogAccess, scheduledTrainings };
 };
 
 describe('GoalsService', () => {
@@ -272,6 +279,32 @@ describe('GoalsService', () => {
         service.updateGoal(stranger, 'g1', { title: 'Cizí' }),
       ).rejects.toThrow(NotFoundException);
       expect(goalRepository.updateGoal).not.toHaveBeenCalled();
+    });
+
+    it('clears planned trainings when a goal is completed or archived', async () => {
+      const { service, goalRepository, scheduledTrainings } = setup();
+      goalRepository.getGoalById.mockResolvedValue(aGoal());
+      goalRepository.updateGoal.mockResolvedValue(
+        aGoal({ status: 'COMPLETED' }),
+      );
+
+      await service.updateGoal(owner, 'g1', { status: 'COMPLETED' });
+
+      expect(scheduledTrainings.deletePlannedForGoal).toHaveBeenCalledWith(
+        'g1',
+      );
+    });
+
+    it('does not clear planned trainings when restoring a goal to active', async () => {
+      const { service, goalRepository, scheduledTrainings } = setup();
+      goalRepository.getGoalById.mockResolvedValue(
+        aGoal({ status: 'ARCHIVED' }),
+      );
+      goalRepository.updateGoal.mockResolvedValue(aGoal({ status: 'ACTIVE' }));
+
+      await service.updateGoal(owner, 'g1', { status: 'ACTIVE' });
+
+      expect(scheduledTrainings.deletePlannedForGoal).not.toHaveBeenCalled();
     });
   });
 

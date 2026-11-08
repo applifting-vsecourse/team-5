@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { api } from "@/lib/api-client"
 import { dogKeys } from "@/lib/dogKeys"
+import { weekKeys } from "@/lib/weekKeys"
 
 import type { GoalFormValues } from "@/features/dog/api/dogSchemas"
 import { dogDetailQueryOptions, goalQueryOptions } from "@/features/dog/api/dogsQueryOptions"
@@ -162,9 +163,13 @@ export function EditGoalPage({
   })
   const status = useMutation({
     mutationFn: (value: string) => api.patch(`goals/${goalId}`, { json: { status: value } }),
-    onSuccess: refresh,
+    onSuccess: async () => {
+      await refresh()
+      await client.invalidateQueries({ queryKey: weekKeys.all })
+    },
     onError: () => toast.error("Stav cíle se nepodařilo změnit."),
   })
+  const isGoalClosed = goal?.status === "ARCHIVED" || goal?.status === "COMPLETED"
   const schedulableSession = sessions.find((session) => !session.isArchived)
   const save = async (values: GoalFormValues, shouldSchedule = false) => {
     try {
@@ -359,9 +364,20 @@ export function EditGoalPage({
               </div>
             )}
             {isReadOnly && (
-              <p className="text-sm text-muted-foreground">
-                Tento cíl je uzavřený. Tréninky a záznamy zůstávají dostupné ke čtení.
-              </p>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Tento cíl je uzavřený. Tréninky a záznamy zůstávají dostupné ke čtení.
+                </p>
+                {isGoalClosed && (
+                  <Button
+                    variant="outline"
+                    disabled={status.isPending}
+                    onClick={() => status.mutate("ACTIVE")}
+                  >
+                    Vrátit mezi aktivní
+                  </Button>
+                )}
+              </div>
             )}
             <EditorSheet
               isOpen={isEditing}
