@@ -1,7 +1,8 @@
 import { useQueries, useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { CalendarPlus, ChevronLeft, MessageSquare, PawPrint } from "lucide-react"
+import { PawPrint } from "lucide-react"
 
+import { DesignIcon } from "@/components/DesignIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { Button } from "@/components/ui/button"
 import { dogColorClass } from "@/lib/dogColors"
@@ -16,9 +17,10 @@ import { trainerOverviewQueryOptions } from "@/features/client/api/trainerOvervi
 
 type ClientDetailViewProps = {
   client: Client
+  onSchedule?: () => void
 }
 
-export function ClientDetailView({ client }: ClientDetailViewProps) {
+export function ClientDetailView({ client, onSchedule }: ClientDetailViewProps) {
   const overview = useQuery(trainerOverviewQueryOptions())
   const metricsQueries = useQueries({
     queries: client.dogs.map((dog) => ({
@@ -30,9 +32,6 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
   })
   const primaryDog = client.dogs[0]
   const goalsQuery = useQuery(clientDogGoalsQueryOptions(primaryDog?.id ?? ""))
-  const replyAttention = (overview.data?.attention ?? []).find(
-    (item) => item.client.id === client.id && item.kind === "reply" && item.activityId,
-  )
   const activeGoal = (goalsQuery.data ?? []).find((goal) => goal.status === "ACTIVE")
   const recentRecords = [
     ...new Map(
@@ -49,18 +48,28 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Navigace zpět">
-        <Link
-          to="/clients"
-          className="group inline-flex min-h-touch items-center gap-1.5 text-sm font-medium text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="Zpět na seznam klientů"
+      <nav
+        aria-label="Navigace klienta"
+        className="flex items-center gap-3"
+      >
+        <Button
+          asChild
+          variant="outline"
+          size="icon"
+          className="rounded-field bg-card"
         >
-          <ChevronLeft
-            className="size-5 transition-transform group-hover:-translate-x-0.5"
-            aria-hidden
-          />
-          <span>Klienti</span>
-        </Link>
+          <Link
+            to="/clients"
+            aria-label="Zpět na seznam klientů"
+          >
+            <DesignIcon name="client-ChevL" />
+          </Link>
+        </Button>
+        <p className="flex-1 text-center text-sm font-bold">Klient</p>
+        <span
+          aria-hidden
+          className="w-touch"
+        />
       </nav>
 
       <header className="space-y-4 rounded-card border border-border bg-card p-4">
@@ -77,63 +86,19 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
               .join("") || "?"}
           </span>
           <div className="min-w-0 flex-1">
-            <h1 className="text-page font-extrabold tracking-tight">{client.name}</h1>
-            <p className="text-sm font-medium text-muted-foreground">{client.email}</p>
+            <h1 className="text-xl font-extrabold tracking-tight break-words">{client.name}</h1>
+            <p className="text-xs font-medium break-all text-muted-foreground">{client.email}</p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {replyAttention?.activityId ? (
-            <Button
-              asChild
-              variant="secondary"
-              className="min-h-touch flex-1 font-bold sm:flex-none"
-            >
-              <Link
-                to="/dogs/$dogId/activities/$activityId"
-                params={{
-                  dogId: replyAttention.dog.id,
-                  activityId: replyAttention.activityId,
-                }}
-              >
-                <MessageSquare
-                  className="size-4"
-                  aria-hidden
-                />
-                Napsat
-              </Link>
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="secondary"
-              className="min-h-touch flex-1 font-bold sm:flex-none"
-              disabled
-            >
-              <MessageSquare
-                className="size-4"
-                aria-hidden
-              />
-              Napsat
-            </Button>
-          )}
-          {primaryDog ? (
-            <Button
-              asChild
-              className="min-h-touch flex-1 font-bold sm:flex-none"
-            >
-              <Link
-                to="/dogs/$dogId"
-                params={{ dogId: primaryDog.id }}
-              >
-                <CalendarPlus
-                  className="size-4"
-                  aria-hidden
-                />
-                Naplánovat
-              </Link>
-            </Button>
-          ) : null}
-        </div>
+        {client.dogs.length > 0 && (
+          <Button
+            className="min-h-touch w-full rounded-control font-bold"
+            onClick={onSchedule}
+          >
+            <DesignIcon name="client-Cal" />
+            Naplánovat
+          </Button>
+        )}
       </header>
 
       <section
@@ -150,7 +115,7 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
             titleAs="p"
           />
         ) : (
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <ul className="grid grid-cols-2 gap-3">
             {client.dogs.map((dog, index) => {
               const rate = metricsQueries[index]?.data?.successRate
               return (
@@ -164,11 +129,17 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
                     )}
                   >
                     <span className="flex items-center justify-between gap-2">
-                      <span className="text-lg font-extrabold">{dog.name}</span>
+                      <span
+                        aria-hidden
+                        className="flex size-8 items-center justify-center rounded-full border border-dog-foreground text-sm font-extrabold"
+                      >
+                        {dog.name.charAt(0)}
+                      </span>
                       <span className="text-sm font-extrabold tabular-nums">
                         {rate == null ? "—" : `${Math.round(rate)} %`}
                       </span>
                     </span>
+                    <span className="text-lg font-extrabold break-words">{dog.name}</span>
                     <span className="text-xs font-medium">
                       {[dog.breed, dog.disciplines?.join(" · ")].filter(Boolean).join(" · ") ||
                         "Bez detailů"}

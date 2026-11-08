@@ -196,11 +196,8 @@ describe("ClientDetailView", () => {
     const backLink = screen.getByRole("link", { name: /zpět na seznam klientů/i })
     expect(backLink).toHaveAttribute("href", "/clients")
 
-    const napsat = await screen.findByRole("link", { name: /napsat/i })
-    expect(napsat).toHaveAttribute("href", "/dogs/dog-rex-1/activities/act-99")
-
-    const naplanovat = screen.getByRole("link", { name: /naplánovat/i })
-    expect(naplanovat).toHaveAttribute("href", "/dogs/dog-rex-1")
+    expect(screen.queryByRole("link", { name: /napsat/i })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /naplánovat/i })).toBeInTheDocument()
 
     expect(screen.getByRole("heading", { level: 2, name: "Psi" })).toBeInTheDocument()
     expect(screen.getByText("Rex")).toBeInTheDocument()
@@ -245,6 +242,6 @@ describe("ClientDetailView", () => {
     render(<ClientDetailView client={clientWithoutDogs} />, { wrapper: createWrapper() })
 
     expect(screen.getByText("Klient s vámi zatím nesdílí žádného psa")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /napsat/i })).toBeDisabled()
+    expect(screen.queryByRole("button", { name: /napsat|naplánovat/i })).not.toBeInTheDocument()
   })
 })
