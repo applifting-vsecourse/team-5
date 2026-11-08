@@ -123,6 +123,7 @@ function HistoryRecord({ record }: { record: HistoryItem }) {
             <Link
               to="/dogs/$dogId/activities/$activityId"
               params={{ dogId: record.dog.id, activityId: record.id }}
+              hash="training-reply"
               aria-label={`Odpovědět k tréninku ${record.title}`}
             >
               <DesignIcon name="trainer-Msg" />
@@ -159,29 +160,6 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 px-gutter pt-4 pb-6 md:py-8">
       <header className="flex items-center gap-3">
-        <Button
-          asChild
-          variant="outline"
-          size="icon"
-          className="shrink-0 rounded-field bg-card"
-        >
-          {initialDogId ? (
-            <Link
-              to="/dogs/$dogId"
-              params={{ dogId: initialDogId }}
-              aria-label="Zpět na psa"
-            >
-              <DesignIcon name="history-ChevL" />
-            </Link>
-          ) : (
-            <Link
-              to="/dogs"
-              aria-label="Zpět na psy"
-            >
-              <DesignIcon name="history-ChevL" />
-            </Link>
-          )}
-        </Button>
         <div className="min-w-0 flex-1">
           <h1 className="text-page font-extrabold tracking-tight">Historie</h1>
           {first && (

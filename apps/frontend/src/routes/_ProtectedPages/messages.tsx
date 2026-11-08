@@ -1,18 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router"
-
-import { Seo } from "@/components/Seo"
-
-import { InboxView } from "@/features/dog/components/InboxView"
+import { createFileRoute, redirect } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/_ProtectedPages/messages")({
-  component: MessagesPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/history", replace: true })
+  },
 })
-
-function MessagesPage() {
-  return (
-    <>
-      <Seo title="Zprávy" />
-      <InboxView />
-    </>
-  )
-}

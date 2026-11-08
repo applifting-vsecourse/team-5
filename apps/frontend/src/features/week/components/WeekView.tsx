@@ -8,12 +8,6 @@ import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
 import { StripCard } from "@/components/StripCard"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Progress } from "@/components/ui/progress"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
@@ -40,7 +34,6 @@ import { useUndoSkip } from "@/features/week/hooks/useSkipTraining"
 
 function WeekTrainingCard({ training, today }: { training: WeekTraining; today: CalendarDate }) {
   const [isMoveOpen, setMoveOpen] = useState(false)
-  const [isSkipOpen, setSkipOpen] = useState(false)
   const undo = useUndoSkip(training.id)
   const isPlanned = training.status === "PLANNED"
   const isTodayOrOverdue = training.date <= today
@@ -120,51 +113,32 @@ function WeekTrainingCard({ training, today }: { training: WeekTraining; today: 
             </Link>
           </Button>
         ) : null}
-        {(isPlanned || canUndo) && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`Možnosti tréninku ${heading}`}
-                className="shrink-0"
-              >
-                <Ellipsis />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {isPlanned && (
-                <>
-                  <DropdownMenuItem onSelect={() => setMoveOpen(true)}>
-                    Přesunout trénink
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => setSkipOpen(true)}>
-                    Přeskočit trénink
-                  </DropdownMenuItem>
-                </>
-              )}
-              {canUndo && (
-                <DropdownMenuItem
-                  disabled={undo.isPending}
-                  onSelect={() => undo.mutate()}
-                >
-                  Vrátit přeskočení
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+        {isPlanned && (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={`Možnosti tréninku ${heading}`}
+            className="shrink-0"
+            onClick={() => setMoveOpen(true)}
+          >
+            <Ellipsis />
+          </Button>
+        )}
+        {canUndo && (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={undo.isPending}
+            onClick={() => undo.mutate()}
+          >
+            Vrátit přeskočení
+          </Button>
         )}
       </div>
       <MoveTrainingDialog
         training={training}
-        isOpen={isMoveOpen || isSkipOpen}
-        initialAction={isSkipOpen ? "skip" : "move"}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) {
-            setMoveOpen(false)
-            setSkipOpen(false)
-          }
-        }}
+        isOpen={isMoveOpen}
+        onOpenChange={setMoveOpen}
       />
     </StripCard>
   )

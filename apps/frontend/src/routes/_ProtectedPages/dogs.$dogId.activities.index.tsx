@@ -1,18 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router"
-
-import { Seo } from "@/components/Seo"
-
-import { HistoryView } from "@/features/dog/components/HistoryView"
+import { createFileRoute, redirect } from "@tanstack/react-router"
 
 export const Route = createFileRoute("/_ProtectedPages/dogs/$dogId/activities/")({
-  component: DogHistoryPage,
+  beforeLoad: ({ params }) => {
+    throw redirect({ to: "/history", search: { dogId: params.dogId }, replace: true })
+  },
 })
-function DogHistoryPage() {
-  const { dogId } = Route.useParams()
-  return (
-    <>
-      <Seo title="Historie" />
-      <HistoryView initialDogId={dogId} />
-    </>
-  )
-}
