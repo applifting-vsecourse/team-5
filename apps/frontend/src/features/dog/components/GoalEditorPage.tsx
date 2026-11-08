@@ -144,6 +144,9 @@ export function EditGoalPage({
   const selected = sessions.find((s) => s.id === sessionId)
   const isReadOnly =
     goal?.status === "ARCHIVED" || goal?.status === "COMPLETED" || membership?.isArchived === true
+  const canMoveStep = Boolean(goal?.status === "ACTIVE" && !isReadOnly)
+  const currentStepId =
+    goal?.currentStepId ?? sessions.flatMap((session) => session.steps).at(0)?.id ?? null
   const refresh = () => client.invalidateQueries({ queryKey: dogKeys.all })
   const create = useMutation({
     mutationFn: () => createSession(goalId, title.trim()),
@@ -205,6 +208,8 @@ export function EditGoalPage({
           Boolean(selected.scheduledTrainings?.some((t) => t.status === "COMPLETED"))
         }
         canSchedule={!isReadOnly && !selected.isArchived}
+        canMoveStep={canMoveStep}
+        currentStepId={currentStepId}
         onBack={() => setSessionId(null)}
         isScheduleRequested={isScheduleRequested}
         onScheduleRequestHandled={onScheduleRequestHandled}
@@ -274,59 +279,71 @@ export function EditGoalPage({
                 />
               ) : (
                 <ol className="space-y-3">
-                  {sessions.map((s, index) => (
-                    <li
-                      key={s.id}
-                      className="rounded-card border border-border bg-card p-3"
-                    >
-                      <button
-                        type="button"
-                        className="flex min-h-touch w-full items-center gap-3 text-left"
-                        onClick={() => setSessionId(s.id)}
+                  {sessions.map((s, index) => {
+                    const hasCurrentStep = Boolean(
+                      currentStepId && s.steps.some((block) => block.id === currentStepId),
+                    )
+                    return (
+                      <li
+                        key={s.id}
+                        className={`rounded-card border bg-card p-3 ${
+                          hasCurrentStep ? "border-primary ring-2 ring-primary/30" : "border-border"
+                        }`}
                       >
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary font-extrabold">
-                          {index + 1}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block font-bold break-words">{s.title}</span>
-                          <span className="text-label text-muted-foreground">
-                            {s.steps.length} kroků ·{" "}
-                            {s.steps.reduce((n, step) => n + (step.durationMinutes ?? 0), 0)} min
-                            {s.isArchived ? " · Archiv" : ""}
+                        <button
+                          type="button"
+                          className="flex min-h-touch w-full items-center gap-3 text-left"
+                          onClick={() => setSessionId(s.id)}
+                        >
+                          <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary font-extrabold">
+                            {index + 1}
                           </span>
-                        </span>
-                        <ChevronRight className="size-5 shrink-0" />
-                      </button>
-                      {!isReadOnly && sessions.length > 1 && (
-                        <div className="flex justify-end gap-1">
-                          {([-1, 1] as const).map((direction) => (
-                            <Button
-                              key={direction}
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Posunout trénink ${s.title} ${direction === -1 ? "nahoru" : "dolů"}`}
-                              disabled={
-                                reorder.isPending ||
-                                index + direction < 0 ||
-                                index + direction >= sessions.length
-                              }
-                              onClick={() => {
-                                const ids = sessions.map((t) => t.id)
-                                const target = ids[index + direction]
-                                const source = ids[index]
-                                if (!target || !source) return
-                                ids[index] = target
-                                ids[index + direction] = source
-                                reorder.mutate(ids)
-                              }}
-                            >
-                              {direction === -1 ? <ChevronUp /> : <ChevronDown />}
-                            </Button>
-                          ))}
-                        </div>
-                      )}
-                    </li>
-                  ))}
+                          <span className="min-w-0 flex-1">
+                            <span className="flex flex-wrap items-center gap-2">
+                              <span className="block font-bold break-words">{s.title}</span>
+                              {hasCurrentStep ? (
+                                <StatusChip tone="accent">Aktuální</StatusChip>
+                              ) : null}
+                            </span>
+                            <span className="text-label text-muted-foreground">
+                              {s.steps.length} kroků ·{" "}
+                              {s.steps.reduce((n, step) => n + (step.durationMinutes ?? 0), 0)} min
+                              {s.isArchived ? " · Archiv" : ""}
+                            </span>
+                          </span>
+                          <ChevronRight className="size-5 shrink-0" />
+                        </button>
+                        {!isReadOnly && sessions.length > 1 && (
+                          <div className="flex justify-end gap-1">
+                            {([-1, 1] as const).map((direction) => (
+                              <Button
+                                key={direction}
+                                variant="ghost"
+                                size="icon"
+                                aria-label={`Posunout trénink ${s.title} ${direction === -1 ? "nahoru" : "dolů"}`}
+                                disabled={
+                                  reorder.isPending ||
+                                  index + direction < 0 ||
+                                  index + direction >= sessions.length
+                                }
+                                onClick={() => {
+                                  const ids = sessions.map((t) => t.id)
+                                  const target = ids[index + direction]
+                                  const source = ids[index]
+                                  if (!target || !source) return
+                                  ids[index] = target
+                                  ids[index + direction] = source
+                                  reorder.mutate(ids)
+                                }}
+                              >
+                                {direction === -1 ? <ChevronUp /> : <ChevronDown />}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
+                      </li>
+                    )
+                  })}
                 </ol>
               )}
               {!isReadOnly && (
