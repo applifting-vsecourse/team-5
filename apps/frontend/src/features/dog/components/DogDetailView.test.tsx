@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type * as Router from "@tanstack/react-router"
 import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { beforeAll, describe, expect, it, vi } from "vitest"
 
 import { dogKeys } from "@/lib/dogKeys"
 
@@ -10,6 +10,22 @@ import type { Dog, DogActivity } from "@/features/dog/api/dogSchemas"
 
 import { DogActivitiesSection } from "./DogActivitiesSection"
 import { DogDetailView } from "./DogDetailView"
+
+beforeAll(() => {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    }),
+  })
+})
 
 const demoActivities: DogActivity[] = [
   {
@@ -105,6 +121,7 @@ const aDog: Dog = {
   color: 1,
   photoUrl: null,
   ownerId: "u1",
+  isArchived: false,
   disciplines: ["Agility", "Canicross"],
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -125,12 +142,19 @@ const createWrapper = (queryClient?: QueryClient) => {
 }
 
 describe("DogDetailView", () => {
+  it("shows age calculated from birth date and stored decimal weight", () => {
+    render(<DogDetailView dog={{ ...aDog, birthDate: "2020-01-01", weightKg: 21.5 }} />, {
+      wrapper: createWrapper(),
+    })
+    const years = new Date().getFullYear() - 2020
+    expect(screen.getByText(`Border kolie · ${years} let · 21,5 kg`)).toBeInTheDocument()
+  })
   it("renders the current Figma dog profile with working section links and edit action", () => {
     render(<DogDetailView dog={aDog} />, { wrapper: createWrapper() })
 
     // Dog name and breed & disciplines
     expect(screen.getByRole("heading", { level: 1, name: "Baryk" })).toBeInTheDocument()
-    expect(screen.getByText("Border kolie")).toBeInTheDocument()
+    expect(screen.getByText("Border kolie · Věk neuveden · Váha neuvedena")).toBeInTheDocument()
     expect(screen.getByText("Agility")).toBeInTheDocument()
     expect(screen.getByText("Canicross")).toBeInTheDocument()
 
@@ -151,6 +175,10 @@ describe("DogDetailView", () => {
     // Sections
     expect(screen.getByRole("heading", { name: "Cíle" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Zvládnuté dovednosti" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: /Historie tréninků/ })).toHaveAttribute(
+      "href",
+      "/dogs/d-123/activities",
+    )
     expect(screen.getByRole("link", { name: /Poznámky/ })).toHaveAttribute(
       "href",
       "/dogs/d-123/notes",

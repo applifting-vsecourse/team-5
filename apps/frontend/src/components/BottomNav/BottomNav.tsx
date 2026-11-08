@@ -13,22 +13,21 @@ type NavItem = {
   matchPrefix: string
 }
 
-/** Handler: Dnes · Týden · Psi · Účet (Figma 110:908). */
+/** Handler: Dnes · Týden · Psi · Historie · Účet */
 const HANDLER_ITEMS: NavItem[] = [
   { label: "Dnes", to: ROUTES.dashboard, icon: Home, matchPrefix: ROUTES.dashboard },
   { label: "Týden", to: ROUTES.week, icon: Calendar, matchPrefix: ROUTES.week },
   { label: "Psi", to: ROUTES.dogs, icon: PawPrint, matchPrefix: ROUTES.dogs },
+  { label: "Historie", to: ROUTES.history, icon: ListChecks, matchPrefix: ROUTES.history },
   { label: "Účet", to: ROUTES.account, icon: User, matchPrefix: ROUTES.account },
 ]
 
-/**
- * Trainer: Přehled · Klienti · Cíle · Účet (Figma 110:1001).
- * Cíle uses /dogs until the goals screen ticket adds its own route.
- */
+/** Trainer: Přehled · Klienti · Kalendář · Historie · Účet */
 const TRAINER_ITEMS: NavItem[] = [
   { label: "Přehled", to: ROUTES.dashboard, icon: Home, matchPrefix: ROUTES.dashboard },
   { label: "Klienti", to: ROUTES.clients, icon: Users, matchPrefix: ROUTES.clients },
-  { label: "Cíle", to: ROUTES.dogs, icon: ListChecks, matchPrefix: ROUTES.dogs },
+  { label: "Kalendář", to: ROUTES.week, icon: Calendar, matchPrefix: ROUTES.week },
+  { label: "Historie", to: ROUTES.history, icon: ListChecks, matchPrefix: ROUTES.history },
   { label: "Účet", to: ROUTES.account, icon: User, matchPrefix: ROUTES.account },
 ]
 
@@ -73,7 +72,7 @@ export function BottomNav({ isTrainer = false }: BottomNavProps) {
             >
               <span
                 className={cn(
-                  "flex h-8 w-14 items-center justify-center rounded-full transition-colors",
+                  "flex h-8 w-11 items-center justify-center rounded-full transition-colors",
                   isActive && "bg-accent",
                 )}
               >
@@ -84,9 +83,11 @@ export function BottomNav({ isTrainer = false }: BottomNavProps) {
                         ? "trainer-Home"
                         : item.to === ROUTES.clients
                           ? "trainer-Users"
-                          : item.to === ROUTES.dogs
-                            ? "trainer-List"
-                            : "trainer-User"
+                          : item.to === ROUTES.week
+                            ? "today-Calendar"
+                            : item.to === ROUTES.history
+                              ? "trainer-List"
+                              : "trainer-User"
                     }
                   />
                 ) : (
@@ -102,7 +103,11 @@ export function BottomNav({ isTrainer = false }: BottomNavProps) {
                             : "today-Paw"
                           : item.to === ROUTES.week
                             ? "today-Calendar"
-                            : "today-User"
+                            : item.to === ROUTES.history
+                              ? "trainer-List"
+                              : item.to === ROUTES.inbox
+                                ? "trainer-Msg"
+                                : "today-User"
                     }
                   />
                 )}

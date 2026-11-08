@@ -24,7 +24,7 @@ vi.mock("@tanstack/react-router", async () => {
 })
 
 describe("BottomNav", () => {
-  it("renders handler tabs: Dnes, Týden, Psi, Účet", () => {
+  it("renders handler tabs: Dnes, Týden, Psi, Historie, Účet", () => {
     currentPath = "/week"
     render(<BottomNav />)
 
@@ -32,17 +32,21 @@ describe("BottomNav", () => {
     expect(screen.getByRole("link", { name: "Dnes" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Týden" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Psi" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Historie" })).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "Zprávy" })).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Účet" })).toBeInTheDocument()
     expect(screen.queryByRole("link", { name: "Klienti" })).not.toBeInTheDocument()
   })
 
-  it("renders trainer tabs: Přehled, Klienti, Cíle, Účet", () => {
+  it("renders trainer tabs: Přehled, Klienti, Historie, Účet", () => {
     currentPath = "/clients"
     render(<BottomNav isTrainer />)
 
     expect(screen.getByRole("link", { name: "Přehled" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Klienti" })).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "Cíle" })).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "Cíle" })).not.toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Historie" })).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "Zprávy" })).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Účet" })).toBeInTheDocument()
     expect(screen.queryByRole("link", { name: "Dnes" })).not.toBeInTheDocument()
   })

@@ -14,6 +14,7 @@ export const dogSchema = z.object({
   color: dogColorSchema,
   photoUrl: z.string().nullable().optional(),
   ownerId: z.string(),
+  isArchived: z.boolean().default(false),
   disciplines: z.array(z.string()).default([]),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
@@ -31,6 +32,7 @@ const profileFields = {
     .number()
     .min(0.1, "Váha musí být alespoň 0,1 kg.")
     .max(200, "Maximální váha je 200 kg.")
+    .multipleOf(0.01, "Váha může mít nejvýš dvě desetinná místa.")
     .nullable()
     .optional(),
 }

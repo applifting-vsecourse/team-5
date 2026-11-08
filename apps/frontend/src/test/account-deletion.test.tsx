@@ -81,7 +81,9 @@ describe("account deletion", () => {
       const dialog = screen.getByRole("dialog")
       expect(
         within(dialog).getByText(
-          role === "trainer" ? /spolupráci se všemi klienty/ : /Trvale smažete své psy/,
+          role === "trainer"
+            ? /Propojení se všemi klienty/
+            : /Psi, cíle, tréninky a jejich záznamy/,
         ),
       ).toBeInTheDocument()
       await interaction.click(within(dialog).getByRole("button", { name: "Trvale smazat účet" }))
@@ -189,5 +191,5 @@ it("opens the public draft policy without requiring a session", async () => {
   ).toBeInTheDocument()
   expect(screen.getByText(/Pracovní návrh/)).toBeInTheDocument()
   expect(screen.getByText(/smazaný uživatel/)).toBeInTheDocument()
-  expect(screen.getByRole("link", { name: "TrainLoop" })).toBeInTheDocument()
+  expect(screen.getByRole("link", { name: "Zpět do aplikace" })).toBeInTheDocument()
 })

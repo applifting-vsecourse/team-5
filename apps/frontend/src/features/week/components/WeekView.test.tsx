@@ -67,6 +67,9 @@ const renderWeek = (trainings: WeekTraining[], weekStart = "2026-10-19") => {
   queryClient.setQueryData(weekKeys.week(weekStart), trainings)
   queryClient.setQueryData([...weekKeys.week(weekStart), "metrics"], {
     weeklyTarget: 6,
+    weeklyPlannedSessions: 6,
+    weeklyCompletedSessions: 3,
+    weeklySkippedSessions: 0,
     weeklyTrainedDays: 3,
   })
   const onWeekChange = vi.fn()
@@ -199,8 +202,8 @@ describe("WeekView", () => {
         screen.getByRole("link", { name: "Začít trénink Rex · Chůze u nohy" }),
       ).toHaveAttribute("href", "/trainings/t1")
       await user.click(screen.getByRole("button", { name: "Možnosti tréninku Rex · Chůze u nohy" }))
-      expect(screen.getByRole("menuitem", { name: "Přesunout trénink" })).toBeInTheDocument()
-      expect(screen.getByRole("menuitem", { name: "Přeskočit trénink" })).toBeInTheDocument()
+      expect(screen.getByRole("dialog", { name: "Co s tréninkem?" })).toBeInTheDocument()
+      expect(screen.getByRole("radio", { name: /Přeskočit tento trénink/ })).toBeInTheDocument()
     })
 
     it("moves the training to a day in the next week", async () => {
@@ -214,12 +217,12 @@ describe("WeekView", () => {
       renderWeek([aTraining({ status: "PLANNED" })])
 
       await user.click(screen.getByRole("button", { name: /^Možnosti tréninku/ }))
-      await user.click(screen.getByRole("menuitem", { name: "Přesunout trénink" }))
-      const dialog = screen.getByRole("dialog", { name: "Přesunout trénink" })
+      const dialog = screen.getByRole("dialog", { name: "Co s tréninkem?" })
       // The day it is on now cannot be picked, so tomorrow is offered first.
       expect(within(dialog).getByRole("radio", { name: "středa 21. 10." })).toBeDisabled()
       expect(within(dialog).getByRole("radio", { name: "čtvrtek 22. 10." })).toBeChecked()
 
+      await user.click(within(dialog).getByRole("button", { name: "Jiný týden" }))
       await user.click(within(dialog).getByRole("button", { name: "Další týden" }))
       await user.click(within(dialog).getByRole("radio", { name: "úterý 27. 10." }))
       await user.click(within(dialog).getByRole("button", { name: "Přesunout na úterý 27. 10." }))
@@ -234,10 +237,9 @@ describe("WeekView", () => {
       renderWeek([aTraining({ status: "PLANNED" })])
 
       await user.click(screen.getByRole("button", { name: /^Možnosti tréninku/ }))
-      await user.click(screen.getByRole("menuitem", { name: "Přesunout trénink" }))
       await user.click(screen.getByRole("button", { name: "Přesunout na čtvrtek 22. 10." }))
 
-      expect(screen.getByRole("dialog", { name: "Přesunout trénink" })).toBeInTheDocument()
+      expect(screen.getByRole("dialog", { name: "Co s tréninkem?" })).toBeInTheDocument()
     })
   })
 
@@ -261,11 +263,12 @@ describe("WeekView", () => {
       renderWeek([aTraining({ status: "PLANNED" })])
 
       await user.click(screen.getByRole("button", { name: /^Možnosti tréninku/ }))
-      await user.click(screen.getByRole("menuitem", { name: "Přeskočit trénink" }))
-      const dialog = screen.getByRole("alertdialog", { name: "Přeskočit trénink?" })
-      expect(dialog).toHaveTextContent("plán cíle se neposune")
+      await user.click(screen.getByRole("radio", { name: /Přeskočit tento trénink/ }))
+      const dialog = screen.getByRole("dialog", { name: "Co s tréninkem?" })
+      expect(within(dialog).getByRole("radio", { name: /Přeskočit tento trénink/ })).toBeChecked()
+      expect(dialog).toHaveTextContent("další tréninky cíle se neposunou")
 
-      await user.click(within(dialog).getByRole("button", { name: "Přeskočit" }))
+      await user.click(within(dialog).getByRole("button", { name: "Přeskočit trénink" }))
 
       expect(skipTraining).toHaveBeenCalledWith("t1")
     })
@@ -275,11 +278,11 @@ describe("WeekView", () => {
       renderWeek([aTraining({ status: "PLANNED" })])
 
       await user.click(screen.getByRole("button", { name: /^Možnosti tréninku/ }))
-      await user.click(screen.getByRole("menuitem", { name: "Přeskočit trénink" }))
-      await user.click(screen.getByRole("button", { name: "Ponechat" }))
+      await user.click(screen.getByRole("radio", { name: /Přeskočit tento trénink/ }))
+      await user.click(screen.getByRole("button", { name: "Zrušit" }))
 
       expect(skipTraining).not.toHaveBeenCalled()
-      expect(screen.queryByRole("alertdialog")).toBeNull()
+      expect(screen.queryByRole("dialog")).toBeNull()
     })
 
     it("keeps a skipped training in the week and lets the user take the skip back", async () => {
@@ -290,8 +293,7 @@ describe("WeekView", () => {
       expect(screen.getByText("Přeskočeno")).toBeInTheDocument()
       expect(screen.queryByRole("button", { name: /^Přeskočit trénink/ })).toBeNull()
 
-      await user.click(screen.getByRole("button", { name: /^Možnosti tréninku/ }))
-      await user.click(screen.getByRole("menuitem", { name: "Vrátit přeskočení" }))
+      await user.click(screen.getByRole("button", { name: "Vrátit přeskočení" }))
 
       expect(undoSkip).toHaveBeenCalledWith("t1")
     })
@@ -302,9 +304,18 @@ describe("WeekView", () => {
       expect(screen.queryByRole("button", { name: /^Vrátit přeskočení/ })).toBeNull()
     })
 
-    it("offers no action on a completed training", () => {
-      renderWeek([aTraining({ status: "COMPLETED" })])
+    it("links a completed training with activityId to its record and thread", () => {
+      renderWeek([
+        aTraining({
+          id: "t1",
+          status: "COMPLETED",
+          activityId: "act-1",
+          dog: { id: "dog-1", name: "Baryk", color: 1 },
+        }),
+      ])
 
+      const link = screen.getByRole("link", { name: /^Záznam tréninku/ })
+      expect(link).toHaveAttribute("href", "/dogs/dog-1/activities/act-1")
       expect(screen.queryByRole("button", { name: /^Přeskočit trénink/ })).toBeNull()
       expect(screen.queryByRole("button", { name: /^Vrátit přeskočení/ })).toBeNull()
     })

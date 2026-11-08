@@ -1,13 +1,11 @@
 import { useState } from "react"
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router"
-import { AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 import { z } from "zod"
 
 import { ROUTES } from "@/app/routes"
 import { AuthLayout } from "@/components/AuthLayout"
 import { Seo } from "@/components/Seo"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 
 import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
@@ -60,8 +58,9 @@ function ResetPasswordPage() {
       <>
         <Seo title="Obnova hesla" />
         <AuthLayout
-          title="Obnova hesla"
-          description="Odkaz pro obnovu hesla není platný."
+          title="Odkaz už neplatí"
+          icon="auth-235-1063-IconKey"
+          description="Odkaz pro nastavení hesla vypršel, byl už použit nebo není správný."
           footer={
             <Link
               to={ROUTES.login}
@@ -72,13 +71,6 @@ function ResetPasswordPage() {
           }
         >
           <div className="space-y-4">
-            <Alert variant="destructive">
-              <AlertCircle className="size-4" />
-              <AlertTitle>Neplatný odkaz</AlertTitle>
-              <AlertDescription>
-                Odkaz pro obnovu hesla je neplatný, vypršel nebo již byl použit.
-              </AlertDescription>
-            </Alert>
             <Button
               asChild
               className="w-full"
@@ -95,8 +87,9 @@ function ResetPasswordPage() {
     <>
       <Seo title="Nové heslo" />
       <AuthLayout
-        title="Nastavení nového hesla"
-        description="Zadejte nové heslo ke svému účtu."
+        title="Nové heslo"
+        icon="auth-235-1019-IconKey"
+        description="Zvol si nové heslo. Po uložení tě přihlásíme do TrainLoop."
         footer={
           <Link
             to={ROUTES.login}

@@ -288,6 +288,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
             <Input
               id="dog-birth-date"
               type="date"
+              disabled={isPending}
               value={birthDate}
               onChange={(event) => setBirthDate(event.target.value)}
               aria-invalid={Boolean(errors.birthDate)}
@@ -309,7 +310,8 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
               type="number"
               min="0.1"
               max="200"
-              step="0.1"
+              step="0.01"
+              disabled={isPending}
               value={weight}
               onChange={(event) => setWeight(event.target.value)}
               aria-invalid={Boolean(errors.weightKg)}

@@ -1,8 +1,12 @@
 import { zodResolver } from "@hookform/resolvers/zod"
+import { Link } from "@tanstack/react-router"
 import { Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
+import { ROUTES } from "@/app/routes"
+import { IconInput } from "@/components/IconInput"
+import { PasswordInput } from "@/components/PasswordInput"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -13,7 +17,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 
 const schema = z.object({
   email: z.string().trim().min(1, "Vyplňte e-mail.").email("Zadejte platný e-mail."),
@@ -41,7 +44,7 @@ export function SignInForm({ isLoading, errorMessage, onSubmit }: SignInFormProp
       <form
         noValidate
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-4"
+        className="space-y-6"
         aria-busy={isLoading}
       >
         {errorMessage ? (
@@ -57,7 +60,8 @@ export function SignInForm({ isLoading, errorMessage, onSubmit }: SignInFormProp
             <FormItem>
               <FormLabel>E-mail</FormLabel>
               <FormControl>
-                <Input
+                <IconInput
+                  icon="auth-141-1520-IconMail"
                   type="email"
                   autoComplete="email"
                   required
@@ -77,8 +81,7 @@ export function SignInForm({ isLoading, errorMessage, onSubmit }: SignInFormProp
             <FormItem>
               <FormLabel>Heslo</FormLabel>
               <FormControl>
-                <Input
-                  type="password"
+                <PasswordInput
                   autoComplete="current-password"
                   required
                   disabled={isLoading}
@@ -86,6 +89,12 @@ export function SignInForm({ isLoading, errorMessage, onSubmit }: SignInFormProp
                 />
               </FormControl>
               <FormMessage />
+              <Link
+                to={ROUTES.forgotPassword}
+                className="inline-flex min-h-touch items-center justify-end text-sm font-bold text-primary"
+              >
+                Zapomenuté heslo?
+              </Link>
             </FormItem>
           )}
         />

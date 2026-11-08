@@ -1,11 +1,14 @@
 import {
   fromCalendarDate,
+  lastDayOfWeek,
+  toCalendarDate,
   todayInAppZone,
 } from '@/modules/dog/domain/calendar-date';
 import {
   calculateOwnerMetrics,
   calculateTrainingMetrics,
   TrainingMetrics,
+  WeeklyPlanSummary,
 } from '@/modules/dog/domain/training-metrics';
 import { MetricsRepository } from '@/modules/dog/repositories/metrics.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
@@ -22,11 +25,18 @@ export class MetricsService {
   async getOwnerMetrics(
     user: Identity,
     now = new Date(),
-  ): Promise<TrainingMetrics> {
-    return calculateOwnerMetrics(
-      await this.repository.getOwnerInputs(user.id),
-      now,
+  ): Promise<TrainingMetrics & WeeklyPlanSummary> {
+    const to = lastDayOfWeek(todayInAppZone(now));
+    const from = toCalendarDate(
+      new Date(fromCalendarDate(to).getTime() - 6 * 86400000),
     );
+    return {
+      ...calculateOwnerMetrics(
+        await this.repository.getOwnerInputs(user.id),
+        now,
+      ),
+      ...(await this.repository.getWeeklyPlan({ ownerId: user.id }, from, to)),
+    };
   }
 
   async getOwnerWeekMetrics(
@@ -34,7 +44,9 @@ export class MetricsService {
     from: string,
     to: string,
     now = new Date(),
-  ): Promise<{ weeklyTarget: number; weeklyTrainedDays: number }> {
+  ): Promise<
+    { weeklyTarget: number; weeklyTrainedDays: number } & WeeklyPlanSummary
+  > {
     if (
       fromCalendarDate(to).getTime() - fromCalendarDate(from).getTime() !==
       6 * 86400000
@@ -42,6 +54,7 @@ export class MetricsService {
       throw new BadRequestException('Vyber celý týden.');
     const inputs = await this.repository.getOwnerInputs(user.id);
     return {
+      ...(await this.repository.getWeeklyPlan({ ownerId: user.id }, from, to)),
       weeklyTarget: inputs.reduce((sum, dog) => sum + dog.weeklyTarget, 0),
       weeklyTrainedDays: inputs.reduce(
         (sum, dog) =>
@@ -63,14 +76,17 @@ export class MetricsService {
     user: Identity,
     dogId: string,
     now = new Date(),
-  ): Promise<TrainingMetrics> {
+  ): Promise<TrainingMetrics & WeeklyPlanSummary> {
     await this.dogAccess.getAccessibleDog(user, dogId);
     const inputs = await this.repository.getInputs(dogId);
-    return calculateTrainingMetrics(
-      inputs.workoutLogs,
-      inputs.weeklyTarget,
-      now,
+    const to = lastDayOfWeek(todayInAppZone(now));
+    const from = toCalendarDate(
+      new Date(fromCalendarDate(to).getTime() - 6 * 86400000),
     );
+    return {
+      ...calculateTrainingMetrics(inputs.workoutLogs, inputs.weeklyTarget, now),
+      ...(await this.repository.getWeeklyPlan({ dogId }, from, to)),
+    };
   }
 
   async setTarget(

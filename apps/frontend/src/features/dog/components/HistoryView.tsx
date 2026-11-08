@@ -6,7 +6,6 @@ import { History } from "lucide-react"
 import { DesignIcon } from "@/components/DesignIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
-import { TrainingConversationDialog } from "@/components/TrainingConversationDialog"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -55,63 +54,84 @@ function formatTotalDuration(minutes: number): string {
   return `${mins} min`
 }
 
-function HistoryRecord({ record, onOpen }: { record: HistoryItem; onOpen: () => void }) {
+function HistoryRecord({ record }: { record: HistoryItem }) {
   return (
     <li className="relative flex min-w-0 items-start gap-3 pb-3 last:pb-0">
       <span
         aria-hidden
         className={cn("mt-5 size-2.5 shrink-0 rounded-full", dogColorClass(record.dog.color))}
       />
-      <Button
-        type="button"
-        variant="ghost"
-        onClick={onOpen}
-        aria-label={`Otevřít záznam ${record.title}`}
-        className="h-auto min-w-0 flex-1 flex-col items-stretch gap-2 rounded-card border border-border bg-card p-4 text-left whitespace-normal hover:bg-card/90"
-      >
-        <span className="flex items-start justify-between gap-3">
-          <span className="text-sm font-extrabold break-words">{record.title}</span>
-          <span
-            className={cn(
-              "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-extrabold",
-              record.status === "SKIPPED"
-                ? "bg-secondary text-muted-foreground"
-                : record.successRate !== null && record.successRate < 75
-                  ? "bg-warning text-warning-foreground"
-                  : "bg-success text-success-foreground",
-            )}
-          >
+      <div className="flex min-w-0 flex-1 flex-col items-stretch gap-2 rounded-card border border-border bg-card p-4 text-left transition-colors hover:bg-card/90">
+        <Link
+          to="/dogs/$dogId/activities/$activityId"
+          params={{ dogId: record.dog.id, activityId: record.id }}
+          aria-label={`Otevřít záznam ${record.title}`}
+          className="flex flex-col items-stretch gap-2 outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="flex items-start justify-between gap-3">
+            <span className="text-sm font-extrabold break-words">{record.title}</span>
+            <span
+              className={cn(
+                "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-extrabold",
+                record.status === "SKIPPED"
+                  ? "bg-secondary text-muted-foreground"
+                  : record.successRate !== null && record.successRate < 75
+                    ? "bg-warning text-warning-foreground"
+                    : "bg-success text-success-foreground",
+              )}
+            >
+              {record.status === "SKIPPED"
+                ? "Přeskočeno"
+                : record.successRate === null
+                  ? "Hotovo"
+                  : `${record.successRate} %`}
+            </span>
+          </span>
+          <span className="text-xs font-normal text-muted-foreground">
+            {record.dog.name} · {formatHistoryTime(record.completedAt)}
             {record.status === "SKIPPED"
-              ? "Přeskočeno"
-              : record.successRate === null
-                ? "Hotovo"
-                : `${record.successRate} %`}
+              ? " · —"
+              : record.plannedDurationMinutes !== null
+                ? ` · ${record.plannedDurationMinutes} min`
+                : ""}
           </span>
-        </span>
-        <span className="text-xs font-normal text-muted-foreground">
-          {record.dog.name} · {formatHistoryTime(record.completedAt)}
-          {record.status === "SKIPPED"
-            ? " · —"
-            : record.plannedDurationMinutes !== null
-              ? ` · ${record.plannedDurationMinutes} min`
-              : ""}
-        </span>
-        {record.note && (
-          <span className="line-clamp-2 text-sm leading-relaxed font-normal">{record.note}</span>
-        )}
-        {record.messageCount > 0 && (
-          <span className="flex items-center gap-1.5 text-xs font-bold text-primary">
-            <DesignIcon name="history-Msg1" />
-            {record.lastMessage?.author.name ? `${record.lastMessage.author.name} · ` : ""}
-            {record.messageCount}{" "}
-            {record.messageCount === 1
-              ? "komentář"
-              : record.messageCount < 5
-                ? "komentáře"
-                : "komentářů"}
-          </span>
-        )}
-      </Button>
+          {record.note && (
+            <span className="line-clamp-2 text-sm leading-relaxed font-normal">{record.note}</span>
+          )}
+        </Link>
+        <div className="mt-1 flex items-center justify-between gap-2 border-t border-border/50 pt-2">
+          {record.messageCount > 0 ? (
+            <span className="flex items-center gap-1.5 text-xs font-bold text-primary">
+              <DesignIcon name="history-Msg1" />
+              {record.lastMessage?.author.name ? `${record.lastMessage.author.name} · ` : ""}
+              {record.messageCount}{" "}
+              {record.messageCount === 1
+                ? "komentář"
+                : record.messageCount < 5
+                  ? "komentáře"
+                  : "komentářů"}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">Bez komentářů</span>
+          )}
+          <Button
+            asChild
+            size="sm"
+            variant="secondary"
+            className="shrink-0 gap-1.5 rounded-field font-bold"
+          >
+            <Link
+              to="/dogs/$dogId/activities/$activityId"
+              params={{ dogId: record.dog.id, activityId: record.id }}
+              hash="training-reply"
+              aria-label={`Odpovědět k tréninku ${record.title}`}
+            >
+              <DesignIcon name="trainer-Msg" />
+              Odpovědět
+            </Link>
+          </Button>
+        </div>
+      </div>
     </li>
   )
 }
@@ -122,7 +142,6 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
   const [isCommentsOnly, setCommentsOnly] = useState(false)
   const [isFilterOpen, setFilterOpen] = useState(false)
   const [draftMonth, setDraftMonth] = useState("")
-  const [activityId, setActivity] = useState<string | null>(null)
   const dogs = useQuery(accessibleDogsQueryOptions())
   const history = useInfiniteQuery(
     historyQueryOptions({ dogId, month, commentsOnly: isCommentsOnly }),
@@ -141,29 +160,6 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 px-gutter pt-4 pb-6 md:py-8">
       <header className="flex items-center gap-3">
-        <Button
-          asChild
-          variant="outline"
-          size="icon"
-          className="shrink-0 rounded-field bg-card"
-        >
-          {initialDogId ? (
-            <Link
-              to="/dogs/$dogId"
-              params={{ dogId: initialDogId }}
-              aria-label="Zpět na psa"
-            >
-              <DesignIcon name="history-ChevL" />
-            </Link>
-          ) : (
-            <Link
-              to="/dogs"
-              aria-label="Zpět na psy"
-            >
-              <DesignIcon name="history-ChevL" />
-            </Link>
-          )}
-        </Button>
         <div className="min-w-0 flex-1">
           <h1 className="text-page font-extrabold tracking-tight">Historie</h1>
           {first && (
@@ -308,7 +304,6 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
                   <HistoryRecord
                     key={record.id}
                     record={record}
-                    onOpen={() => setActivity(record.id)}
                   />
                 ))}
               </ol>
@@ -374,10 +369,6 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
           </Button>
         </DialogContent>
       </Dialog>
-      <TrainingConversationDialog
-        activityId={activityId}
-        onClose={() => setActivity(null)}
-      />
     </div>
   )
 }

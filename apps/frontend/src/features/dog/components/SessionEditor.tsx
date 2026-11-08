@@ -41,6 +41,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { api } from "@/lib/api-client"
 import { dogColorClass } from "@/lib/dogColors"
 import { dogKeys } from "@/lib/dogKeys"
+import { useMoveCurrentStep } from "@/lib/useMoveCurrentStep"
 import { cn } from "@/lib/utils"
 import { weekKeys } from "@/lib/weekKeys"
 
@@ -64,13 +65,27 @@ function StepRow({
   index,
   isReadOnly,
   isBusy,
+  isCurrent,
+  isFirstInGoal,
+  canMoveStep,
+  isStepBusy,
   onEdit,
+  onAdvance,
+  onSkip,
+  onBack,
 }: {
   step: PlanBlock
   index: number
   isReadOnly: boolean
   isBusy: boolean
+  isCurrent: boolean
+  isFirstInGoal: boolean
+  canMoveStep: boolean
+  isStepBusy: boolean
   onEdit: () => void
+  onAdvance: () => void
+  onSkip: () => void
+  onBack: () => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: step.id,
@@ -84,51 +99,93 @@ function StepRow({
     <li
       ref={setNodeRef}
       style={style}
+      aria-current={isCurrent ? "step" : undefined}
       className={cn(
-        "flex items-start gap-2 rounded-card border border-border bg-card px-3 py-3",
+        "flex flex-col gap-3 rounded-card border border-border bg-card px-3 py-3",
+        isCurrent && "border-primary ring-2 ring-primary/30",
         isDragging && "z-10 opacity-60",
       )}
     >
-      {!isReadOnly && (
+      <div className="flex items-start gap-2">
+        {!isReadOnly && (
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            aria-label={`Přetáhnout krok ${step.title}`}
+            className="flex min-h-touch min-w-touch touch-none items-center justify-center rounded-field"
+            disabled={isBusy}
+          >
+            <EditorIcon name="Grip" />
+          </button>
+        )}
+        <span
+          className={cn(
+            "mt-1 flex size-7 shrink-0 items-center justify-center rounded-md text-sm font-extrabold",
+            isCurrent
+              ? "bg-primary text-primary-foreground"
+              : cn("text-dog-foreground", dogColorClass((index % 6) + 1)),
+          )}
+        >
+          {index + 1}
+        </span>
         <button
           type="button"
-          {...attributes}
-          {...listeners}
-          aria-label={`Přetáhnout krok ${step.title}`}
-          className="flex min-h-touch min-w-touch touch-none items-center justify-center rounded-field"
-          disabled={isBusy}
+          onClick={onEdit}
+          className="min-h-touch min-w-0 flex-1 space-y-2 rounded-field text-left"
+          aria-label={`${isReadOnly ? "Zobrazit" : "Upravit"} krok ${step.title}`}
         >
-          <EditorIcon name="Grip" />
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-bold break-words">{step.title}</span>
+            {isCurrent ? <StatusChip tone="accent">Aktuální</StatusChip> : null}
+            {step.outcome === "MASTERED" ? <StatusChip tone="success">Zvládnuto</StatusChip> : null}
+            {step.outcome === "SKIPPED" ? <StatusChip tone="muted">Přeskočeno</StatusChip> : null}
+            <span className="ml-auto flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs">
+              <EditorIcon name="Clock" />
+              {step.durationMinutes ?? 0} min
+            </span>
+          </span>
+          {step.criterion && (
+            <span className="flex items-start gap-1 text-label text-muted-foreground">
+              <EditorIcon name="Target" />
+              Kritérium: {step.criterion}
+            </span>
+          )}
         </button>
-      )}
-      <span
-        className={cn(
-          "mt-1 flex size-7 shrink-0 items-center justify-center rounded-md text-sm font-extrabold text-dog-foreground",
-          dogColorClass((index % 6) + 1),
-        )}
-      >
-        {index + 1}
-      </span>
-      <button
-        type="button"
-        onClick={onEdit}
-        className="min-h-touch min-w-0 flex-1 space-y-2 rounded-field text-left"
-        aria-label={`${isReadOnly ? "Zobrazit" : "Upravit"} krok ${step.title}`}
-      >
-        <span className="flex flex-wrap items-center justify-between gap-2">
-          <span className="text-sm font-bold break-words">{step.title}</span>
-          <span className="flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs">
-            <EditorIcon name="Clock" />
-            {step.durationMinutes ?? 0} min
-          </span>
-        </span>
-        {step.criterion && (
-          <span className="flex items-start gap-1 text-label text-muted-foreground">
-            <EditorIcon name="Target" />
-            Kritérium: {step.criterion}
-          </span>
-        )}
-      </button>
+      </div>
+      {isCurrent && canMoveStep ? (
+        <div className="flex flex-col gap-2 border-t border-border pt-3">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 flex-1"
+              disabled={isFirstInGoal || isStepBusy}
+              onClick={onBack}
+            >
+              Zpět o krok
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="min-h-11 flex-1"
+              disabled={isStepBusy}
+              onClick={onSkip}
+            >
+              Přeskočit
+            </Button>
+          </div>
+          <Button
+            type="button"
+            variant="default"
+            className="min-h-11 w-full"
+            disabled={isStepBusy}
+            onClick={onAdvance}
+          >
+            Zvládnuto, další krok
+          </Button>
+        </div>
+      ) : null}
     </li>
   )
 }
@@ -257,6 +314,8 @@ export function SessionEditor({
   goal,
   isReadOnly,
   canSchedule = !isReadOnly,
+  canMoveStep = false,
+  currentStepId = null,
   onBack,
   isScheduleRequested,
   onScheduleRequestHandled,
@@ -267,11 +326,18 @@ export function SessionEditor({
   goal: DogGoal
   isReadOnly: boolean
   canSchedule?: boolean
+  canMoveStep?: boolean
+  currentStepId?: string | null
   onBack: () => void
   isScheduleRequested?: boolean
   onScheduleRequestHandled?: () => void
 }) {
   const client = useQueryClient()
+  const moveStep = useMoveCurrentStep(goal.id, dog.id)
+  const goalStepIds = sessions.flatMap((s) => s.steps.map((block) => block.id))
+  const effectiveCurrentStepId = currentStepId ?? goalStepIds[0] ?? null
+  const isFirstInGoal =
+    effectiveCurrentStepId == null || goalStepIds.indexOf(effectiveCurrentStepId) <= 0
   const [step, setStep] = useState<PlanBlock | "new" | null>(null)
   const [deleting, setDeleting] = useState<PlanBlock | null>(null)
   const [isLibraryOpen, setLibrary] = useState(false)
@@ -341,7 +407,12 @@ export function SessionEditor({
   )
   const blocks = session.steps
   const isBusy =
-    save.isPending || remove.isPending || reorder.isPending || pause.isPending || isLibraryBusy
+    save.isPending ||
+    remove.isPending ||
+    reorder.isPending ||
+    pause.isPending ||
+    isLibraryBusy ||
+    moveStep.isPending
   const move = (from: number, to: number) => {
     if (isReadOnly || isBusy || to < 0 || to >= blocks.length) return
     reorder.mutate(arrayMove(blocks, from, to).map((s) => s.id))
@@ -453,7 +524,14 @@ export function SessionEditor({
                     index={i}
                     isReadOnly={isReadOnly}
                     isBusy={isBusy}
+                    isCurrent={b.id === effectiveCurrentStepId}
+                    isFirstInGoal={isFirstInGoal}
+                    canMoveStep={canMoveStep}
+                    isStepBusy={moveStep.isPending}
                     onEdit={() => setStep(b)}
+                    onAdvance={() => void moveStep.mutateAsync("advance").catch(() => undefined)}
+                    onSkip={() => void moveStep.mutateAsync("skip").catch(() => undefined)}
+                    onBack={() => void moveStep.mutateAsync("back").catch(() => undefined)}
                   />
                 ))}
               </ol>

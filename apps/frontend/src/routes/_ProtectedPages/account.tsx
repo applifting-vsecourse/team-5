@@ -1,184 +1,189 @@
-import { useState } from "react"
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { LogOut, Sparkles } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
+import { createFileRoute, Link } from "@tanstack/react-router"
 import { toast } from "sonner"
 
 import { ROUTES } from "@/app/routes"
+import { DesignIcon } from "@/components/DesignIcon"
+import { QueryState } from "@/components/QueryState"
 import { Seo } from "@/components/Seo"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 
 import { DeleteAccountDialog } from "@/features/auth/components/DeleteAccountDialog"
+import { EditAccountDialog } from "@/features/auth/components/EditAccountDialog"
 import { useSession } from "@/features/auth/hooks/useSession"
 import { useSignOut } from "@/features/auth/hooks/useSignOut"
+import { ConnectTrainerDialog } from "@/features/client/components/ConnectTrainerDialog"
+import { dogsQueryOptions } from "@/features/dog/api/dogsQueryOptions"
+import { CreateDogDialog } from "@/features/dog/components/CreateDogDialog"
 
-export const Route = createFileRoute("/_ProtectedPages/account")({
-  component: AccountPage,
-})
-
+export const Route = createFileRoute("/_ProtectedPages/account")({ component: AccountPage })
 export function AccountPage() {
   const { user } = useSession()
   const signOut = useSignOut()
-  const navigate = useNavigate()
-
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
-  const [inviteCode, setInviteCode] = useState("")
-
-  const handleInviteSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const trimmedCode = inviteCode.trim().toUpperCase()
-    if (!trimmedCode) return
-    setIsInviteDialogOpen(false)
-    setInviteCode("")
-    void navigate({
-      to: ROUTES.invite,
-      search: { code: trimmedCode },
-    })
-  }
-
+  const isTrainer = user?.role === "trainer" || user?.role === "admin"
+  const dogs = useQuery({ ...dogsQueryOptions(), enabled: Boolean(user) && !isTrainer })
+  const ownedDogs = (dogs.data ?? []).filter((dog) => dog.ownerId === user?.id)
+  const trainers = [
+    ...new Map(
+      ownedDogs.flatMap((dog) => dog.trainers ?? []).map((trainer) => [trainer.id, trainer]),
+    ).values(),
+  ]
   return (
     <>
       <Seo title="Účet" />
-      <section className="mx-auto w-full max-w-2xl px-4 py-8">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Účet</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Nastavení vašeho profilu a správa propojení s trenérem.
-        </p>
-
+      <section className="mx-auto w-full max-w-2xl space-y-6 px-5 pt-6 pb-8 md:pt-8">
+        <h1 className="text-2xl font-extrabold tracking-tight">Účet</h1>
         {user && (
-          <div className="mt-8 space-y-6">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Přihlášený uživatel</p>
-              <p className="text-lg font-semibold text-foreground">{user.name}</p>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
-            </div>
-
-            {user.role !== "trainer" && (
-              <>
-                <Separator />
-                <div className="space-y-3">
-                  <div>
-                    <h2 className="text-base font-semibold text-foreground">
-                      Propojení s trenérem
-                    </h2>
+          <>
+            <section
+              className="space-y-4 rounded-card border border-border bg-card p-4"
+              aria-label="Profil"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-2xl font-extrabold text-primary-foreground">
+                  {user.name.trim().charAt(0).toUpperCase()}
+                </span>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-extrabold break-words">{user.name}</h2>
+                  <p className="text-xs break-all text-muted-foreground">{user.email}</p>
+                  <p className="mt-1 inline-flex rounded-full bg-accent px-2 py-1 text-xs font-semibold text-primary">
+                    {user.role === "trainer"
+                      ? "Trenér"
+                      : user.role === "admin"
+                        ? "Administrátor"
+                        : "Psovod"}
+                    {!isTrainer && dogs.isSuccess
+                      ? ` · ${ownedDogs.length} ${ownedDogs.length === 1 ? "pes" : ownedDogs.length >= 2 && ownedDogs.length <= 4 ? "psi" : "psů"}`
+                      : ""}
+                  </p>
+                </div>
+              </div>
+              <EditAccountDialog
+                mode="name"
+                name={user.name}
+              />
+            </section>
+            {!isTrainer && (
+              <section
+                className="space-y-3"
+                aria-labelledby="account-connections"
+              >
+                <h2
+                  id="account-connections"
+                  className="text-sm font-bold text-muted-foreground"
+                >
+                  Propojení s trenérem
+                </h2>
+                <QueryState
+                  isLoading={dogs.isPending}
+                  error={dogs.error}
+                  onRetry={() => {
+                    void dogs.refetch()
+                  }}
+                  isEmpty={!trainers.length}
+                  empty={
                     <p className="text-sm text-muted-foreground">
-                      Dostali jste od trenéra 6místný kód pozvánky? Zadejte jej a propojte svůj
-                      účet.
+                      Zatím trénuješ bez trenéra. Propojit se můžeš kódem z pozvánky.
                     </p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="min-h-11 w-full justify-start gap-2"
-                    onClick={() => setIsInviteDialogOpen(true)}
-                  >
-                    <Sparkles className="size-4 text-primary" />
-                    Mám kód od trenéra
-                  </Button>
-                </div>
-              </>
+                  }
+                >
+                  {trainers.map((trainer) => (
+                    <div
+                      key={trainer.id}
+                      className="flex items-center gap-3 rounded-card bg-hero p-5 text-hero-foreground"
+                    >
+                      <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-card font-extrabold text-foreground">
+                        {trainer.name.charAt(0).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-hero-muted">TVŮJ TRENÉR</p>
+                        <h3 className="font-extrabold break-words">{trainer.name}</h3>
+                        <p className="text-xs text-hero-muted">
+                          Sdílení psi:{" "}
+                          {ownedDogs
+                            .filter((dog) => dog.trainers?.some((item) => item.id === trainer.id))
+                            .map((dog) => dog.name)
+                            .join(", ")}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </QueryState>
+                <ConnectTrainerDialog
+                  dogs={ownedDogs}
+                  email={user.email}
+                  isLoading={dogs.isPending}
+                  error={dogs.error}
+                  onRetry={() => {
+                    void dogs.refetch()
+                  }}
+                  createDogAction={
+                    <CreateDogDialog
+                      existingDogs={ownedDogs}
+                      trigger={<Button variant="outline">Přidat psa</Button>}
+                    />
+                  }
+                />
+              </section>
             )}
-
-            <Separator />
-
-            <div className="flex flex-col gap-3">
-              {signOut.isError ? (
-                <Alert variant="destructive">
-                  <AlertDescription>
-                    Odhlášení se nezdařilo. Zkuste to prosím znovu.
-                  </AlertDescription>
-                </Alert>
-              ) : null}
+            <section className="space-y-3 rounded-card border border-border bg-card p-4">
+              <h2 className="text-sm font-bold text-muted-foreground">Tréninky</h2>
               <Button
-                variant="outline"
-                className="min-h-11 w-full justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() =>
-                  signOut.mutate(undefined, {
-                    onError: () => {
-                      toast.error("Odhlášení se nezdařilo. Zkontrolujte připojení k síti.")
-                    },
-                  })
-                }
-                disabled={signOut.isPending}
+                asChild
+                variant="ghost"
+                className="w-full justify-start"
               >
-                <LogOut className="size-4" />
-                {signOut.isPending ? "Odhlašuji…" : "Odhlásit se"}
+                <Link to={ROUTES.week}>
+                  <DesignIcon name="auth-120-1291-IconTarget" />
+                  Týdenní plán
+                  <DesignIcon name="auth-120-1291-IconChevR" />
+                </Link>
               </Button>
-              <DeleteAccountDialog isTrainer={user.role === "trainer"} />
-              <Link
-                to={ROUTES.privacy}
-                className="inline-flex min-h-12 items-center text-sm underline underline-offset-4"
-              >
-                Zásady zpracování osobních údajů
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {user && user.role !== "trainer" && (
-          <Dialog
-            open={isInviteDialogOpen}
-            onOpenChange={(isOpenNext) => {
-              setIsInviteDialogOpen(isOpenNext)
-              if (!isOpenNext) setInviteCode("")
-            }}
-          >
-            <DialogContent className="sm:max-w-md">
-              <form
-                onSubmit={handleInviteSubmit}
-                className="space-y-4"
-              >
-                <DialogHeader>
-                  <DialogTitle>Mám kód od trenéra</DialogTitle>
-                  <DialogDescription>
-                    Zadejte šestimístný kód pozvánky, který jste obdrželi od svého trenéra na lekci
-                    nebo v e-mailu.
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-2">
-                  <Label htmlFor="account-invite-code">Kód pozvánky</Label>
-                  <Input
-                    id="account-invite-code"
-                    value={inviteCode}
-                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                    placeholder="např. K7M2PQ"
-                    maxLength={6}
-                    required
-                  />
-                </div>
-
-                <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setIsInviteDialogOpen(false)
-                      setInviteCode("")
-                    }}
-                  >
-                    Zrušit
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={!inviteCode.trim()}
-                  >
-                    Pokračovat
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+              <p className="text-sm text-muted-foreground">
+                Skutečně naplánované a dokončené tréninky najdeš v týdnu a u každého psa.
+              </p>
+            </section>
+            <section className="space-y-2 rounded-card border border-border bg-card p-4">
+              <h2 className="text-sm font-bold text-muted-foreground">Přihlášení</h2>
+              <div className="divide-y divide-border">
+                <EditAccountDialog
+                  mode="email"
+                  name={user.name}
+                />
+                <EditAccountDialog
+                  mode="password"
+                  name={user.name}
+                />
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-destructive hover:text-destructive"
+                  disabled={signOut.isPending}
+                  onClick={() =>
+                    signOut.mutate(undefined, {
+                      onError: () =>
+                        toast.error("Odhlášení se nezdařilo. Zkontrolujte připojení k síti."),
+                    })
+                  }
+                >
+                  <DesignIcon name="auth-120-1291-IconLogout" />
+                  {signOut.isPending ? "Odhlašuji…" : "Odhlásit se"}
+                </Button>
+                <DeleteAccountDialog isTrainer={user.role === "trainer"} />
+              </div>
+              {signOut.isError && (
+                <Alert variant="destructive">
+                  <AlertDescription>Odhlášení se nezdařilo. Zkus to prosím znovu.</AlertDescription>
+                </Alert>
+              )}
+            </section>
+            <Link
+              to={ROUTES.privacy}
+              className="inline-flex min-h-touch items-center text-sm font-medium text-primary"
+            >
+              Zásady zpracování osobních údajů
+            </Link>
+          </>
         )}
       </section>
     </>

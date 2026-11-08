@@ -131,7 +131,7 @@ describe("forgot password and reset password flows", () => {
     expect(emailInput).toHaveValue("") // No prefill
 
     await interaction.type(emailInput, "test@example.com")
-    await interaction.click(screen.getByRole("button", { name: "Odeslat odkaz pro obnovu" }))
+    await interaction.click(screen.getByRole("button", { name: "Poslat odkaz" }))
 
     expect(auth.requestPasswordReset).toHaveBeenCalledWith({ email: "test@example.com" })
     expect(await screen.findByText("Pokud účet existuje, poslali jsme e-mail.")).toBeInTheDocument()
@@ -143,7 +143,9 @@ describe("forgot password and reset password flows", () => {
   it("immediately shows expired or invalid explanation when opening reset-password with invalid token", async () => {
     await openPage("/reset-password?token=invalid-or-expired")
     expect(
-      await screen.findByText("Odkaz pro obnovu hesla je neplatný, vypršel nebo již byl použit."),
+      await screen.findByText(
+        "Odkaz pro nastavení hesla vypršel, byl už použit nebo není správný.",
+      ),
     ).toBeInTheDocument()
 
     const sendNewLink = screen.getByRole("link", { name: "Poslat nový odkaz" })
@@ -158,9 +160,7 @@ describe("forgot password and reset password flows", () => {
     })
 
     const { interaction, router } = await openPage("/reset-password?token=valid-token")
-    expect(
-      await screen.findByRole("heading", { name: "Nastavení nového hesla" }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Nové heslo" })).toBeInTheDocument()
 
     const passwordInput = screen.getByLabelText("Nové heslo")
     const confirmInput = screen.getByLabelText("Potvrzení nového hesla")
@@ -168,7 +168,7 @@ describe("forgot password and reset password flows", () => {
     // Mismatched passwords
     await interaction.type(passwordInput, "newpassword123")
     await interaction.type(confirmInput, "differentpassword")
-    await interaction.click(screen.getByRole("button", { name: "Uložit heslo a přihlásit se" }))
+    await interaction.click(screen.getByRole("button", { name: "Uložit nové heslo" }))
 
     expect(await screen.findByText("Hesla se neshodují.")).toBeInTheDocument()
     expect(auth.resetPassword).not.toHaveBeenCalled()
@@ -176,7 +176,7 @@ describe("forgot password and reset password flows", () => {
     // Match passwords
     await interaction.clear(confirmInput)
     await interaction.type(confirmInput, "newpassword123")
-    await interaction.click(screen.getByRole("button", { name: "Uložit heslo a přihlásit se" }))
+    await interaction.click(screen.getByRole("button", { name: "Uložit nové heslo" }))
 
     await waitFor(() => {
       expect(auth.resetPassword).toHaveBeenCalledWith({

@@ -77,42 +77,55 @@ export function TodayWeekPreview({
               </div>
               {query.data
                 ?.filter((training) => training.date === day)
-                .map((training) => (
-                  <Link
-                    key={training.id}
-                    to="/trainings/$trainingId"
-                    params={{ trainingId: training.id }}
-                    className={cn(
-                      "block space-y-1 rounded-control p-2 text-xs",
-                      training.status === "COMPLETED"
-                        ? "bg-success text-success-foreground"
-                        : training.status === "SKIPPED"
-                          ? "bg-warning text-warning-foreground"
-                          : "bg-secondary text-secondary-foreground",
-                    )}
-                  >
-                    <span className="flex items-center gap-1 font-bold">
-                      <span
-                        aria-hidden
-                        className={cn(
-                          "size-1.5 shrink-0 rounded-full",
-                          dogColorClass(training.dog.color),
-                        )}
-                      />
-                      {training.dog.name}
-                    </span>
-                    <span className="block break-words">
-                      {training.training?.title ?? training.goal.title}
-                    </span>
-                    <span className="block text-xs">
-                      {training.status === "COMPLETED"
-                        ? "✓ Hotovo"
-                        : training.status === "SKIPPED"
-                          ? "Přeskočeno"
-                          : `${training.exercises.length} cviků`}
-                    </span>
-                  </Link>
-                ))}
+                .map((training) => {
+                  const isFinished =
+                    training.status === "COMPLETED" || training.status === "SKIPPED"
+                  const targetTo =
+                    isFinished && training.activityId
+                      ? "/dogs/$dogId/activities/$activityId"
+                      : "/trainings/$trainingId"
+                  const targetParams =
+                    isFinished && training.activityId
+                      ? { dogId: training.dog.id, activityId: training.activityId }
+                      : { trainingId: training.id }
+
+                  return (
+                    <Link
+                      key={training.id}
+                      to={targetTo}
+                      params={targetParams}
+                      className={cn(
+                        "block space-y-1 rounded-control p-2 text-xs",
+                        training.status === "COMPLETED"
+                          ? "bg-success text-success-foreground"
+                          : training.status === "SKIPPED"
+                            ? "bg-warning text-warning-foreground"
+                            : "bg-secondary text-secondary-foreground",
+                      )}
+                    >
+                      <span className="flex items-center gap-1 font-bold">
+                        <span
+                          aria-hidden
+                          className={cn(
+                            "size-1.5 shrink-0 rounded-full",
+                            dogColorClass(training.dog.color),
+                          )}
+                        />
+                        {training.dog.name}
+                      </span>
+                      <span className="block break-words">
+                        {training.training?.title ?? training.goal.title}
+                      </span>
+                      <span className="block text-xs">
+                        {training.status === "COMPLETED"
+                          ? "✓ Hotovo"
+                          : training.status === "SKIPPED"
+                            ? "Přeskočeno"
+                            : `${training.exercises.length} cviků`}
+                      </span>
+                    </Link>
+                  )
+                })}
             </div>
           ))}
         </div>

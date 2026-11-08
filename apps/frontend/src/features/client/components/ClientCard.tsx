@@ -1,71 +1,100 @@
 import { Link } from "@tanstack/react-router"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Clock } from "lucide-react"
 
-import { PesAvatar } from "@/components/PesAvatar"
-import { StripCard } from "@/components/StripCard"
+import { dogColorClass } from "@/lib/dogColors"
+import { cn } from "@/lib/utils"
 
 import type { Client } from "@/features/client/api/clientSchemas"
 
-type ClientCardProps = {
-  client: Client
+export type ClientListExtras = {
+  successRate: number | null
+  lastActivity: string
+  attentionLabel: string | null
+  attentionKind: "reply" | "inactive" | "low-success" | null
 }
 
-export function ClientCard({ client }: ClientCardProps) {
-  const displayedDogs = client.dogs.slice(0, 3)
-  const remainingCount = client.dogs.length - displayedDogs.length
-  const primaryDog = client.dogs[0]
+type ClientCardProps = {
+  client: Client
+  extras?: ClientListExtras | null
+}
+
+export function ClientCard({ client, extras }: ClientCardProps) {
+  const dogs = client.dogs.slice(0, 4)
+  const badge =
+    extras?.attentionKind === "inactive" && extras.attentionLabel ? (
+      <span className="inline-flex items-center gap-1 rounded-full bg-warning px-2.5 py-0.5 text-xs font-extrabold text-warning-foreground">
+        <Clock
+          className="size-3"
+          aria-hidden
+        />
+        {extras.attentionLabel
+          .replace(/^Bez tréninku\s+/i, "")
+          .replace(/^Zatím bez tréninku ·\s*/i, "")}
+      </span>
+    ) : extras?.attentionKind === "low-success" && extras.successRate != null ? (
+      <span className="rounded-full bg-danger-surface px-2.5 py-0.5 text-xs font-extrabold text-danger-foreground">
+        {Math.round(extras.successRate)} %
+      </span>
+    ) : extras?.successRate != null ? (
+      <span className="rounded-full bg-success px-2.5 py-0.5 text-xs font-extrabold text-success-foreground">
+        {Math.round(extras.successRate)} %
+      </span>
+    ) : (
+      <span className="text-sm font-extrabold text-muted-foreground">—</span>
+    )
 
   return (
-    <StripCard dogColor={primaryDog?.color}>
+    <li>
       <Link
         to="/clients/$clientId"
         params={{ clientId: client.id }}
-        className="group flex min-h-11 w-full items-center gap-3 px-4 py-3 outline-hidden transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        className="flex min-h-touch items-center gap-3 rounded-card border border-border bg-card p-3 outline-hidden transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <div className="flex shrink-0 items-center">
-          {displayedDogs.length > 0 ? (
-            <>
-              {displayedDogs.map((dog, index) => (
-                <div
+        <span
+          aria-hidden
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-hero text-sm font-extrabold text-hero-foreground"
+        >
+          {client.name
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part.charAt(0).toUpperCase())
+            .join("") || "?"}
+        </span>
+        <span className="min-w-0 flex-1 space-y-1">
+          <span className="block truncate text-sm font-bold">{client.name}</span>
+          <span className="flex flex-wrap items-center gap-1.5">
+            {dogs.length ? (
+              dogs.map((dog) => (
+                <span
                   key={dog.id}
-                  className={index > 0 ? "-ml-2 rounded-full ring-2 ring-card" : "rounded-full"}
+                  className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-semibold"
                 >
-                  <PesAvatar
-                    name={dog.name}
-                    color={dog.color}
-                    size="md"
-                    photoUrl={dog.photoUrl}
+                  <span
+                    aria-hidden
+                    className={cn("size-1.5 rounded-full", dogColorClass(dog.color))}
                   />
-                </div>
-              ))}
-              {remainingCount > 0 && (
-                <div
-                  className="-ml-2 flex size-10 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground ring-2 ring-card"
-                  title={`A další ${remainingCount} ${remainingCount === 1 ? "pes" : remainingCount < 5 ? "psi" : "psů"}`}
-                  aria-label={`A další ${remainingCount} ${remainingCount === 1 ? "pes" : remainingCount < 5 ? "psi" : "psů"}`}
-                  role="img"
-                >
-                  +{remainingCount}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="flex size-10 items-center justify-center rounded-full bg-muted text-xs text-muted-foreground">
-              –
-            </div>
+                  {dog.name}
+                </span>
+              ))
+            ) : (
+              <span className="text-xs text-muted-foreground">Bez sdíleného psa</span>
+            )}
+          </span>
+          {extras?.lastActivity && (
+            <span className="block truncate text-xs font-medium text-muted-foreground">
+              {extras.lastActivity}
+            </span>
           )}
-        </div>
-
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="truncate text-base font-semibold text-foreground">{client.name}</span>
-          <span className="truncate text-sm text-muted-foreground">{client.email}</span>
-        </div>
-
-        <ChevronRight
-          className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
-          aria-hidden="true"
-        />
+        </span>
+        <span className="flex shrink-0 flex-col items-end gap-1">
+          {badge}
+          <ChevronRight
+            className="size-4 text-muted-foreground"
+            aria-hidden
+          />
+        </span>
       </Link>
-    </StripCard>
+    </li>
   )
 }

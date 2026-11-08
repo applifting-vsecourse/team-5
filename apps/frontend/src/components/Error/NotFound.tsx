@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router"
 
-import { ROUTES } from "@/app/routes"
+import { DesignIcon } from "@/components/DesignIcon"
 import { Button } from "@/components/ui/button"
 
 import { ErrorLayout } from "./ErrorLayout"
@@ -8,11 +8,18 @@ import { ErrorLayout } from "./ErrorLayout"
 export function NotFound() {
   return (
     <ErrorLayout
-      title="Page not found"
-      description="The page you're looking for doesn't exist or has been moved."
+      chip="404"
+      title="Tuhle stránku jsme nenašli"
+      description="Odkaz je možná starý nebo neúplný. Tvoje tréninky jsou pořád na svém místě."
       action={
-        <Button asChild>
-          <Link to={ROUTES.home}>Go home</Link>
+        <Button
+          asChild
+          size="lg"
+        >
+          <Link to="/">
+            <DesignIcon name="auth-222-835-IconHome" />
+            Zpět do aplikace
+          </Link>
         </Button>
       }
     />
