@@ -6,6 +6,7 @@ import {
   UpdateGoalData,
 } from '@/modules/dog/domain/goal';
 import { GoalRepository } from '@/modules/dog/repositories/goal.repository';
+import { ScheduledTrainingRepository } from '@/modules/dog/repositories/scheduled-training.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import {
@@ -14,11 +15,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
+const INACTIVE_GOAL_STATUSES: GoalStatus[] = [
+  GoalStatus.COMPLETED,
+  GoalStatus.ARCHIVED,
+];
+
 @Injectable()
 export class GoalsService {
   constructor(
     private readonly goalRepository: GoalRepository,
     private readonly dogAccess: DogAccessService,
+    private readonly scheduledTrainings: ScheduledTrainingRepository,
   ) {}
 
   // A goal is visible exactly when its dog is. A goal of someone else's dog
@@ -45,7 +52,7 @@ export class GoalsService {
   }
 
   // The discipline is picked from the dog's own disciplines (#62). An empty
-  // value means "no discipline" and is stored as null. A goal may keep the
+  // value selects the default "Obecné" discipline. A goal may keep the
   // discipline it already has even after the dog dropped it, so editing
   // something else on that goal still works.
   private normalizeDiscipline(
@@ -55,7 +62,7 @@ export class GoalsService {
   ): string | null | undefined {
     if (discipline === undefined) return undefined;
     const trimmed = discipline.trim();
-    if (!trimmed) return null;
+    if (!trimmed) return 'Obecné';
     if (
       trimmed !== currentDiscipline &&
       !(dog.disciplines ?? []).includes(trimmed)
@@ -88,10 +95,12 @@ export class GoalsService {
   ): Promise<Goal> {
     const dog = await this.dogAccess.getAccessibleDog(user, dogId);
     return this.goalRepository.createGoal({
+      ...(data.deadline !== undefined && { deadline: data.deadline || null }),
+      criterion: data.criterion?.trim() || null,
       dogId,
       createdById: user.id,
       title: data.title.trim(),
-      discipline: this.normalizeDiscipline(dog, data.discipline) ?? null,
+      discipline: this.normalizeDiscipline(dog, data.discipline) ?? 'Obecné',
       principle: data.principle?.trim() || null,
       status: data.status,
       order: data.order,
@@ -105,7 +114,12 @@ export class GoalsService {
   ): Promise<Goal> {
     const { goal, dog } = await this.getAccessibleGoal(user, goalId);
 
-    return this.goalRepository.updateGoal(goalId, {
+    const updated = await this.goalRepository.updateGoal(goalId, {
+      ...(data.deadline !== undefined && { deadline: data.deadline || null }),
+      criterion:
+        data.criterion === undefined
+          ? undefined
+          : data.criterion.trim() || null,
       title: data.title?.trim(),
       discipline: this.normalizeDiscipline(
         dog,
@@ -119,6 +133,17 @@ export class GoalsService {
       status: data.status,
       order: data.order,
     });
+
+    // Completed / archived goals leave the week; history keeps finished rows (#69).
+    if (
+      data.status &&
+      INACTIVE_GOAL_STATUSES.includes(data.status) &&
+      goal.status === GoalStatus.ACTIVE
+    ) {
+      await this.scheduledTrainings.deletePlannedForGoal(goalId);
+    }
+
+    return updated;
   }
 
   async deleteGoal(user: Identity, goalId: string): Promise<Goal> {

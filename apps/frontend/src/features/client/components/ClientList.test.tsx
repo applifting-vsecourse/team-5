@@ -97,22 +97,12 @@ const createWrapper = () => {
 }
 
 describe("ClientCard", () => {
-  it("renders client name, email, dog avatars and link matching Figma 50:102", () => {
+  it("renders client name, dog chips and link", () => {
     render(<ClientCard client={mockClients[0]!} />, { wrapper: createWrapper() })
 
     expect(screen.getByText("Jan Novák")).toBeInTheDocument()
-    expect(screen.getByText("jan.novak@seznam.cz")).toBeInTheDocument()
-
-    // 2 dog avatars: Rex (R, dog-1) and Baryk (B, dog-3)
-    const rexAvatar = screen.getByRole("img", { name: "Avatar psa Rex" })
-    const barykAvatar = screen.getByRole("img", { name: "Avatar psa Baryk" })
-    expect(rexAvatar).toBeInTheDocument()
-    expect(rexAvatar).toHaveTextContent("R")
-    expect(rexAvatar).toHaveClass("bg-dog-1")
-
-    expect(barykAvatar).toBeInTheDocument()
-    expect(barykAvatar).toHaveTextContent("B")
-    expect(barykAvatar).toHaveClass("bg-dog-3")
+    expect(screen.getByText("Rex")).toBeInTheDocument()
+    expect(screen.getByText("Baryk")).toBeInTheDocument()
 
     const link = screen.getByRole("link", { name: /jan novák/i })
     expect(link).toHaveAttribute("href", "/clients/c-1")
@@ -124,7 +114,7 @@ describe("ClientList", () => {
     vi.clearAllMocks()
   })
 
-  it("renders clients list matching Figma node 50:93", async () => {
+  it("renders clients list with search, filters and invites", async () => {
     vi.mocked(api.get).mockImplementation((url: unknown) => {
       const urlStr = String(url)
       if (urlStr === "clients") {
@@ -133,24 +123,50 @@ describe("ClientList", () => {
       if (urlStr === "clients/invitations") {
         return { json: () => Promise.resolve(mockInvitations) } as ReturnType<typeof api.get>
       }
+      if (urlStr === "overview/trainer") {
+        return {
+          json: () =>
+            Promise.resolve({
+              metrics: {
+                activeClients: 3,
+                newClientsThisMonth: 0,
+                completedThisWeek: 0,
+                weeklySessionChange: 0,
+                successRate: null,
+                weeklyRateChange: null,
+              },
+              clients: mockClients.map((client) => ({
+                id: client.id,
+                name: client.name,
+                dogs: client.dogs.map((dog) => ({
+                  id: dog.id,
+                  name: dog.name,
+                  color: dog.color,
+                })),
+                successRate: 80,
+                weeks: [],
+                lastTraining: null,
+              })),
+              attention: [],
+            }),
+        } as ReturnType<typeof api.get>
+      }
       throw new Error(`Unexpected url: ${urlStr}`)
     })
 
     render(<ClientList />, { wrapper: createWrapper() })
 
-    // Header
-    expect(screen.getByRole("heading", { level: 1, name: "Vaši klienti" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 1, name: "Klienti" })).toBeInTheDocument()
+    expect(screen.getByLabelText("Hledat klienta nebo psa")).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: /vše/i })).toBeInTheDocument()
 
-    // Clients
     await waitFor(() => {
       expect(screen.getByText("Jan Novák")).toBeInTheDocument()
       expect(screen.getByText("Petra Svobodová")).toBeInTheDocument()
       expect(screen.getByText("Tomáš Dvořák")).toBeInTheDocument()
     })
     expect(screen.getByRole("button", { name: /pozvat klienta/i })).toBeInTheDocument()
-
-    // Unused invitation from Figma node 50:135
-    expect(screen.getByText("K7M2PQ")).toBeInTheDocument()
+    expect(screen.getByText(/kód k7m2pq/i)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: /zrušit pozvánku k7m2pq/i })).toBeInTheDocument()
   })
 
@@ -163,6 +179,23 @@ describe("ClientList", () => {
       if (urlStr === "clients/invitations") {
         return { json: () => Promise.resolve([]) } as ReturnType<typeof api.get>
       }
+      if (urlStr === "overview/trainer") {
+        return {
+          json: () =>
+            Promise.resolve({
+              metrics: {
+                activeClients: 0,
+                newClientsThisMonth: 0,
+                completedThisWeek: 0,
+                weeklySessionChange: 0,
+                successRate: null,
+                weeklyRateChange: null,
+              },
+              clients: [],
+              attention: [],
+            }),
+        } as ReturnType<typeof api.get>
+      }
       throw new Error(`Unexpected url: ${urlStr}`)
     })
 
@@ -172,8 +205,7 @@ describe("ClientList", () => {
       expect(screen.getByText("Zatím nemáte žádné klienty")).toBeInTheDocument()
     })
     expect(screen.getByRole("button", { name: /pozvěte prvního klienta/i })).toBeInTheDocument()
-    // V prázdném stavu je dle DESIGN.md pouze jedno primární tlačítko (horní tlačítko v hlavičce se nezobrazuje)
-    expect(screen.queryByRole("button", { name: "Pozvat klienta" })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Pozvat klienta" })).toBeInTheDocument()
   })
 
   it("opens invite dialog when Pozvat klienta in header is clicked", async () => {
@@ -185,6 +217,23 @@ describe("ClientList", () => {
       }
       if (urlStr === "clients/invitations") {
         return { json: () => Promise.resolve([]) } as ReturnType<typeof api.get>
+      }
+      if (urlStr === "overview/trainer") {
+        return {
+          json: () =>
+            Promise.resolve({
+              metrics: {
+                activeClients: 3,
+                newClientsThisMonth: 0,
+                completedThisWeek: 0,
+                weeklySessionChange: 0,
+                successRate: null,
+                weeklyRateChange: null,
+              },
+              clients: [],
+              attention: [],
+            }),
+        } as ReturnType<typeof api.get>
       }
       throw new Error(`Unexpected url: ${urlStr}`)
     })
@@ -207,6 +256,23 @@ describe("ClientList", () => {
       }
       if (urlStr === "clients/invitations") {
         return { json: () => Promise.resolve([]) } as ReturnType<typeof api.get>
+      }
+      if (urlStr === "overview/trainer") {
+        return {
+          json: () =>
+            Promise.resolve({
+              metrics: {
+                activeClients: 3,
+                newClientsThisMonth: 0,
+                completedThisWeek: 0,
+                weeklySessionChange: 0,
+                successRate: null,
+                weeklyRateChange: null,
+              },
+              clients: [],
+              attention: [],
+            }),
+        } as ReturnType<typeof api.get>
       }
       throw new Error(`Unexpected url: ${urlStr}`)
     })
@@ -251,6 +317,23 @@ describe("ClientList", () => {
       }
       if (urlStr === "clients/invitations") {
         return { json: () => Promise.resolve([]) } as ReturnType<typeof api.get>
+      }
+      if (urlStr === "overview/trainer") {
+        return {
+          json: () =>
+            Promise.resolve({
+              metrics: {
+                activeClients: 3,
+                newClientsThisMonth: 0,
+                completedThisWeek: 0,
+                weeklySessionChange: 0,
+                successRate: null,
+                weeklyRateChange: null,
+              },
+              clients: [],
+              attention: [],
+            }),
+        } as ReturnType<typeof api.get>
       }
       throw new Error(`Unexpected url: ${urlStr}`)
     })
@@ -298,6 +381,23 @@ describe("ClientList", () => {
       if (urlStr === "clients/invitations") {
         return { json: () => Promise.resolve([]) } as ReturnType<typeof api.get>
       }
+      if (urlStr === "overview/trainer") {
+        return {
+          json: () =>
+            Promise.resolve({
+              metrics: {
+                activeClients: 0,
+                newClientsThisMonth: 0,
+                completedThisWeek: 0,
+                weeklySessionChange: 0,
+                successRate: null,
+                weeklyRateChange: null,
+              },
+              clients: [],
+              attention: [],
+            }),
+        } as ReturnType<typeof api.get>
+      }
       throw new Error(`Unexpected url: ${urlStr}`)
     })
 
@@ -318,6 +418,23 @@ describe("ClientList", () => {
       }
       if (urlStr === "clients/invitations") {
         return { json: () => Promise.resolve(mockInvitations) } as ReturnType<typeof api.get>
+      }
+      if (urlStr === "overview/trainer") {
+        return {
+          json: () =>
+            Promise.resolve({
+              metrics: {
+                activeClients: 3,
+                newClientsThisMonth: 0,
+                completedThisWeek: 0,
+                weeklySessionChange: 0,
+                successRate: null,
+                weeklyRateChange: null,
+              },
+              clients: [],
+              attention: [],
+            }),
+        } as ReturnType<typeof api.get>
       }
       throw new Error(`Unexpected url: ${urlStr}`)
     })

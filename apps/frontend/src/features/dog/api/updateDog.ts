@@ -2,8 +2,18 @@ import { api } from "@/lib/api-client"
 
 import { dogSchema, type Dog, type UpdateDogInput } from "./dogSchemas"
 
+export async function archiveDog(id: string): Promise<Dog> {
+  return dogSchema.parse(await api.post(`dogs/${id}/archive`).json())
+}
+
+export async function restoreDog(id: string): Promise<Dog> {
+  return dogSchema.parse(await api.post(`dogs/${id}/restore`).json())
+}
+
 export async function updateDog(id: string, input: UpdateDogInput): Promise<Dog> {
   const patchPayload: Record<string, unknown> = {}
+  if (input.birthDate !== undefined) patchPayload.birthDate = input.birthDate
+  if (input.weightKg !== undefined) patchPayload.weightKg = input.weightKg
   if (input.name !== undefined) patchPayload.name = input.name
   if (input.breed !== undefined) patchPayload.breed = input.breed ? input.breed.trim() : ""
   if (input.color !== undefined) patchPayload.color = input.color

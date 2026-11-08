@@ -1,10 +1,12 @@
 import 'multer';
+import { todayInAppZone } from '@/modules/dog/domain/calendar-date';
 import { Dog } from '@/modules/dog/domain/dog';
 import { DogRepository } from '@/modules/dog/repositories/dog.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -38,9 +40,13 @@ export class DogsService {
   ) {}
 
   // The user's own dogs. A trainer reaches the dogs shared with them through
-  // their clients (#81), not through this list.
-  async getDogs(user: Identity): Promise<Dog[]> {
-    return this.dogRepository.getDogsByOwnerId(user.id);
+  // their clients (#81), not through this list. Archived dogs are listed only
+  // when asked for (#57).
+  async getDogs(
+    user: Identity,
+    options: { archived?: boolean } = {},
+  ): Promise<Dog[]> {
+    return this.dogRepository.getDogsByOwnerId(user.id, options);
   }
 
   // The owner, or a trainer the dog is shared with (#85).
@@ -48,15 +54,54 @@ export class DogsService {
     return this.dogAccess.getAccessibleDog(user, id);
   }
 
+  // Callers: DogsController POST :id/archive|restore. Existing DogsService.
+  // Dog.isArchived soft flag. User asked to split PRs and re-review.
+  async archiveDog(user: Identity, dogId: string): Promise<Dog> {
+    const dog = await this.dogAccess.getOwnedDog(user, dogId);
+    if (dog.isArchived) {
+      throw new BadRequestException('Pes už je v archivu');
+    }
+    const archived = await this.dogRepository.setArchived(dogId, user.id, true);
+    if (!archived) {
+      throw new NotFoundException(`Dog with ID ${dogId} not found`);
+    }
+    return archived;
+  }
+
+  async restoreDog(user: Identity, dogId: string): Promise<Dog> {
+    const dog = await this.dogAccess.getOwnedDog(user, dogId);
+    if (!dog.isArchived) {
+      throw new BadRequestException('Pes není v archivu');
+    }
+    const restored = await this.dogRepository.setArchived(
+      dogId,
+      user.id,
+      false,
+    );
+    if (!restored) {
+      throw new NotFoundException(`Dog with ID ${dogId} not found`);
+    }
+    return restored;
+  }
+
   async createDog(
     user: Identity,
     dogData: {
       name: string;
       breed?: string;
+      birthDate?: string;
+      weightKg?: number | null;
       color: number;
       disciplines?: string[];
     },
   ): Promise<Dog> {
+    if (user.role === 'trainer' || user.role === 'admin') {
+      throw new ForbiddenException(
+        'Trainers cannot create their own dogs yet.',
+      );
+    }
+    if (dogData.birthDate && dogData.birthDate > todayInAppZone())
+      throw new BadRequestException('Datum narození nesmí být v budoucnosti.');
     const sanitizedDisciplines = dogData.disciplines
       ? (sanitizeDisciplines(dogData.disciplines) ?? [])
       : [];
@@ -64,6 +109,10 @@ export class DogsService {
     return this.dogRepository.createDog({
       name: dogData.name.trim(),
       breed: dogData.breed?.trim() || null,
+      ...(dogData.birthDate !== undefined && {
+        birthDate: dogData.birthDate || null,
+      }),
+      ...(dogData.weightKg !== undefined && { weightKg: dogData.weightKg }),
       color: dogData.color,
       ownerId: user.id,
       disciplines: sanitizedDisciplines,
@@ -76,6 +125,8 @@ export class DogsService {
     updateData: {
       name?: string;
       breed?: string;
+      birthDate?: string;
+      weightKg?: number | null;
       color?: number;
       disciplines?: string[];
     },
@@ -85,12 +136,19 @@ export class DogsService {
     // can never touch someone else's dog.
     await this.dogAccess.getOwnedDog(user, id);
 
+    if (updateData.birthDate && updateData.birthDate > todayInAppZone())
+      throw new BadRequestException('Datum narození nesmí být v budoucnosti.');
     const sanitizedDisciplines =
       updateData.disciplines !== undefined
         ? sanitizeDisciplines(updateData.disciplines)
         : undefined;
 
     const updated = await this.dogRepository.updateDog(id, user.id, {
+      birthDate:
+        updateData.birthDate === undefined
+          ? undefined
+          : updateData.birthDate || null,
+      weightKg: updateData.weightKg,
       name: updateData.name?.trim(),
       breed:
         updateData.breed !== undefined

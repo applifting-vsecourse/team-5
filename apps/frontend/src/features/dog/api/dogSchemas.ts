@@ -1,14 +1,20 @@
 import { z } from "zod"
 
+import { todayCalendarDate } from "@/lib/calendarDate"
+
 export const dogColorSchema = z.number().int().min(1).max(6)
 
 export const dogSchema = z.object({
+  birthDate: z.string().nullable().optional(),
+  weightKg: z.number().nullable().optional(),
+  trainers: z.array(z.object({ id: z.string(), name: z.string() })).optional(),
   id: z.string(),
   name: z.string().min(1, "Jméno je povinné").max(40, "Jméno může mít maximálně 40 znaků"),
   breed: z.string().max(100).nullable().optional(),
   color: dogColorSchema,
   photoUrl: z.string().nullable().optional(),
   ownerId: z.string(),
+  isArchived: z.boolean().default(false),
   disciplines: z.array(z.string()).default([]),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
@@ -16,7 +22,22 @@ export const dogSchema = z.object({
 
 export const dogsSchema = z.array(dogSchema)
 
+const profileFields = {
+  birthDate: z.iso
+    .date("Zadej platné datum.")
+    .refine((value) => value <= todayCalendarDate(), "Datum narození nesmí být v budoucnosti.")
+    .optional()
+    .or(z.literal("")),
+  weightKg: z
+    .number()
+    .min(0.1, "Váha musí být alespoň 0,1 kg.")
+    .max(200, "Maximální váha je 200 kg.")
+    .multipleOf(0.01, "Váha může mít nejvýš dvě desetinná místa.")
+    .nullable()
+    .optional(),
+}
 export const createDogInputSchema = z.object({
+  ...profileFields,
   name: z
     .string()
     .trim()
@@ -34,6 +55,7 @@ export const createDogInputSchema = z.object({
 })
 
 export const updateDogInputSchema = z.object({
+  ...profileFields,
   name: z
     .string()
     .trim()
@@ -57,6 +79,9 @@ export type Dog = z.infer<typeof dogSchema>
 export type CreateDogInput = z.infer<typeof createDogInputSchema>
 export type UpdateDogInput = z.infer<typeof updateDogInputSchema>
 
+export const stepOutcomeSchema = z.enum(["MASTERED", "SKIPPED"])
+export type StepOutcome = z.infer<typeof stepOutcomeSchema>
+
 export const dogGoalSchema = z.object({
   id: z.string(),
   dogId: z.string(),
@@ -64,8 +89,12 @@ export const dogGoalSchema = z.object({
   title: z.string().min(1),
   discipline: z.string().nullable(),
   principle: z.string().nullable(),
+  criterion: z.string().nullable().optional(),
+  deadline: z.string().nullable().optional(),
   status: z.enum(["ACTIVE", "COMPLETED", "PAUSED", "ARCHIVED"]),
   order: z.number(),
+  // null = first step of the plan (#66)
+  currentStepId: z.string().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
@@ -79,7 +108,9 @@ export const goalFormSchema = z.object({
     .trim()
     .min(1, "Název cíle je povinný")
     .max(100, "Název cíle může mít nejvýš 100 znaků"),
-  discipline: z.string(),
+  discipline: z.string().max(60),
+  criterion: z.string().trim().max(1000, "Kritérium může mít nejvýš 1000 znaků").optional(),
+  deadline: z.union([z.iso.date("Zadejte platné datum"), z.literal("")]).optional(),
   principle: z.string().trim().max(2000, "Princip může mít nejvýš 2000 znaků"),
 })
 
@@ -90,9 +121,11 @@ export const planBlockSchema = z.object({
   id: z.string(),
   goalId: z.string(),
   position: z.number(),
+  durationMinutes: z.number().int().min(0).max(480).optional(),
   title: z.string(),
   instruction: z.string().nullable(),
   criterion: z.string().nullable(),
+  outcome: stepOutcomeSchema.nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
@@ -101,6 +134,7 @@ export const planBlocksSchema = z.array(planBlockSchema)
 
 // Limits match the API (plan-block.dto.ts).
 export const exerciseFormSchema = z.object({
+  durationMinutes: z.number().int().min(0).max(480).optional(),
   title: z
     .string()
     .trim()
@@ -115,6 +149,7 @@ export type PlanBlock = z.infer<typeof planBlockSchema>
 // A goal's training planned for one calendar day (#71).
 export const trainingSchema = z.object({
   id: z.string(),
+  trainingId: z.string().optional(),
   goalId: z.string(),
   dogId: z.string(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -139,6 +174,7 @@ export type PlannedTraining = z.infer<typeof plannedTrainingSchema>
 export type ExerciseFormValues = z.infer<typeof exerciseFormSchema>
 
 export const dogActivitySchema = z.object({
+  mistakeDetails: z.array(z.string()).optional(),
   id: z.string(),
   dogId: z.string().optional(),
   title: z.string(),
@@ -178,3 +214,26 @@ export const dogActivityPageSchema = z.object({
 })
 
 export type DogActivity = z.infer<typeof dogActivitySchema>
+
+// Private lesson / seminar notes (#70). Only the dog owner sees them.
+export const dogNoteSchema = z.object({
+  id: z.string(),
+  dogId: z.string(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  title: z.string().min(1),
+  text: z.string().min(1),
+  createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
+})
+
+export const dogNotesSchema = z.array(dogNoteSchema)
+
+export const dogNoteFormSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Zadejte datum ve formátu RRRR-MM-DD"),
+  title: z.string().trim().min(1, "Název je povinný").max(100, "Název může mít nejvýš 100 znaků"),
+  text: z.string().trim().min(1, "Text je povinný").max(2000, "Text může mít nejvýš 2000 znaků"),
+})
+
+export type DogNote = z.infer<typeof dogNoteSchema>
+export type DogNoteFormValues = z.infer<typeof dogNoteFormSchema>
+export { dogMetricsSchema, type DogMetrics } from "@/lib/dogMetrics"

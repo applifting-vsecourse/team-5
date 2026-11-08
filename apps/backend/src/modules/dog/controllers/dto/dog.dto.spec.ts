@@ -3,6 +3,50 @@ import { validate } from 'class-validator';
 import { CreateDogDto } from './create-dog.dto';
 import { UpdateDogDto } from './update-dog.dto';
 
+describe('Dog profile fields', () => {
+  for (const Dto of [CreateDogDto, UpdateDogDto]) {
+    it(`${Dto.name} accepts a birth date and decimal weight`, async () => {
+      expect(
+        await validate(
+          Object.assign(new Dto(), {
+            name: 'Rex',
+            color: 1,
+            birthDate: '2020-02-29',
+            weightKg: 21.45,
+          }),
+        ),
+      ).toHaveLength(0);
+    });
+
+    it.each([
+      { birthDate: '2026-02-30' },
+      { birthDate: '2020-1-1' },
+      { weightKg: 0 },
+      { weightKg: 201 },
+      { weightKg: 21.555 },
+    ])(`${Dto.name} rejects invalid profile values: %j`, async (fields) => {
+      expect(
+        (
+          await validate(
+            Object.assign(new Dto(), {
+              name: 'Rex',
+              color: 1,
+              ...fields,
+            }),
+          )
+        ).length,
+      ).toBeGreaterThan(0);
+    });
+  }
+  it('allows clearing optional profile fields', async () => {
+    expect(
+      await validate(
+        Object.assign(new UpdateDogDto(), { birthDate: '', weightKg: null }),
+      ),
+    ).toHaveLength(0);
+  });
+});
+
 describe('Dog DTOs (Disciplines validation and sanitization)', () => {
   describe('CreateDogDto', () => {
     it('sanitizes disciplines by trimming, deduplicating, and removing empty strings', async () => {

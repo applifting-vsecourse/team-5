@@ -8,6 +8,25 @@ const errorsFor = async (plain: Record<string, unknown>): Promise<string[]> => {
 };
 
 describe('CompleteTrainingDto', () => {
+  it('validates persisted mistake details without allowing duplicate or oversized tags', async () => {
+    await expect(
+      errorsFor({
+        repeatedMistakes: 'YES',
+        mistakeDetails: ['Předbíhal', 'Vlastní chyba'],
+      }),
+    ).resolves.toEqual([]);
+    for (const mistakeDetails of [
+      [''],
+      ['Stejné', 'Stejné'],
+      ['x'.repeat(61)],
+      Array.from({ length: 11 }, (_, index) => String(index)),
+      'not-an-array',
+    ]) {
+      await expect(errorsFor({ mistakeDetails })).resolves.toEqual([
+        'mistakeDetails',
+      ]);
+    }
+  });
   it('accepts an empty record: every field is optional', async () => {
     await expect(errorsFor({})).resolves.toEqual([]);
   });
@@ -21,5 +40,23 @@ describe('CompleteTrainingDto', () => {
     await expect(errorsFor({ successRate: rate })).resolves.toEqual([
       'successRate',
     ]);
+  });
+
+  it('accepts an optional https video URL up to 500 characters', async () => {
+    await expect(
+      errorsFor({ videoUrl: 'https://youtube.com/watch?v=123' }),
+    ).resolves.toEqual([]);
+  });
+
+  it('rejects a non-https video URL', async () => {
+    await expect(
+      errorsFor({ videoUrl: 'http://youtube.com/watch?v=123' }),
+    ).resolves.toEqual(['videoUrl']);
+  });
+
+  it('rejects a video URL longer than 500 characters', async () => {
+    await expect(
+      errorsFor({ videoUrl: `https://example.com/${'a'.repeat(500)}` }),
+    ).resolves.toEqual(['videoUrl']);
   });
 });

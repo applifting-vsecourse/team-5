@@ -203,6 +203,8 @@ export const seedDogData = async (
         {
           id: 'act-1',
           dogId: rex.id,
+          goalId: 'goal-1',
+          trainingId: 'training-goal-1',
           authorId: userId,
           title: 'Chůze u nohy',
           discipline: 'Poslušnost',
@@ -217,6 +219,8 @@ export const seedDogData = async (
         {
           id: 'act-2',
           dogId: rex.id,
+          goalId: 'goal-2',
+          trainingId: 'training-goal-2',
           authorId: userId,
           title: 'Start na povel',
           discipline: 'Canicross',
@@ -231,6 +235,8 @@ export const seedDogData = async (
         {
           id: 'act-3',
           dogId: rex.id,
+          goalId: 'goal-3',
+          trainingId: 'training-goal-3',
           authorId: userId,
           title: 'Trénink odložení',
           discipline: 'Poslušnost',
@@ -253,6 +259,32 @@ export const seedDogData = async (
           focus: 'YES',
           repeatedMistakes: 'NO',
           note: 'Soustředil se skvěle, jen u druhého cviku byl trochu rozptýlený kolemjdoucím psem.',
+        },
+      ],
+    });
+  }
+
+  // 3b. Seed private lesson notes for Rex (#70) — owner-only diary.
+  const existingNotesCount = await prisma.dogNote.count({
+    where: { dogId: rex.id },
+  });
+  if (existingNotesCount === 0) {
+    console.log('Creating initial private notes for Rex');
+    await prisma.dogNote.createMany({
+      data: [
+        {
+          id: 'note-1',
+          dogId: rex.id,
+          date: new Date('2026-10-18T00:00:00.000Z'),
+          title: 'Seminář poslušnosti',
+          text: 'Více odměňovat u levé nohy. Kratší úseky, pak postupně prodlužovat.',
+        },
+        {
+          id: 'note-2',
+          dogId: rex.id,
+          date: new Date('2026-10-05T00:00:00.000Z'),
+          title: 'Lekce canicross',
+          text: 'Start na povel: nejdřív klid u nohy, teprve potom tah. Neotáčet se na psa.',
         },
       ],
     });
@@ -491,6 +523,8 @@ export const seedClientData = async (
       },
     });
   }
+
+  await seedClientActivity(prisma, trainerId, { jan, petra, tomas });
 
   // Baryk's goal & blocks
   const barykGoal = await prisma.trainingGoal.upsert({
@@ -804,4 +838,208 @@ export const seedClientData = async (
       expiresAt,
     },
   });
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Recent records of the trainer's clients, so the trainer overview has real
+// data for every attention reason: a client message waiting for a reply (Rex),
+// falling success (Baryk), a quiet dog (Lucky) and a dog doing fine (Alík).
+// Dates are relative to the seed run and refreshed on every deploy.
+const seedClientActivity = async (
+  prisma: PrismaService,
+  trainerId: string,
+  clients: {
+    jan: { id: string };
+    petra: { id: string };
+    tomas: { id: string };
+  },
+): Promise<void> => {
+  const { jan, petra, tomas } = clients;
+  const now = Date.now();
+  const records = [
+    // Rex (Jan): good progress; Jan asked a question under yesterday's record.
+    {
+      id: 'client-act-rex-1',
+      dogId: 'dog-rex-1',
+      goalId: 'goal-1',
+      trainingId: 'training-goal-1',
+      authorId: jan.id,
+      title: 'Přivolání v parku',
+      discipline: 'Poslušnost',
+      daysAgo: 1,
+      successRate: 80,
+      note: 'Na 15 m to šlo skvěle, pak ho rozptýlil jiný pes.',
+    },
+    {
+      id: 'client-act-rex-2',
+      dogId: 'dog-rex-1',
+      goalId: 'goal-1',
+      trainingId: 'training-goal-1',
+      authorId: jan.id,
+      title: 'Chůze u nohy',
+      discipline: 'Poslušnost',
+      daysAgo: 4,
+      successRate: 75,
+      note: null,
+    },
+    {
+      id: 'client-act-rex-3',
+      dogId: 'dog-rex-1',
+      goalId: 'goal-2',
+      trainingId: 'training-goal-2',
+      authorId: jan.id,
+      title: 'Přivolání na píšťalku',
+      discipline: 'Poslušnost',
+      daysAgo: 9,
+      successRate: 70,
+      note: null,
+    },
+    {
+      id: 'client-act-rex-4',
+      dogId: 'dog-rex-1',
+      goalId: 'goal-2',
+      trainingId: 'training-goal-2',
+      authorId: jan.id,
+      title: 'Start na povel',
+      discipline: 'Canicross',
+      daysAgo: 16,
+      successRate: 65,
+      note: null,
+    },
+    // Baryk (Jan): success rate keeps dropping.
+    {
+      id: 'client-act-baryk-1',
+      dogId: 'dog-baryk-1',
+      goalId: 'goal-baryk-1',
+      trainingId: 'training-goal-baryk-1',
+      authorId: jan.id,
+      title: 'Náběh na áčko',
+      discipline: 'Agility',
+      daysAgo: 2,
+      successRate: 45,
+      note: null,
+    },
+    {
+      id: 'client-act-baryk-2',
+      dogId: 'dog-baryk-1',
+      goalId: 'goal-baryk-1',
+      trainingId: 'training-goal-baryk-1',
+      authorId: jan.id,
+      title: 'Zóna 2on/2off',
+      discipline: 'Agility',
+      daysAgo: 8,
+      successRate: 60,
+      note: null,
+    },
+    {
+      id: 'client-act-baryk-3',
+      dogId: 'dog-baryk-1',
+      goalId: 'goal-baryk-1',
+      trainingId: 'training-goal-baryk-1',
+      authorId: jan.id,
+      title: 'Náběh na áčko',
+      discipline: 'Agility',
+      daysAgo: 15,
+      successRate: 68,
+      note: null,
+    },
+    // Alík (Petra): steady, trained today.
+    {
+      id: 'client-act-alik-1',
+      dogId: 'dog-alik-1',
+      authorId: petra.id,
+      title: 'Hledání pamlsku v trávě',
+      discipline: 'Nosework',
+      daysAgo: 0,
+      successRate: 90,
+      note: null,
+    },
+    {
+      id: 'client-act-alik-2',
+      dogId: 'dog-alik-1',
+      authorId: petra.id,
+      title: 'Krabicová hra',
+      discipline: 'Nosework',
+      daysAgo: 3,
+      successRate: 85,
+      note: null,
+    },
+    {
+      id: 'client-act-alik-3',
+      dogId: 'dog-alik-1',
+      authorId: petra.id,
+      title: 'Hledání pamlsku v trávě',
+      discipline: 'Nosework',
+      daysAgo: 10,
+      successRate: 80,
+      note: null,
+    },
+    // Lucky (Tomáš): no training for a week.
+    {
+      id: 'client-act-lucky-1',
+      dogId: 'dog-lucky-1',
+      authorId: tomas.id,
+      title: 'Canicross start',
+      discipline: 'Canicross',
+      daysAgo: 7,
+      successRate: 85,
+      note: null,
+    },
+    {
+      id: 'client-act-lucky-2',
+      dogId: 'dog-lucky-1',
+      authorId: tomas.id,
+      title: 'Tah v postroji',
+      discipline: 'Canicross',
+      daysAgo: 12,
+      successRate: 80,
+      note: null,
+    },
+  ];
+  for (const { daysAgo, ...record } of records) {
+    // Late afternoon keeps "today" records in the past at any seed time.
+    const completedAt = new Date(now - daysAgo * DAY_MS - 2 * 60 * 60 * 1000);
+    await prisma.workoutLog.upsert({
+      where: { id: record.id },
+      update: {
+        completedAt,
+        successRate: record.successRate,
+        note: record.note,
+        trainingId: (record as { trainingId?: string }).trainingId,
+        goalId: (record as { goalId?: string }).goalId,
+      },
+      create: { ...record, status: 'COMPLETED', completedAt },
+    });
+  }
+
+  const messages = [
+    {
+      id: 'client-msg-rex-1',
+      authorId: trainerId,
+      minutesAfter: 30,
+      text: 'Skvělá práce! Příště zkus přivolání s menším rozptýlením.',
+    },
+    {
+      id: 'client-msg-rex-2',
+      authorId: jan.id,
+      minutesAfter: 90,
+      text: 'Díky! Mám ho při rozptýlení odvolat dřív, nebo počkat?',
+    },
+  ];
+  const rexRecord = new Date(now - DAY_MS - 2 * 60 * 60 * 1000).getTime();
+  for (const message of messages) {
+    const createdAt = new Date(rexRecord + message.minutesAfter * 60 * 1000);
+    await prisma.trainingMessage.upsert({
+      where: { id: message.id },
+      update: { createdAt },
+      create: {
+        id: message.id,
+        workoutLogId: 'client-act-rex-1',
+        authorId: message.authorId,
+        text: message.text,
+        createdAt,
+      },
+    });
+  }
 };

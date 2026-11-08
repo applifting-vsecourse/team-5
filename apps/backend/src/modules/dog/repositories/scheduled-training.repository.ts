@@ -1,42 +1,59 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
 import {
   FocusLevel,
+  GoalStatus,
   MistakeLevel,
   TrainingStatus,
   WorkoutLog,
   WorkoutStatus,
 } from '@/generated/prisma/client';
+import { effectiveCurrentStepId } from '@/modules/dog/domain/current-step';
 import {
   ScheduledTraining,
   ScheduledTrainingDetail,
   WeekTraining,
 } from '@/modules/dog/domain/scheduled-training';
 import { Injectable } from '@nestjs/common';
+import { planOrder, resolveTraining } from './hierarchy.repository';
 
 @Injectable()
 export class ScheduledTrainingRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // The week is the owner's own view (#72): trainings of their active dogs.
-  // A trainer sees clients' dogs elsewhere (Klienti), not in this week.
+  // The week is the owner's own view (#72): trainings of their active dogs
+  // and active goals (#69). A trainer sees clients elsewhere, not here.
   async getOwnerTrainingsBetween(
     ownerId: string,
     from: Date,
     to: Date,
   ): Promise<WeekTraining[]> {
-    return this.prisma.scheduledTraining.findMany({
+    const rows = await this.prisma.scheduledTraining.findMany({
       where: {
         date: { gte: from, lte: to },
         dog: { ownerId, isArchived: false },
+        goal: { status: GoalStatus.ACTIVE },
       },
       include: {
+        workoutLog: { select: { id: true, successRate: true } },
         dog: { select: { id: true, name: true, color: true } },
         goal: {
           select: {
             id: true,
             title: true,
-            blocks: {
-              select: { id: true, title: true },
+            discipline: true,
+            sessions: {
+              where: { isArchived: false },
+              select: { id: true },
+              orderBy: [...planOrder],
+            },
+          },
+        },
+        training: {
+          select: {
+            id: true,
+            title: true,
+            steps: {
+              select: { id: true, title: true, durationMinutes: true },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },
           },
@@ -44,6 +61,20 @@ export class ScheduledTrainingRepository {
       },
       orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
     });
+    return rows.map((row) => ({
+      ...row,
+      training: {
+        ...row.training,
+        position: Math.max(
+          0,
+          row.goal.sessions.findIndex(
+            (session) => session.id === row.training.id,
+          ),
+        ),
+        total: row.goal.sessions.length,
+      },
+      goal: { ...row.goal, blocks: row.training.steps },
+    }));
   }
 
   async getTrainingsByGoalId(goalId: string): Promise<ScheduledTraining[]> {
@@ -54,7 +85,7 @@ export class ScheduledTrainingRepository {
   }
 
   async getTrainingById(id: string): Promise<ScheduledTrainingDetail | null> {
-    return this.prisma.scheduledTraining.findUnique({
+    const row = await this.prisma.scheduledTraining.findUnique({
       where: { id },
       include: {
         dog: {
@@ -62,22 +93,26 @@ export class ScheduledTrainingRepository {
             id: true,
             name: true,
             color: true,
+            ownerId: true,
             shares: {
               select: { id: true, trainerId: true },
             },
           },
         },
-        goal: {
+        goal: { select: { id: true, title: true, currentStepId: true } },
+        training: {
           select: {
             id: true,
             title: true,
-            blocks: {
+            steps: {
               select: {
                 id: true,
                 position: true,
                 title: true,
                 instruction: true,
                 criterion: true,
+                durationMinutes: true,
+                outcome: true,
               },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },
@@ -85,6 +120,25 @@ export class ScheduledTrainingRepository {
         },
       },
     });
+    if (!row) return null;
+    // Walkthrough compares the pointer to this training's steps; expose the
+    // effective first step of the whole goal when the stored pointer is null.
+    const goalSteps = await this.prisma.planBlock.findMany({
+      where: { goalId: row.goal.id, training: { isArchived: false } },
+      select: { id: true },
+      orderBy: [{ training: { position: 'asc' } }, ...planOrder],
+    });
+    return {
+      ...row,
+      goal: {
+        ...row.goal,
+        currentStepId: effectiveCurrentStepId(
+          goalSteps.map((step) => step.id),
+          row.goal.currentStepId,
+        ),
+        blocks: row.training.steps,
+      },
+    };
   }
 
   // A goal can be practised on many days. Only a duplicate planned session
@@ -94,17 +148,18 @@ export class ScheduledTrainingRepository {
   // makes concurrent requests for the same goal wait for each other, so the
   // second one sees the first one's training.
   async createPlannedTraining(data: {
+    trainingId?: string;
     goalId: string;
     dogId: string;
     createdById: string;
     date: Date;
   }): Promise<ScheduledTraining | null> {
     return this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT "id" FROM "training_goal" WHERE "id" = ${data.goalId} FOR UPDATE`;
+      const training = await resolveTraining(tx, data.goalId, data.trainingId);
 
       const planned = await tx.scheduledTraining.findFirst({
         where: {
-          goalId: data.goalId,
+          trainingId: training.id,
           date: data.date,
           status: TrainingStatus.PLANNED,
         },
@@ -114,6 +169,7 @@ export class ScheduledTrainingRepository {
 
       return tx.scheduledTraining.create({
         data: {
+          training: { connect: { id: training.id } },
           goal: { connect: { id: data.goalId } },
           dog: { connect: { id: data.dogId } },
           createdBy: { connect: { id: data.createdById } },
@@ -137,9 +193,13 @@ export class ScheduledTrainingRepository {
     return this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "training_goal" WHERE "id" = ${goalId} FOR UPDATE`;
 
+      const current = await tx.scheduledTraining.findUniqueOrThrow({
+        where: { id },
+      });
+
       const sameDay = await tx.scheduledTraining.findFirst({
         where: {
-          goalId,
+          trainingId: current.trainingId,
           date,
           status: TrainingStatus.PLANNED,
           id: { not: id },
@@ -173,6 +233,7 @@ export class ScheduledTrainingRepository {
 
       const training = await tx.scheduledTraining.findUniqueOrThrow({
         where: { id },
+        include: { training: { select: { title: true } } },
       });
       const goal = await tx.trainingGoal.findUniqueOrThrow({
         where: { id: training.goalId },
@@ -184,7 +245,8 @@ export class ScheduledTrainingRepository {
           goal: { connect: { id: training.goalId } },
           author: { connect: { id: authorId } },
           scheduledTraining: { connect: { id } },
-          title: goal.title,
+          training: { connect: { id: training.trainingId } },
+          title: training.training.title,
           discipline: goal.discipline,
           status: WorkoutStatus.SKIPPED,
           // The record belongs to the day the training was planned for.
@@ -206,8 +268,16 @@ export class ScheduledTrainingRepository {
     return this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT "id" FROM "training_goal" WHERE "id" = ${goalId} FOR UPDATE`;
 
+      const current = await tx.scheduledTraining.findUniqueOrThrow({
+        where: { id },
+      });
+
       const sameDay = await tx.scheduledTraining.findFirst({
-        where: { goalId, date, status: TrainingStatus.PLANNED },
+        where: {
+          trainingId: current.trainingId,
+          date,
+          status: TrainingStatus.PLANNED,
+        },
         select: { id: true },
       });
       if (sameDay) return 'day-taken';
@@ -223,18 +293,32 @@ export class ScheduledTrainingRepository {
     });
   }
 
+  // Removes future calendar slots when a goal is completed or archived (#69).
+  // Completed and skipped records stay for the dog's history.
+  async deletePlannedForGoal(goalId: string): Promise<number> {
+    const { count } = await this.prisma.scheduledTraining.deleteMany({
+      where: { goalId, status: TrainingStatus.PLANNED },
+    });
+    return count;
+  }
+
   // A dog's trainings still to be done, for its Activities (#74): the owner
   // and a trainer with a share see the day each one is planned for.
   async getPlannedTrainingsByDogId(dogId: string): Promise<WeekTraining[]> {
-    return this.prisma.scheduledTraining.findMany({
-      where: { dogId, status: TrainingStatus.PLANNED },
+    const rows = await this.prisma.scheduledTraining.findMany({
+      where: {
+        dogId,
+        status: TrainingStatus.PLANNED,
+        goal: { status: GoalStatus.ACTIVE },
+      },
       include: {
         dog: { select: { id: true, name: true, color: true } },
-        goal: {
+        goal: { select: { id: true, title: true } },
+        training: {
           select: {
             id: true,
             title: true,
-            blocks: {
+            steps: {
               select: { id: true, title: true },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },
@@ -243,6 +327,10 @@ export class ScheduledTrainingRepository {
       },
       orderBy: [{ date: 'asc' }, { createdAt: 'asc' }],
     });
+    return rows.map((row) => ({
+      ...row,
+      goal: { ...row.goal, blocks: row.training.steps },
+    }));
   }
 
   async completeTraining(
@@ -252,10 +340,16 @@ export class ScheduledTrainingRepository {
       successRate?: number | null;
       focus?: FocusLevel | null;
       repeatedMistakes?: MistakeLevel | null;
+      mistakeDetails?: string[];
       note?: string | null;
+      videoUrl?: string | null;
     },
   ): Promise<WorkoutLog | null> {
     return this.prisma.$transaction(async (tx) => {
+      // Serialize completion with definition edits before freezing its content.
+      await tx.$queryRaw`SELECT g."id" FROM "training_goal" g
+        JOIN "scheduled_training" s ON s."goalId" = g."id"
+        WHERE s."id" = ${trainingId} FOR UPDATE OF g`;
       // The status check is part of the UPDATE, so of two quick submits
       // (double click, a retry on a weak signal) only one completes the
       // training and writes a record. Null: it is no longer planned.
@@ -268,6 +362,7 @@ export class ScheduledTrainingRepository {
       const training = await tx.scheduledTraining.findUniqueOrThrow({
         where: { id: trainingId },
         include: {
+          training: { select: { title: true } },
           goal: {
             select: {
               id: true,
@@ -284,14 +379,21 @@ export class ScheduledTrainingRepository {
           goal: { connect: { id: training.goalId } },
           author: { connect: { id: authorId } },
           scheduledTraining: { connect: { id: trainingId } },
-          title: training.goal.title,
+          training: { connect: { id: training.trainingId } },
+          title: training.training.title,
           discipline: training.goal.discipline ?? null,
           status: WorkoutStatus.COMPLETED,
           completedAt: new Date(),
           successRate: data.successRate ?? null,
           focus: data.focus ?? null,
           repeatedMistakes: data.repeatedMistakes ?? null,
+          ...(data.mistakeDetails !== undefined && {
+            mistakeDetails: [
+              ...new Set(data.mistakeDetails.map((detail) => detail.trim())),
+            ],
+          }),
           note: data.note?.trim() || null,
+          videoUrl: data.videoUrl?.trim() || null,
         },
       });
     });

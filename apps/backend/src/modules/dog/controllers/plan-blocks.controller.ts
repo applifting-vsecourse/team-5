@@ -47,6 +47,11 @@ export class PlanBlocksController {
   @Get('goals/:goalId/blocks')
   @ApiOperation({ summary: "List the blocks of a goal's plan in order" })
   @ApiResponse({ status: 200, type: [PlanBlockResponseDto] })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Select a concrete training when the goal has multiple trainings',
+  })
   @ApiResponse({ status: 401, description: 'Not signed in' })
   @ApiResponse({ status: 404, description: 'Goal not found' })
   async list(
@@ -78,6 +83,11 @@ export class PlanBlocksController {
   @Put('goals/:goalId/blocks/order')
   @ApiOperation({ summary: "Change the order of a goal's plan blocks" })
   @ApiResponse({ status: 200, type: [PlanBlockResponseDto] })
+  @ApiResponse({
+    status: 409,
+    description:
+      'Select a concrete training when the goal has multiple trainings',
+  })
   @ApiResponse({
     status: 400,
     description: 'The order does not list every block exactly once',

@@ -1,105 +1,144 @@
-import { AlertCircle, PawPrint } from "lucide-react"
+import { Link } from "@tanstack/react-router"
+import { Archive, PawPrint } from "lucide-react"
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { DesignIcon } from "@/components/DesignIcon"
+import { EmptyState } from "@/components/EmptyState"
+import { PesAvatar } from "@/components/PesAvatar"
+import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
+import { dogColorClass } from "@/lib/dogColors"
+import { cn } from "@/lib/utils"
 
 import type { Dog } from "@/features/dog/api/dogSchemas"
+import { useRestoreDog } from "@/features/dog/hooks/useUpdateDog"
 
 import { CreateDogDialog } from "./CreateDogDialog"
 import { DogCard } from "./DogCard"
 
 type DogListProps = {
   dogs: Dog[]
+  archivedDogs?: Dog[]
   isLoading?: boolean
   error?: Error | null
   onReload?: () => void
 }
 
-export function DogList({ dogs, isLoading = false, error = null, onReload }: DogListProps) {
-  if (isLoading) {
-    return (
-      <div
-        className="flex flex-col gap-3"
-        aria-label="Načítám seznam psů"
+function ArchivedDogRow({ dog }: { dog: Dog }) {
+  const restore = useRestoreDog(dog.id)
+  return (
+    <li className="flex items-center gap-3 rounded-card border border-border bg-card p-3">
+      <Link
+        to="/dogs/$dogId"
+        params={{ dogId: dog.id }}
+        className="flex min-w-0 flex-1 items-center gap-3"
       >
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div
-            key={i}
-            className="flex min-h-16 items-center gap-4 rounded-lg border border-border p-4"
-          >
-            <Skeleton className="size-10 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-20" />
-            </div>
-            <Skeleton className="size-5 rounded-md" />
-          </div>
-        ))}
-      </div>
-    )
-  }
+        <PesAvatar
+          name={dog.name}
+          color={dog.color}
+          photoUrl={dog.photoUrl}
+          className={cn("size-11", dogColorClass(dog.color))}
+        />
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-bold">{dog.name}</span>
+          <span className="block text-xs text-muted-foreground">Archiv · historie zůstává</span>
+        </span>
+      </Link>
+      <Button
+        type="button"
+        variant="outline"
+        disabled={restore.isPending}
+        onClick={() => restore.mutate()}
+      >
+        Vrátit
+      </Button>
+    </li>
+  )
+}
 
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="size-4" />
-        <AlertTitle>Chyba při načítání psů</AlertTitle>
-        <AlertDescription className="flex flex-col items-start gap-3">
-          <span>{error.message || "Nepodařilo se načíst seznam psů."}</span>
-          {onReload && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onReload}
-            >
-              Zkusit znovu
-            </Button>
-          )}
-        </AlertDescription>
-      </Alert>
-    )
-  }
-
-  if (dogs.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-8 text-center sm:p-12">
-        <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-          <PawPrint className="size-6" />
+export function DogList({
+  dogs,
+  archivedDogs = [],
+  isLoading = false,
+  error = null,
+  onReload,
+}: DogListProps) {
+  return (
+    <div className="space-y-6">
+      <QueryState
+        isLoading={isLoading}
+        error={error}
+        isEmpty={dogs.length === 0}
+        onRetry={onReload}
+        loadingLabel="Načítám seznam psů"
+        errorTitle="Chyba při načítání psů"
+        errorDescription="Nepodařilo se načíst seznam psů."
+        empty={
+          <EmptyState
+            icon={PawPrint}
+            chip="BEZ PSA"
+            iconTone="dog"
+            title="Přidejte prvního psa"
+            description="Po přidání psa k němu budete moci vést plán, tréninky a kalendář."
+          />
+        }
+      >
+        <div
+          className="flex flex-col gap-6"
+          aria-label="Seznam psů"
+        >
+          {dogs.map((dog) => (
+            <DogCard
+              key={dog.id}
+              dog={dog}
+            />
+          ))}
         </div>
-
-        <h2 className="mb-1 text-lg font-semibold tracking-tight text-foreground">
-          Přidejte prvního psa
-        </h2>
-        <p className="mb-6 max-w-sm text-sm text-muted-foreground">
-          Po přidání psa k němu budete moci vést plán, tréninky a kalendář.
-        </p>
-
+      </QueryState>
+      {!isLoading && !error && (
         <CreateDogDialog
           existingDogs={dogs}
           trigger={
-            <Button>
-              <PawPrint className="size-4" />
-              <span>Přidat psa</span>
+            <Button
+              type="button"
+              variant="outline"
+              aria-label="Přidat psa"
+              className="flex h-auto w-full flex-col gap-3 rounded-hero border-2 border-dashed bg-background px-5 py-6 whitespace-normal"
+            >
+              <span className="flex size-12 items-center justify-center rounded-full bg-accent">
+                <DesignIcon name="dogs-Plus1" />
+              </span>
+              <span className="text-lg font-extrabold">Přidat psa</span>
+              <span className="max-w-xs text-center text-sm font-normal text-muted-foreground">
+                Jméno, plemeno, disciplíny a barva – zabere to minutu.
+              </span>
             </Button>
           }
         />
-      </div>
-    )
-  }
-
-  return (
-    <div
-      className="flex flex-col gap-3"
-      aria-label="Seznam psů"
-    >
-      {dogs.map((dog) => (
-        <DogCard
-          key={dog.id}
-          dog={dog}
-        />
-      ))}
+      )}
+      {archivedDogs.length > 0 && (
+        <section
+          className="space-y-3"
+          aria-labelledby="dogs-archive-heading"
+        >
+          <div className="flex items-center gap-2">
+            <Archive className="size-4 text-muted-foreground" />
+            <h2
+              id="dogs-archive-heading"
+              className="text-sm font-extrabold"
+            >
+              Archiv
+            </h2>
+          </div>
+          <ul className="space-y-2">
+            {archivedDogs.map((dog) => (
+              <ArchivedDogRow
+                key={dog.id}
+                dog={dog}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   )
 }

@@ -38,4 +38,6 @@ The CLI puts `shadow-xs`/`shadow-sm` on inputs, textareas and cards. [`DESIGN.md
 
 Assume the dev servers are up. If something is listening on the app's ports, that is this application: use it. Don't start a second instance, don't restart it, don't run `pnpm dev`.
 
-Don't reach for the browser to check your own work. Tests and type-checks are the evidence; open the running app when asked to, not on your own initiative.
+### Always verify UI in the browser
+
+After any frontend/UI change, open the running app and click through the affected flows. Use a mobile viewport (~390×844) when the screen is mobile-first; cover trenér and psovod when both roles are involved. Tests and type-checks are necessary but not enough — live browser checks are part of done.

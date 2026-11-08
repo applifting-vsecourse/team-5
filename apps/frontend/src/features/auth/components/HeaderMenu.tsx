@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router"
+import { Link, useLocation } from "@tanstack/react-router"
 import { LogOut, UserRound } from "lucide-react"
 import { toast } from "sonner"
 
@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
 
 import { useSession } from "@/features/auth/hooks/useSession"
 import { useSignOut } from "@/features/auth/hooks/useSignOut"
@@ -20,6 +21,9 @@ import { useSignOut } from "@/features/auth/hooks/useSignOut"
 export function HeaderMenu({ isNavigation = false }: { isNavigation?: boolean }) {
   const { user } = useSession()
   const signOut = useSignOut()
+  const { pathname } = useLocation()
+  const isAccountActive =
+    isNavigation && (pathname === ROUTES.account || pathname.startsWith(`${ROUTES.account}/`))
 
   if (!user) {
     return (
@@ -45,17 +49,33 @@ export function HeaderMenu({ isNavigation = false }: { isNavigation?: boolean })
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          aria-label={isNavigation ? "Účet a odhlášení" : "Uživatelské menu"}
+          size={isNavigation ? "default" : "icon"}
+          aria-label={isNavigation ? undefined : "Uživatelské menu"}
+          aria-current={isAccountActive ? "page" : undefined}
           className={
             isNavigation
-              ? "min-h-11 w-full flex-col gap-1 py-1 text-xs text-muted-foreground"
+              ? cn(
+                  "h-auto min-h-touch w-full min-w-touch flex-col items-center justify-center gap-1 rounded-md px-0 py-1 text-xs whitespace-normal transition-colors hover:bg-transparent",
+                  isAccountActive
+                    ? "font-extrabold text-primary hover:text-primary"
+                    : "font-semibold text-muted-foreground hover:text-foreground",
+                )
               : "size-11 rounded-full"
           }
         >
           {isNavigation ? (
             <>
-              <UserRound className="size-5" />
+              <span
+                className={cn(
+                  "flex size-8 items-center justify-center rounded-2xl",
+                  isAccountActive && "bg-accent",
+                )}
+              >
+                <UserRound
+                  className="size-5"
+                  aria-hidden
+                />
+              </span>
               <span>Účet</span>
             </>
           ) : (

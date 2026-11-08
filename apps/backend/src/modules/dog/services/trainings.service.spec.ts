@@ -20,6 +20,7 @@ import { TrainingsService } from './trainings.service';
 const aTraining = (
   overrides: Partial<ScheduledTraining> = {},
 ): ScheduledTraining => ({
+  trainingId: 'session-1',
   id: 't1',
   goalId: 'g1',
   dogId: 'd1',
@@ -34,18 +35,22 @@ const aTraining = (
 const aTrainingDetail = (
   overrides: Partial<ScheduledTrainingDetail> = {},
 ): ScheduledTrainingDetail => ({
+  training: { id: 'session-1', title: 'První trénink' },
   ...aTraining(),
   dog: { id: 'd1', name: 'Rex', color: 1 },
   goal: {
     id: 'g1',
     title: 'Chůze u nohy',
+    currentStepId: null,
     blocks: [
       {
         id: 'b1',
         position: 1,
         title: 'Sedni u nohy',
         instruction: 'Sedni rovně u levé nohy.',
+        durationMinutes: 5,
         criterion: '3x za sebou.',
+        outcome: null,
       },
     ],
   },
@@ -219,6 +224,8 @@ describe('TrainingsService', () => {
 
   describe('completeTraining', () => {
     const fakeLog = {
+      mistakeDetails: [],
+      trainingId: 'session-1',
       id: 'log1',
       dogId: 'd1',
       goalId: 'g1',
@@ -391,7 +398,7 @@ describe('TrainingsService', () => {
 
       await expect(
         service.moveTraining(owner, 't1', '2026-10-29', now),
-      ).rejects.toThrow('This goal already has a planned training on this day');
+      ).rejects.toThrow('This training is already planned on this day');
     });
 
     it('moves a missed training to today', async () => {
@@ -595,7 +602,7 @@ describe('TrainingsService', () => {
       repository.restoreSkippedTraining.mockResolvedValue('day-taken');
 
       await expect(service.undoSkip(owner, 't1', now)).rejects.toThrow(
-        'This goal already has a planned training on this day',
+        'This training is already planned on this day',
       );
     });
 

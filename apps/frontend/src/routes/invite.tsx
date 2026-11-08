@@ -1,460 +1,423 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { AlertCircle, CheckCircle2, Loader2, Plus, Sparkles } from "lucide-react"
+import { HTTPError } from "ky"
+import { Check, Clock, CloudOff } from "lucide-react"
 import { z } from "zod"
 
 import { ROUTES } from "@/app/routes"
-import { AuthLayout } from "@/components/AuthLayout"
+import { AuthBrand } from "@/components/AuthLayout"
+import { DesignIcon } from "@/components/DesignIcon"
+import { EmptyState } from "@/components/EmptyState"
+import { InviteCodeDialog } from "@/components/InviteCodeDialog"
+import { QueryState } from "@/components/QueryState"
 import { Seo } from "@/components/Seo"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { StatusChip } from "@/components/StatusChip"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 
 import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
+import { useSignOut } from "@/features/auth/hooks/useSignOut"
 import { accountHome } from "@/features/auth/lib/account-home"
 import { useAcceptInvitation, verifyInvitation } from "@/features/client/api/invitationApi"
 import { dogsQueryOptions } from "@/features/dog/api/dogsQueryOptions"
 import { CreateDogDialog } from "@/features/dog/components/CreateDogDialog"
 import { PesAvatar } from "@/features/dog/components/PesAvatar"
 
-const inviteSearchSchema = z.object({
-  code: z.string().optional(),
-})
-
 export const Route = createFileRoute("/invite")({
-  validateSearch: inviteSearchSchema,
+  validateSearch: z.object({ code: z.string().optional() }),
   component: InvitePage,
 })
-
 function InvitePage() {
   const { code: rawCode } = Route.useSearch()
-  const code = rawCode?.trim().toUpperCase() ?? ""
   const navigate = useNavigate()
-
-  const { data: session } = useQuery(authSessionQueryOptions())
-  const acceptMutation = useAcceptInvitation()
-  const [isAccepted, setIsAccepted] = useState(false)
-  const [acceptError, setAcceptError] = useState<string | null>(null)
-  const [userSelectedDogIds, setUserSelectedDogIds] = useState<string[] | null>(null)
-
-  const isClient = Boolean(session?.user && session.user.role !== "trainer")
-
-  const { data: dogs = [], isLoading: isLoadingDogs } = useQuery({
-    ...dogsQueryOptions(),
-    enabled: isClient,
-  })
-
-  const selectedDogIds = userSelectedDogIds ?? dogs.map((d) => d.id)
-
-  const {
-    data: invitation,
-    isLoading,
-    isError,
-  } = useQuery({
+  const code = rawCode?.replace(/[-\s]/g, "").toUpperCase() ?? ""
+  const session = useQuery(authSessionQueryOptions())
+  const invitation = useQuery({
     queryKey: ["invitation", code],
     queryFn: () => verifyInvitation(code),
     enabled: Boolean(code),
     retry: false,
   })
-
-  useEffect(() => {
-    if (!isAccepted) return
-    const timer = setTimeout(() => {
-      if (session?.user) {
-        void navigate({ to: accountHome(session.user) })
-      } else {
-        void navigate({ to: ROUTES.dogs })
-      }
-    }, 1500)
-    return () => clearTimeout(timer)
-  }, [isAccepted, navigate, session])
-
-  const handleAccept = async () => {
-    if (!code) return
-    if (selectedDogIds.length === 0) {
-      setAcceptError("Vyberte alespoň jednoho psa pro sdílení s trenérem.")
+  const isClient = Boolean(session.data?.user && session.data.user.role !== "trainer")
+  const dogs = useQuery({ ...dogsQueryOptions(), enabled: isClient })
+  const ownedDogs = (dogs.data ?? []).filter((dog) => dog.ownerId === session.data?.user.id)
+  const [selected, setSelected] = useState<string[] | null>(null)
+  const selectedIds = selected ?? ownedDogs.map((dog) => dog.id)
+  const accept = useAcceptInvitation()
+  const signOut = useSignOut()
+  const [isAccepted, setAccepted] = useState(false)
+  const [error, setError] = useState("")
+  async function acceptInvite() {
+    setError("")
+    if (!selectedIds.length) {
+      setError("Vyberte alespoň jednoho psa pro sdílení s trenérem.")
       return
     }
-    setAcceptError(null)
     try {
-      await acceptMutation.mutateAsync({ code, dogIds: selectedDogIds })
-      setIsAccepted(true)
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        setAcceptError(err.message)
-      } else {
-        setAcceptError("Přijetí pozvánky se nezdařilo. Zkontrolujte prosím své připojení.")
-      }
+      await accept.mutateAsync({ code, dogIds: selectedIds })
+      setAccepted(true)
+    } catch {
+      setError(
+        "Přijetí pozvánky se nezdařilo. Zkontroluj připojení a platnost kódu a zkus to znovu.",
+      )
     }
   }
-
-  if (!code) {
-    return (
-      <>
-        <Seo title="Pozvánka" />
-        <AuthLayout
-          title="Pozvánka do TrainLoopu"
-          description="Nebyl zadán žádný kód pozvánky."
-          footer={
-            <Link
-              to={ROUTES.home}
-              className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-4"
-            >
-              Zpět na úvodní stránku
-            </Link>
-          }
-        >
-          <div className="space-y-4">
-            <Alert>
-              <AlertCircle className="size-4" />
-              <AlertTitle>Chybí kód pozvánky</AlertTitle>
-              <AlertDescription>
-                Pro přijetí pozvánky klikněte na odkaz v e-mailu od trenéra, nebo zadejte kód na
-                úvodní stránce v sekci „Mám pozvánku“.
-              </AlertDescription>
-            </Alert>
-            <Button
-              asChild
-              className="w-full"
-            >
-              <Link to={ROUTES.home}>Přejít na úvodní stránku</Link>
-            </Button>
-          </div>
-        </AuthLayout>
-      </>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <>
-        <Seo title="Ověřuji pozvánku…" />
-        <AuthLayout
-          title="Ověřování pozvánky"
-          description="Čekejte prosím, ověřujeme platnost vašeho kódu…"
-          footer={null}
-        >
-          <div className="flex justify-center py-8">
-            <Loader2 className="size-8 animate-spin text-primary" />
-          </div>
-        </AuthLayout>
-      </>
-    )
-  }
-
-  if (isError || !invitation) {
-    return (
-      <>
-        <Seo title="Neplatná pozvánka" />
-        <AuthLayout
-          title="Neplatná pozvánka"
-          description="Pozvánka nebyla nalezena nebo její platnost již vypršela."
-          footer={
-            <Link
-              to={ROUTES.home}
-              className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-4"
-            >
-              Zpět na úvodní stránku
-            </Link>
-          }
-        >
-          <div className="space-y-4">
-            <Alert variant="destructive">
-              <AlertCircle className="size-4" />
-              <AlertTitle>Neplatný nebo vypršený kód</AlertTitle>
-              <AlertDescription>
-                Kód <strong>{code}</strong> není platný, již byl použit, nebo vypršela jeho 7denní
-                lhůta. Požádejte svého trenéra o vystavení nové pozvánky.
-              </AlertDescription>
-            </Alert>
-            <Button
-              asChild
-              className="w-full"
-            >
-              <Link to={ROUTES.home}>Přejít na úvodní stránku</Link>
-            </Button>
-          </div>
-        </AuthLayout>
-      </>
-    )
-  }
-
-  if (isAccepted) {
-    return (
-      <>
-        <Seo title="Pozvánka přijata" />
-        <AuthLayout
-          title="Propojení úspěšné!"
-          description={`Byli jste úspěšně propojeni s trenérem ${invitation.trainerName}.`}
-          footer={null}
-        >
-          <div className="space-y-4 py-4 text-center">
-            <CheckCircle2 className="mx-auto size-12 text-green-600" />
-            <p className="text-sm text-muted-foreground">Přesměrovávám do aplikace…</p>
-          </div>
-        </AuthLayout>
-      </>
-    )
-  }
-
-  const isEmailMismatch = Boolean(
-    invitation.email &&
-    session?.user?.email &&
-    invitation.email.toLowerCase() !== session.user.email.toLowerCase(),
+  const user = session.data?.user
+  const data = invitation.data
+  const isMismatch = Boolean(
+    data?.email && user?.email && data.email.toLowerCase() !== user.email.toLowerCase(),
   )
-
+  const isInvalid =
+    invitation.error instanceof HTTPError && invitation.error.response.status === 404
   return (
-    <>
-      <Seo title={`Pozvánka od ${invitation.trainerName}`} />
-      <AuthLayout
-        title="Pozvánka do TrainLoopu"
-        description={`Trenér ${invitation.trainerName} vás zve ke spolupráci v aplikaci TrainLoop.`}
-        footer={
-          <Link
-            to={ROUTES.home}
-            className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-4"
-          >
-            Zpět na úvodní stránku
-          </Link>
-        }
-      >
-        <div className="space-y-6">
-          <div className="rounded-lg border bg-muted/40 p-4 text-center">
-            <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-              Kód pozvánky
-            </span>
-            <p className="mt-1 font-mono text-2xl font-bold tracking-widest text-foreground">
-              {invitation.code}
+    <main className="public-flow min-h-svh bg-background">
+      <Seo title={isAccepted ? "Pozvánka přijata" : "Pozvánka do TrainLoopu"} />
+      <div className="mx-auto w-full max-w-md pb-10 md:pt-8">
+        <div className="px-5 py-6">
+          <AuthBrand />
+        </div>
+        {!code ? (
+          <section className="space-y-6 px-5">
+            <h1 className="text-page font-extrabold">Mám pozvánku od trenéra</h1>
+            <p className="text-sm text-muted-foreground">
+              Zadej kód z pozvánky a ověř, s kým budeš svého psa sdílet.
             </p>
-          </div>
-
-          {acceptError ? (
-            <Alert variant="destructive">
-              <AlertDescription>{acceptError}</AlertDescription>
-            </Alert>
-          ) : null}
-
-          {session?.user ? (
-            session.user.role === "trainer" ? (
-              <Alert>
-                <AlertCircle className="size-4" />
-                <AlertTitle>Přihlášen jako trenér</AlertTitle>
-                <AlertDescription>
-                  Jste aktuálně přihlášeni jako trenér ({session.user.email}). Pozvánku může
-                  přijmout pouze psovod (klient). Odhlaste se a přihlaste se prosím jako klient.
-                </AlertDescription>
-              </Alert>
-            ) : isEmailMismatch ? (
-              <Alert variant="destructive">
-                <AlertCircle className="size-4" />
-                <AlertTitle>Pozvánka pro jiný e-mail</AlertTitle>
-                <AlertDescription>
-                  Tato pozvánka je určena pro e-mail <strong>{invitation.email}</strong>, ale vy
-                  jste přihlášeni jako <strong>{session.user.email}</strong>. Přihlaste se prosím
-                  správným účtem.
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Jste přihlášeni jako <strong>{session.user.name}</strong> ({session.user.email}).
-                  Vyberte psy, které chcete s trenérem <strong>{invitation.trainerName}</strong>{" "}
-                  sdílet.
-                </p>
-
-                {isLoadingDogs ? (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="size-6 animate-spin text-primary" />
-                  </div>
-                ) : dogs.length === 0 ? (
-                  <div className="space-y-3 rounded-lg border border-dashed p-4 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      Zatím nemáte v účtu žádného psa. Před přijetím pozvánky je nutné vytvořit
-                      profil alespoň jednoho psa pro sdílení s trenérem.
-                    </p>
-                    <CreateDogDialog
-                      existingDogs={dogs}
-                      onSuccess={(newDog) => setUserSelectedDogIds([...selectedDogIds, newDog.id])}
-                      trigger={
-                        <Button
-                          variant="outline"
-                          size="sm"
-                        >
-                          <Plus className="mr-2 size-4" />
-                          Založit psa
-                        </Button>
-                      }
-                    />
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-foreground">
-                        Sdílení psi (vyberte alespoň jednoho) *
-                      </span>
-                      <CreateDogDialog
-                        existingDogs={dogs}
-                        onSuccess={(newDog) =>
-                          setUserSelectedDogIds([...selectedDogIds, newDog.id])
-                        }
-                        trigger={
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 text-xs"
-                          >
-                            <Plus className="mr-1 size-3.5" />
-                            Nový pes
-                          </Button>
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2 rounded-lg border p-3">
-                      {dogs.map((dog) => {
-                        const isChecked = selectedDogIds.includes(dog.id)
-                        return (
-                          <label
-                            key={dog.id}
-                            className="flex cursor-pointer items-center gap-3 rounded-md p-2 transition-colors hover:bg-muted/50"
-                          >
-                            <Checkbox
-                              checked={isChecked}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setUserSelectedDogIds([...selectedDogIds, dog.id])
-                                } else {
-                                  setUserSelectedDogIds(
-                                    selectedDogIds.filter((id) => id !== dog.id),
-                                  )
-                                }
-                              }}
-                            />
-                            <PesAvatar
-                              name={dog.name}
-                              color={dog.color}
-                              photoUrl={dog.photoUrl}
-                              size="sm"
-                            />
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm leading-none font-medium">
-                                {dog.name}
-                              </p>
-                              {dog.breed && (
-                                <p className="truncate text-xs text-muted-foreground">
-                                  {dog.breed}
-                                </p>
-                              )}
-                            </div>
-                          </label>
-                        )
-                      })}
-                    </div>
-                    {selectedDogIds.length === 0 && (
-                      <p className="text-xs text-destructive">
-                        Je nutné vybrat alespoň jednoho psa.
-                      </p>
-                    )}
-                  </div>
-                )}
-
+            <InviteCodeDialog
+              trigger={
                 <Button
-                  onClick={handleAccept}
-                  disabled={
-                    acceptMutation.isPending || isLoadingDogs || selectedDogIds.length === 0
-                  }
-                  className="w-full"
                   size="lg"
+                  className="w-full"
                 >
-                  {acceptMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                      Propojuji…
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 size-4" />
-                      Přijmout pozvánku a propojit účet
-                    </>
-                  )}
+                  Zadat kód pozvánky
                 </Button>
-              </div>
-            )
-          ) : invitation.isExistingUser ? (
-            <div className="space-y-4">
-              <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
-                K e-mailu <strong className="text-foreground">{invitation.email}</strong> již
-                existuje účet v TrainLoopu. Přihlaste se ke svému účtu pro výběr psů a potvrzení
-                propojení s trenérem.
-              </div>
-              <div className="space-y-2">
-                <Button
-                  asChild
-                  className="w-full"
-                  size="lg"
-                >
-                  <Link
-                    to={ROUTES.login}
-                    search={{
-                      from: `/invite?code=${invitation.code}`,
-                      code: invitation.code,
+              }
+            />
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="w-full"
+            >
+              <Link to={user ? accountHome(user) : ROUTES.signup}>Pokračovat bez trenéra</Link>
+            </Button>
+          </section>
+        ) : session.isPending || invitation.isPending ? (
+          <div className="px-5">
+            <QueryState
+              isLoading
+              empty={null}
+            >
+              <span />
+            </QueryState>
+          </div>
+        ) : session.error || invitation.error || !data ? (
+          <section className="space-y-6 px-5">
+            <h1 className="sr-only">{isInvalid ? "Neplatná pozvánka" : "Ověření pozvánky"}</h1>
+            <EmptyState
+              icon={isInvalid ? Clock : CloudOff}
+              chip={isInvalid ? "POZVÁNKA VYPRŠELA" : "CHYBA PŘIPOJENÍ"}
+              title={isInvalid ? "Pozvánka už neplatí" : "Pozvánku se nepodařilo ověřit"}
+              description={
+                isInvalid
+                  ? "Kód neexistuje, už byl použit nebo vypršela jeho platnost. Požádej trenéra o novou pozvánku."
+                  : "Zkontroluj připojení a zkus ověření znovu."
+              }
+              action={
+                !isInvalid ? (
+                  <Button
+                    size="lg"
+                    onClick={() => {
+                      void session.refetch()
+                      void invitation.refetch()
                     }}
                   >
-                    Přihlásit se a pokračovat k propojení
-                  </Link>
-                </Button>
+                    Zkusit znovu
+                  </Button>
+                ) : undefined
+              }
+            />
+            <InviteCodeDialog
+              trigger={
                 <Button
-                  asChild
-                  variant="ghost"
-                  className="w-full text-xs text-muted-foreground"
-                  size="sm"
+                  size="lg"
+                  className="w-full"
+                  variant={isInvalid ? "default" : "outline"}
                 >
-                  <Link
-                    to={ROUTES.signup}
-                    search={{ code: invitation.code }}
-                  >
-                    Chcete se zaregistrovat s jiným e-mailem?
-                  </Link>
+                  Ověřit nový kód
                 </Button>
+              }
+            />
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="w-full"
+            >
+              <Link to={user ? accountHome(user) : ROUTES.signup}>Pokračovat bez trenéra</Link>
+            </Button>
+            <Link
+              to={ROUTES.login}
+              search={{ code }}
+              className="flex min-h-touch items-center justify-center text-sm font-bold text-primary"
+            >
+              Už mám účet – přihlásit
+            </Link>
+          </section>
+        ) : isAccepted ? (
+          <>
+            <header className="space-y-4 rounded-b-sheet bg-primary px-6 py-6 text-primary-foreground md:rounded-sheet">
+              <StatusChip tone="hero">Pozvánka přijata</StatusChip>
+              <h1 className="text-page font-extrabold">
+                Vítej v TrainLoopu, {user?.name.split(" ")[0]}!
+              </h1>
+              <p className="text-sm">Propojení s trenérem {data.trainerName} je hotové.</p>
+            </header>
+            <section className="space-y-6 px-5 pt-6">
+              <div className="space-y-4 rounded-card border border-border bg-card p-4">
+                <h2 className="text-xl font-extrabold">Začínáme</h2>
+                <p className="flex items-center gap-3">
+                  <Check className="size-6 text-success-foreground" />
+                  Přijmout pozvánku
+                </p>
+                <p className="flex items-start gap-3">
+                  <Check className="size-6 shrink-0 text-success-foreground" />
+                  <span>
+                    Sdílení psi:{" "}
+                    {ownedDogs
+                      .filter((dog) => selectedIds.includes(dog.id))
+                      .map((dog) => dog.name)
+                      .join(", ")}
+                  </span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Teď si prohlédni týdenní plán nebo profil svého psa. Cíle a záznamy u sdílených
+                  psů už vidí i tvůj trenér. Soukromé poznámky zůstávají tvoje.
+                </p>
               </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
               <Button
                 asChild
-                className="w-full"
                 size="lg"
+                className="w-full"
               >
-                <Link
-                  to={ROUTES.signup}
-                  search={{
-                    code: invitation.code,
-                    email: invitation.email ?? undefined,
-                  }}
-                >
-                  Zaregistrovat se jako psovod
-                </Link>
+                <Link to={ROUTES.week}>Zobrazit týdenní plán</Link>
               </Button>
               <Button
                 asChild
                 variant="outline"
-                className="w-full"
                 size="lg"
+                className="w-full"
               >
-                <Link
-                  to={ROUTES.login}
-                  search={{
-                    from: `/invite?code=${invitation.code}`,
-                    code: invitation.code,
-                  }}
-                >
-                  Už mám účet → Přihlásit se
-                </Link>
+                <Link to={ROUTES.dogs}>Moji psi</Link>
               </Button>
-            </div>
-          )}
-        </div>
-      </AuthLayout>
-    </>
+            </section>
+          </>
+        ) : (
+          <>
+            <header className="space-y-4 rounded-b-sheet bg-hero px-6 py-6 text-hero-foreground md:rounded-sheet">
+              <StatusChip tone="hero">
+                <span className="inline-flex items-center gap-2">
+                  <DesignIcon name="auth-142-1518-IconTicket" />
+                  POZVÁNKA
+                </span>
+              </StatusChip>
+              <div className="flex items-center gap-3.5">
+                <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-card text-2xl font-extrabold text-foreground">
+                  {data.trainerName.charAt(0).toUpperCase()}
+                </span>
+                <div>
+                  <p className="text-section font-extrabold">{data.trainerName}</p>
+                  <p className="text-sm text-hero-muted">Trenér</p>
+                </div>
+              </div>
+              <h1 className="text-section font-extrabold">
+                {data.trainerName} tě zve ke společnému tréninku v TrainLoopu.
+              </h1>
+              {data.expiresAt && (
+                <p className="text-sm text-hero-muted">
+                  Platí do {new Date(data.expiresAt).toLocaleDateString("cs-CZ")}
+                </p>
+              )}
+            </header>
+            <section className="space-y-6 px-5 pt-6">
+              <div className="space-y-3">
+                <h2 className="font-extrabold">Co tím získáš</h2>
+                {[
+                  "Cíle a tréninky pro tvého psa od trenéra",
+                  "Odpovědi trenéra přímo u každého tréninku",
+                  "Přehled pokroku a týdenního plánu psa",
+                ].map((text) => (
+                  <p
+                    key={text}
+                    className="flex items-center gap-2.5 text-sm font-semibold"
+                  >
+                    <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success">
+                      <DesignIcon name="auth-142-1518-IconCheck" />
+                    </span>
+                    {text}
+                  </p>
+                ))}
+              </div>
+              {data.email && (
+                <div className="space-y-2">
+                  <p className="text-sm font-bold">E-mail pozvánky</p>
+                  <p className="rounded-field border border-border bg-card p-3.5 break-all">
+                    {data.email}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Pozvánku může přijmout jen účet s tímto e-mailem.
+                  </p>
+                </div>
+              )}
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              {!user ? (
+                <div className="space-y-2.5">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="w-full"
+                  >
+                    <Link
+                      to={data.isExistingUser ? ROUTES.login : ROUTES.signup}
+                      search={{ code, email: data.email ?? undefined }}
+                    >
+                      {" "}
+                      {data.isExistingUser
+                        ? "Přihlásit se a pokračovat k propojení"
+                        : "Přijmout a vytvořit účet"}
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Link
+                      to={data.isExistingUser ? ROUTES.signup : ROUTES.login}
+                      search={{ code, email: data.email ?? undefined }}
+                    >
+                      {data.isExistingUser ? "Vytvořit jiný účet" : "Už mám účet – přihlásit"}
+                    </Link>
+                  </Button>
+                </div>
+              ) : user.role === "trainer" || isMismatch ? (
+                <div className="space-y-4">
+                  <Alert variant="destructive">
+                    <AlertDescription>
+                      {isMismatch
+                        ? "Pozvánka pro jiný e-mail. Přihlas se účtem, pro který je pozvánka určena."
+                        : "Přihlášen jako trenér. Pozvánku může přijmout pouze psovod."}
+                    </AlertDescription>
+                  </Alert>
+                  <Button
+                    size="lg"
+                    className="w-full"
+                    disabled={signOut.isPending}
+                    onClick={() =>
+                      signOut.mutate(undefined, {
+                        onSuccess: () => {
+                          void navigate({ to: ROUTES.login, search: { code }, replace: true })
+                        },
+                      })
+                    }
+                  >
+                    Odhlásit se a použít jiný účet
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <h2 className="font-extrabold">Které psy bude trenér vidět?</h2>
+                  <QueryState
+                    isLoading={dogs.isPending}
+                    error={dogs.error}
+                    onRetry={() => {
+                      void dogs.refetch()
+                    }}
+                    isEmpty={!ownedDogs.length}
+                    empty={
+                      <p className="text-sm text-muted-foreground">
+                        Zatím nemáš žádného psa. Nejdřív založ jeho profil.
+                      </p>
+                    }
+                  >
+                    <div className="space-y-2.5">
+                      {ownedDogs.map((dog) => (
+                        <label
+                          key={dog.id}
+                          htmlFor={`invite-dog-${dog.id}`}
+                          className={`flex min-h-touch cursor-pointer items-center gap-3 rounded-card border p-4 ${selectedIds.includes(dog.id) ? "border-primary bg-accent" : "border-border bg-card"}`}
+                        >
+                          <PesAvatar
+                            name={dog.name}
+                            color={dog.color}
+                            photoUrl={dog.photoUrl}
+                            size="sm"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-extrabold">{dog.name}</span>
+                            <span className="text-xs text-muted-foreground">{dog.breed}</span>
+                          </span>
+                          <Checkbox
+                            id={`invite-dog-${dog.id}`}
+                            checked={selectedIds.includes(dog.id)}
+                            disabled={accept.isPending}
+                            onCheckedChange={(checked) =>
+                              setSelected(
+                                checked
+                                  ? [...selectedIds, dog.id]
+                                  : selectedIds.filter((id) => id !== dog.id),
+                              )
+                            }
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </QueryState>
+                  <CreateDogDialog
+                    existingDogs={ownedDogs}
+                    onSuccess={(dog) => setSelected([...selectedIds, dog.id])}
+                    trigger={
+                      <Button
+                        variant="outline"
+                        disabled={accept.isPending}
+                      >
+                        {ownedDogs.length ? "Nový pes" : "Založit psa"}
+                      </Button>
+                    }
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Trenér uvidí tréninky, záznamy a cíle vybraných psů. Poznámky z deníku zůstanou
+                    jen tvoje.
+                  </p>
+                  <Button
+                    size="lg"
+                    className="w-full"
+                    disabled={accept.isPending || dogs.isPending || dogs.isError}
+                    onClick={() => {
+                      void acceptInvite()
+                    }}
+                  >
+                    {accept.isPending ? "Propojuji…" : "Přijmout pozvánku a sdílet psy"}
+                  </Button>
+                </div>
+              )}
+              <Button
+                asChild
+                variant="ghost"
+                className="w-full"
+              >
+                <Link to={user ? accountHome(user) : ROUTES.signup}>Pokračovat bez trenéra</Link>
+              </Button>
+            </section>
+          </>
+        )}
+      </div>
+    </main>
   )
 }

@@ -12,7 +12,7 @@ export function useCreateGoal(dogId: string) {
     mutationFn: (values: GoalFormValues) => createGoal(dogId, values),
     onSuccess: (goal) => {
       queryClient.setQueryData(dogKeys.goal(goal.id), goal)
-      void queryClient.invalidateQueries({ queryKey: dogKeys.goals(dogId) })
+      void queryClient.invalidateQueries({ queryKey: dogKeys.detail(dogId) })
       toast.success("Cíl je uložený")
     },
     onError: () => {

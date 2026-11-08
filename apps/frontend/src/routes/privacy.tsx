@@ -1,7 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link } from "@tanstack/react-router"
 
-import { Header } from "@/components/Header/Header"
+import { ROUTES } from "@/app/routes"
+import { DesignIcon } from "@/components/DesignIcon"
 import { Seo } from "@/components/Seo"
+import { Button } from "@/components/ui/button"
 
 export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
@@ -11,10 +13,21 @@ function PrivacyPage() {
   return (
     <>
       <Seo title="Zásady zpracování osobních údajů" />
-      <Header nav={null} />
-      <main className="mx-auto w-full max-w-2xl space-y-8 px-4 py-8">
+      <main className="mx-auto w-full max-w-2xl space-y-6 px-5 py-6 text-sm leading-relaxed text-muted-foreground">
+        <Button
+          asChild
+          variant="outline"
+          size="icon"
+        >
+          <Link
+            to={ROUTES.home}
+            aria-label="Zpět do aplikace"
+          >
+            <DesignIcon name="auth-235-1107-IconChevL" />
+          </Link>
+        </Button>
         <div className="space-y-3">
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="text-page font-extrabold tracking-tight text-foreground">
             Zásady zpracování osobních údajů
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -27,7 +40,9 @@ function PrivacyPage() {
           </p>
         </div>
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold tracking-tight">Jaké údaje aplikace používá</h2>
+          <h2 className="text-lg font-extrabold tracking-tight text-foreground">
+            Jaké údaje aplikace používá
+          </h2>
           <p>
             Pro vedení účtu používáme jméno, e-mail, roli psovoda nebo trenéra a zabezpečený otisk
             hesla. Přihlášení zajišťují relační cookies a údaje o relaci, které mohou zahrnovat IP
@@ -40,7 +55,9 @@ function PrivacyPage() {
           </p>
         </section>
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold tracking-tight">K čemu údaje slouží</h2>
+          <h2 className="text-lg font-extrabold tracking-tight text-foreground">
+            K čemu údaje slouží
+          </h2>
           <p>
             Údaje slouží k přihlášení, vedení tréninkového deníku a spolupráci psovoda s trenérem.
             Při sdílení psa jsou jeho tréninkové údaje dostupné připojenému trenérovi. Soukromé
@@ -52,7 +69,9 @@ function PrivacyPage() {
           </p>
         </section>
         <section className="space-y-3">
-          <h2 className="text-xl font-semibold tracking-tight">Souhlas a smazání účtu</h2>
+          <h2 className="text-lg font-extrabold tracking-tight text-foreground">
+            Souhlas a smazání účtu
+          </h2>
           <p>
             Registrace vyžaduje výslovné zaškrtnutí souhlasu se zpracováním osobních údajů. Účet
             můžete kdykoli smazat v záložce Účet volbou Smazat účet a potvrzením heslem. Smazání je

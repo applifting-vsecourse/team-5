@@ -1,6 +1,7 @@
 export const dogKeys = {
   all: ["dogs"] as const,
   lists: () => [...dogKeys.all, "list"] as const,
+  archivedList: () => [...dogKeys.all, "list", "archived"] as const,
   details: () => [...dogKeys.all, "detail"] as const,
   detail: (id: string) => [...dogKeys.details(), id] as const,
   goals: (dogId: string) => [...dogKeys.detail(dogId), "goals"] as const,
@@ -9,4 +10,6 @@ export const dogKeys = {
   goalTrainings: (goalId: string) => [...dogKeys.goal(goalId), "trainings"] as const,
   activities: (dogId: string) => [...dogKeys.detail(dogId), "activities"] as const,
   plannedTrainings: (dogId: string) => [...dogKeys.detail(dogId), "planned-trainings"] as const,
+  notes: (dogId: string) => [...dogKeys.detail(dogId), "notes"] as const,
+  metrics: (dogId: string) => [...dogKeys.detail(dogId), "metrics"] as const,
 }

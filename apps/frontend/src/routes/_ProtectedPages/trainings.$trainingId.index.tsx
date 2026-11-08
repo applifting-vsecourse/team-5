@@ -20,7 +20,7 @@ function TrainingWalkthroughPage() {
 
   if (trainingQuery.isLoading) {
     return (
-      <div className="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-2xl flex-col bg-background">
+      <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col bg-background">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
           <Skeleton className="size-6 rounded-md" />
           <Skeleton className="h-6 w-32" />

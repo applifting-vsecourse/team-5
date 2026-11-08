@@ -10,6 +10,8 @@ export async function createDog(input: CreateDogInput): Promise<Dog> {
       json: {
         name: input.name,
         breed: input.breed ?? undefined,
+        birthDate: input.birthDate,
+        weightKg: input.weightKg,
         color: input.color,
         disciplines: input.disciplines ?? [],
       },

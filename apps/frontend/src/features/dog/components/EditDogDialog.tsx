@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Camera, Check, Plus, Trash2, X } from "lucide-react"
 
+import { StatusChip } from "@/components/StatusChip"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -16,6 +18,8 @@ import { validateDogPhoto } from "@/lib/dogPhoto"
 import { cn } from "@/lib/utils"
 
 import { updateDogInputSchema, type Dog } from "@/features/dog/api/dogSchemas"
+import { dogPlanQueryOptions } from "@/features/dog/api/trainingEditor"
+import { useSetDogDiscipline } from "@/features/dog/hooks/useSetDogDiscipline"
 import { useUpdateDog } from "@/features/dog/hooks/useUpdateDog"
 
 import { DEFAULT_DISCIPLINES, DOG_COLORS } from "./CreateDogDialog"
@@ -30,11 +34,31 @@ type EditDogFormProps = {
 function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
   const [name, setName] = useState(dog.name)
   const [breed, setBreed] = useState(dog.breed ?? "")
+  const [birthDate, setBirthDate] = useState(dog.birthDate ?? "")
+  const [weight, setWeight] = useState(dog.weightKg == null ? "" : String(dog.weightKg))
   const [color, setColor] = useState<number>(dog.color)
   const [disciplines, setDisciplines] = useState<string[]>(dog.disciplines ?? [])
   const [customDiscipline, setCustomDiscipline] = useState("")
   const [customDisciplineError, setCustomDisciplineError] = useState<string | null>(null)
-  const [errors, setErrors] = useState<{ name?: string; breed?: string }>({})
+  const [localArchived, setLocalArchived] = useState<string[]>([])
+  const [disciplineToArchive, setDisciplineToArchive] = useState<string | null>(null)
+  const [errors, setErrors] = useState<{
+    name?: string
+    breed?: string
+    birthDate?: string
+    weightKg?: string
+  }>({})
+
+  const planQuery = useQuery(dogPlanQueryOptions(dog.id))
+  const setDisciplineMutation = useSetDogDiscipline(dog.id)
+
+  const planArchivedNames = (planQuery.data ?? [])
+    .filter((item) => item.isArchived)
+    .map((item) => item.discipline.name)
+
+  const archivedDisciplines = Array.from(new Set([...planArchivedNames, ...localArchived])).filter(
+    (disc) => !disciplines.some((d) => d.toLowerCase() === disc.toLowerCase()),
+  )
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
@@ -83,6 +107,32 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
+  const handleRestoreDiscipline = async (disc: string) => {
+    try {
+      await setDisciplineMutation.mutateAsync({ name: disc, isArchived: false })
+      setDisciplines((prev) =>
+        prev.some((d) => d.toLowerCase() === disc.toLowerCase()) ? prev : [...prev, disc],
+      )
+      setLocalArchived((prev) => prev.filter((d) => d.toLowerCase() !== disc.toLowerCase()))
+    } catch {
+      // Error handled by mutation hook
+    }
+  }
+
+  const handleConfirmArchive = async (disc: string) => {
+    try {
+      await setDisciplineMutation.mutateAsync({ name: disc, isArchived: true })
+      setDisciplines((prev) => prev.filter((d) => d.toLowerCase() !== disc.toLowerCase()))
+      setLocalArchived((prev) =>
+        prev.some((d) => d.toLowerCase() === disc.toLowerCase()) ? prev : [...prev, disc],
+      )
+    } catch {
+      // Error handled by mutation hook
+    } finally {
+      setDisciplineToArchive(null)
+    }
+  }
+
   const handleAddCustomDiscipline = () => {
     const trimmed = customDiscipline.trim()
     if (!trimmed) return
@@ -98,23 +148,46 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
       return
     }
 
-    setDisciplines((prev) => [...prev, trimmed])
+    const matchingArchived = archivedDisciplines.find(
+      (d) => d.toLowerCase() === trimmed.toLowerCase(),
+    )
+    if (matchingArchived) {
+      void handleRestoreDiscipline(matchingArchived)
+    } else {
+      setDisciplines((prev) => [...prev, trimmed])
+    }
     setCustomDiscipline("")
     setCustomDisciplineError(null)
   }
 
   const handleToggleDefaultDiscipline = (disc: string) => {
-    setDisciplines((prev) => {
-      const isSelected = prev.some((d) => d.toLowerCase() === disc.toLowerCase())
-      if (isSelected) {
-        return prev.filter((d) => d.toLowerCase() !== disc.toLowerCase())
+    const isSelected = disciplines.some((d) => d.toLowerCase() === disc.toLowerCase())
+    if (isSelected) {
+      const isSavedOnDog = dog.disciplines?.some((d) => d.toLowerCase() === disc.toLowerCase())
+      if (isSavedOnDog) {
+        setDisciplineToArchive(disc)
+        return
       }
-      return [...prev, disc]
-    })
+      setDisciplines((prev) => prev.filter((d) => d.toLowerCase() !== disc.toLowerCase()))
+    } else {
+      const matchingArchived = archivedDisciplines.find(
+        (d) => d.toLowerCase() === disc.toLowerCase(),
+      )
+      if (matchingArchived) {
+        void handleRestoreDiscipline(matchingArchived)
+      } else {
+        setDisciplines((prev) => [...prev, disc])
+      }
+    }
   }
 
   const handleRemoveDiscipline = (disc: string) => {
-    setDisciplines((prev) => prev.filter((d) => d !== disc))
+    const isSavedOnDog = dog.disciplines?.some((d) => d.toLowerCase() === disc.toLowerCase())
+    if (isSavedOnDog) {
+      setDisciplineToArchive(disc)
+    } else {
+      setDisciplines((prev) => prev.filter((d) => d.toLowerCase() !== disc.toLowerCase()))
+    }
   }
 
   const customDisciplines = disciplines.filter(
@@ -127,6 +200,8 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
     const parseResult = updateDogInputSchema.safeParse({
       name,
       breed,
+      birthDate,
+      weightKg: weight.trim() ? Number(weight) : null,
       color,
       disciplines,
       photo: photoFile,
@@ -134,10 +209,15 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
     })
 
     if (!parseResult.success) {
-      const fieldErrors: { name?: string; breed?: string } = {}
+      const fieldErrors: { name?: string; breed?: string; birthDate?: string; weightKg?: string } =
+        {}
       for (const issue of parseResult.error.issues) {
         if (issue.path[0] === "name") {
           fieldErrors.name = issue.message
+        } else if (issue.path[0] === "birthDate") {
+          fieldErrors.birthDate = issue.message
+        } else if (issue.path[0] === "weightKg") {
+          fieldErrors.weightKg = issue.message
         } else if (issue.path[0] === "breed") {
           fieldErrors.breed = issue.message
         }
@@ -156,6 +236,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
   }
 
   const isPending = updateDogMutation.isPending
+  const isBusy = isPending || setDisciplineMutation.isPending
 
   return (
     <form onSubmit={handleSubmit}>
@@ -174,7 +255,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isPending}
+              disabled={isBusy}
               className="group relative cursor-pointer rounded-full focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden"
               aria-label="Vybrat fotku psa"
             >
@@ -196,7 +277,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
                   variant="outline"
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isPending}
+                  disabled={isBusy}
                   className="min-h-11"
                 >
                   <Camera className="size-4" />
@@ -208,7 +289,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
                     variant="ghost"
                     size="sm"
                     onClick={handleRemovePhoto}
-                    disabled={isPending}
+                    disabled={isBusy}
                     className="min-h-11 text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     <Trash2 className="size-4" />
@@ -226,7 +307,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
             accept="image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif"
             className="sr-only"
             onChange={handlePhotoChange}
-            disabled={isPending}
+            disabled={isBusy}
             data-testid="edit-dog-photo-input"
           />
 
@@ -246,7 +327,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
             }}
             maxLength={40}
             aria-invalid={Boolean(errors.name)}
-            disabled={isPending}
+            disabled={isBusy}
           />
           {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
         </div>
@@ -264,9 +345,54 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
             }}
             maxLength={100}
             aria-invalid={Boolean(errors.breed)}
-            disabled={isPending}
+            disabled={isBusy}
           />
           {errors.breed && <p className="text-xs text-destructive">{errors.breed}</p>}
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="dog-birth-date">Datum narození</Label>
+            <Input
+              id="dog-birth-date"
+              type="date"
+              disabled={isBusy}
+              value={birthDate}
+              onChange={(event) => setBirthDate(event.target.value)}
+              aria-invalid={Boolean(errors.birthDate)}
+              aria-describedby={errors.birthDate ? "dog-birth-error" : undefined}
+            />
+            {errors.birthDate && (
+              <p
+                id="dog-birth-error"
+                className="text-xs text-destructive"
+              >
+                {errors.birthDate}
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="dog-weight">Váha (kg)</Label>
+            <Input
+              id="dog-weight"
+              type="number"
+              min="0.1"
+              max="200"
+              step="0.01"
+              disabled={isBusy}
+              value={weight}
+              onChange={(event) => setWeight(event.target.value)}
+              aria-invalid={Boolean(errors.weightKg)}
+              aria-describedby={errors.weightKg ? "dog-weight-error" : undefined}
+            />
+            {errors.weightKg && (
+              <p
+                id="dog-weight-error"
+                className="text-xs text-destructive"
+              >
+                {errors.weightKg}
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -286,7 +412,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
                   aria-checked={isSelected}
                   aria-label={c.label}
                   onClick={() => setColor(c.value)}
-                  disabled={isPending}
+                  disabled={isBusy}
                   className={cn(
                     "flex size-11 items-center justify-center rounded-full transition-transform focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden active:scale-95",
                     c.className,
@@ -314,7 +440,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
                   role="checkbox"
                   aria-checked={isSelected}
                   onClick={() => handleToggleDefaultDiscipline(disc)}
-                  disabled={isPending}
+                  disabled={isBusy}
                   className={cn(
                     "inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden",
                     isSelected
@@ -340,14 +466,52 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
                   <button
                     type="button"
                     aria-label={`Odebrat disciplínu ${disc}`}
+                    title="Ukončit disciplínu"
                     onClick={() => handleRemoveDiscipline(disc)}
-                    disabled={isPending}
+                    disabled={isBusy}
                     className="relative ml-1 inline-flex size-6 items-center justify-center rounded-full text-primary-foreground after:absolute after:-inset-2 hover:bg-black/20 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden"
                   >
                     <X className="size-3.5" />
                   </button>
                 </span>
               ))}
+            </div>
+          )}
+
+          {disciplineToArchive && (
+            <div
+              role="alert"
+              className="space-y-2 rounded-card border border-destructive/30 bg-destructive/5 p-3 text-xs"
+            >
+              <p className="font-semibold text-destructive">
+                Ukončit disciplínu <strong>{disciplineToArchive}</strong>?
+              </p>
+              <p className="text-muted-foreground">
+                Disciplína se přesune do archivu. Všechny její cíle, tréninky a historie zůstanou
+                zachovány a můžete ji kdykoliv znovu obnovit.
+              </p>
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={setDisciplineMutation.isPending}
+                  onClick={() => void handleConfirmArchive(disciplineToArchive)}
+                  className="min-h-9"
+                >
+                  {setDisciplineMutation.isPending ? "Ukončuji..." : "Ukončit disciplínu"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={setDisciplineMutation.isPending}
+                  onClick={() => setDisciplineToArchive(null)}
+                  className="min-h-9"
+                >
+                  Zrušit
+                </Button>
+              </div>
             </div>
           )}
 
@@ -367,14 +531,14 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
                   handleAddCustomDiscipline()
                 }
               }}
-              disabled={isPending}
+              disabled={isBusy}
               className="min-h-11 flex-1"
             />
             <Button
               type="button"
               variant="outline"
               onClick={handleAddCustomDiscipline}
-              disabled={isPending || !customDiscipline.trim()}
+              disabled={isBusy || !customDiscipline.trim()}
               className="min-h-11"
             >
               <Plus className="size-4" />
@@ -384,6 +548,41 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
           {customDisciplineError && (
             <p className="text-xs text-destructive">{customDisciplineError}</p>
           )}
+
+          {archivedDisciplines.length > 0 && (
+            <div className="space-y-2 border-t border-border/50 pt-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-xs font-semibold text-muted-foreground">
+                  Ukončené disciplíny
+                </Label>
+                <StatusChip tone="muted">Archiv</StatusChip>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Disciplíny ukončené pro tohoto psa. Jejich historie a cíle zůstávají zachovány.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {archivedDisciplines.map((disc) => (
+                  <span
+                    key={disc}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full border border-dashed border-border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground"
+                  >
+                    <span>{disc}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => void handleRestoreDiscipline(disc)}
+                      disabled={isBusy}
+                      className="h-7 px-2 text-xs font-semibold text-primary hover:bg-primary/10"
+                      aria-label={`Obnovit disciplínu ${disc}`}
+                    >
+                      Obnovit
+                    </Button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -392,14 +591,14 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
           type="button"
           variant="outline"
           onClick={onClose}
-          disabled={isPending}
+          disabled={isBusy}
           className="min-h-11"
         >
           Zrušit
         </Button>
         <Button
           type="submit"
-          disabled={isPending}
+          disabled={isBusy}
           className="min-h-11"
         >
           {isPending ? "Ukládám..." : "Uložit změny"}

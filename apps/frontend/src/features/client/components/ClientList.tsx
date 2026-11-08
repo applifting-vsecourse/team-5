@@ -1,127 +1,271 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { AlertCircle, UserPlus, Users } from "lucide-react"
+import { differenceInCalendarDays } from "date-fns"
+import { Mail, Search, UserPlus, Users } from "lucide-react"
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { EmptyState } from "@/components/EmptyState"
+import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 
-import { clientsQueryOptions } from "@/features/client/api/clientsQueryOptions"
+import { useCancelInvitation } from "@/features/client/api/cancelInvitation"
+import type { Invitation } from "@/features/client/api/clientSchemas"
+import {
+  clientInvitationsQueryOptions,
+  clientsQueryOptions,
+} from "@/features/client/api/clientsQueryOptions"
+import { trainerOverviewQueryOptions } from "@/features/client/api/trainerOverview"
 
-import { ClientCard } from "./ClientCard"
+import { ClientCard, type ClientListExtras } from "./ClientCard"
+import { CopyInviteLinkButton } from "./CopyInviteLinkButton"
 import { InviteClientDialog } from "./InviteClientDialog"
-import { UnusedInvitations } from "./UnusedInvitations"
+
+type FilterId = "all" | "attention" | "active" | "invite"
+
+function lastActivityLabel(
+  lastTraining: { title: string; completedAt: Date } | null | undefined,
+  dogCount: number,
+  now: Date,
+): string {
+  if (!lastTraining) return dogCount ? "Zatím bez tréninku" : "Zatím bez sdíleného psa"
+  const days = differenceInCalendarDays(now, lastTraining.completedAt)
+  const when = days <= 0 ? "Dnes" : days === 1 ? "Včera" : `Před ${days} dny`
+  return `${when} · ${lastTraining.title}`
+}
+
+function formatExpirationDate(date: Date): string {
+  return `vyprší ${date.getDate()}. ${date.getMonth() + 1}.`
+}
+
+function InviteRow({ invitation }: { invitation: Invitation }) {
+  const cancelMutation = useCancelInvitation()
+  return (
+    <li className="flex min-h-touch items-center gap-3 rounded-card border border-dashed border-border bg-card p-3">
+      <span
+        aria-hidden
+        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground"
+      >
+        <Mail className="size-5" />
+      </span>
+      <span className="min-w-0 flex-1 space-y-0.5">
+        <span className="block truncate text-sm font-bold">
+          {invitation.email ?? `Kód ${invitation.code}`}
+        </span>
+        <span className="block text-xs font-medium text-muted-foreground">
+          Pozvánka čeká · {formatExpirationDate(new Date(invitation.expiresAt))}
+        </span>
+      </span>
+      <CopyInviteLinkButton
+        code={invitation.code}
+        isCompact
+      />
+      <Button
+        variant="ghost"
+        size="sm"
+        className="shrink-0 font-bold text-destructive"
+        onClick={() => cancelMutation.mutate(invitation.id)}
+        disabled={cancelMutation.isPending}
+        aria-label={`Zrušit pozvánku ${invitation.code}`}
+      >
+        Zrušit
+      </Button>
+    </li>
+  )
+}
 
 export function ClientList() {
   const [isInviteOpen, setIsInviteOpen] = useState(false)
-  const { data: clients, isLoading, isError, refetch } = useQuery(clientsQueryOptions())
+  const [filter, setFilter] = useState<FilterId>("all")
+  const [search, setSearch] = useState("")
+  const clientsQuery = useQuery(clientsQueryOptions())
+  const overviewQuery = useQuery(trainerOverviewQueryOptions())
+  const invitationsQuery = useQuery(clientInvitationsQueryOptions())
+  const now = useMemo(() => new Date(), [])
+  const clients = useMemo(() => clientsQuery.data ?? [], [clientsQuery.data])
+  const invitations = invitationsQuery.data ?? []
+  const overview = overviewQuery.data
+  const attentionByClient = useMemo(() => {
+    const map = new Map<string, { kind: "reply" | "inactive" | "low-success"; label: string }>()
+    for (const item of overview?.attention ?? []) {
+      if (!map.has(item.client.id)) {
+        map.set(item.client.id, { kind: item.kind, label: item.label })
+      }
+    }
+    return map
+  }, [overview?.attention])
+  const overviewByClient = useMemo(() => {
+    return new Map((overview?.clients ?? []).map((client) => [client.id, client]))
+  }, [overview?.clients])
+  const extrasByClient = useMemo(() => {
+    const map = new Map<string, ClientListExtras>()
+    for (const client of clients) {
+      const overviewClient = overviewByClient.get(client.id)
+      const attention = attentionByClient.get(client.id)
+      map.set(client.id, {
+        successRate: overviewClient?.successRate ?? null,
+        lastActivity: lastActivityLabel(
+          overviewClient?.lastTraining ?? null,
+          client.dogs.length,
+          now,
+        ),
+        attentionLabel: attention?.label ?? null,
+        attentionKind: attention?.kind ?? null,
+      })
+    }
+    return map
+  }, [attentionByClient, clients, now, overviewByClient])
+  const query = search.trim().toLowerCase()
+  const filteredClients = clients.filter((client) => {
+    if (filter === "invite") return false
+    if (filter === "attention" && !attentionByClient.has(client.id)) return false
+    if (filter === "active" && client.dogs.length === 0) return false
+    if (!query) return true
+    const haystack = [client.name, client.email, ...client.dogs.map((dog) => dog.name)]
+      .join(" ")
+      .toLowerCase()
+    return haystack.includes(query)
+  })
+  const filteredInvites =
+    filter === "all" || filter === "invite"
+      ? invitations.filter((invitation) => {
+          if (!query) return true
+          return `${invitation.email ?? ""} ${invitation.code}`.toLowerCase().includes(query)
+        })
+      : []
+  const isLoading = clientsQuery.isLoading
+  const isError = clientsQuery.isError
+  const counts = {
+    all: clients.length + invitations.length,
+    attention: attentionByClient.size,
+    active: clients.filter((client) => client.dogs.length > 0).length,
+    invite: invitations.length,
+  }
+  const filters: { id: FilterId; label: string; count: number }[] = [
+    { id: "all", label: "Vše", count: counts.all },
+    { id: "attention", label: "Pozornost", count: counts.attention },
+    { id: "active", label: "Aktivní", count: counts.active },
+    { id: "invite", label: "Pozvání", count: counts.invite },
+  ]
+  const isListEmpty = filteredClients.length === 0 && filteredInvites.length === 0
+  const hasNoClientsAtAll = clients.length === 0 && invitations.length === 0
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Nadpis a akce (Figma node 50:97) */}
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Vaši klienti</h1>
-        {clients && clients.length > 0 && (
-          <Button
-            variant="default"
-            className="min-h-11 font-medium"
-            onClick={() => setIsInviteOpen(true)}
-            aria-label="Pozvat klienta"
-          >
-            <UserPlus
-              className="mr-1.5 size-4"
-              aria-hidden="true"
-            />
-            Pozvat klienta
-          </Button>
-        )}
+    <div className="flex flex-col gap-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-page font-extrabold tracking-tight text-foreground">Klienti</h1>
+          <p className="text-sm text-muted-foreground">
+            {counts.active} aktivních
+            {counts.invite > 0 ? ` · ${counts.invite} pozvánka čeká` : ""}
+          </p>
+        </div>
+        <Button
+          variant="default"
+          size="icon"
+          className="size-11 shrink-0"
+          aria-label="Pozvat klienta"
+          onClick={() => setIsInviteOpen(true)}
+        >
+          <UserPlus
+            className="size-5"
+            aria-hidden
+          />
+        </Button>
       </div>
 
-      {/* Loading state */}
-      {isLoading && (
-        <div
-          className="flex flex-col gap-2"
-          aria-label="Načítání klientů"
-        >
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-16 w-full animate-pulse rounded-lg border border-border bg-muted/40"
-            />
-          ))}
-        </div>
-      )}
+      <div className="relative">
+        <Search
+          className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden
+        />
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Hledat klienta nebo psa"
+          aria-label="Hledat klienta nebo psa"
+          className="h-11 rounded-field bg-card pl-9"
+        />
+      </div>
 
-      {/* Error state */}
-      {isError && (
-        <Alert variant="destructive">
-          <AlertCircle
-            className="size-4"
-            aria-hidden="true"
-          />
-          <AlertTitle>Chyba při načítání klientů</AlertTitle>
-          <AlertDescription className="mt-2 flex flex-col items-start gap-3">
-            <span>
-              Nepodařilo se načíst seznam klientů. Zkontrolujte prosím připojení k síti a zkuste to
-              znovu.
-            </span>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="min-h-11"
-              onClick={() => void refetch()}
-            >
-              Zkusit znovu
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Empty state */}
-      {!isLoading && !isError && clients && clients.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-8 text-center sm:p-12">
-          <div className="flex size-12 items-center justify-center rounded-full bg-muted">
-            <Users
-              className="size-6 text-muted-foreground"
-              aria-hidden="true"
-            />
-          </div>
-          <h2 className="mt-4 text-base font-semibold text-foreground">
-            Zatím nemáte žádné klienty
-          </h2>
-          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            Pozvěte prvního klienta a získejte přístup k tréninkovým plánům a aktivitám jeho psů.
-          </p>
-          <Button
-            variant="default"
-            className="mt-6 min-h-11"
-            onClick={() => setIsInviteOpen(true)}
+      <div
+        role="tablist"
+        aria-label="Filtr klientů"
+        className="flex gap-2 overflow-x-auto pb-1"
+      >
+        {filters.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={filter === item.id}
+            onClick={() => setFilter(item.id)}
+            className={cn(
+              "inline-flex min-h-touch shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-bold",
+              filter === item.id
+                ? "border-foreground bg-foreground text-background"
+                : item.id === "attention"
+                  ? "border-primary/30 bg-accent text-primary"
+                  : "border-border bg-card text-foreground",
+            )}
           >
-            <UserPlus
-              className="mr-1.5 size-4"
-              aria-hidden="true"
-            />
-            Pozvěte prvního klienta
-          </Button>
-        </div>
-      )}
+            {item.label}
+            <span className="tabular-nums opacity-80">{item.count}</span>
+          </button>
+        ))}
+      </div>
 
-      {/* Populated list */}
-      {!isLoading && !isError && clients && clients.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {clients.map((client) => (
-            <ClientCard
-              key={client.id}
-              client={client}
-            />
-          ))}
-        </div>
-      )}
+      <QueryState
+        isLoading={isLoading}
+        error={isError ? (clientsQuery.error ?? new Error("Nepodařilo se načíst klienty.")) : null}
+        isEmpty={hasNoClientsAtAll}
+        onRetry={() => void clientsQuery.refetch()}
+        loadingLabel="Načítání klientů"
+        errorTitle="Chyba při načítání klientů"
+        errorDescription="Nepodařilo se načíst seznam klientů. Zkontroluj připojení a zkus to znovu."
+        empty={
+          <EmptyState
+            icon={Users}
+            chip="BEZ KLIENTŮ"
+            title="Zatím nemáte žádné klienty"
+            description="Pozvěte prvního klienta a získejte přístup k tréninkovým plánům a aktivitám jeho psů."
+            action={
+              <Button
+                size="lg"
+                className="w-full"
+                onClick={() => setIsInviteOpen(true)}
+              >
+                <UserPlus
+                  className="size-4"
+                  aria-hidden
+                />
+                Pozvěte prvního klienta
+              </Button>
+            }
+          />
+        }
+      >
+        {isListEmpty ? (
+          <p className="text-sm text-muted-foreground">Nic neodpovídá filtru nebo hledání.</p>
+        ) : (
+          <ul className="flex flex-col gap-2.5">
+            {filteredClients.map((client) => (
+              <ClientCard
+                key={client.id}
+                client={client}
+                extras={extrasByClient.get(client.id)}
+              />
+            ))}
+            {filteredInvites.map((invitation) => (
+              <InviteRow
+                key={invitation.id}
+                invitation={invitation}
+              />
+            ))}
+          </ul>
+        )}
+      </QueryState>
 
-      {/* Unused invitations */}
-      <UnusedInvitations />
-
-      {/* Invite dialog stub for #58 */}
       <InviteClientDialog
         isOpen={isInviteOpen}
         onOpenChange={setIsInviteOpen}

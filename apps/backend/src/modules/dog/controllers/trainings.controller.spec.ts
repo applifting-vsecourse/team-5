@@ -25,6 +25,8 @@ describe('TrainingsController', () => {
       const controller = new TrainingsController(service);
 
       const fakeLog: WorkoutLog = {
+        mistakeDetails: [],
+        trainingId: 'session-1',
         id: 'log1',
         dogId: 'dog1',
         goalId: 'goal1',
@@ -58,6 +60,7 @@ describe('TrainingsController', () => {
 
       expect(service.completeTraining).toHaveBeenCalledWith(user, 't1', dto);
       expect(result).toEqual({
+        mistakeDetails: [],
         id: 'log1',
         dogId: 'dog1',
         authorId: 'u1',
@@ -81,6 +84,7 @@ describe('TrainingsController', () => {
 
   describe('skip and undoSkip (#75)', () => {
     const aTraining = (status: TrainingStatus): ScheduledTraining => ({
+      trainingId: 'session-1',
       id: 't1',
       goalId: 'g1',
       dogId: 'dog1',
@@ -102,6 +106,7 @@ describe('TrainingsController', () => {
       expect(service.skipTraining).toHaveBeenCalledWith(user, 't1');
       expect(result).toEqual({
         id: 't1',
+        trainingId: 'session-1',
         goalId: 'g1',
         dogId: 'dog1',
         date: '2026-10-22',

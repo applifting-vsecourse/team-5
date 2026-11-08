@@ -10,6 +10,9 @@ export class VerifyInvitationResponseDto {
   @ApiProperty()
   trainerName!: string;
 
+  @ApiProperty({ type: String, format: 'date-time' })
+  expiresAt!: Date;
+
   @ApiPropertyOptional({ type: String, nullable: true })
   email?: string | null;
 

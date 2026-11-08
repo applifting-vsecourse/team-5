@@ -81,6 +81,20 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
         }
         return;
       }
+      if (ctx.path === '/update-user' && ctx.body?.name !== undefined) {
+        const name = ctx.body.name;
+        if (
+          typeof name !== 'string' ||
+          !name.trim() ||
+          name.trim().length > 100
+        ) {
+          throw new APIError('BAD_REQUEST', {
+            code: 'INVALID_NAME',
+            message: 'Jméno musí mít 1 až 100 znaků.',
+          });
+        }
+        return { context: { body: { ...ctx.body, name: name.trim() } } };
+      }
       if (ctx.path !== '/sign-up/email') return;
       try {
         const name = validateRegistration(ctx.body ?? {});
@@ -131,6 +145,7 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
     },
   },
   user: {
+    changeEmail: { enabled: true },
     deleteUser: { enabled: true },
     additionalFields: {
       role: {

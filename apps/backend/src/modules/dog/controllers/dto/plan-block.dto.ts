@@ -1,3 +1,4 @@
+import { StepOutcome } from '@/generated/prisma/client';
 import { PlanBlock } from '@/modules/dog/domain/plan-block';
 import { Trim } from '@/shared/validation/trim';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -11,6 +12,7 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 
 // Title mirrors the plan_block column; instruction and criterion are TEXT,
@@ -51,6 +53,12 @@ export class CreatePlanBlockDto {
   @IsString()
   @MaxLength(CRITERION_MAX_LENGTH)
   criterion?: string;
+  @ApiPropertyOptional({ minimum: 0, maximum: 480 })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsInt()
+  @Min(0)
+  @Max(480)
+  durationMinutes?: number;
 
   @ApiPropertyOptional({
     description:
@@ -94,6 +102,12 @@ export class UpdatePlanBlockDto {
   @IsString()
   @MaxLength(CRITERION_MAX_LENGTH)
   criterion?: string;
+  @ApiPropertyOptional({ minimum: 0, maximum: 480 })
+  @ValidateIf((_, value) => value !== undefined)
+  @IsInt()
+  @Min(0)
+  @Max(480)
+  durationMinutes?: number;
 }
 
 export class ReorderPlanBlocksDto {
@@ -108,6 +122,10 @@ export class ReorderPlanBlocksDto {
 }
 
 export class PlanBlockResponseDto {
+  @ApiProperty()
+  trainingId!: string;
+  @ApiProperty()
+  durationMinutes!: number;
   @ApiProperty()
   id!: string;
 
@@ -126,6 +144,9 @@ export class PlanBlockResponseDto {
   @ApiPropertyOptional({ nullable: true })
   criterion!: string | null;
 
+  @ApiProperty({ enum: StepOutcome, nullable: true })
+  outcome!: StepOutcome | null;
+
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: Date;
 
@@ -134,12 +155,15 @@ export class PlanBlockResponseDto {
 
   static fromDomain(block: PlanBlock): PlanBlockResponseDto {
     return {
+      trainingId: block.trainingId,
+      durationMinutes: block.durationMinutes,
       id: block.id,
       goalId: block.goalId,
       position: block.position,
       title: block.title,
       instruction: block.instruction,
       criterion: block.criterion,
+      outcome: block.outcome,
       createdAt: block.createdAt,
       updatedAt: block.updatedAt,
     };

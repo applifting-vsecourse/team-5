@@ -23,6 +23,21 @@ const aDog = (overrides: Partial<Dog> = {}): Dog => ({
 });
 
 describe('DogsService', () => {
+  it.each(['trainer', 'admin'])(
+    'rejects own-dog creation for %s',
+    async (role) => {
+      const repository = mock<DogRepository>();
+      const service = new DogsService(repository, mock<DogAccessService>());
+      await expect(
+        service.createDog({ id: 'trainer', role } as Identity, {
+          name: 'Argo',
+          color: 1,
+        }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.createDog).not.toHaveBeenCalled();
+    },
+  );
+
   it('returns dogs from the repository for the given user', async () => {
     const dogs = [aDog()];
     const repository = mock<DogRepository>();
@@ -32,7 +47,51 @@ describe('DogsService', () => {
     const user = { id: 'u1' } as Identity;
 
     await expect(service.getDogs(user)).resolves.toEqual(dogs);
-    expect(repository.getDogsByOwnerId).toHaveBeenCalledWith('u1');
+    expect(repository.getDogsByOwnerId).toHaveBeenCalledWith('u1', {});
+  });
+
+  it('lists archived dogs when asked (#57)', async () => {
+    const dogs = [aDog({ isArchived: true })];
+    const repository = mock<DogRepository>();
+    repository.getDogsByOwnerId.mockResolvedValue(dogs);
+
+    const service = new DogsService(repository, mock<DogAccessService>());
+    const user = { id: 'u1' } as Identity;
+
+    await expect(service.getDogs(user, { archived: true })).resolves.toEqual(
+      dogs,
+    );
+    expect(repository.getDogsByOwnerId).toHaveBeenCalledWith('u1', {
+      archived: true,
+    });
+  });
+
+  it('archives an owned dog (#57)', async () => {
+    const archived = aDog({ isArchived: true });
+    const repository = mock<DogRepository>();
+    const dogAccess = mock<DogAccessService>();
+    dogAccess.getOwnedDog.mockResolvedValue(aDog());
+    repository.setArchived.mockResolvedValue(archived);
+
+    const service = new DogsService(repository, dogAccess);
+    const user = { id: 'u1' } as Identity;
+
+    await expect(service.archiveDog(user, 'd1')).resolves.toEqual(archived);
+    expect(repository.setArchived).toHaveBeenCalledWith('d1', 'u1', true);
+  });
+
+  it('restores an archived dog (#57)', async () => {
+    const restored = aDog({ isArchived: false });
+    const repository = mock<DogRepository>();
+    const dogAccess = mock<DogAccessService>();
+    dogAccess.getOwnedDog.mockResolvedValue(aDog({ isArchived: true }));
+    repository.setArchived.mockResolvedValue(restored);
+
+    const service = new DogsService(repository, dogAccess);
+    const user = { id: 'u1' } as Identity;
+
+    await expect(service.restoreDog(user, 'd1')).resolves.toEqual(restored);
+    expect(repository.setArchived).toHaveBeenCalledWith('d1', 'u1', false);
   });
 
   it('creates a dog owned by the signed-in user', async () => {
@@ -160,6 +219,29 @@ describe('DogsService', () => {
   });
 
   describe('updateDog', () => {
+    it('persists profile facts and clears them when the owner removes them', async () => {
+      const repository = mock<DogRepository>();
+      const access = mock<DogAccessService>();
+      access.getOwnedDog.mockResolvedValue(aDog());
+      repository.updateDog.mockResolvedValue(aDog());
+      const service = new DogsService(repository, access);
+      const owner = { id: 'u1' } as Identity;
+      await service.updateDog(owner, 'd1', {
+        birthDate: '2020-01-01',
+        weightKg: 21.45,
+      });
+      expect(repository.updateDog).toHaveBeenLastCalledWith(
+        'd1',
+        'u1',
+        expect.objectContaining({ birthDate: '2020-01-01', weightKg: 21.45 }),
+      );
+      await service.updateDog(owner, 'd1', { birthDate: '', weightKg: null });
+      expect(repository.updateDog).toHaveBeenLastCalledWith(
+        'd1',
+        'u1',
+        expect.objectContaining({ birthDate: null, weightKg: null }),
+      );
+    });
     it('lets the owner edit the dog', async () => {
       const updated = aDog({ name: 'Rexík' });
       const repository = mock<DogRepository>();

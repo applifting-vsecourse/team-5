@@ -43,7 +43,7 @@ function WeekPage() {
   return (
     <>
       <Seo title="Týden" />
-      <div className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
+      <div className="mx-auto w-full max-w-2xl px-gutter pt-4 pb-6 md:py-8">
         {/* Remount per week, so the selected day starts again from today or Monday. */}
         <WeekView
           key={weekStart}

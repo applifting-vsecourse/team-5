@@ -1,6 +1,7 @@
 import { Dog } from '@/modules/dog/domain/dog';
 import { Goal } from '@/modules/dog/domain/goal';
 import { GoalRepository } from '@/modules/dog/repositories/goal.repository';
+import { ScheduledTrainingRepository } from '@/modules/dog/repositories/scheduled-training.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
@@ -21,6 +22,10 @@ const aDog = (overrides: Partial<Dog> = {}): Dog => ({
 });
 
 const aGoal = (overrides: Partial<Goal> = {}): Goal => ({
+  disciplineId: 'discipline-1',
+  currentStepId: null,
+  criterion: null,
+  deadline: null,
   id: 'g1',
   dogId: 'd1',
   createdById: 'u1',
@@ -43,17 +48,23 @@ const setup = (): {
   service: GoalsService;
   goalRepository: MockProxy<GoalRepository>;
   dogAccess: MockProxy<DogAccessService>;
+  scheduledTrainings: MockProxy<ScheduledTrainingRepository>;
 } => {
   const goalRepository = mock<GoalRepository>();
   const dogAccess = mock<DogAccessService>();
+  const scheduledTrainings = mock<ScheduledTrainingRepository>();
   // The owner sees dog d1; anyone else gets the same 404 as for a missing dog.
   dogAccess.getAccessibleDog.mockImplementation((user, dogId) =>
     (user.id === 'u1' || user.id === 'u9') && dogId === 'd1'
       ? Promise.resolve(aDog())
       : Promise.reject(new NotFoundException()),
   );
-  const service = new GoalsService(goalRepository, dogAccess);
-  return { service, goalRepository, dogAccess };
+  const service = new GoalsService(
+    goalRepository,
+    dogAccess,
+    scheduledTrainings,
+  );
+  return { service, goalRepository, dogAccess, scheduledTrainings };
 };
 
 describe('GoalsService', () => {
@@ -136,6 +147,7 @@ describe('GoalsService', () => {
       ).resolves.toEqual(created);
 
       expect(goalRepository.createGoal).toHaveBeenCalledWith({
+        criterion: null,
         dogId: 'd1',
         createdById: 'u1',
         title: 'Spolehlivá chůze u nohy',
@@ -146,7 +158,7 @@ describe('GoalsService', () => {
       });
     });
 
-    it('stores a goal without discipline and principle as null', async () => {
+    it('uses the default discipline and clears an empty principle', async () => {
       const { service, goalRepository } = setup();
       goalRepository.createGoal.mockResolvedValue(aGoal());
 
@@ -157,7 +169,16 @@ describe('GoalsService', () => {
       });
 
       expect(goalRepository.createGoal).toHaveBeenCalledWith(
-        expect.objectContaining({ discipline: null, principle: null }),
+        expect.objectContaining({ discipline: 'Obecné', principle: null }),
+      );
+    });
+
+    it('uses the default discipline when no discipline is supplied', async () => {
+      const { service, goalRepository } = setup();
+      goalRepository.createGoal.mockResolvedValue(aGoal());
+      await service.createGoal(owner, 'd1', { title: 'Pac' });
+      expect(goalRepository.createGoal).toHaveBeenCalledWith(
+        expect.objectContaining({ discipline: 'Obecné' }),
       );
     });
 
@@ -184,6 +205,19 @@ describe('GoalsService', () => {
   });
 
   describe('updateGoal', () => {
+    it('moves a goal to the default discipline when cleared', async () => {
+      const { service, goalRepository } = setup();
+      goalRepository.getGoalById.mockResolvedValue(aGoal());
+      goalRepository.updateGoal.mockResolvedValue(
+        aGoal({ discipline: 'Obecné' }),
+      );
+      await service.updateGoal(owner, 'g1', { discipline: '   ' });
+      expect(goalRepository.updateGoal).toHaveBeenCalledWith(
+        'g1',
+        expect.objectContaining({ discipline: 'Obecné' }),
+      );
+    });
+
     it('updates a goal of the user’s dog', async () => {
       const { service, goalRepository } = setup();
       goalRepository.getGoalById.mockResolvedValue(aGoal());
@@ -197,6 +231,7 @@ describe('GoalsService', () => {
       });
 
       expect(goalRepository.updateGoal).toHaveBeenCalledWith('g1', {
+        criterion: undefined,
         title: 'Start na povel',
         discipline: 'Canicross',
         principle: undefined,
@@ -244,6 +279,32 @@ describe('GoalsService', () => {
         service.updateGoal(stranger, 'g1', { title: 'Cizí' }),
       ).rejects.toThrow(NotFoundException);
       expect(goalRepository.updateGoal).not.toHaveBeenCalled();
+    });
+
+    it('clears planned trainings when a goal is completed or archived', async () => {
+      const { service, goalRepository, scheduledTrainings } = setup();
+      goalRepository.getGoalById.mockResolvedValue(aGoal());
+      goalRepository.updateGoal.mockResolvedValue(
+        aGoal({ status: 'COMPLETED' }),
+      );
+
+      await service.updateGoal(owner, 'g1', { status: 'COMPLETED' });
+
+      expect(scheduledTrainings.deletePlannedForGoal).toHaveBeenCalledWith(
+        'g1',
+      );
+    });
+
+    it('does not clear planned trainings when restoring a goal to active', async () => {
+      const { service, goalRepository, scheduledTrainings } = setup();
+      goalRepository.getGoalById.mockResolvedValue(
+        aGoal({ status: 'ARCHIVED' }),
+      );
+      goalRepository.updateGoal.mockResolvedValue(aGoal({ status: 'ACTIVE' }));
+
+      await service.updateGoal(owner, 'g1', { status: 'ACTIVE' });
+
+      expect(scheduledTrainings.deletePlannedForGoal).not.toHaveBeenCalled();
     });
   });
 

@@ -1,19 +1,14 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import {
-  Calendar,
-  CalendarClock,
-  ChevronLeft,
-  ChevronRight,
-  SkipForward,
-  Undo2,
-} from "lucide-react"
+import { Calendar, Ellipsis } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
+import { DesignIcon } from "@/components/DesignIcon"
+import { EmptyState } from "@/components/EmptyState"
+import { QueryState } from "@/components/QueryState"
+import { StripCard } from "@/components/StripCard"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   addCalendarDays,
@@ -28,278 +23,222 @@ import {
 import { dogColorClass } from "@/lib/dogColors"
 import { cn } from "@/lib/utils"
 
-import { weekTrainingsQueryOptions, type WeekTraining } from "@/features/week/api/weekQueryOptions"
+import {
+  weekMetricsQueryOptions,
+  weekTrainingsQueryOptions,
+  type WeekTraining,
+} from "@/features/week/api/weekQueryOptions"
 import { MoveTrainingDialog } from "@/features/week/components/MoveTrainingDialog"
-import { SkipTrainingDialog } from "@/features/week/components/SkipTrainingDialog"
+import { WeekPickerDialog } from "@/features/week/components/WeekPickerDialog"
 import { useUndoSkip } from "@/features/week/hooks/useSkipTraining"
 
-import { WeekPickerDialog } from "./WeekPickerDialog"
-
-const STATUS_LABELS: Record<WeekTraining["status"], string> = {
-  PLANNED: "Naplánováno",
-  COMPLETED: "Odcvičeno",
-  SKIPPED: "Přeskočeno",
-}
-
-// 1 cvik, 2–4 cviky, 5 cviků.
-const exerciseCount = (count: number): string => {
-  if (count === 1) return "1 cvik"
-  if (count >= 2 && count <= 4) return `${count} cviky`
-  return `${count} cviků`
-}
-
-// A skip can be taken back until the training's week is over (#75).
-function UndoSkipButton({ training, heading }: { training: WeekTraining; heading: string }) {
-  const undoSkip = useUndoSkip(training.id)
-
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      className="min-h-11"
-      aria-label={`Vrátit přeskočení tréninku ${heading}`}
-      disabled={undoSkip.isPending}
-      onClick={() => undoSkip.mutate()}
-    >
-      <Undo2 className="size-4" />
-      Vrátit
-    </Button>
-  )
-}
-
-type WeekTrainingCardProps = {
-  training: WeekTraining
-  today: CalendarDate
-}
-
-function WeekTrainingCard({ training, today }: WeekTrainingCardProps) {
-  const [isMoveOpen, setIsMoveOpen] = useState(false)
-  const [isSkipOpen, setIsSkipOpen] = useState(false)
-  const titles = training.exercises.map((exercise) => exercise.title)
+function WeekTrainingCard({ training, today }: { training: WeekTraining; today: CalendarDate }) {
+  const [isMoveOpen, setMoveOpen] = useState(false)
+  const undo = useUndoSkip(training.id)
   const isPlanned = training.status === "PLANNED"
-  const canUndoSkip =
+  const isTodayOrOverdue = training.date <= today
+  const canUndo =
     training.status === "SKIPPED" && startOfWeekOf(training.date) >= startOfWeekOf(today)
-  const heading = `${training.dog.name} · ${training.goal.title}`
-
+  const title = training.training?.title ?? training.goal.title
+  const heading = `${training.dog.name} · ${title}`
+  const duration = training.exercises.every((exercise) => exercise.durationMinutes !== undefined)
+    ? training.exercises.reduce((sum, exercise) => sum + (exercise.durationMinutes ?? 0), 0)
+    : null
+  const subtitle = [
+    training.dog.name,
+    duration ? `${isPlanned ? "" : "plán "}${duration} min` : null,
+    training.successRate != null ? `${training.successRate} %` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ")
   return (
-    <li className="relative overflow-hidden rounded-lg border border-border bg-card py-3 pr-3 pl-4 transition-colors has-[a:hover]:border-foreground/30">
-      {/* The dog's colour tells the dogs apart, as in the day strip above. */}
-      <span
-        aria-hidden="true"
-        className={cn("absolute inset-y-0 left-0 w-1", dogColorClass(training.dog.color))}
-      />
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-medium text-foreground">
-          {isPlanned ? (
-            // The link covers the whole card (::after), so the card still opens
-            // the walkthrough (#76); the actions below sit on top of it.
+    <StripCard
+      as="li"
+      dogColor={training.dog.color}
+      className="rounded-card"
+    >
+      <div className="flex min-w-0 flex-1 items-center gap-2 py-3 pr-3 pl-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-bold break-words">{title}</h3>
+            {!isPlanned && (
+              <span
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
+                  training.status === "COMPLETED"
+                    ? "bg-success text-success-foreground"
+                    : "bg-secondary text-muted-foreground",
+                )}
+              >
+                <DesignIcon name={training.status === "COMPLETED" ? "week-Check" : "week-X"} />
+                {training.status === "COMPLETED" ? "Hotovo" : "Přeskočeno"}
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
+        </div>
+        {isPlanned ? (
+          <Button
+            asChild
+            size="sm"
+            variant={isTodayOrOverdue ? "default" : "secondary"}
+            className={cn(
+              "shrink-0 gap-1.5 rounded-field",
+              !isTodayOrOverdue && "text-muted-foreground",
+            )}
+          >
             <Link
               to="/trainings/$trainingId"
               params={{ trainingId: training.id }}
-              className="outline-hidden transition-colors after:absolute after:inset-0 after:rounded-lg hover:text-primary focus-visible:after:ring-2 focus-visible:after:ring-ring focus-visible:after:ring-inset"
-              aria-label={`Trénink ${heading}`}
+              aria-label={`${isTodayOrOverdue ? "Začít trénink" : "Trénink"} ${heading}`}
             >
-              {heading}
+              <DesignIcon name={isTodayOrOverdue ? "week-Play" : "week-Cal"} />
+              {isTodayOrOverdue ? "Začít" : "Naplánováno"}
             </Link>
-          ) : (
-            heading
-          )}
-        </h3>
-        <Badge
-          variant={isPlanned ? "secondary" : "outline"}
-          className={cn(
-            "shrink-0 font-mono text-xs font-semibold tracking-wider uppercase",
-            training.status === "COMPLETED" && "border-primary/40 bg-primary/10 text-primary",
-          )}
-        >
-          {STATUS_LABELS[training.status]}
-        </Badge>
+          </Button>
+        ) : training.activityId ? (
+          <Button
+            asChild
+            size="sm"
+            variant="secondary"
+            className="shrink-0 gap-1.5 rounded-field font-bold"
+          >
+            <Link
+              to="/dogs/$dogId/activities/$activityId"
+              params={{ dogId: training.dog.id, activityId: training.activityId }}
+              aria-label={`Záznam tréninku ${heading}`}
+            >
+              <DesignIcon name="history-Msg1" />
+              Záznam
+            </Link>
+          </Button>
+        ) : null}
+        {isPlanned && (
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={`Možnosti tréninku ${heading}`}
+            className="shrink-0"
+            onClick={() => setMoveOpen(true)}
+          >
+            <Ellipsis />
+          </Button>
+        )}
+        {canUndo && (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={undo.isPending}
+            onClick={() => undo.mutate()}
+          >
+            Vrátit přeskočení
+          </Button>
+        )}
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {titles.length === 0
-          ? "Plán zatím nemá žádný cvik."
-          : `${exerciseCount(titles.length)} · ${titles.join(", ")}`}
-      </p>
-      {isPlanned ? (
-        <>
-          <div className="relative mt-3 flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="min-h-11"
-              aria-label={`Přesunout trénink ${heading}`}
-              onClick={() => setIsMoveOpen(true)}
-            >
-              <CalendarClock className="size-4" />
-              Přesunout
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="min-h-11"
-              aria-label={`Přeskočit trénink ${heading}`}
-              onClick={() => setIsSkipOpen(true)}
-            >
-              <SkipForward className="size-4" />
-              Přeskočit
-            </Button>
-          </div>
-          <MoveTrainingDialog
-            training={training}
-            isOpen={isMoveOpen}
-            onOpenChange={setIsMoveOpen}
-          />
-          <SkipTrainingDialog
-            training={training}
-            isOpen={isSkipOpen}
-            onOpenChange={setIsSkipOpen}
-          />
-        </>
-      ) : null}
-      {canUndoSkip ? (
-        <div className="mt-3 flex gap-2">
-          <UndoSkipButton
-            training={training}
-            heading={heading}
-          />
-        </div>
-      ) : null}
-    </li>
+      <MoveTrainingDialog
+        training={training}
+        isOpen={isMoveOpen}
+        onOpenChange={setMoveOpen}
+      />
+    </StripCard>
   )
 }
 
-type WeekViewProps = {
+export function WeekView({
+  weekStart,
+  today,
+  onWeekChange,
+}: {
   weekStart: CalendarDate
   today: CalendarDate
   onWeekChange: (weekStart: CalendarDate) => void
-}
-
-export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
+}) {
   const days = daysOfWeek(weekStart)
-  // Today when it is in the shown week, otherwise its Monday.
   const [selectedDay, setSelectedDay] = useState<CalendarDate>(
     days.includes(today) ? today : weekStart,
   )
-  const [isWeekPickerOpen, setIsWeekPickerOpen] = useState(false)
-  const weekQuery = useQuery(weekTrainingsQueryOptions(weekStart))
-
-  const trainings = weekQuery.data ?? []
-  const trainingsOf = (day: CalendarDate) => trainings.filter((training) => training.date === day)
-  const selectedTrainings = trainingsOf(selectedDay)
-
-  const completedCount = trainings.filter((t) => t.status === "COMPLETED").length
-  const totalCount = trainings.length
-
+  const [isPickerOpen, setPickerOpen] = useState(false)
+  const query = useQuery(weekTrainingsQueryOptions(weekStart))
+  const metrics = useQuery(weekMetricsQueryOptions(weekStart))
+  const trainings = query.data ?? []
+  const completed = trainings.filter((training) => training.status === "COMPLETED").length
   return (
     <div className="flex flex-col gap-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Týden</h1>
-        <p className="text-sm text-muted-foreground">
-          Jednotlivé tréninky vašich psů. Na jednom cíli můžete pracovat v několika dnech.
-        </p>
-        {/* Week switching (#73): arrows a week back and forth, range opens month calendar */}
-        <div className="flex items-center justify-between gap-1">
+      <header className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-page font-extrabold tracking-tight">Tento týden</h1>
           <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-11 shrink-0"
-            aria-label="Předchozí týden"
-            onClick={() => onWeekChange(addCalendarDays(weekStart, -7))}
-          >
-            <ChevronLeft className="size-5" />
-          </Button>
-
-          {/* The range opens a month calendar (standup feedback). */}
-          <Button
-            type="button"
-            variant="ghost"
-            className="min-h-11 min-w-0 flex-1 gap-1.5 px-2 text-base font-semibold tracking-tight sm:gap-2 sm:text-lg"
+            variant="outline"
+            size="sm"
+            className="mt-1 h-auto min-h-touch max-w-full justify-between gap-2 rounded-field border-border bg-card/60 px-3 py-1.5 text-xs font-semibold text-foreground shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground"
             aria-label={`Vybrat týden, aktuálně ${formatWeekRange(weekStart)}`}
-            onClick={() => setIsWeekPickerOpen(true)}
+            onClick={() => setPickerOpen(true)}
           >
-            <span
-              aria-live="polite"
-              className="truncate"
-            >
-              {formatWeekRange(weekStart)}
+            <span className="text-left break-words">
+              {formatWeekRange(weekStart)} · {completed} z {trainings.length} tréninků
             </span>
-            <Calendar className="size-4 shrink-0 text-muted-foreground" />
-          </Button>
-
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-11 shrink-0"
-            aria-label="Další týden"
-            onClick={() => onWeekChange(addCalendarDays(weekStart, 7))}
-          >
-            <ChevronRight className="size-5" />
+            <DesignIcon name="history-ChevD" />
           </Button>
         </div>
-
-        {totalCount > 0 && (
-          <div className="flex flex-col gap-2 pt-2">
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span id="week-progress-label">Týdenní postup</span>
-              <span className="font-medium text-foreground">
-                {completedCount} z {totalCount} odcvičeno
-              </span>
-            </div>
-            <Progress
-              value={Math.round((completedCount / totalCount) * 100)}
-              aria-labelledby="week-progress-label"
-            />
-          </div>
-        )}
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Předchozí týden"
+          className="shrink-0 rounded-field bg-card"
+          onClick={() => onWeekChange(addCalendarDays(weekStart, -7))}
+        >
+          <DesignIcon name="week-ChevL" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Další týden"
+          className="shrink-0 rounded-field bg-card"
+          onClick={() => onWeekChange(addCalendarDays(weekStart, 7))}
+        >
+          <DesignIcon name="week-ChevR" />
+        </Button>
       </header>
-
       <ToggleGroup
         type="single"
+        spacing={1.5}
         value={selectedDay}
         onValueChange={(value) => {
-          // Radix sends "" when the selected day is clicked again; keep it.
-          if (value) setSelectedDay(value)
+          if (value) {
+            setSelectedDay(value)
+            const target = document.getElementById(`day-${value}`)
+            target?.scrollIntoView({
+              behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                ? "instant"
+                : "smooth",
+              block: "start",
+            })
+            target?.focus({ preventScroll: true })
+          }
         }}
         aria-label="Den v týdnu"
-        className="grid w-full grid-cols-7 gap-0"
+        className="grid w-full grid-cols-7 gap-1.5"
       >
         {days.map((day) => {
-          const dogColors = [...new Set(trainingsOf(day).map((training) => training.dog.color))]
+          const dayTrainings = trainings.filter((training) => training.date === day)
+          const colors = [...new Set(dayTrainings.map((training) => training.dog.color))]
           return (
             <ToggleGroupItem
               key={day}
               value={day}
-              aria-label={`${formatDayLong(day)}${day === today ? ", dnes" : ""}${
-                dogColors.length > 0 ? `, tréninků: ${trainingsOf(day).length}` : ""
-              }`}
-              className={cn(
-                "flex h-auto min-h-16 min-w-11 flex-col gap-1 rounded-md px-0 py-2 transition-all duration-150 select-none",
-                "hover:bg-accent/40 active:scale-95",
-                "data-[state=on]:bg-secondary data-[state=on]:text-secondary-foreground",
-                day === today && "font-semibold text-primary",
-              )}
+              aria-label={`${formatDayLong(day)}${day === today ? ", dnes" : ""}${dayTrainings.length ? `, tréninků: ${dayTrainings.length}` : ""}`}
+              className="flex h-auto min-h-20 min-w-0 flex-col gap-1 rounded-control border border-border bg-card px-0 py-2 text-foreground data-[state=on]:bg-hero data-[state=on]:text-hero-foreground"
             >
-              <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-                {formatWeekdayShort(day)}
-              </span>
-              <span className="text-base font-bold">{formatDayOfMonth(day)}</span>
-              {/* One dot per dog that trains that day (#72). */}
+              <span className="text-xs font-medium opacity-75">{formatWeekdayShort(day)}</span>
+              <span className="text-lg font-extrabold">{formatDayOfMonth(day)}</span>
               <span
-                aria-hidden="true"
-                className="flex h-2 items-center gap-1"
+                aria-hidden
+                className="flex h-1.5 items-center justify-center gap-1"
               >
-                {dogColors.map((color) => (
+                {colors.map((color) => (
                   <span
                     key={color}
-                    className={cn(
-                      "size-2 rounded-full ring-1 ring-background",
-                      dogColorClass(color),
-                    )}
+                    className={cn("size-1.5 rounded-full", dogColorClass(color))}
                   />
                 ))}
               </span>
@@ -307,79 +246,114 @@ export function WeekView({ weekStart, today, onWeekChange }: WeekViewProps) {
           )
         })}
       </ToggleGroup>
-
-      <section
-        aria-labelledby="selected-day-heading"
-        className="flex flex-col gap-3"
+      <QueryState
+        isLoading={metrics.isLoading}
+        error={metrics.error}
+        onRetry={() => void metrics.refetch()}
+        empty={null}
       >
-        <h2
-          id="selected-day-heading"
-          className="text-xs tracking-widest text-muted-foreground uppercase"
-        >
-          {formatDayLong(selectedDay)}
-          {selectedDay === today ? " · dnes" : ""}
-        </h2>
-
-        {weekQuery.isLoading ? (
-          <div className="space-y-2">
-            <Skeleton className="h-20 w-full rounded-lg" />
-            <Skeleton className="h-20 w-full rounded-lg" />
-          </div>
-        ) : weekQuery.error ? (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Týden se nepodařilo načíst.</p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="min-h-11"
-              onClick={() => void weekQuery.refetch()}
-            >
-              Zkusit znovu
-            </Button>
-          </div>
-        ) : trainings.length === 0 ? (
-          // Nothing in the whole week: say what to do next (#72).
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-8 text-center sm:p-12">
-            <div className="mb-3 flex size-12 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-              <Calendar className="size-6" />
+        {metrics.data?.weeklyPlannedSessions != null && (
+          <section
+            className="space-y-2 rounded-card border border-border bg-card p-4"
+            aria-label="Týdenní plán"
+          >
+            <div className="flex items-center justify-between gap-3 text-sm font-bold">
+              <h2>Týdenní plán</h2>
+              <span className="text-primary">
+                {metrics.data.weeklyPlannedSessions > 0
+                  ? `${metrics.data.weeklyCompletedSessions ?? 0} / ${metrics.data.weeklyPlannedSessions}`
+                  : "Bez plánu"}
+              </span>
             </div>
-            <p className="max-w-md text-sm text-muted-foreground">
-              Na tento týden nemáte nic naplánováno. Založte psovi cíl a naplánujte trénink, nebo
-              počkejte, až vám ho zadá trenér.
+            <Progress
+              value={Math.min(
+                100,
+                metrics.data.weeklyPlannedSessions > 0
+                  ? ((metrics.data.weeklyCompletedSessions ?? 0) /
+                      metrics.data.weeklyPlannedSessions) *
+                      100
+                  : 0,
+              )}
+              aria-label="Dokončené naplánované tréninky"
+              className="h-2"
+            />
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {metrics.data.weeklyPlannedSessions === 0
+                ? "Na tento týden zatím nemáš naplánované tréninky."
+                : `Hotové ${metrics.data.weeklyCompletedSessions ?? 0} z ${metrics.data.weeklyPlannedSessions} naplánovaných tréninků. Přeskočené: ${metrics.data.weeklySkippedSessions ?? 0}.`}
             </p>
-            <Button
-              asChild
-              variant="outline"
-              className="mt-4 min-h-11"
-            >
-              <Link to="/dogs">Přejít na psy</Link>
-            </Button>
-          </div>
-        ) : selectedTrainings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border p-6 text-center">
-            <div className="mb-2 flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
-              <Calendar className="size-5" />
-            </div>
-            <p className="text-sm text-muted-foreground">Na tento den nemáte nic naplánováno.</p>
-          </div>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {selectedTrainings.map((training) => (
-              <WeekTrainingCard
-                key={training.id}
-                training={training}
-                today={today}
-              />
-            ))}
-          </ul>
+          </section>
         )}
-      </section>
-
-      {/* Month Calendar Week Picker Dialog */}
+      </QueryState>
+      <QueryState
+        isLoading={query.isLoading}
+        error={query.error}
+        onRetry={() => void query.refetch()}
+        errorTitle="Týden se nepodařilo načíst"
+        empty={null}
+        className="flex flex-col gap-6"
+      >
+        {!trainings.length && (
+          <EmptyState
+            icon={Calendar}
+            titleAs="p"
+            title="Na tento týden nemáte nic naplánováno"
+            description="Vytvoř psovi cíl a naplánuj trénink."
+            action={
+              <Button asChild>
+                <Link to="/dogs">Přejít na psy</Link>
+              </Button>
+            }
+          />
+        )}
+        <div className="flex flex-col gap-6">
+          {days.map((day) => {
+            const dayTrainings = trainings.filter((training) => training.date === day)
+            return (
+              <section
+                key={day}
+                aria-labelledby={`day-${day}`}
+                className="flex flex-col gap-2"
+              >
+                <h2
+                  id={`day-${day}`}
+                  tabIndex={-1}
+                  className={cn(
+                    "scroll-mt-4 text-xs font-extrabold tracking-wide uppercase outline-none",
+                    day === today ? "text-primary" : "text-muted-foreground",
+                  )}
+                >
+                  {formatDayLong(day)}
+                  {day === today && (
+                    <span className="ml-2 rounded-full bg-primary px-2 py-1 text-xs text-primary-foreground">
+                      Dnes
+                    </span>
+                  )}
+                </h2>
+                {dayTrainings.length ? (
+                  <ul className="flex flex-col gap-2">
+                    {dayTrainings.map((training) => (
+                      <WeekTrainingCard
+                        key={training.id}
+                        training={training}
+                        today={today}
+                      />
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="flex items-center gap-2 rounded-card border border-dashed border-border px-4 py-4 text-sm text-muted-foreground">
+                    <DesignIcon name="week-Moon" />
+                    Volný den – odpočinek je taky trénink.
+                  </p>
+                )}
+              </section>
+            )
+          })}
+        </div>
+      </QueryState>
       <WeekPickerDialog
-        isOpen={isWeekPickerOpen}
-        onOpenChange={setIsWeekPickerOpen}
+        isOpen={isPickerOpen}
+        onOpenChange={setPickerOpen}
         selectedWeek={weekStart}
         onSelectWeek={onWeekChange}
       />

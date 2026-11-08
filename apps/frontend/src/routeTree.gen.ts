@@ -20,14 +20,20 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ProtectedPagesAccountRouteImport } from './routes/_ProtectedPages/account'
 import { Route as ProtectedPagesClientsRouteImport } from './routes/_ProtectedPages/clients'
 import { Route as ProtectedPagesDashboardRouteImport } from './routes/_ProtectedPages/dashboard'
+import { Route as ProtectedPagesHistoryRouteImport } from './routes/_ProtectedPages/history'
+import { Route as ProtectedPagesMessagesRouteImport } from './routes/_ProtectedPages/messages'
 import { Route as ProtectedPagesWeekRouteImport } from './routes/_ProtectedPages/week'
 import { Route as ProtectedPagesClientsIndexRouteImport } from './routes/_ProtectedPages/clients.index'
 import { Route as ProtectedPagesClientsClientIdRouteImport } from './routes/_ProtectedPages/clients.$clientId'
 import { Route as ProtectedPagesDogsIndexRouteImport } from './routes/_ProtectedPages/dogs.index'
 import { Route as ProtectedPagesDogsDogIdIndexRouteImport } from './routes/_ProtectedPages/dogs.$dogId.index'
-import { Route as ProtectedPagesDogsDogIdActivitiesRouteImport } from './routes/_ProtectedPages/dogs.$dogId.activities'
+import { Route as ProtectedPagesDogsDogIdNotesRouteImport } from './routes/_ProtectedPages/dogs.$dogId.notes'
 import { Route as ProtectedPagesTrainingsTrainingIdIndexRouteImport } from './routes/_ProtectedPages/trainings.$trainingId.index'
+import { Route as ProtectedPagesTrainingsTrainingIdDoneRouteImport } from './routes/_ProtectedPages/trainings.$trainingId.done'
 import { Route as ProtectedPagesTrainingsTrainingIdFinishRouteImport } from './routes/_ProtectedPages/trainings.$trainingId.finish'
+import { Route as ProtectedPagesDogsDogIdActivitiesIndexRouteImport } from './routes/_ProtectedPages/dogs.$dogId.activities.index'
+import { Route as ProtectedPagesDogsDogIdActivitiesActivityIdRouteImport } from './routes/_ProtectedPages/dogs.$dogId.activities.$activityId'
+import { Route as ProtectedPagesDogsDogIdGoalsIndexRouteImport } from './routes/_ProtectedPages/dogs.$dogId.goals.index'
 import { Route as ProtectedPagesDogsDogIdGoalsGoalIdRouteImport } from './routes/_ProtectedPages/dogs.$dogId.goals.$goalId'
 import { Route as ProtectedPagesDogsDogIdGoalsNewRouteImport } from './routes/_ProtectedPages/dogs.$dogId.goals.new'
 
@@ -85,6 +91,16 @@ const ProtectedPagesDashboardRoute = ProtectedPagesDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => ProtectedPagesRoute,
 } as any)
+const ProtectedPagesHistoryRoute = ProtectedPagesHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => ProtectedPagesRoute,
+} as any)
+const ProtectedPagesMessagesRoute = ProtectedPagesMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => ProtectedPagesRoute,
+} as any)
 const ProtectedPagesWeekRoute = ProtectedPagesWeekRouteImport.update({
   id: '/week',
   path: '/week',
@@ -113,10 +129,10 @@ const ProtectedPagesDogsDogIdIndexRoute =
     path: '/dogs/$dogId/',
     getParentRoute: () => ProtectedPagesRoute,
   } as any)
-const ProtectedPagesDogsDogIdActivitiesRoute =
-  ProtectedPagesDogsDogIdActivitiesRouteImport.update({
-    id: '/dogs/$dogId/activities',
-    path: '/dogs/$dogId/activities',
+const ProtectedPagesDogsDogIdNotesRoute =
+  ProtectedPagesDogsDogIdNotesRouteImport.update({
+    id: '/dogs/$dogId/notes',
+    path: '/dogs/$dogId/notes',
     getParentRoute: () => ProtectedPagesRoute,
   } as any)
 const ProtectedPagesTrainingsTrainingIdIndexRoute =
@@ -125,10 +141,34 @@ const ProtectedPagesTrainingsTrainingIdIndexRoute =
     path: '/trainings/$trainingId/',
     getParentRoute: () => ProtectedPagesRoute,
   } as any)
+const ProtectedPagesTrainingsTrainingIdDoneRoute =
+  ProtectedPagesTrainingsTrainingIdDoneRouteImport.update({
+    id: '/trainings/$trainingId/done',
+    path: '/trainings/$trainingId/done',
+    getParentRoute: () => ProtectedPagesRoute,
+  } as any)
 const ProtectedPagesTrainingsTrainingIdFinishRoute =
   ProtectedPagesTrainingsTrainingIdFinishRouteImport.update({
     id: '/trainings/$trainingId/finish',
     path: '/trainings/$trainingId/finish',
+    getParentRoute: () => ProtectedPagesRoute,
+  } as any)
+const ProtectedPagesDogsDogIdActivitiesIndexRoute =
+  ProtectedPagesDogsDogIdActivitiesIndexRouteImport.update({
+    id: '/dogs/$dogId/activities/',
+    path: '/dogs/$dogId/activities/',
+    getParentRoute: () => ProtectedPagesRoute,
+  } as any)
+const ProtectedPagesDogsDogIdActivitiesActivityIdRoute =
+  ProtectedPagesDogsDogIdActivitiesActivityIdRouteImport.update({
+    id: '/dogs/$dogId/activities/$activityId',
+    path: '/dogs/$dogId/activities/$activityId',
+    getParentRoute: () => ProtectedPagesRoute,
+  } as any)
+const ProtectedPagesDogsDogIdGoalsIndexRoute =
+  ProtectedPagesDogsDogIdGoalsIndexRouteImport.update({
+    id: '/dogs/$dogId/goals/',
+    path: '/dogs/$dogId/goals/',
     getParentRoute: () => ProtectedPagesRoute,
   } as any)
 const ProtectedPagesDogsDogIdGoalsGoalIdRoute =
@@ -155,16 +195,22 @@ export interface FileRoutesByFullPath {
   '/account': typeof ProtectedPagesAccountRoute
   '/clients': typeof ProtectedPagesClientsRouteWithChildren
   '/dashboard': typeof ProtectedPagesDashboardRoute
+  '/history': typeof ProtectedPagesHistoryRoute
+  '/messages': typeof ProtectedPagesMessagesRoute
   '/week': typeof ProtectedPagesWeekRoute
   '/clients/$clientId': typeof ProtectedPagesClientsClientIdRoute
   '/clients/': typeof ProtectedPagesClientsIndexRoute
   '/dogs/': typeof ProtectedPagesDogsIndexRoute
-  '/dogs/$dogId/activities': typeof ProtectedPagesDogsDogIdActivitiesRoute
+  '/dogs/$dogId/notes': typeof ProtectedPagesDogsDogIdNotesRoute
+  '/trainings/$trainingId/done': typeof ProtectedPagesTrainingsTrainingIdDoneRoute
   '/trainings/$trainingId/finish': typeof ProtectedPagesTrainingsTrainingIdFinishRoute
   '/dogs/$dogId/': typeof ProtectedPagesDogsDogIdIndexRoute
   '/trainings/$trainingId/': typeof ProtectedPagesTrainingsTrainingIdIndexRoute
+  '/dogs/$dogId/activities/$activityId': typeof ProtectedPagesDogsDogIdActivitiesActivityIdRoute
   '/dogs/$dogId/goals/$goalId': typeof ProtectedPagesDogsDogIdGoalsGoalIdRoute
   '/dogs/$dogId/goals/new': typeof ProtectedPagesDogsDogIdGoalsNewRoute
+  '/dogs/$dogId/activities/': typeof ProtectedPagesDogsDogIdActivitiesIndexRoute
+  '/dogs/$dogId/goals/': typeof ProtectedPagesDogsDogIdGoalsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -176,16 +222,22 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/account': typeof ProtectedPagesAccountRoute
   '/dashboard': typeof ProtectedPagesDashboardRoute
+  '/history': typeof ProtectedPagesHistoryRoute
+  '/messages': typeof ProtectedPagesMessagesRoute
   '/week': typeof ProtectedPagesWeekRoute
   '/clients/$clientId': typeof ProtectedPagesClientsClientIdRoute
   '/clients': typeof ProtectedPagesClientsIndexRoute
   '/dogs': typeof ProtectedPagesDogsIndexRoute
-  '/dogs/$dogId/activities': typeof ProtectedPagesDogsDogIdActivitiesRoute
+  '/dogs/$dogId/notes': typeof ProtectedPagesDogsDogIdNotesRoute
+  '/trainings/$trainingId/done': typeof ProtectedPagesTrainingsTrainingIdDoneRoute
   '/trainings/$trainingId/finish': typeof ProtectedPagesTrainingsTrainingIdFinishRoute
   '/dogs/$dogId': typeof ProtectedPagesDogsDogIdIndexRoute
   '/trainings/$trainingId': typeof ProtectedPagesTrainingsTrainingIdIndexRoute
+  '/dogs/$dogId/activities/$activityId': typeof ProtectedPagesDogsDogIdActivitiesActivityIdRoute
   '/dogs/$dogId/goals/$goalId': typeof ProtectedPagesDogsDogIdGoalsGoalIdRoute
   '/dogs/$dogId/goals/new': typeof ProtectedPagesDogsDogIdGoalsNewRoute
+  '/dogs/$dogId/activities': typeof ProtectedPagesDogsDogIdActivitiesIndexRoute
+  '/dogs/$dogId/goals': typeof ProtectedPagesDogsDogIdGoalsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -200,16 +252,22 @@ export interface FileRoutesById {
   '/_ProtectedPages/account': typeof ProtectedPagesAccountRoute
   '/_ProtectedPages/clients': typeof ProtectedPagesClientsRouteWithChildren
   '/_ProtectedPages/dashboard': typeof ProtectedPagesDashboardRoute
+  '/_ProtectedPages/history': typeof ProtectedPagesHistoryRoute
+  '/_ProtectedPages/messages': typeof ProtectedPagesMessagesRoute
   '/_ProtectedPages/week': typeof ProtectedPagesWeekRoute
   '/_ProtectedPages/clients/$clientId': typeof ProtectedPagesClientsClientIdRoute
   '/_ProtectedPages/clients/': typeof ProtectedPagesClientsIndexRoute
   '/_ProtectedPages/dogs/': typeof ProtectedPagesDogsIndexRoute
-  '/_ProtectedPages/dogs/$dogId/activities': typeof ProtectedPagesDogsDogIdActivitiesRoute
+  '/_ProtectedPages/dogs/$dogId/notes': typeof ProtectedPagesDogsDogIdNotesRoute
+  '/_ProtectedPages/trainings/$trainingId/done': typeof ProtectedPagesTrainingsTrainingIdDoneRoute
   '/_ProtectedPages/trainings/$trainingId/finish': typeof ProtectedPagesTrainingsTrainingIdFinishRoute
   '/_ProtectedPages/dogs/$dogId/': typeof ProtectedPagesDogsDogIdIndexRoute
   '/_ProtectedPages/trainings/$trainingId/': typeof ProtectedPagesTrainingsTrainingIdIndexRoute
+  '/_ProtectedPages/dogs/$dogId/activities/$activityId': typeof ProtectedPagesDogsDogIdActivitiesActivityIdRoute
   '/_ProtectedPages/dogs/$dogId/goals/$goalId': typeof ProtectedPagesDogsDogIdGoalsGoalIdRoute
   '/_ProtectedPages/dogs/$dogId/goals/new': typeof ProtectedPagesDogsDogIdGoalsNewRoute
+  '/_ProtectedPages/dogs/$dogId/activities/': typeof ProtectedPagesDogsDogIdActivitiesIndexRoute
+  '/_ProtectedPages/dogs/$dogId/goals/': typeof ProtectedPagesDogsDogIdGoalsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -224,16 +282,22 @@ export interface FileRouteTypes {
     | '/account'
     | '/clients'
     | '/dashboard'
+    | '/history'
+    | '/messages'
     | '/week'
     | '/clients/$clientId'
     | '/clients/'
     | '/dogs/'
-    | '/dogs/$dogId/activities'
+    | '/dogs/$dogId/notes'
+    | '/trainings/$trainingId/done'
     | '/trainings/$trainingId/finish'
     | '/dogs/$dogId/'
     | '/trainings/$trainingId/'
+    | '/dogs/$dogId/activities/$activityId'
     | '/dogs/$dogId/goals/$goalId'
     | '/dogs/$dogId/goals/new'
+    | '/dogs/$dogId/activities/'
+    | '/dogs/$dogId/goals/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -245,16 +309,22 @@ export interface FileRouteTypes {
     | '/signup'
     | '/account'
     | '/dashboard'
+    | '/history'
+    | '/messages'
     | '/week'
     | '/clients/$clientId'
     | '/clients'
     | '/dogs'
-    | '/dogs/$dogId/activities'
+    | '/dogs/$dogId/notes'
+    | '/trainings/$trainingId/done'
     | '/trainings/$trainingId/finish'
     | '/dogs/$dogId'
     | '/trainings/$trainingId'
+    | '/dogs/$dogId/activities/$activityId'
     | '/dogs/$dogId/goals/$goalId'
     | '/dogs/$dogId/goals/new'
+    | '/dogs/$dogId/activities'
+    | '/dogs/$dogId/goals'
   id:
     | '__root__'
     | '/'
@@ -268,16 +338,22 @@ export interface FileRouteTypes {
     | '/_ProtectedPages/account'
     | '/_ProtectedPages/clients'
     | '/_ProtectedPages/dashboard'
+    | '/_ProtectedPages/history'
+    | '/_ProtectedPages/messages'
     | '/_ProtectedPages/week'
     | '/_ProtectedPages/clients/$clientId'
     | '/_ProtectedPages/clients/'
     | '/_ProtectedPages/dogs/'
-    | '/_ProtectedPages/dogs/$dogId/activities'
+    | '/_ProtectedPages/dogs/$dogId/notes'
+    | '/_ProtectedPages/trainings/$trainingId/done'
     | '/_ProtectedPages/trainings/$trainingId/finish'
     | '/_ProtectedPages/dogs/$dogId/'
     | '/_ProtectedPages/trainings/$trainingId/'
+    | '/_ProtectedPages/dogs/$dogId/activities/$activityId'
     | '/_ProtectedPages/dogs/$dogId/goals/$goalId'
     | '/_ProtectedPages/dogs/$dogId/goals/new'
+    | '/_ProtectedPages/dogs/$dogId/activities/'
+    | '/_ProtectedPages/dogs/$dogId/goals/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -370,6 +446,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPagesDashboardRouteImport
       parentRoute: typeof ProtectedPagesRoute
     }
+    '/_ProtectedPages/history': {
+      id: '/_ProtectedPages/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof ProtectedPagesHistoryRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
+    '/_ProtectedPages/messages': {
+      id: '/_ProtectedPages/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof ProtectedPagesMessagesRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
     '/_ProtectedPages/week': {
       id: '/_ProtectedPages/week'
       path: '/week'
@@ -405,11 +495,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPagesDogsDogIdIndexRouteImport
       parentRoute: typeof ProtectedPagesRoute
     }
-    '/_ProtectedPages/dogs/$dogId/activities': {
-      id: '/_ProtectedPages/dogs/$dogId/activities'
-      path: '/dogs/$dogId/activities'
-      fullPath: '/dogs/$dogId/activities'
-      preLoaderRoute: typeof ProtectedPagesDogsDogIdActivitiesRouteImport
+    '/_ProtectedPages/dogs/$dogId/notes': {
+      id: '/_ProtectedPages/dogs/$dogId/notes'
+      path: '/dogs/$dogId/notes'
+      fullPath: '/dogs/$dogId/notes'
+      preLoaderRoute: typeof ProtectedPagesDogsDogIdNotesRouteImport
       parentRoute: typeof ProtectedPagesRoute
     }
     '/_ProtectedPages/trainings/$trainingId/': {
@@ -419,11 +509,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedPagesTrainingsTrainingIdIndexRouteImport
       parentRoute: typeof ProtectedPagesRoute
     }
+    '/_ProtectedPages/trainings/$trainingId/done': {
+      id: '/_ProtectedPages/trainings/$trainingId/done'
+      path: '/trainings/$trainingId/done'
+      fullPath: '/trainings/$trainingId/done'
+      preLoaderRoute: typeof ProtectedPagesTrainingsTrainingIdDoneRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
     '/_ProtectedPages/trainings/$trainingId/finish': {
       id: '/_ProtectedPages/trainings/$trainingId/finish'
       path: '/trainings/$trainingId/finish'
       fullPath: '/trainings/$trainingId/finish'
       preLoaderRoute: typeof ProtectedPagesTrainingsTrainingIdFinishRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
+    '/_ProtectedPages/dogs/$dogId/activities/': {
+      id: '/_ProtectedPages/dogs/$dogId/activities/'
+      path: '/dogs/$dogId/activities'
+      fullPath: '/dogs/$dogId/activities/'
+      preLoaderRoute: typeof ProtectedPagesDogsDogIdActivitiesIndexRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
+    '/_ProtectedPages/dogs/$dogId/activities/$activityId': {
+      id: '/_ProtectedPages/dogs/$dogId/activities/$activityId'
+      path: '/dogs/$dogId/activities/$activityId'
+      fullPath: '/dogs/$dogId/activities/$activityId'
+      preLoaderRoute: typeof ProtectedPagesDogsDogIdActivitiesActivityIdRouteImport
+      parentRoute: typeof ProtectedPagesRoute
+    }
+    '/_ProtectedPages/dogs/$dogId/goals/': {
+      id: '/_ProtectedPages/dogs/$dogId/goals/'
+      path: '/dogs/$dogId/goals'
+      fullPath: '/dogs/$dogId/goals/'
+      preLoaderRoute: typeof ProtectedPagesDogsDogIdGoalsIndexRouteImport
       parentRoute: typeof ProtectedPagesRoute
     }
     '/_ProtectedPages/dogs/$dogId/goals/$goalId': {
@@ -462,32 +580,47 @@ interface ProtectedPagesRouteChildren {
   ProtectedPagesAccountRoute: typeof ProtectedPagesAccountRoute
   ProtectedPagesClientsRoute: typeof ProtectedPagesClientsRouteWithChildren
   ProtectedPagesDashboardRoute: typeof ProtectedPagesDashboardRoute
+  ProtectedPagesHistoryRoute: typeof ProtectedPagesHistoryRoute
+  ProtectedPagesMessagesRoute: typeof ProtectedPagesMessagesRoute
   ProtectedPagesWeekRoute: typeof ProtectedPagesWeekRoute
   ProtectedPagesDogsIndexRoute: typeof ProtectedPagesDogsIndexRoute
-  ProtectedPagesDogsDogIdActivitiesRoute: typeof ProtectedPagesDogsDogIdActivitiesRoute
+  ProtectedPagesDogsDogIdNotesRoute: typeof ProtectedPagesDogsDogIdNotesRoute
+  ProtectedPagesTrainingsTrainingIdDoneRoute: typeof ProtectedPagesTrainingsTrainingIdDoneRoute
   ProtectedPagesTrainingsTrainingIdFinishRoute: typeof ProtectedPagesTrainingsTrainingIdFinishRoute
   ProtectedPagesDogsDogIdIndexRoute: typeof ProtectedPagesDogsDogIdIndexRoute
   ProtectedPagesTrainingsTrainingIdIndexRoute: typeof ProtectedPagesTrainingsTrainingIdIndexRoute
+  ProtectedPagesDogsDogIdActivitiesActivityIdRoute: typeof ProtectedPagesDogsDogIdActivitiesActivityIdRoute
   ProtectedPagesDogsDogIdGoalsGoalIdRoute: typeof ProtectedPagesDogsDogIdGoalsGoalIdRoute
   ProtectedPagesDogsDogIdGoalsNewRoute: typeof ProtectedPagesDogsDogIdGoalsNewRoute
+  ProtectedPagesDogsDogIdActivitiesIndexRoute: typeof ProtectedPagesDogsDogIdActivitiesIndexRoute
+  ProtectedPagesDogsDogIdGoalsIndexRoute: typeof ProtectedPagesDogsDogIdGoalsIndexRoute
 }
 
 const ProtectedPagesRouteChildren: ProtectedPagesRouteChildren = {
   ProtectedPagesAccountRoute: ProtectedPagesAccountRoute,
   ProtectedPagesClientsRoute: ProtectedPagesClientsRouteWithChildren,
   ProtectedPagesDashboardRoute: ProtectedPagesDashboardRoute,
+  ProtectedPagesHistoryRoute: ProtectedPagesHistoryRoute,
+  ProtectedPagesMessagesRoute: ProtectedPagesMessagesRoute,
   ProtectedPagesWeekRoute: ProtectedPagesWeekRoute,
   ProtectedPagesDogsIndexRoute: ProtectedPagesDogsIndexRoute,
-  ProtectedPagesDogsDogIdActivitiesRoute:
-    ProtectedPagesDogsDogIdActivitiesRoute,
+  ProtectedPagesDogsDogIdNotesRoute: ProtectedPagesDogsDogIdNotesRoute,
+  ProtectedPagesTrainingsTrainingIdDoneRoute:
+    ProtectedPagesTrainingsTrainingIdDoneRoute,
   ProtectedPagesTrainingsTrainingIdFinishRoute:
     ProtectedPagesTrainingsTrainingIdFinishRoute,
   ProtectedPagesDogsDogIdIndexRoute: ProtectedPagesDogsDogIdIndexRoute,
   ProtectedPagesTrainingsTrainingIdIndexRoute:
     ProtectedPagesTrainingsTrainingIdIndexRoute,
+  ProtectedPagesDogsDogIdActivitiesActivityIdRoute:
+    ProtectedPagesDogsDogIdActivitiesActivityIdRoute,
   ProtectedPagesDogsDogIdGoalsGoalIdRoute:
     ProtectedPagesDogsDogIdGoalsGoalIdRoute,
   ProtectedPagesDogsDogIdGoalsNewRoute: ProtectedPagesDogsDogIdGoalsNewRoute,
+  ProtectedPagesDogsDogIdActivitiesIndexRoute:
+    ProtectedPagesDogsDogIdActivitiesIndexRoute,
+  ProtectedPagesDogsDogIdGoalsIndexRoute:
+    ProtectedPagesDogsDogIdGoalsIndexRoute,
 }
 
 const ProtectedPagesRouteWithChildren = ProtectedPagesRoute._addFileChildren(

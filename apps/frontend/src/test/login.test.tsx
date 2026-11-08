@@ -101,36 +101,39 @@ function acceptLogin(role = "user") {
 }
 
 describe("login and logout", () => {
-  it.each(["Uživatelské menu", "Účet a odhlášení"])(
-    "logs out directly from %s without opening account settings",
-    async (menuName) => {
-      auth.getSession.mockResolvedValue({ data: { user }, error: null })
-      const { router, queryClient, interaction } = await openPage("/dogs")
-      await interaction.click(await screen.findByRole("button", { name: menuName }))
-      expect(router.state.location.pathname).toBe("/dogs")
-      auth.signOut.mockImplementation(() => {
-        auth.getSession.mockResolvedValue({ data: null, error: null })
-        return Promise.resolve({ data: {}, error: null })
-      })
-      await interaction.click(screen.getByRole("menuitem", { name: "Odhlásit se" }))
-      await waitFor(() => expect(router.state.location.pathname).toBe("/"))
-      expect(auth.signOut).toHaveBeenCalledTimes(1)
-      expect(queryClient.getQueryData(authKeys.session())).toBeNull()
-    },
-  )
+  it.each(["user", "trainer"])("logs out through Account navigation for %s", async (role) => {
+    auth.getSession.mockResolvedValue({ data: { user: { ...user, role } }, error: null })
+    const { router, queryClient, interaction } = await openPage("/dogs")
+    await interaction.click(
+      within(await screen.findByRole("navigation", { name: "Spodní navigace" })).getByRole("link", {
+        name: "Účet",
+      }),
+    )
+    await screen.findByRole("heading", { name: "Účet" })
+    expect(router.state.location.pathname).toBe("/account")
+    auth.signOut.mockImplementation(() => {
+      auth.getSession.mockResolvedValue({ data: null, error: null })
+      return Promise.resolve({ data: {}, error: null })
+    })
+    await interaction.click(screen.getByRole("button", { name: "Odhlásit se" }))
+    await waitFor(() => expect(router.state.location.pathname).toBe("/"))
+    expect(auth.signOut).toHaveBeenCalledTimes(1)
+    expect(queryClient.getQueryData(authKeys.session())).toBeNull()
+  })
 
-  it("keeps the menu usable when logout fails", async () => {
+  it("keeps Account usable when logout fails", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
     auth.signOut.mockResolvedValue({ data: null, error: { message: "Offline" } })
     const { router, interaction } = await openPage("/dogs")
-    await interaction.click(await screen.findByRole("button", { name: "Uživatelské menu" }))
-    await interaction.click(screen.getByRole("menuitem", { name: "Odhlásit se" }))
-    await waitFor(() =>
-      expect(screen.getByRole("menuitem", { name: "Odhlásit se" })).not.toHaveAttribute(
-        "data-disabled",
-      ),
+    await interaction.click(
+      within(await screen.findByRole("navigation", { name: "Spodní navigace" })).getByRole("link", {
+        name: "Účet",
+      }),
     )
-    expect(router.state.location.pathname).toBe("/dogs")
+    await interaction.click(await screen.findByRole("button", { name: "Odhlásit se" }))
+    await waitFor(() => expect(screen.getByRole("button", { name: "Odhlásit se" })).toBeEnabled())
+    expect(auth.signOut).toHaveBeenCalledTimes(1)
+    expect(router.state.location.pathname).toBe("/account")
   })
   const oldDog = {
     id: "dog-a",
@@ -164,7 +167,7 @@ describe("login and logout", () => {
     await act(async () => {
       await router.navigate({ to: "/account" })
     })
-    await screen.findByRole("dialog", { name: "Přihlášení" })
+    await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
     expect(queryClient.getQueryData(dogKeys.lists())).toBeUndefined()
     expect(queryClient.getQueryData(["week", "2026-10-19"])).toBeUndefined()
     await act(async () => {
@@ -206,7 +209,7 @@ describe("login and logout", () => {
 
   it("cancels pre-login session requests so a late response cannot restore another account", async () => {
     const { interaction, queryClient } = await openPage()
-    await screen.findByRole("dialog")
+    await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
     let finish: (value: unknown) => void = () => undefined
     auth.getSession.mockReturnValueOnce(
       new Promise((resolve) => {
@@ -219,7 +222,7 @@ describe("login and logout", () => {
     acceptLogin()
     await fillForm(interaction)
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-    await screen.findByRole("heading", { name: "Týden" })
+    await screen.findByRole("heading", { name: /Ahoj Jana|Dnes/ })
     await act(async () => {
       finish({ data: { user: otherUser }, error: null })
       await pending
@@ -236,7 +239,7 @@ describe("login and logout", () => {
     await act(async () => {
       await queryClient.invalidateQueries({ queryKey: authKeys.session() })
     })
-    expect(await screen.findByRole("dialog", { name: "Přihlášení" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Vítej zpátky 👋" })).toBeInTheDocument()
     expect(screen.queryByText(oldDog.name)).not.toBeInTheDocument()
     expect(queryClient.getQueryData(dogKeys.lists())).toBeUndefined()
   })
@@ -249,25 +252,25 @@ describe("login and logout", () => {
     await act(async () => {
       await queryClient.fetchQuery({ ...authSessionQueryOptions(), staleTime: 0 })
     })
-    expect(await screen.findByRole("heading", { name: "Psi" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Moji psi" })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/dogs")
     expect(screen.queryByRole("link", { name: "Klienti" })).not.toBeInTheDocument()
   })
-  it("opens an accessible modal from the landing page and closes it with Escape", async () => {
+  it("opens a standalone login page from the landing page", async () => {
     const { interaction, router } = await openPage("/")
     const links = await screen.findAllByRole("link", { name: "Přihlásit se" })
     await interaction.click(links[links.length - 1]!)
-    const dialog = await screen.findByRole("dialog", { name: "Přihlášení" })
-    expect(within(dialog).getByLabelText("E-mail")).toBeInTheDocument()
-    expect(within(dialog).getByLabelText("Heslo")).toBeInTheDocument()
+    await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
+    expect(screen.getByLabelText("E-mail")).toBeInTheDocument()
+    expect(screen.getByLabelText("Heslo")).toBeInTheDocument()
     await interaction.keyboard("{Escape}")
-    await waitFor(() => expect(router.state.location.pathname).toBe("/"))
+    expect(router.state.location.pathname).toBe("/login")
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
   })
 
   it("validates the email and required password beside the fields", async () => {
     const { interaction } = await openPage()
-    await screen.findByRole("dialog")
+    await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
     expect(await screen.findByText("Vyplňte e-mail.")).toBeInTheDocument()
     expect(screen.getByText("Vyplňte heslo.")).toBeInTheDocument()
@@ -285,7 +288,7 @@ describe("login and logout", () => {
         error: { code, message: "This specific email does not exist" },
       })
       const { interaction } = await openPage()
-      await screen.findByRole("dialog")
+      await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
       await fillForm(interaction)
       await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
       expect(await screen.findByRole("alert")).toHaveTextContent("Nesprávný e-mail nebo heslo.")
@@ -295,14 +298,14 @@ describe("login and logout", () => {
   )
 
   it.each([
-    ["user", "Týden", "/week"],
-    ["trainer", "Vaši klienti", "/clients"],
+    ["user", /Ahoj Jana|Dnes/, "/dashboard"],
+    ["trainer", /Klienti|Přehled/, "/clients"],
   ])(
     "logs in a %s with a persistent session and the correct destination",
     async (role, heading, path) => {
       const { interaction, router, queryClient } = await openPage()
       acceptLogin(role)
-      await screen.findByRole("dialog")
+      await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
       await fillForm(interaction, " space password ")
       await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
       expect(await screen.findByRole("heading", { name: heading })).toBeInTheDocument()
@@ -321,7 +324,7 @@ describe("login and logout", () => {
     "returns to the original protected destination %s after login",
     async (destination) => {
       const { interaction, router } = await openPage(destination)
-      await screen.findByRole("dialog")
+      await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
       expect(router.state.location.pathname).toBe("/login")
       acceptLogin(destination === "/clients" ? "trainer" : "user")
       await fillForm(interaction)
@@ -333,7 +336,7 @@ describe("login and logout", () => {
   it("uses a remembered session after loading the app with an empty query cache", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
     await openPage("/week")
-    expect(await screen.findByRole("heading", { name: "Týden" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Tento týden" })).toBeInTheDocument()
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     expect(auth.signIn).not.toHaveBeenCalled()
   })
@@ -341,15 +344,14 @@ describe("login and logout", () => {
   it("rechecks an expired session before entering another protected page", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
     const { interaction, router } = await openPage("/dogs")
-    await screen.findByRole("heading", { name: "Psi" })
+    await screen.findByRole("heading", { name: "Moji psi" })
     auth.getSession.mockResolvedValue({ data: null, error: null })
     await interaction.click(
-      within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("button", {
-        name: "Účet a odhlášení",
+      within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("link", {
+        name: "Účet",
       }),
     )
-    await interaction.click(screen.getByRole("menuitem", { name: "Účet" }))
-    expect(await screen.findByRole("dialog", { name: "Přihlášení" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Vítej zpátky 👋" })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/login")
     expect(screen.queryByText(user.email)).not.toBeInTheDocument()
   })
@@ -357,7 +359,7 @@ describe("login and logout", () => {
   it("redirects an already signed-in trainer from login to Clients", async () => {
     auth.getSession.mockResolvedValue({ data: { user: { ...user, role: "trainer" } }, error: null })
     const { router } = await openPage()
-    expect(await screen.findByRole("heading", { name: "Vaši klienti" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Klienti" })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe("/clients")
   })
 
@@ -366,17 +368,17 @@ describe("login and logout", () => {
       "/login?from=https%3A%2F%2Fexample.com%2Fclients",
     )
     acceptLogin()
-    await screen.findByRole("dialog")
+    await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
     await fillForm(interaction)
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-    expect(await screen.findByRole("heading", { name: "Týden" })).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe("/week")
+    expect(await screen.findByRole("heading", { name: /Ahoj Jana|Dnes/ })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe("/dashboard")
   })
 
   it("keeps the form usable after a network failure", async () => {
     auth.signIn.mockRejectedValue(new Error("Internal network error"))
     const { interaction } = await openPage()
-    await screen.findByRole("dialog")
+    await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
     await fillForm(interaction)
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
     expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -386,7 +388,7 @@ describe("login and logout", () => {
     expect(screen.getByRole("button", { name: "Přihlásit se" })).toBeEnabled()
     acceptLogin()
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-    expect(await screen.findByRole("heading", { name: "Týden" })).toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: /Ahoj Jana|Dnes/ })).toBeInTheDocument()
   })
 
   it("prevents duplicate submissions and closing while login is pending", async () => {
@@ -397,14 +399,13 @@ describe("login and logout", () => {
       }),
     )
     const { interaction } = await openPage()
-    await screen.findByRole("dialog")
+    await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
     await fillForm(interaction)
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
     expect(await screen.findByRole("button", { name: "Přihlašuji…" })).toBeDisabled()
     expect(screen.getByLabelText("Heslo")).toBeDisabled()
-    expect(screen.getByRole("button", { name: "Zavřít přihlášení" })).toBeDisabled()
     await interaction.keyboard("{Escape}")
-    expect(screen.getByRole("dialog")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Vítej zpátky 👋" })).toBeInTheDocument()
     act(() => {
       finish({ data: null, error: { code: "INVALID_EMAIL_OR_PASSWORD" } })
     })
@@ -414,13 +415,12 @@ describe("login and logout", () => {
   it("logs out from Account, clears private data, and guards browser-back navigation", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
     const { interaction, router, queryClient } = await openPage("/dogs")
-    await screen.findByRole("heading", { name: "Psi" })
+    await screen.findByRole("heading", { name: "Moji psi" })
     await interaction.click(
-      within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("button", {
-        name: "Účet a odhlášení",
+      within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("link", {
+        name: "Účet",
       }),
     )
-    await interaction.click(screen.getByRole("menuitem", { name: "Účet" }))
     await screen.findByRole("heading", { name: "Účet" })
     queryClient.setQueryData(["private-dogs"], [{ name: "Private dog" }])
     auth.signOut.mockImplementation(() => {
@@ -436,8 +436,8 @@ describe("login and logout", () => {
     act(() => {
       router.history.back()
     })
-    expect(await screen.findByRole("dialog", { name: "Přihlášení" })).toBeInTheDocument()
-    expect(screen.queryByRole("heading", { name: "Psi" })).not.toBeInTheDocument()
+    expect(await screen.findByRole("heading", { name: "Vítej zpátky 👋" })).toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "Moji psi" })).not.toBeInTheDocument()
   })
 
   it("does not pretend to sign out when the API fails, and permits retry", async () => {
@@ -446,7 +446,7 @@ describe("login and logout", () => {
     const { interaction, router } = await openPage("/account")
     await interaction.click(await screen.findByRole("button", { name: "Odhlásit se" }))
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Odhlášení se nezdařilo. Zkuste to prosím znovu.",
+      "Odhlášení se nezdařilo. Zkus to prosím znovu.",
     )
     expect(router.state.location.pathname).toBe("/account")
     expect(screen.getByRole("button", { name: "Odhlásit se" })).toBeEnabled()
@@ -455,7 +455,7 @@ describe("login and logout", () => {
   it("redirects to invite page when invitation code is provided on sign in", async () => {
     const { interaction, router } = await openPage("/login?code=EXIST1")
     acceptLogin()
-    await screen.findByRole("dialog")
+    await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
     await fillForm(interaction)
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
 

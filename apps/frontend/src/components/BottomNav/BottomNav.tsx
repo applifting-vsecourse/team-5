@@ -1,42 +1,42 @@
 import type { ReactNode } from "react"
 import { Link, useLocation } from "@tanstack/react-router"
-import { Calendar, PawPrint, User, Users } from "lucide-react"
+import { Calendar, Home, ListChecks, PawPrint, User, Users } from "lucide-react"
 
+import { ROUTES } from "@/app/routes"
+import { DesignIcon } from "@/components/DesignIcon"
 import { cn } from "@/lib/utils"
 
-const NAV_ITEMS = [
-  {
-    label: "Psi",
-    to: "/dogs",
-    icon: PawPrint,
-    matchPrefix: "/dogs",
-  },
-  {
-    label: "Týden",
-    to: "/week",
-    icon: Calendar,
-    matchPrefix: "/week",
-  },
-  {
-    label: "Klienti",
-    to: "/clients",
-    icon: Users,
-    matchPrefix: "/clients",
-  },
-  {
-    label: "Účet",
-    to: "/account",
-    icon: User,
-    matchPrefix: "/account",
-  },
-] as const
+type NavItem = {
+  label: string
+  to: string
+  icon: typeof Home
+  matchPrefix: string
+}
+
+/** Handler: Dnes · Týden · Psi · Historie · Účet */
+const HANDLER_ITEMS: NavItem[] = [
+  { label: "Dnes", to: ROUTES.dashboard, icon: Home, matchPrefix: ROUTES.dashboard },
+  { label: "Týden", to: ROUTES.week, icon: Calendar, matchPrefix: ROUTES.week },
+  { label: "Psi", to: ROUTES.dogs, icon: PawPrint, matchPrefix: ROUTES.dogs },
+  { label: "Historie", to: ROUTES.history, icon: ListChecks, matchPrefix: ROUTES.history },
+  { label: "Účet", to: ROUTES.account, icon: User, matchPrefix: ROUTES.account },
+]
+
+/** Trainer: Přehled · Klienti · Kalendář · Historie · Účet */
+const TRAINER_ITEMS: NavItem[] = [
+  { label: "Přehled", to: ROUTES.dashboard, icon: Home, matchPrefix: ROUTES.dashboard },
+  { label: "Klienti", to: ROUTES.clients, icon: Users, matchPrefix: ROUTES.clients },
+  { label: "Kalendář", to: ROUTES.week, icon: Calendar, matchPrefix: ROUTES.week },
+  { label: "Historie", to: ROUTES.history, icon: ListChecks, matchPrefix: ROUTES.history },
+  { label: "Účet", to: ROUTES.account, icon: User, matchPrefix: ROUTES.account },
+]
 
 type BottomNavProps = {
   isTrainer?: boolean
   accountMenu?: ReactNode
 }
 
-export function BottomNav({ isTrainer = false, accountMenu }: BottomNavProps) {
+export function BottomNav({ isTrainer = false }: BottomNavProps) {
   const location = useLocation()
   const currentPath = location.pathname
 
@@ -46,41 +46,72 @@ export function BottomNav({ isTrainer = false, accountMenu }: BottomNavProps) {
     return null
   }
 
-  const items = NAV_ITEMS.filter((item) => item.to !== "/clients" || isTrainer)
+  const items = isTrainer ? TRAINER_ITEMS : HANDLER_ITEMS
 
   return (
     <nav
       aria-label="Spodní navigace"
-      className="fixed right-0 bottom-0 left-0 z-40 border-t border-border bg-background/95 backdrop-blur-xs md:hidden"
+      className="fixed right-0 bottom-0 left-0 z-40 border-t border-border bg-background pb-safe-bottom md:hidden"
     >
-      <div className="mx-auto flex h-16 max-w-md items-center justify-around px-2">
+      <div className="mx-auto flex min-h-tab-bar max-w-md items-stretch justify-around px-2 pt-2">
         {items.map((item) => {
-          if (item.to === "/account" && accountMenu) {
-            return (
-              <div
-                key="account"
-                className="flex flex-1 justify-center"
-              >
-                {accountMenu}
-              </div>
-            )
-          }
-          const Icon = item.icon
-          const isActive = currentPath.startsWith(item.matchPrefix)
+          const isActive =
+            currentPath === item.matchPrefix || currentPath.startsWith(`${item.matchPrefix}/`)
 
           return (
             <Link
               key={item.label}
               to={item.to}
               className={cn(
-                "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-1 rounded-md py-1 text-xs transition-colors",
+                "flex min-h-touch min-w-touch flex-1 flex-col items-center justify-center gap-1 rounded-md py-1 text-xs transition-colors",
                 isActive
-                  ? "font-medium text-primary"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "font-extrabold text-primary"
+                  : "font-semibold text-muted-foreground hover:text-foreground",
               )}
               aria-current={isActive ? "page" : undefined}
             >
-              <Icon className="size-5" />
+              <span
+                className={cn(
+                  "flex h-8 w-11 items-center justify-center rounded-full transition-colors",
+                  isActive && "bg-accent",
+                )}
+              >
+                {isTrainer ? (
+                  <DesignIcon
+                    name={
+                      item.to === ROUTES.dashboard
+                        ? "trainer-Home"
+                        : item.to === ROUTES.clients
+                          ? "trainer-Users"
+                          : item.to === ROUTES.week
+                            ? "today-Calendar"
+                            : item.to === ROUTES.history
+                              ? "trainer-List"
+                              : "trainer-User"
+                    }
+                  />
+                ) : (
+                  <DesignIcon
+                    name={
+                      item.to === ROUTES.dashboard
+                        ? isActive
+                          ? "today-Home"
+                          : "dogs-Home"
+                        : item.to === ROUTES.dogs
+                          ? isActive
+                            ? "dogs-Paw"
+                            : "today-Paw"
+                          : item.to === ROUTES.week
+                            ? "today-Calendar"
+                            : item.to === ROUTES.history
+                              ? "trainer-List"
+                              : item.to === ROUTES.inbox
+                                ? "trainer-Msg"
+                                : "today-User"
+                    }
+                  />
+                )}
+              </span>
               <span>{item.label}</span>
             </Link>
           )
