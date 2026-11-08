@@ -83,6 +83,8 @@ export class WeekTrainingExerciseDto {
 
 export class WeekTrainingResponseDto {
   @ApiPropertyOptional({ nullable: true })
+  activityId?: string | null;
+  @ApiPropertyOptional({ nullable: true })
   successRate?: number | null;
   @ApiProperty({ type: WeekTrainingGoalDto })
   training!: WeekTrainingGoalDto;
@@ -106,6 +108,7 @@ export class WeekTrainingResponseDto {
 
   static fromDomain(training: WeekTraining): WeekTrainingResponseDto {
     return {
+      activityId: training.workoutLog?.id ?? null,
       successRate: training.workoutLog?.successRate ?? null,
       training: {
         id: training.training.id,

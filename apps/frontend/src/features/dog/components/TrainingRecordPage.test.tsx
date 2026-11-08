@@ -133,6 +133,24 @@ describe("TrainingRecordPage", () => {
     expect(myMsg).toHaveClass("ml-auto", "bg-primary")
 
     expect(screen.getByRole("button", { name: "👍 Díky!" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Zpět" })).toBeInTheDocument()
+  })
+
+  it("navigates back when clicking Zpět button", async () => {
+    const user = userEvent.setup()
+    Object.defineProperty(window.history, "length", { value: 2, configurable: true })
+    const backSpy = vi.spyOn(window.history, "back").mockReturnValue(undefined)
+    render(
+      <TrainingRecordPage
+        dogId="dog-1"
+        activityId="act-1"
+      />,
+      { wrapper: createWrapper() },
+    )
+
+    await user.click(screen.getByRole("button", { name: "Zpět" }))
+    expect(backSpy).toHaveBeenCalled()
+    backSpy.mockRestore()
   })
 
   it("fills composer from a quick reply chip", async () => {
