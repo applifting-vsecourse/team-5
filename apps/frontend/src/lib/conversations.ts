@@ -50,6 +50,5 @@ export const conversationQueryOptions = (id: string) =>
   queryOptions({
     queryKey: ["training-conversation", id],
     enabled: Boolean(id),
-    queryFn: async () =>
-      conversationDetail.parse(await api.get(`activities/${id}`).json()),
+    queryFn: async () => conversationDetail.parse(await api.get(`activities/${id}`).json()),
   })

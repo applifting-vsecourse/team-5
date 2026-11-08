@@ -1,6 +1,6 @@
 import { useState } from "react"
-import { Link } from "@tanstack/react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import { ChevronLeft, Link2, Send } from "lucide-react"
 import { toast } from "sonner"
 
@@ -86,7 +86,7 @@ function RecordSummary({ detail }: { detail: ConversationDetail }) {
             ) : (
               <span className="rounded-full bg-success px-2.5 py-1 text-xs font-bold text-success-foreground">
                 {detail.goal?.blocks.length
-                  ? `${detail.goal.blocks.length} ze ${detail.goal.blocks.length} kroků`
+                  ? `${detail.goal.blocks.filter((block) => block.outcome === "MASTERED" || block.outcome === "SKIPPED").length} ze ${detail.goal.blocks.length} kroků`
                   : "Hotovo"}
               </span>
             )}
@@ -152,8 +152,7 @@ function StepsList({
       </h2>
       <ol className="space-y-2">
         {blocks.map((block) => {
-          const isDone =
-            isCompleted || block.outcome === "MASTERED" || block.outcome === "SKIPPED"
+          const isDone = isCompleted || block.outcome === "MASTERED" || block.outcome === "SKIPPED"
           const label =
             block.outcome === "SKIPPED" ? "přeskočeno" : isDone ? "hotovo" : "bez výsledku"
           return (
@@ -281,21 +280,18 @@ function ThreadComposer({ activityId }: { activityId: string }) {
   )
 }
 
-export function TrainingRecordPage({
-  dogId,
-  activityId,
-}: {
-  dogId: string
-  activityId: string
-}) {
+export function TrainingRecordPage({ dogId, activityId }: { dogId: string; activityId: string }) {
   const detail = useQuery(conversationQueryOptions(activityId))
+  const recordDogId = detail.data?.dog.id
+  const hasDogMismatch = Boolean(recordDogId && recordDogId !== dogId)
+  const backDogId = recordDogId ?? dogId
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 pb-8">
       <header className="space-y-3">
         <nav aria-label="Navigace zpět">
           <Link
             to="/dogs/$dogId/activities"
-            params={{ dogId }}
+            params={{ dogId: backDogId }}
             className="inline-flex min-h-touch items-center gap-1.5 text-sm font-medium text-muted-foreground outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           >
             <ChevronLeft
@@ -307,7 +303,7 @@ export function TrainingRecordPage({
         </nav>
         <div>
           <h1 className="text-page font-extrabold tracking-tight">Záznam tréninku</h1>
-          {detail.data && (
+          {detail.data && !hasDogMismatch && (
             <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
               <span
                 aria-hidden
@@ -320,11 +316,11 @@ export function TrainingRecordPage({
       </header>
       <QueryState
         isLoading={detail.isLoading}
-        error={detail.error}
+        error={detail.error ?? (hasDogMismatch ? new Error("Záznam nepatří k tomuto psovi") : null)}
         onRetry={() => void detail.refetch()}
         empty={null}
       >
-        {detail.data && (
+        {detail.data && !hasDogMismatch && (
           <>
             <RecordSummary detail={detail.data} />
             {detail.data.goal?.blocks.length ? (
