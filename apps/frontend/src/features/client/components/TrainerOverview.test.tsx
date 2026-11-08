@@ -56,6 +56,11 @@ vi.mock("./InviteClientDialog", () => ({
   InviteClientDialog: () => null,
 }))
 
+vi.mock("@/components/TrainingConversationDialog", () => ({
+  TrainingConversationDialog: ({ activityId }: { activityId: string | null }) =>
+    activityId ? <p>Konverzace {activityId}</p> : null,
+}))
+
 const dog = { id: "d-1", name: "Rex", color: 1 }
 const jan = { id: "c-1", name: "Jan Novák" }
 
