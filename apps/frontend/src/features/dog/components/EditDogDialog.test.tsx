@@ -253,4 +253,74 @@ describe("EditDogDialog", () => {
       isArchived: false,
     })
   })
+
+  it("does not move discipline to archive when archiving API call fails", async () => {
+    const user = userEvent.setup()
+    vi.mocked(setDogDiscipline).mockRejectedValue(new Error("Network error"))
+
+    render(
+      <EditDogDialog
+        dog={aDog}
+        isOpen={true}
+        onOpenChange={vi.fn()}
+      />,
+      { wrapper: createWrapper() },
+    )
+
+    const removeAgilityBtn = screen.getByRole("button", { name: /odebrat disciplínu agility/i })
+    await user.click(removeAgilityBtn)
+
+    const confirmBtn = screen.getByRole("button", { name: "Ukončit disciplínu" })
+    await user.click(confirmBtn)
+
+    expect(setDogDiscipline).toHaveBeenCalledWith("dog-1", {
+      name: "Agility",
+      isArchived: true,
+    })
+
+    // Alert should close
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+    // Agility should remain in active disciplines
+    expect(screen.getByText("Agility")).toBeInTheDocument()
+    // Agility should not be in Ukončené disciplíny
+    expect(screen.queryByText("Ukončené disciplíny")).not.toBeInTheDocument()
+  })
+
+  it("preserves original discipline casing when restoring via custom text input", async () => {
+    const user = userEvent.setup()
+    vi.mocked(setDogDiscipline).mockResolvedValue({
+      id: "dd-2",
+      dogId: "dog-1",
+      disciplineId: "disc-2",
+      isArchived: false,
+      discipline: { id: "disc-2", name: "Agility" },
+    })
+
+    const initialPlan = [
+      {
+        id: "dd-2",
+        isArchived: true,
+        discipline: { id: "d-2", name: "Agility" },
+        goals: [],
+      },
+    ]
+
+    render(
+      <EditDogDialog
+        dog={{ ...aDog, disciplines: ["Canicross"] }}
+        isOpen={true}
+        onOpenChange={vi.fn()}
+      />,
+      { wrapper: createWrapper(initialPlan) },
+    )
+
+    const input = screen.getByLabelText(/název vlastní disciplíny/i)
+    await user.type(input, "agility")
+    await user.click(screen.getByRole("button", { name: /přidat/i }))
+
+    expect(setDogDiscipline).toHaveBeenCalledWith("dog-1", {
+      name: "Agility",
+      isArchived: false,
+    })
+  })
 })
