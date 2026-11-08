@@ -1,9 +1,8 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Link } from "@tanstack/react-router"
-import { ChevronLeft, Link2, Send } from "lucide-react"
 import { toast } from "sonner"
 
+import { DesignIcon } from "@/components/DesignIcon"
 import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -23,7 +22,7 @@ function SuccessRing({ rate }: { rate: number | null }) {
   const offset = c - (value / 100) * c
   return (
     <div
-      className="relative size-24 shrink-0"
+      className="relative size-22 shrink-0"
       role="img"
       aria-label={rate == null ? "Bez hodnocení úspěšnosti" : `Úspěšnost ${rate} %`}
     >
@@ -71,7 +70,7 @@ function RecordSummary({ detail }: { detail: ConversationDetail }) {
         <div className="min-w-0 flex-1 space-y-2">
           <h2
             id="record-title"
-            className="text-title font-extrabold tracking-tight break-words"
+            className="text-lg font-extrabold tracking-tight break-words"
           >
             {detail.title}
           </h2>
@@ -93,15 +92,15 @@ function RecordSummary({ detail }: { detail: ConversationDetail }) {
           </div>
         </div>
       </div>
-      <dl className="grid gap-3 sm:grid-cols-2">
+      <dl className="grid grid-cols-2 gap-3">
         {detail.focus && (
-          <div className="rounded-field bg-secondary p-3">
+          <div className="min-w-0">
             <dt className="text-xs font-medium text-muted-foreground">Soustředění</dt>
             <dd className="text-sm font-bold">{ANSWER_LABELS[detail.focus]}</dd>
           </div>
         )}
         {detail.repeatedMistakes && (
-          <div className="rounded-field bg-secondary p-3">
+          <div className="min-w-0">
             <dt className="text-xs font-medium text-muted-foreground">Opakoval chyby</dt>
             <dd className="text-sm font-bold">
               {ANSWER_LABELS[detail.repeatedMistakes]}
@@ -120,10 +119,7 @@ function RecordSummary({ detail }: { detail: ConversationDetail }) {
           rel="noopener noreferrer"
           className="inline-flex min-h-touch items-center gap-2 rounded-field border border-border px-3 text-sm font-bold text-primary"
         >
-          <Link2
-            className="size-4"
-            aria-hidden
-          />
+          <DesignIcon name="record-Link" />
           {detail.videoUrl.replace(/^https?:\/\//, "")}
         </a>
       )}
@@ -142,7 +138,7 @@ function StepsList({
   return (
     <section
       aria-labelledby="record-steps"
-      className="space-y-3"
+      className="space-y-3 rounded-card border border-border bg-card p-4"
     >
       <h2
         id="record-steps"
@@ -158,7 +154,7 @@ function StepsList({
           return (
             <li
               key={block.id}
-              className="flex min-h-touch items-center gap-3 rounded-card border border-border bg-card px-3 py-2"
+              className="flex min-h-touch items-center gap-3 py-2"
             >
               <span
                 className={cn(
@@ -205,6 +201,15 @@ function ThreadComposer({
     onError: () => toast.error("Zprávu se nepodařilo odeslat. Text zůstal rozepsaný."),
   })
   const messages = detail.data?.messages ?? []
+  const replyRef = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    if (window.location.hash !== "#training-reply") return
+    const frame = window.requestAnimationFrame(() => {
+      replyRef.current?.scrollIntoView({ block: "end" })
+      replyRef.current?.focus({ preventScroll: true })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [activityId])
   return (
     <section
       aria-labelledby="record-thread"
@@ -234,17 +239,14 @@ function ThreadComposer({
             <li
               key={message.id}
               className={cn(
-                "max-w-[85%] space-y-1 rounded-field p-3 shadow-xs",
+                "max-w-[85%] space-y-1 rounded-field p-3",
                 isMe
-                  ? "ml-auto rounded-br-xs bg-primary text-primary-foreground"
-                  : "mr-auto rounded-bl-xs bg-secondary text-secondary-foreground",
+                  ? "ml-auto rounded-br-xs bg-accent text-accent-foreground"
+                  : "mr-auto rounded-bl-xs border border-border bg-card text-card-foreground",
               )}
             >
               <p
-                className={cn(
-                  "text-xs font-bold",
-                  isMe ? "text-primary-foreground/80" : "text-muted-foreground",
-                )}
+                className={cn("text-xs font-bold", isMe ? "text-primary" : "text-muted-foreground")}
               >
                 {isMe ? "Já" : message.author.name} · {message.createdAt.toLocaleString("cs-CZ")}
               </p>
@@ -259,7 +261,7 @@ function ThreadComposer({
           <Button
             key={reply}
             type="button"
-            variant="secondary"
+            variant="outline"
             size="sm"
             className="rounded-full font-bold"
             onClick={() => setText(reply)}
@@ -276,6 +278,7 @@ function ThreadComposer({
         }}
       >
         <Textarea
+          ref={replyRef}
           id="training-reply"
           aria-label="Napsat zprávu"
           placeholder="Napsat zprávu…"
@@ -283,7 +286,7 @@ function ThreadComposer({
           onChange={(event) => setText(event.target.value)}
           maxLength={2000}
           disabled={send.isPending}
-          className="min-h-12 flex-1 resize-none"
+          className="min-h-12 flex-1 resize-none scroll-mb-32"
         />
         <Button
           type="submit"
@@ -292,7 +295,7 @@ function ThreadComposer({
           disabled={send.isPending || !text.trim()}
           aria-label={send.isPending ? "Odesílám" : "Odeslat zprávu"}
         >
-          <Send className="size-4" />
+          <DesignIcon name="record-Send" />
         </Button>
       </form>
     </section>
@@ -312,24 +315,30 @@ export function TrainingRecordPage({
   const recordDogId = detail.data?.dog.id
   const hasDogMismatch = Boolean(recordDogId && recordDogId !== dogId)
   const backDogId = recordDogId ?? dogId
+
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      window.history.back()
+    } else {
+      window.location.assign(`/dogs/${backDogId}/activities`)
+    }
+  }
+
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-6 pb-8">
-      <header className="space-y-3">
-        <nav aria-label="Navigace zpět">
-          <Link
-            to="/dogs/$dogId/activities"
-            params={{ dogId: backDogId }}
-            className="inline-flex min-h-touch items-center gap-1.5 text-sm font-medium text-muted-foreground outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <ChevronLeft
-              className="size-5"
-              aria-hidden
-            />
-            Historie
-          </Link>
-        </nav>
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-gutter pt-3 pb-6 md:py-8">
+      <header className="flex items-center gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={handleBack}
+          aria-label="Zpět"
+          className="shrink-0 rounded-field bg-card"
+        >
+          <DesignIcon name="record-ChevL" />
+        </Button>
         <div>
-          <h1 className="text-page font-extrabold tracking-tight">Záznam tréninku</h1>
+          <h1 className="text-xl font-extrabold tracking-tight">Záznam tréninku</h1>
           {detail.data && !hasDogMismatch && (
             <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
               <span
