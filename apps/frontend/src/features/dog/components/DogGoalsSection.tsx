@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { Check, ChevronRight, Folder, Plus, Target } from "lucide-react"
 
+import { ConfirmDestructiveDialog } from "@/components/ConfirmDestructiveDialog"
 import { EditorIcon } from "@/components/EditorIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 import { dogPlanQueryOptions, type PlanGoal } from "@/features/dog/api/trainingEditor"
+import { useSetDogDiscipline } from "@/features/dog/hooks/useSetDogDiscipline"
 
 export function GoalProgressCard({ goal, dogId }: { goal: PlanGoal; dogId: string }) {
   const completed = goal.sessions.filter((s) =>
@@ -116,6 +118,7 @@ export function DogGoalsSection({
   discipline?: string
 }) {
   const query = useQuery(dogPlanQueryOptions(dogId))
+  const setDisciplineMutation = useSetDogDiscipline(dogId)
   const groups = (query.data ?? []).filter(
     (d) => d.goals.length > 0 && (!discipline || d.discipline.name === discipline),
   )
@@ -174,12 +177,54 @@ export function DogGoalsSection({
               key={group.id}
               className="space-y-3"
             >
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="flex items-center gap-2 text-xs font-extrabold tracking-wide uppercase">
-                  <Folder className="size-4 text-primary" />
-                  {group.discipline.name}
-                  {group.isArchived ? " · Archiv" : ""}
-                </h3>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="flex items-center gap-2 text-xs font-extrabold tracking-wide uppercase">
+                    <Folder className="size-4 text-primary" />
+                    {group.discipline.name}
+                    {group.isArchived ? " · Archiv" : ""}
+                  </h3>
+                  {group.isArchived ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setDisciplineMutation.mutate({
+                          name: group.discipline.name,
+                          isArchived: false,
+                        })
+                      }
+                      disabled={setDisciplineMutation.isPending}
+                      className="h-7 px-2.5 text-xs font-semibold"
+                    >
+                      Obnovit disciplínu
+                    </Button>
+                  ) : (
+                    <ConfirmDestructiveDialog
+                      title={`Ukončit disciplínu ${group.discipline.name}?`}
+                      description="Disciplína se přesune do archivu. Všechny její cíle, tréninky a historie zůstanou zachovány a můžete ji kdykoliv znovu obnovit."
+                      confirmLabel="Ukončit disciplínu"
+                      onConfirm={() =>
+                        setDisciplineMutation.mutate({
+                          name: group.discipline.name,
+                          isArchived: true,
+                        })
+                      }
+                      trigger={
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={setDisciplineMutation.isPending}
+                          className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+                        >
+                          Ukončit
+                        </Button>
+                      }
+                    />
+                  )}
+                </div>
                 <span className="text-xs text-muted-foreground">
                   {group.goals.filter((g) => g.status === "ACTIVE").length} aktivní ·{" "}
                   {group.goals.filter((g) => g.status === "COMPLETED").length} splněné
