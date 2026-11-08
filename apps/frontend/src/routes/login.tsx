@@ -1,20 +1,13 @@
 import { useState } from "react"
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router"
-import { X } from "lucide-react"
 import { z } from "zod"
 
-import { LandingPage } from "@/app/LandingPage"
 import { ROUTES } from "@/app/routes"
+import { AuthLayout } from "@/components/AuthLayout"
+import { DesignIcon } from "@/components/DesignIcon"
+import { InviteCodeDialog } from "@/components/InviteCodeDialog"
 import { Seo } from "@/components/Seo"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 
 import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
 import { SignInForm } from "@/features/auth/components/SignInForm"
@@ -75,61 +68,47 @@ function LoginPage() {
 
   return (
     <>
-      <LandingPage />
       <Seo title="Přihlášení" />
-      <Dialog
-        open
-        onOpenChange={(isOpen) => {
-          if (!isOpen && !signIn.isPending) {
-            void navigate({ to: ROUTES.home, replace: true })
-          }
-        }}
-      >
-        <DialogContent showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle className="tracking-tight">Přihlášení</DialogTitle>
-            <DialogDescription>Přihlaste se e-mailem a heslem ke svému účtu.</DialogDescription>
-          </DialogHeader>
-          <DialogClose asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2"
-              aria-label="Zavřít přihlášení"
-              disabled={signIn.isPending}
+      <AuthLayout
+        hasBrand
+        title="Vítej zpátky 👋"
+        description="Přihlas se a pokračuj v tréninku svého psa."
+        footer={
+          <span>
+            Nemáš účet?{" "}
+            <Link
+              to={ROUTES.signup}
+              search={effectiveCode ? { code: effectiveCode } : undefined}
+              className="inline-flex min-h-touch items-center font-bold text-primary"
             >
-              <X
-                aria-hidden="true"
-                className="size-4"
-              />
+              Zaregistruj se
+            </Link>
+          </span>
+        }
+      >
+        <SignInForm
+          isLoading={signIn.isPending}
+          errorMessage={errorMessage}
+          onSubmit={handleSubmit}
+        />
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          nebo
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <InviteCodeDialog
+          trigger={
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-full"
+            >
+              <DesignIcon name="auth-141-1520-IconTicket" />
+              Mám pozvánku od trenéra
             </Button>
-          </DialogClose>
-          <SignInForm
-            isLoading={signIn.isPending}
-            errorMessage={errorMessage}
-            onSubmit={handleSubmit}
-          />
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div>
-              <Link
-                to={ROUTES.forgotPassword}
-                className="font-medium text-foreground underline underline-offset-4"
-              >
-                Zapomenuté heslo?
-              </Link>
-            </div>
-            <p>
-              Ještě nemáte účet?{" "}
-              <Link
-                to={ROUTES.signup}
-                className="font-medium text-foreground underline underline-offset-4"
-              >
-                Registrace
-              </Link>
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
+          }
+        />
+      </AuthLayout>
     </>
   )
 }

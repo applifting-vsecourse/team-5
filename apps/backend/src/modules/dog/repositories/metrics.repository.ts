@@ -1,4 +1,5 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
+import { fromCalendarDate } from '@/modules/dog/domain/calendar-date';
 import { MetricLog } from '@/modules/dog/domain/training-metrics';
 import { Injectable } from '@nestjs/common';
 
@@ -32,6 +33,33 @@ export class MetricsRepository {
         },
       },
     });
+  }
+
+  async getWeeklyPlan(
+    scope: { dogId: string } | { ownerId: string },
+    from: string,
+    to: string,
+  ) {
+    const groups = await this.prisma.scheduledTraining.groupBy({
+      by: ['status'],
+      where: {
+        date: { gte: fromCalendarDate(from), lte: fromCalendarDate(to) },
+        ...('dogId' in scope
+          ? { dogId: scope.dogId }
+          : { dog: { ownerId: scope.ownerId, isArchived: false } }),
+      },
+      _count: true,
+    });
+    return {
+      weeklyPlannedSessions: groups.reduce(
+        (sum, group) => sum + group._count,
+        0,
+      ),
+      weeklyCompletedSessions:
+        groups.find((group) => group.status === 'COMPLETED')?._count ?? 0,
+      weeklySkippedSessions:
+        groups.find((group) => group.status === 'SKIPPED')?._count ?? 0,
+    };
   }
 
   setWeeklyTarget(

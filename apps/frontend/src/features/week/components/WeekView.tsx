@@ -35,7 +35,6 @@ import {
   type WeekTraining,
 } from "@/features/week/api/weekQueryOptions"
 import { MoveTrainingDialog } from "@/features/week/components/MoveTrainingDialog"
-import { SkipTrainingDialog } from "@/features/week/components/SkipTrainingDialog"
 import { WeekPickerDialog } from "@/features/week/components/WeekPickerDialog"
 import { useUndoSkip } from "@/features/week/hooks/useSkipTraining"
 
@@ -139,13 +138,14 @@ function WeekTrainingCard({ training, today }: { training: WeekTraining; today: 
       </div>
       <MoveTrainingDialog
         training={training}
-        isOpen={isMoveOpen}
-        onOpenChange={setMoveOpen}
-      />
-      <SkipTrainingDialog
-        training={training}
-        isOpen={isSkipOpen}
-        onOpenChange={setSkipOpen}
+        isOpen={isMoveOpen || isSkipOpen}
+        initialAction={isSkipOpen ? "skip" : "move"}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setMoveOpen(false)
+            setSkipOpen(false)
+          }
+        }}
       />
     </StripCard>
   )
@@ -257,29 +257,35 @@ export function WeekView({
         onRetry={() => void metrics.refetch()}
         empty={null}
       >
-        {metrics.data && metrics.data.weeklyTarget > 0 && (
+        {metrics.data?.weeklyPlannedSessions != null && (
           <section
             className="space-y-2 rounded-card border border-border bg-card p-4"
-            aria-label="Týdenní cíl"
+            aria-label="Týdenní plán"
           >
             <div className="flex items-center justify-between gap-3 text-sm font-bold">
-              <h2>Týdenní cíl</h2>
+              <h2>Týdenní plán</h2>
               <span className="text-primary">
-                {metrics.data.weeklyTrainedDays} / {metrics.data.weeklyTarget}
+                {metrics.data.weeklyPlannedSessions > 0
+                  ? `${metrics.data.weeklyCompletedSessions ?? 0} / ${metrics.data.weeklyPlannedSessions}`
+                  : "Bez plánu"}
               </span>
             </div>
             <Progress
               value={Math.min(
                 100,
-                (metrics.data.weeklyTrainedDays / metrics.data.weeklyTarget) * 100,
+                metrics.data.weeklyPlannedSessions > 0
+                  ? ((metrics.data.weeklyCompletedSessions ?? 0) /
+                      metrics.data.weeklyPlannedSessions) *
+                      100
+                  : 0,
               )}
-              aria-label="Splněné tréninkové dny všech psů"
+              aria-label="Dokončené naplánované tréninky"
               className="h-2"
             />
             <p className="text-xs leading-relaxed text-muted-foreground">
-              {metrics.data.weeklyTrainedDays >= metrics.data.weeklyTarget
-                ? "Týdenní cíl je splněný."
-                : `Ještě ${metrics.data.weeklyTarget - metrics.data.weeklyTrainedDays} tréninkových dnů psů do splnění cíle.`}
+              {metrics.data.weeklyPlannedSessions === 0
+                ? "Na tento týden zatím nemáš naplánované tréninky."
+                : `Hotové ${metrics.data.weeklyCompletedSessions ?? 0} z ${metrics.data.weeklyPlannedSessions} naplánovaných tréninků. Přeskočené: ${metrics.data.weeklySkippedSessions ?? 0}.`}
             </p>
           </section>
         )}
@@ -290,6 +296,7 @@ export function WeekView({
         onRetry={() => void query.refetch()}
         errorTitle="Týden se nepodařilo načíst"
         empty={null}
+        className="flex flex-col gap-6"
       >
         {!trainings.length && (
           <EmptyState

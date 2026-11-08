@@ -160,6 +160,7 @@ export class ClientsService {
     valid: boolean;
     code: string;
     trainerName: string;
+    expiresAt: Date;
     email?: string | null;
     isExistingUser: boolean;
   }> {
@@ -172,6 +173,7 @@ export class ClientsService {
       valid: true,
       code: inv.code,
       trainerName: inv.trainer.name,
+      expiresAt: inv.expiresAt,
       email: inv.email,
       isExistingUser: inv.isExistingUser,
     };

@@ -1,117 +1,83 @@
-import { useState } from "react"
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { CheckCircle2, X } from "lucide-react"
+import { useEffect, useState } from "react"
+import { createFileRoute, Link } from "@tanstack/react-router"
 
-import { LandingPage } from "@/app/LandingPage"
 import { ROUTES } from "@/app/routes"
+import { AuthLayout } from "@/components/AuthLayout"
+import { DesignIcon } from "@/components/DesignIcon"
 import { Seo } from "@/components/Seo"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 
 import { ForgotPasswordForm } from "@/features/auth/components/ForgotPasswordForm"
 import { useForgotPassword } from "@/features/auth/hooks/useForgotPassword"
 
-export const Route = createFileRoute("/forgot-password")({
-  component: ForgotPasswordPage,
-})
-
+export const Route = createFileRoute("/forgot-password")({ component: ForgotPasswordPage })
 function ForgotPasswordPage() {
-  const navigate = useNavigate()
   const forgotPassword = useForgotPassword()
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
-  const handleSubmit = async (values: { email: string }) => {
-    setErrorMessage(null)
+  const [submittedEmail, setSubmittedEmail] = useState("")
+  const [seconds, setSeconds] = useState(0)
+  useEffect(() => {
+    if (!seconds) return
+    const timer = window.setTimeout(() => setSeconds(seconds - 1), 1000)
+    return () => window.clearTimeout(timer)
+  }, [seconds])
+  async function submit({ email }: { email: string }) {
     try {
-      await forgotPassword.mutateAsync(values)
-      setIsSubmitted(true)
-    } catch {
-      // Per acceptance criteria:
-      // "Po odeslání se vždy ukáže stejná hláška „Pokud účet existuje, poslali jsme e-mail“."
-      setIsSubmitted(true)
+      await forgotPassword.mutateAsync({ email })
+    } finally {
+      setSubmittedEmail(email)
+      setSeconds(45)
     }
   }
-
   return (
     <>
-      <LandingPage />
       <Seo title="Zapomenuté heslo" />
-      <Dialog
-        open
-        onOpenChange={(isOpen) => {
-          if (!isOpen && !forgotPassword.isPending) {
-            void navigate({ to: ROUTES.home, replace: true })
-          }
-        }}
+      <AuthLayout
+        title="Zapomenuté heslo"
+        description="Pošleme ti odkaz pro nastavení nového hesla. Tvoje data i záznamy psů zůstanou, jak jsou."
+        icon="auth-142-1449-IconKey"
+        footer={
+          <Link
+            to={ROUTES.login}
+            className="inline-flex min-h-touch items-center font-bold text-primary"
+          >
+            Zpět na přihlášení
+          </Link>
+        }
       >
-        <DialogContent showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle className="tracking-tight">Zapomenuté heslo</DialogTitle>
-            <DialogDescription>
-              {isSubmitted
-                ? "Informace k obnovení hesla byly odeslány."
-                : "Zadejte svůj e-mail a my vám pošleme odkaz pro obnovu hesla."}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogClose asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2"
-              aria-label="Zavřít zapomenuté heslo"
-              disabled={forgotPassword.isPending}
-            >
-              <X
-                aria-hidden="true"
-                className="size-4"
-              />
-            </Button>
-          </DialogClose>
-
-          {isSubmitted ? (
-            <div className="space-y-4">
-              <Alert>
-                <CheckCircle2 className="size-4 text-primary" />
-                <AlertTitle>Zkontrolujte e-mail</AlertTitle>
-                <AlertDescription>Pokud účet existuje, poslali jsme e-mail.</AlertDescription>
-              </Alert>
+        <ForgotPasswordForm
+          isLoading={forgotPassword.isPending || seconds > 0}
+          onSubmit={async (values) => {
+            await submit(values).catch(() => undefined)
+          }}
+        />
+        {submittedEmail && (
+          <div
+            role="status"
+            className="flex items-start gap-3 rounded-card bg-success p-4 text-success-foreground"
+          >
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-success-foreground">
+              <DesignIcon name="auth-142-1449-IconCheck" />
+            </span>
+            <div className="min-w-0 space-y-1">
+              <h2 className="font-extrabold">Odkaz je na cestě</h2>
+              <p className="text-sm">Pokud účet existuje, poslali jsme e-mail.</p>
+              <p className="text-sm">Zkontroluj i spam.</p>
               <Button
-                asChild
-                className="w-full"
-                variant="outline"
+                variant="ghost"
+                className="h-auto px-0 text-success-foreground"
+                disabled={seconds > 0 || forgotPassword.isPending}
+                onClick={() => {
+                  void submit({ email: submittedEmail }).catch(() => undefined)
+                }}
               >
-                <Link to={ROUTES.login}>Zpět na přihlášení</Link>
+                {seconds > 0
+                  ? `Poslat znovu za 0:${String(seconds).padStart(2, "0")}`
+                  : "Poslat znovu"}
               </Button>
             </div>
-          ) : (
-            <>
-              <ForgotPasswordForm
-                isLoading={forgotPassword.isPending}
-                errorMessage={errorMessage}
-                onSubmit={handleSubmit}
-              />
-              <p className="text-sm text-muted-foreground">
-                Vzpomněli jste si na heslo?{" "}
-                <Link
-                  to={ROUTES.login}
-                  className="font-medium text-foreground underline underline-offset-4"
-                >
-                  Přihlásit se
-                </Link>
-              </p>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        )}
+      </AuthLayout>
     </>
   )
 }

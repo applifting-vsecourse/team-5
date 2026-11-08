@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { createMemoryHistory, createRouter, RouterProvider } from "@tanstack/react-router"
 import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { HTTPError } from "ky"
 import type * as Sonner from "sonner"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -97,18 +98,24 @@ afterEach(() => {
 describe("invite page (/invite)", () => {
   it("shows missing code message when no code in query", async () => {
     await openPage("/invite")
-    expect(await screen.findByText("Chybí kód pozvánky")).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "Přejít na úvodní stránku" })).toBeInTheDocument()
+    expect(
+      await screen.findByRole("heading", { name: "Mám pozvánku od trenéra" }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Pokračovat bez trenéra" })).toBeInTheDocument()
   })
 
   it("shows invalid or expired message when code verification fails", async () => {
     vi.mocked(api.get).mockImplementation(() => {
-      throw new Error("Invitation not found")
+      throw new HTTPError(
+        new Response(null, { status: 404 }),
+        new Request("http://localhost/invitations/BAD123"),
+        {} as never,
+      )
     })
 
     await openPage("/invite?code=BAD123")
-    expect(await screen.findByText("Neplatný nebo vypršený kód")).toBeInTheDocument()
-    expect(screen.getByText(/BAD123/)).toBeInTheDocument()
+    expect(await screen.findByText("Pozvánka už neplatí")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Ověřit nový kód" })).toBeInTheDocument()
   })
 
   it("shows trainer invite and registration/login options when not authenticated", async () => {
@@ -130,15 +137,15 @@ describe("invite page (/invite)", () => {
 
     await openPage("/invite?code=K7M2PQ")
 
-    expect(await screen.findByText("Pozvánka do TrainLoopu")).toBeInTheDocument()
-    expect(screen.getByText(/Trenér Veronika Trenérka vás zve ke spolupráci/i)).toBeInTheDocument()
-    expect(screen.getByText("K7M2PQ")).toBeInTheDocument()
+    expect(
+      await screen.findByRole("heading", { name: /Veronika Trenérka tě zve/ }),
+    ).toBeInTheDocument()
 
-    const signupLink = screen.getByRole("link", { name: "Zaregistrovat se jako psovod" })
+    const signupLink = screen.getByRole("link", { name: "Přijmout a vytvořit účet" })
     expect(signupLink).toBeInTheDocument()
     expect(signupLink).toHaveAttribute("href", "/signup?code=K7M2PQ&email=klient%40example.com")
 
-    const loginLink = screen.getByRole("link", { name: /Už mám účet → Přihlásit se/i })
+    const loginLink = screen.getByRole("link", { name: /Už mám účet – přihlásit/i })
     expect(loginLink).toBeInTheDocument()
   })
 
@@ -162,7 +169,7 @@ describe("invite page (/invite)", () => {
 
     await openPage("/invite?code=EXIST1")
 
-    expect(await screen.findByText(/K e-mailu/i)).toBeInTheDocument()
+    expect(await screen.findByText("E-mail pozvánky")).toBeInTheDocument()
     expect(screen.getByText("eva.novotna@email.cz")).toBeInTheDocument()
 
     const loginBtn = screen.getByRole("link", { name: "Přihlásit se a pokračovat k propojení" })
@@ -219,16 +226,15 @@ describe("invite page (/invite)", () => {
 
     expect(await screen.findByText("Blesk")).toBeInTheDocument()
     const acceptBtn = await screen.findByRole("button", {
-      name: "Přijmout pozvánku a propojit účet",
+      name: "Přijmout pozvánku a sdílet psy",
     })
     expect(acceptBtn).toBeInTheDocument()
-    expect(screen.getByText("Pavel Novák")).toBeInTheDocument()
     await interaction.click(acceptBtn)
 
     expect(vi.mocked(api.post)).toHaveBeenCalledWith("invitations/accept", {
       json: { code: "K7M2PQ", dogIds: ["dog-1"] },
     })
-    expect(await screen.findByText("Propojení úspěšné!")).toBeInTheDocument()
+    expect(await screen.findByText("Začínáme")).toBeInTheDocument()
   })
 
   it("prompts logged-in client to create a dog if they have none", async () => {
@@ -256,8 +262,8 @@ describe("invite page (/invite)", () => {
 
     await openPage("/invite?code=K7M2PQ")
 
-    expect(await screen.findByText(/Zatím nemáte v účtu žádného psa/i)).toBeInTheDocument()
+    expect(await screen.findByText(/Zatím nemáš žádného psa/i)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Založit psa" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Přijmout pozvánku a propojit účet" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Přijmout pozvánku a sdílet psy" })).toBeEnabled()
   })
 })

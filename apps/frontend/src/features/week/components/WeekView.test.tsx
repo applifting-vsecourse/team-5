@@ -67,6 +67,9 @@ const renderWeek = (trainings: WeekTraining[], weekStart = "2026-10-19") => {
   queryClient.setQueryData(weekKeys.week(weekStart), trainings)
   queryClient.setQueryData([...weekKeys.week(weekStart), "metrics"], {
     weeklyTarget: 6,
+    weeklyPlannedSessions: 6,
+    weeklyCompletedSessions: 3,
+    weeklySkippedSessions: 0,
     weeklyTrainedDays: 3,
   })
   const onWeekChange = vi.fn()
@@ -215,11 +218,12 @@ describe("WeekView", () => {
 
       await user.click(screen.getByRole("button", { name: /^Možnosti tréninku/ }))
       await user.click(screen.getByRole("menuitem", { name: "Přesunout trénink" }))
-      const dialog = screen.getByRole("dialog", { name: "Přesunout trénink" })
+      const dialog = screen.getByRole("dialog", { name: "Co s tréninkem?" })
       // The day it is on now cannot be picked, so tomorrow is offered first.
       expect(within(dialog).getByRole("radio", { name: "středa 21. 10." })).toBeDisabled()
       expect(within(dialog).getByRole("radio", { name: "čtvrtek 22. 10." })).toBeChecked()
 
+      await user.click(within(dialog).getByRole("button", { name: "Jiný týden" }))
       await user.click(within(dialog).getByRole("button", { name: "Další týden" }))
       await user.click(within(dialog).getByRole("radio", { name: "úterý 27. 10." }))
       await user.click(within(dialog).getByRole("button", { name: "Přesunout na úterý 27. 10." }))
@@ -237,7 +241,7 @@ describe("WeekView", () => {
       await user.click(screen.getByRole("menuitem", { name: "Přesunout trénink" }))
       await user.click(screen.getByRole("button", { name: "Přesunout na čtvrtek 22. 10." }))
 
-      expect(screen.getByRole("dialog", { name: "Přesunout trénink" })).toBeInTheDocument()
+      expect(screen.getByRole("dialog", { name: "Co s tréninkem?" })).toBeInTheDocument()
     })
   })
 
@@ -262,10 +266,11 @@ describe("WeekView", () => {
 
       await user.click(screen.getByRole("button", { name: /^Možnosti tréninku/ }))
       await user.click(screen.getByRole("menuitem", { name: "Přeskočit trénink" }))
-      const dialog = screen.getByRole("alertdialog", { name: "Přeskočit trénink?" })
-      expect(dialog).toHaveTextContent("plán cíle se neposune")
+      const dialog = screen.getByRole("dialog", { name: "Co s tréninkem?" })
+      expect(within(dialog).getByRole("radio", { name: /Přeskočit tento trénink/ })).toBeChecked()
+      expect(dialog).toHaveTextContent("další tréninky cíle se neposunou")
 
-      await user.click(within(dialog).getByRole("button", { name: "Přeskočit" }))
+      await user.click(within(dialog).getByRole("button", { name: "Přeskočit trénink" }))
 
       expect(skipTraining).toHaveBeenCalledWith("t1")
     })
@@ -276,10 +281,10 @@ describe("WeekView", () => {
 
       await user.click(screen.getByRole("button", { name: /^Možnosti tréninku/ }))
       await user.click(screen.getByRole("menuitem", { name: "Přeskočit trénink" }))
-      await user.click(screen.getByRole("button", { name: "Ponechat" }))
+      await user.click(screen.getByRole("button", { name: "Zrušit" }))
 
       expect(skipTraining).not.toHaveBeenCalled()
-      expect(screen.queryByRole("alertdialog")).toBeNull()
+      expect(screen.queryByRole("dialog")).toBeNull()
     })
 
     it("keeps a skipped training in the week and lets the user take the skip back", async () => {
