@@ -1,185 +1,185 @@
-# UX and UI Changes Report
+# Zpráva o změnách UX a UI
 
-**Date**: 2026-11-08  
-**Scope**: All user experience (UX), user interface (UI), and interaction design changes merged into `dev` since 2026-10-26 (commits `ada5199` → `5815bab`).  
-**Context**: Complete application redesign wave implementing the approved Figma specifications ([DESIGN.md](../DESIGN.md)), the shared UI components catalog ([ui-components.md](ui-components.md)), and design system foundations ([design-system-audit-171.md](design-system-audit-171.md)).
-
----
-
-## Executive Summary
-
-Between 26 October and 8 November 2026, TrainLoop underwent a comprehensive UX/UI overhaul across all core screens and flows. A total of **18 pull requests** with direct UX impact were merged, including the major integration PR **#212** (consolidating PRs 200–209 and post-review polish).
-
-The redesign addresses consistency, accessibility, touch ergonomics, and role-tailored workflows:
-
-- **Design system foundations**: Semantic color tokens, light mode enforcement (dark mode deferred per product owner decision; dark hero and sidebar retained as scoped accent surfaces), standard radii (`rounded-card`, `rounded-field`, `rounded-hero`, `rounded-sheet`), and WCAG-compliant contrast.
-- **Mobile-first ergonomics & shared components**: Touch target enlargement (minimum 44 px for interactive items, 52 px for fields, 56 px for primary actions), mobile bottom tab navigation (`BottomNav`), and bottom sheet dialogs (`Drawer` / `ConfirmDestructiveDialog`) replacing intrusive modals on mobile devices.
-- **Public pages & account lifecycle**: Reimagined landing page, dedicated role selection (Handler vs. Trainer) during registration, redesigned sign-in and password recovery, profile editing, e-mail change verification, and password-guarded account deletion.
-- **Handler experience (Today & Week)**: Dominant Hero card with the current training and a 1-tap "Začít trénink" (Start training) action, redesigned week calendar with dog-color identity strips, and overdue indicators.
-- **Dog management, diary & archive**: Dog identity colors (1–6) consistently reflected in avatars, headers, and calendar strips; private notes (`DogNote`) for lessons/seminars; dog archiving and reactivation workflows.
-- **Goals & training execution**: Step-by-step goal editor, explicit step progression (Advance, Skip, Back), training walkthrough runner with integrated timer and mistake recording, and automatic cleanup of future planned trainings upon goal archiving.
-- **Training records & feedback messaging**: Migration from dialogs to full-page records (`TrainingRecordPage`), distinct styling for trainer vs. handler messages, and instant "Reply" actions from history cards with auto-scroll to the composer.
-- **Trainer workspace & clients**: Dedicated mobile `TrainerOverview` dashboard, client directory with performance heatmaps, structured scheduling workflows, and isolation of personal dogs pending multi-role context switching.
+**Datum**: 08. 11. 2026  
+**Rozsah**: Všechny změny uživatelské zkušenosti (UX), uživatelského rozhraní (UI) a interakčního designu začleněné do větve `dev` od 26. 10. 2026 (commity `ada5199` → `5815bab`).  
+**Kontext**: Kompletní redesignová vlna aplikace implementující schválené specifikace z Figmy ([DESIGN.md](../DESIGN.md)), katalog sdílených UI komponent ([ui-components.md](ui-components.md)) a základy design systému ([design-system-audit-171.md](design-system-audit-171.md)).
 
 ---
 
-## Detailed Functional & UX Breakdown
+## Manažerské shrnutí
 
-### 1. Design System Foundations & Shared UI Kit
+Mezi 26. říjnem a 8. listopadem 2026 proběhla v aplikaci TrainLoop rozsáhlá generální obnova UX/UI napříč všemi klíčovými obrazovkami a toky. Celkem bylo začleněno **18 pull requestů** s přímým dopadem na UX, včetně velké integrační PR **#212** (která sjednotila balík PR 200–209 a následné úpravy z review).
 
-- **Figma Token Alignment (PR #176)**:
-  - Consolidated all styling under CSS custom properties in `apps/frontend/src/styles/global.css`.
-  - Added semantic pairs: `hero`/`hero-foreground`, `success`/`success-foreground`, `warning`/`warning-foreground`, `info`/`info-foreground`, and `card`/`card-foreground`.
-  - Enforced light theme throughout the application (hiding theme switchers in headers and settings); scoped dark backgrounds exclusively to the `HeroCard` and the desktop `AppSidebar`.
-  - Replaced ad-hoc border radii with token classes: `rounded-card`, `rounded-field`, `rounded-hero`, and `rounded-sheet`.
-- **Shared Component Library (PR #178, #185)**:
-  - Catalogued reusable components in `docs/ui-components.md`:
-    - `HeroCard` & `HeroChip`: Highlight surface for primary actionable summary.
-    - `StripCard`: Content card with optional dog-color identity strip on the left border.
-    - `StatusChip`: Visual uppercase chips with semantic tones (`muted`, `accent`, `success`, `warning`, `info`, `danger`, `hero`).
-    - `PesAvatar`: Standardized circular dog identity badge rendering with `text-dog-foreground`.
-    - `PerformanceLegend`: Color-coded performance bands (<50%, 50–65%, 65–80%, ≥80%) with accessible contrast.
-    - `QueryState` & `EmptyState`: Unified loading skeletons (`ListSkeleton`), empty states with iconography and actions, and error fallbacks with retry actions.
-- **Touch Targets & Accessibility (PR #178, #185)**:
-  - Standardized minimum interactive dimensions to ≥44×44 px.
-  - Enlarged `CheckboxField` hit area to the full container row (`min-h-touch`).
-  - Implemented accessible Radix-based keyboard focus rings with high-contrast outlines (`ring-2 ring-ring ring-offset-2`).
-- **Mobile Navigation & Sheets (PR #178, #212)**:
-  - Persistent `BottomNav` with role-based routing:
-    - Handler: **Dnes** (Today) · **Týden** (Week) · **Psi** (Dogs) · **Účet** (Account).
-    - Trainer: **Přehled** (Overview) · **Klienti** (Clients) · **Cíle** (Goals) · **Účet** (Account).
-  - Replaced desktop-centric confirmation modals on mobile with swipeable Radix/Vaul bottom sheets (`ConfirmDestructiveDialog` / `Drawer`).
+Redesign řeší konzistenci, přístupnost, ergonomii ovládání na dotykových zařízeních a specializované toky pro jednotlivé role:
+
+- **Základy design systému**: Sémantické barevné tokeny, vynucení světlého režimu (tmavý režim byl na základě rozhodnutí Product Ownera dočasně odložen; tmavé pozadí zůstalo vyhrazeno pouze pro karty Hero a desktopový postranní panel), standardizovaná zaoblení (`rounded-card`, `rounded-field`, `rounded-hero`, `rounded-sheet`) a kontrast odpovídající standardům WCAG.
+- **Ergonomie zaměřená na mobilní zařízení a sdílené komponenty**: Zvětšení dotykových prvků (minimálně 44 px pro interaktivní prvky, 52 px pro formulářová pole, 56 px pro hlavní akční tlačítka), mobilní spodní navigační lišta (`BottomNav`) a dialogy ve formě vysouvacích spodních panelů (`Drawer` / `ConfirmDestructiveDialog`), které na mobilních zařízeních nahradily rušivá modální okna.
+- **Veřejné stránky a životní cyklus účtu**: Přepracovaná úvodní stránka (Landing Page), dedikovaný výběr role (Psovod vs. Trenér) již během registrace, nový vzhled přihlášení a obnovy hesla, úprava profilu, ověření změny e-mailu a bezpečné mazání účtu vyžadující zadání hesla.
+- **Prostředí psovoda (Dnes a Týden)**: Výrazná karta Hero s aktuálním tréninkem a akcí na jedno klepnutí „Začít trénink“, přepracovaný týdenní kalendář s barevnými identifikačními proužky psů a indikátory zmeškaných/opožděných tréninků.
+- **Správa psů, deník a archivace**: Stabilní identifikační barvy psů (1–6) promítnuté do avatarů, hlaviček i proužků v kalendáři; soukromé poznámky psovoda (`DogNote`) z lekcí a seminářů; proces archivace a obnovy psů z archivu.
+- **Cíle a průchod tréninkem**: Editor cílů krok za krokem, explicitní posun v krocích cíle (Posunout, Přeskočit, Zpět), průvodce tréninkem (walkthrough) s integrovaným časovačem a záznamem chyb a automatické promazání budoucích plánovaných tréninků při archivaci cíle.
+- **Záznamy tréninků a zpětná vazba**: Přechod z vyskakovacích oken na samostatné plnohodnotné stránky záznamu (`TrainingRecordPage`), vizuální odlišení zpráv trenéra a psovoda a okamžitá možnost odpovědi z karet historie s automatickým doscrolováním k editoru zprávy.
+- **Pracovní prostor trenéra a klienti**: Dedikovaný mobilní přehled trenéra (`TrainerOverview`), přehled klientů s barevnými teplotními mapami (heatmaps) úspěšnosti, strukturovaný proces plánování a izolace osobních psů trenéra do doby zavedení plnohodnotného přepínání rolí.
 
 ---
 
-### 2. Public Pages, Authentication & Account Management
+## Podrobný funkční a UX rozbor
 
-- **Landing Page Redesign (PR #175 via #212)**:
-  - Rebuilt hero section, value propositions, feature highlights, and footer.
-  - Integrated custom SVG graphics, progress ring indicators (`ProgressRing`), and responsive layout.
-- **Authentication Flows (PR #175 via #212)**:
-  - **Role Selection**: Registration flow starts with an explicit choice between _Psovod_ (Handler) and _Trenér_ (Trainer), establishing role permissions and navigation routes upfront.
-  - **Sign In & Sign Up**: Redesigned on `AuthLayout` with `IconInput` and `PasswordInput` (toggleable password visibility).
-  - **Recovery**: Rebuilt _Zapomenuté heslo_ (Forgot password) and _Obnova hesla_ (Password reset) screens with validation feedback.
-- **Account Settings & Security (`/account`) (PR #175 via #212)**:
-  - **Profile Management**: Inline editing of user profile information (`EditAccountDialog`).
-  - **Email Change**: Requires confirmation link sent to the new email address before updating.
-  - **Password Update**: Integrated password change form with security checks.
-  - **Account Deletion**: Role-aware confirmation explaining exact data deletion consequences (e.g. impact on assigned client dogs for trainers vs. private dogs for handlers); enforces password verification; rendered as a bottom sheet on mobile.
-  - **Trainer Invitation**: Dialog for handlers to enter invitation codes (`InviteCodeDialog` / `ConnectTrainerDialog`) to establish coach-client links.
-- **Error & Loading UX (PR #175 via #212)**:
-  - Redesigned 404 (Not Found) and error boundary screens (`ErrorLayout`, `RootErrorBoundary`) with self-service retry and navigation shortcuts.
-  - Redesigned branded full-page loading screen (`AppLoadingScreen`).
+### 1. Základy design systému a sdílený UI kit
 
----
-
-### 3. Dog Management, Profile, Diary & Archive
-
-- **Visual Dog Identity (PR #176, #190, #191)**:
-  - Dogs maintain a stable color index (1–6) across all views (cards, calendar strips, avatars, headers).
-  - Dog profile features a prominent, full-width colored header matching the dog's assigned tone with high-contrast foreground typography.
-- **Private Notes & Restyled Diary (PR #170, #183, #184)**:
-  - Handlers can record private notes from training lessons and seminars (`DogNote`).
-  - Completely restyled the dog diary into card-based entries utilizing the shared UI kit, with search and entry creation actions.
-- **Dog Archiving & Reactivation (PR #200 via #212)**:
-  - Handlers can archive dogs when inactive, retired, or temporarily paused.
-  - Confirmation dialog verifies the action.
-  - Archived dogs are excluded from active dog lists, quick-pickers, and the weekly schedule.
-  - Added dedicated **Archiv psů** section on `/dogs` allowing users to inspect past dogs and restore them to active status at any time.
-  - Added direct link to dog training history inside `DogDetailView`.
+- **Sladění tokenů s Figmou (PR #176)**:
+  - Sjednocení stylů pod CSS proměnné v `apps/frontend/src/styles/global.css`.
+  - Doplnění sémantických dvojic: `hero`/`hero-foreground`, `success`/`success-foreground`, `warning`/`warning-foreground`, `info`/`info-foreground` a `card`/`card-foreground`.
+  - Vynucení světlého režimu v celé aplikaci (přepínače motivu byly skryty v hlavičce i nastavení účtu); tmavý povrch je striktně vyhrazen pouze pro `HeroCard` a desktopový `AppSidebar`.
+  - Nahrazení nahodilých hodnot zaoblení třídami tokenů: `rounded-card`, `rounded-field`, `rounded-hero` a `rounded-sheet`.
+- **Knihovna sdílených komponent (PR #178, #185)**:
+  - Zavedení znovupoužitelných prvků popsaných v `docs/ui-components.md`:
+    - `HeroCard` a `HeroChip`: Zvýrazněná plocha pro hlavní akční souhrn.
+    - `StripCard`: Karta obsahu s volitelným barevným pruhem psa na levém okraji.
+    - `StatusChip`: Vizuální štítky verzálkami se sémantickými tóny (`muted`, `accent`, `success`, `warning`, `info`, `danger`, `hero`).
+    - `PesAvatar`: Standardizovaný kruhový odznak psa využívající barvu `text-dog-foreground`.
+    - `PerformanceLegend`: Barevná škála pásem úspěšnosti (<50 %, 50–65 %, 65–80 %, ≥80 %) s přístupným kontrastem.
+    - `QueryState` a `EmptyState`: Sjednocené kostry načítání (`ListSkeleton`), prázdné stavy s ikonou, vysvětlením a akcí a chybové stavy s možností opakování akce.
+- **Dotykové cíle a přístupnost (a11y) (PR #178, #185)**:
+  - Standardizace minimálních rozměrů interaktivních prvků na ≥44×44 px.
+  - Zvětšení klikací plochy u `CheckboxField` na celý řádek kontejneru (`min-h-touch`).
+  - Implementace přístupných indikátorů zaměření (focus rings) s výrazným obrysem a odsazením (`ring-2 ring-ring ring-offset-2`).
+- **Mobilní navigace a spodní panely (PR #178, #212)**:
+  - Trvalá spodní navigační lišta (`BottomNav`) s obsahem podle role:
+    - Psovod: **Dnes** · **Týden** · **Psi** · **Účet**.
+    - Trenér: **Přehled** · **Klienti** · **Cíle** · **Účet**.
+  * Nahrazení desktopových potvrzovacích oken na mobilu výsuvnými spodními panely (`ConfirmDestructiveDialog` / `Drawer`).
 
 ---
 
-### 4. Handler Workflows: Today & Week Scheduling
+### 2. Veřejné stránky, autentizace a správa účtu
 
-- **"Dnes" (Today) Dashboard (PR #179, #186, #190)**:
-  - Large dark `HeroCard` presenting today's scheduled training session.
-  - Primary action: 1-click **"Začít trénink"** button to immediately launch the session.
-  - Displays completed exercises, progress metrics, and overdue warning indicators for missed planned sessions.
-- **"Týden" (Week) Calendar (PR #179, #186, #191, #209 via #212)**:
-  - Restyled 7-day calendar agenda matching Figma specifications.
-  - Visual separation of days, dogs (via colored `StripCard` indicators), and completion statuses.
-  - Improved week navigation affordances (previous/next week, current week indicators).
-  - Direct action opening: clicking planned training cards initiates actions directly without redundant intermediary dialogs.
-
----
-
-### 5. Goals, Step Tracking & Training Execution
-
-- **Current Step Progression (PR #66 / #187, PR #206 via #212)**:
-  - Introduced active step tracking in training goals.
-  - Added explicit user controls to **Advance** (posunout), **Skip** (přeskočit), or **Step Back** (vrátit zpět) across step progressions.
-  - Current step is clearly marked in both the goal builder and active walkthrough screens.
-- **Goal Editor & Scheduling (PR #189, PR #201 via #212)**:
-  - Multi-step goal editor allowing handlers and trainers to structure long-term milestones into sequential exercises.
-  - **Goal Completion & Archive**: Completed or obsolete goals can be marked finished/archived.
-  - **Automatic Calendar Cleanup**: Archiving a goal automatically purges all future `PLANNED` training sessions associated with that goal from the week view, keeping the calendar clean.
-- **Training Walkthrough Runner (PR #188, #192)**:
-  - Rebuilt active training execution screen.
-  - Integrated training timer with start/pause/reset controls.
-  - Separated local exercise navigation (previous/next exercise within the current workout) from global goal-step progression.
-  - Post-session completion form capturing duration, detailed mistake notes, and difficulty ratings.
+- **Redesign úvodní stránky (PR #175 v rámci #212)**:
+  - Přepracovaná sekce Hero, přehled přínosů aplikace, představení funkcí i patička.
+  - Využití vektorové grafiky na míru, kruhových ukazatelů postupu (`ProgressRing`) a plně responzivního rozvržení.
+- **Přihlašování a registrace (PR #175 v rámci #212)**:
+  - **Volba role**: Registrační proces začíná explicitní volbou mezi rolí _Psovod_ a _Trenér_, což rovnou nastavuje oprávnění a navigační strukturu.
+  - **Přihlášení a registrace**: Sjednocený layout `AuthLayout` s komponentami `IconInput` a `PasswordInput` (možnost zobrazení hesla).
+  - **Obnova přístupu**: Přepracované obrazovky _Zapomenuté heslo_ a _Obnova hesla_ s okamžitou validací.
+- **Nastavení a zabezpečení účtu (`/account`) (PR #175 v rámci #212)**:
+  - **Správa profilu**: Editace údajů uživatele v dialogu `EditAccountDialog`.
+  - **Změna e-mailu**: Vyžaduje potvrzení přes ověřovací odkaz zaslaný na novou adresu.
+  - **Změna hesla**: Integrovaný formulář pro změnu hesla s bezpečnostní kontrolou.
+  - **Smazání účtu**: Kontextové vysvětlení důsledků podle role (např. vliv na přiřazené psy klientů u trenéra vs. smazání vlastních psů u psovoda); vyžaduje potvrzení zadáním hesla; na mobilu se zobrazuje jako spodní panel.
+  - **Napojení na trenéra**: Dialog pro zadání zvacího kódu trenéra (`InviteCodeDialog` / `ConnectTrainerDialog`).
+- **Chybové a načítací stavy (PR #175 v rámci #212)**:
+  - Nový vzhled chybové stránky 404 (Nenalezeno) i globálního zachycení chyb (`ErrorLayout`, `RootErrorBoundary`) srozumitelný pro uživatele a obsahující tlačítka pro návrat.
+  - Značková načítací obrazovka (`AppLoadingScreen`).
 
 ---
 
-### 6. Training Records, History & Feedback Messaging
+### 3. Správa psů, profil, deník a archivace
 
-- **Full-Page Training Record (`TrainingRecordPage`) (PR #193, #204/#205 via #212)**:
-  - Replaced small dialog popups with dedicated full-page routes (`/dogs/:dogId/activities/:activityId`).
-  - Structured view of completed goals, exercise steps, metrics, and recorded notes.
-- **Trainer/Handler Feedback Chat (PR #163/#205 via #212)**:
-  - Dedicated message thread attached to each training record.
-  - Distinct message bubble styling visually differentiating handler comments from trainer feedback.
-- **History Card UX & Reply Shortcuts (PR #207, #209 via #212)**:
-  - Direct **"Odpovědět"** (Reply) button on history list cards.
-  - Clicking "Reply" navigates directly to the record and auto-scrolls down to the message input composer.
-  - Migrated history views away from inline dialogs to direct routing via `activityId`.
-  - Added dedicated navigation routes for `/inbox` and `/messages` (PR #208 via #212).
-
----
-
-### 7. Trainer Workspace & Client Management
-
-- **Mobile Trainer Overview (PR #182, #193)**:
-  - Dedicated dashboard for trainers displaying key operational metrics: active clients, active dogs, completion rates, and recent client activity.
-  - Quick-access buttons for trainer administrative workflows.
-- **Client Directory & Heatmap (PR #182, #204 via #212)**:
-  - Restyled client list (`ClientList`, `ClientCard`) and client detail screens.
-  - Implemented client activity heatmaps using semantic performance bands (<50%, 50–65%, 65–80%, ≥80%).
-- **Structured Client Scheduling (PR #204 via #212)**:
-  - Enhanced trainer scheduling workflow requiring selection of client, dog, and specific goal before assigning scheduled workouts.
-- **Role Context Isolation (PR #211 via #212)**:
-  - Trainers' personally owned dogs are temporarily hidden from the trainer-specific dashboard view until dedicated multi-role context switching is implemented ([docs/trainer-own-dogs-followup.md](trainer-own-dogs-followup.md)).
+- **Vizuální identita psa (PR #176, #190, #191)**:
+  - Každý pes má stabilně přiřazený index barvy (1–6), který se nemění napříč zobrazeními (karty, proužky v kalendáři, avataři, hlavičky).
+  - Profil psa má výraznou, plnobarevnou záhlavní kartu v barvě psa s kontrastním písmem.
+- **Soukromé poznámky a deník (PR #170, #183, #184)**:
+  - Psovodi mohou k jednotlivým psům ukládat soukromé poznámky z lekcí a seminářů (`DogNote`).
+  - Kompletně restylovaný deník psa využívající karty ze sdíleného UI kitu, doplněný o vyhledávání a rychlé akce pro přidání záznamu.
+- **Archivace a obnova psa (PR #200 v rámci #212)**:
+  - Možnost archivovat psa v případě neaktivity, pauzy nebo ukončení tréninku.
+  - Akce je chráněna potvrzovacím dialogem.
+  - Archivovaní psi se nezobrazují v aktivních seznamech, rychlých přepínačích ani v týdenním plánu.
+  - Přidána dedikovaná sekce **Archiv psů** na stránce `/dogs` s možností kdykoliv psa vrátit mezi aktivní.
+  - Do detailu psa (`DogDetailView`) byl přidán přímý odkaz na historii tréninků.
 
 ---
 
-### 8. Transactional Emails
+### 4. Toky psovoda: Dnes a Týden
 
-- **Unified Email Design (PR #169)**:
-  - Introduced standard `EmailLayout` component across all automated email templates (account confirmation, password reset, client invitations).
-  - Matched application typography, brand colors, spacing, and header/footer structure.
+- **Přehled „Dnes“ (PR #179, #186, #190)**:
+  - Tmavá dominantní karta `HeroCard` s naplánovaným tréninkem na dnešní den.
+  - Hlavní akce: tlačítko **„Začít trénink“** pro okamžité spuštění na jedno klepnutí.
+  - Přehled splněných cviků, metrika postupu a zřetelné upozornění na zmeškané či opožděné tréninky.
+- **Kalendář „Týden“ (PR #179, #186, #191, #209 v rámci #212)**:
+  - Sedmidenní přehled agendy podle předlohy z Figmy.
+  - Vizuální rozlišení jednotlivých dnů, psů (pomocí barevných proužků `StripCard`) a stavů dokončení.
+  - Zřetelnější ovládací prvky pro posun mezi týdny a návrat k aktuálnímu týdnu.
+  - Přímé otevírání akcí: kliknutí na naplánovaný trénink otevře detail rovnou bez zbytečných mezikroků.
 
 ---
 
-## Merged Pull Requests Registry (since 2026-10-26)
+### 5. Cíle, sledování kroků a průchod tréninkem
 
-| Date Merged    | PR / Branch                                       | Commit    | Summary of UX Impact                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| :------------- | :------------------------------------------------ | :-------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **2026-11-05** | **PR #169** (`new-e-mail`)                        | `0098f64` | `feat(email)`: Sjednocení vzhledu e-mailových šablon s design systémem aplikace.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| **2026-11-05** | **PR #170** (`feature/70-dog-notes`)              | `9a6e7c7` | `feat(dog)`: Soukromé poznámky z lekcí a seminářů pro psovody.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| **2026-11-05** | **PR #176** (`feature/171-design-system`)         | `d878929` | Redesign: Sjednocení designového základu a tokenů podle schválené Figmy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| **2026-11-05** | **PR #178** (`feature/172-shared-ui-components`)  | `afe9ec2` | `feat(ui)`: Sdílené UI komponenty, mobilní spodní navigace a mobilní bottom sheet dialogy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| **2026-11-05** | **PR #179** (`feature/161-dnes-tyden`)            | `6a1c3aa` | `feat(today)`: Nová obrazovka Dnes a restyling Týdne pro psovoda.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| **2026-11-05** | **PR #182** (`feature/173-trainer-overview`)      | `d9e33d7` | `feat(client)`: Mobilní přehled trenéra a restyling seznamu klientů.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| **2026-11-05** | **PR #183** (`feature/163-dogs-profile-diary`)    | `783fec9` | `feat(dog)`: Restyle seznamu, profilu a historie psů se sdíleným UI kitem.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| **2026-11-06** | **PR #184** (`feature/163-dog-diary-restyle`)     | `3eb48a0` | `feat(dog)`: Restyle sekce deníku psa se sdíleným UI kitem.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **2026-11-06** | **PR #185** (`feature/172-shared-ui-finish`)      | `f4dd2ea` | `feat(ui)`: Dokončení katalogu komponent, a11y dotykových ploch (44px) a CheckboxField.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| **2026-11-06** | **PR #186** (`feature/161-dnes-tyden-polish`)     | `0a1b541` | `feat(today)`: Začít trénink CTA na kartách plánu, opožděné tréninky.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| **2026-11-06** | **PR #187** (`feature/66-current-step`)           | `4aa870f` | `feat(goals)`: Sledování aktuálního kroku cíle (posun, přeskočení, návrat).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **2026-11-06** | **PR #188** (`feature/162-walkthrough-redesign`)  | `deba307` | `feat(training)`: Redesign průchodu tréninkem, časovač, formulář dokončení s chybami.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| **2026-11-07** | **PR #189** (`feature/164-goals-training-editor`) | `f8512e6` | `feat(goals)`: Redesign cílů, editoru a plánování tréninků.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| **2026-11-07** | **PR #190** (`feature/figma-psi-dnes`)            | `54e0a2e` | `feat(ui)`: Karty psů a metriky Dnes s reálnými daty podle Figmy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| **2026-11-07** | **PR #191** (`feature/figma-tyden-profil`)        | `1c6dcbd` | `feat(ui)`: Týdenní agenda a velká barevná hlavička psa.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| **2026-11-07** | **PR #192** (`feature/figma-pruchod`)             | `8c002e1` | `feat(ui)`: Průchod cvičením s časovačem a karty záznamu.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| **2026-11-07** | **PR #193** (`feature/figma-historie-prehled`)    | `95484f7` | `feat(ui)`: Historie se záznamem a metriky přehledu trenéra.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| **2026-11-08** | **PR #212** (`fix/ready-prs-without-166`)         | `5815bab` | **Integrace PR 200–209 a UX opravy historie, záznamu a plánování**: <br>• **PR #200**: Archiv a návrat psa, link na historii v detailu psa.<br>• **PR #201**: Dokončení a archiv cíle s odstraněním budoucích tréninků.<br>• **PR #203 (#175)**: Redesign veřejných stránek, registrace s výběrem role, přihlášení a správa účtu.<br>• **PR #204/#205**: Celostránkový záznam tréninku s bloky cílů, odlišení zpráv v chatu, seznam klientů.<br>• **PR #206**: Zobrazení a editace aktuálního kroku v cíli.<br>• **PR #207/#208**: Navigace v záznamu přes `activityId`, routy pro zprávy a inbox.<br>• **PR #209**: Polish přepínače týdnů, tlačítko Odpovědět na kartách historie. |
+- **Práce s aktuálním krokem (PR #66 / #187, PR #206 v rámci #212)**:
+  - Zavedení sledování aktivního kroku u cílů tréninku.
+  - Přidány explicitní akce pro **Posunout** (Advance), **Přeskočit** (Skip) a **Vrátit zpět** (Step Back) mezi fázemi cíle.
+  - Aktuální krok je vizuálně označen jak v detailu cíle, tak při samotném průchodu cvičením.
+- **Editor cílů a plánování (PR #189, PR #201 v rámci #212)**:
+  - Editor cílů s postupným průvodcem pro strukturování dlouhodobých milníků do sekvencí cviků.
+  - **Dokončení a archivace cíle**: Splněný nebo již neaktuální cíl lze označit jako hotový či archivovaný.
+  - **Automatický úklid kalendáře**: Archivace cíle automaticky odstraní všechny budoucí naplánované (`PLANNED`) tréninky tohoto cíle z týdenního kalendáře.
+- **Průchod tréninkem – walkthrough (PR #188, #192)**:
+  - Nová obrazovka pro aktivní provádění tréninku se psem.
+  - Integrovaný tréninkový časovač s ovládáním spuštění, pauzy a resetu.
+  - Oddělená navigace mezi lokálními cviky v rámci tréninku od globálního postupu v cíli.
+  - Závěrečný formulář po dokončení tréninku pro zaznamenání délky, podrobných chyb a hodnocení náročnosti.
+
+---
+
+### 6. Záznamy tréninků, historie a zpětná vazba
+
+- **Celostránkový záznam tréninku (`TrainingRecordPage`) (PR #193, #204/#205 v rámci #212)**:
+  - Nahrazení stísněných dialogových oken plnohodnotnými URL adresami (`/dogs/:dogId/activities/:activityId`).
+  - Strukturovaný přehled splněných cílů, jednotlivých kroků, naměřených hodnot i zapsaných poznámek.
+- **Zpětná vazba a chat k tréninku (PR #163/#205 v rámci #212)**:
+  - Komunikační vlákno navázané přímo na konkrétní záznam tréninku.
+  - Graficky odlišené bubliny zpráv pro trenéra a psovoda.
+- **Práce s historií a zkratka pro odpověď (PR #207, #209 v rámci #212)**:
+  - Tlačítko **„Odpovědět“** přímo na kartách v seznamu historie.
+  - Kliknutí na odpověď uživatele přesměruje do záznamu a automaticky doscrolluje k poli pro zadání zprávy.
+  - Přechod z vyskakovacích oken historie na přímé routování s parametrem `activityId`.
+  - Příprava navigačních tras pro `/inbox` a `/messages` (PR #208 v rámci #212).
+
+---
+
+### 7. Prostředí trenéra a správa klientů
+
+- **Mobilní přehled trenéra (PR #182, #193)**:
+  - Přehledová nástěnka pro trenéry s klíčovými metrikami: aktivní klienti, aktivní psi, úspěšnost dokončení a nedávná aktivita.
+  - Rychlá tlačítka pro nejčastější trenérské úkony.
+- **Seznam a detail klienta (PR #182, #204 v rámci #212)**:
+  - Nový design seznamu klientů (`ClientList`, `ClientCard`) a klientského detailu.
+  - Teplotní mapy (heatmaps) tréninkové aktivity klientů se sémantickým barevným odlišením (<50 %, 50–65 %, 65–80 %, ≥80 %).
+- **Strukturované plánování tréninků trenérem (PR #204 v rámci #212)**:
+  - Upravený tok vyžadující povinný výběr klienta, psa a konkrétního cíle před zařazením lekce do kalendáře.
+- **Oddělení rolí trenéra a psovoda (PR #211 v rámci #212)**:
+  - Vlastní psi trenéra byli dočasně skryti z trenérského přehledu, dokud nebude dopracován kompletní UX návrh pro přepínání kontextu rolí ([docs/trainer-own-dogs-followup.md](trainer-own-dogs-followup.md)).
+
+---
+
+### 8. Transakční e-maily
+
+- **Sjednocený vzhled e-mailů (PR #169)**:
+  - Zavedení sdílené komponenty `EmailLayout` napříč všemi šablonami (potvrzení účtu, reset hesla, pozvánka klienta).
+  - Vizuální sladění s typografií, barvami, rozestupy i záhlavím a zápatím aplikace.
+
+---
+
+## Rejstřík začleněných pull requestů (od 26. 10. 2026)
+
+| Datum merge      | PR / Větev                                        | Commit    | Souhrn dopadu na UX                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| :--------------- | :------------------------------------------------ | :-------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **05. 11. 2026** | **PR #169** (`new-e-mail`)                        | `0098f64` | `feat(email)`: Sjednocení vzhledu e-mailových šablon s design systémem aplikace.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **05. 11. 2026** | **PR #170** (`feature/70-dog-notes`)              | `9a6e7c7` | `feat(dog)`: Soukromé poznámky z lekcí a seminářů pro psovody.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| **05. 11. 2026** | **PR #176** (`feature/171-design-system`)         | `d878929` | Redesign: Sjednocení designového základu a tokenů podle schválené Figmy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **05. 11. 2026** | **PR #178** (`feature/172-shared-ui-components`)  | `afe9ec2` | `feat(ui)`: Sdílené UI komponenty, mobilní spodní navigace a mobilní spodní panely.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **05. 11. 2026** | **PR #179** (`feature/161-dnes-tyden`)            | `6a1c3aa` | `feat(today)`: Nová obrazovka Dnes a restyling Týdne pro psovoda.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| **05. 11. 2026** | **PR #182** (`feature/173-trainer-overview`)      | `d9e33d7` | `feat(client)`: Mobilní přehled trenéra a restyling seznamu klientů.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **05. 11. 2026** | **PR #183** (`feature/163-dogs-profile-diary`)    | `783fec9` | `feat(dog)`: Restyle seznamu, profilu a historie psů se sdíleným UI kitem.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **06. 11. 2026** | **PR #184** (`feature/163-dog-diary-restyle`)     | `3eb48a0` | `feat(dog)`: Restyle sekce deníku psa se sdíleným UI kitem.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **06. 11. 2026** | **PR #185** (`feature/172-shared-ui-finish`)      | `f4dd2ea` | `feat(ui)`: Dokončení katalogu komponent, a11y dotykových ploch (44 px) a CheckboxField.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **06. 11. 2026** | **PR #186** (`feature/161-dnes-tyden-polish`)     | `0a1b541` | `feat(today)`: Tlačítko Začít trénink na kartách plánu, opožděné tréninky.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **06. 11. 2026** | **PR #187** (`feature/66-current-step`)           | `4aa870f` | `feat(goals)`: Sledování aktuálního kroku cíle (posun, přeskočení, návrat).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **06. 11. 2026** | **PR #188** (`feature/162-walkthrough-redesign`)  | `deba307` | `feat(training)`: Redesign průchodu tréninkem, časovač, formulář dokončení s chybami.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **07. 11. 2026** | **PR #189** (`feature/164-goals-training-editor`) | `f8512e6` | `feat(goals)`: Redesign cílů, editoru a plánování tréninků.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **07. 11. 2026** | **PR #190** (`feature/figma-psi-dnes`)            | `54e0a2e` | `feat(ui)`: Karty psů a metriky Dnes s reálnými daty podle Figmy.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| **07. 11. 2026** | **PR #191** (`feature/figma-tyden-profil`)        | `1c6dcbd` | `feat(ui)`: Týdenní agenda a velká barevná hlavička psa.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **07. 11. 2026** | **PR #192** (`feature/figma-pruchod`)             | `8c002e1` | `feat(ui)`: Průchod cvičením s časovačem a karty záznamu.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **07. 11. 2026** | **PR #193** (`feature/figma-historie-prehled`)    | `95484f7` | `feat(ui)`: Historie se záznamem a metriky přehledu trenéra.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **08. 11. 2026** | **PR #212** (`fix/ready-prs-without-166`)         | `5815bab` | **Integrace PR 200–209 a UX opravy historie, záznamu a plánování**: <br>• **PR #200**: Archiv a návrat psa, odkaz na historii v detailu psa.<br>• **PR #201**: Dokončení a archiv cíle s odstraněním budoucích tréninků.<br>• **PR #203 (#175)**: Redesign veřejných stránek, registrace s výběrem role, přihlášení a správa účtu.<br>• **PR #204/#205**: Celostránkový záznam tréninku s bloky cílů, odlišení zpráv v chatu, seznam klientů.<br>• **PR #206**: Zobrazení a editace aktuálního kroku v cíli.<br>• **PR #207/#208**: Navigace v záznamu přes `activityId`, routy pro zprávy a inbox.<br>• **PR #209**: Vylepšení přepínače týdnů, tlačítko Odpovědět na kartách historie. |
