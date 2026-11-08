@@ -209,7 +209,7 @@ describe("TrainerOverview", () => {
     expect(await screen.findByText("Přehled se nepodařilo načíst")).toBeInTheDocument()
     expect(screen.queryByText("aktivních klientů")).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: /kalendář/i })).toHaveAttribute("href", "/week")
-    expect(screen.getByRole("link", { name: /moji psi/i })).toHaveAttribute("href", "/dogs")
+    expect(screen.queryByRole("link", { name: /moji psi/i })).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: /^klienti$/i })).toHaveAttribute("href", "/clients")
   })
 

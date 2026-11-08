@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { differenceInCalendarDays } from "date-fns"
-import { Calendar, PawPrint, UserPlus, Users } from "lucide-react"
+import { Calendar, UserPlus, Users } from "lucide-react"
 
 import { ROUTES } from "@/app/routes"
 import { DesignIcon } from "@/components/DesignIcon"
@@ -338,12 +338,11 @@ function OverviewShortcuts() {
   return (
     <nav
       aria-label="Rychlé odkazy"
-      className="grid grid-cols-3 gap-2"
+      className="grid grid-cols-2 gap-2"
     >
       {[
         { to: ROUTES.clients, label: "Klienti", icon: Users },
         { to: ROUTES.week, label: "Kalendář", icon: Calendar },
-        { to: ROUTES.dogs, label: "Moji psi", icon: PawPrint },
       ].map(({ to, label, icon: Icon }) => (
         <Button
           key={to}

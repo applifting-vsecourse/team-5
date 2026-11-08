@@ -6,6 +6,7 @@ import { addCalendarDays, type CalendarDate } from "@/lib/calendarDate"
 import { weekKeys } from "@/lib/weekKeys"
 
 export const weekTrainingSchema = z.object({
+  activityId: z.string().nullable().optional(),
   successRate: z.number().nullable().optional(),
   training: z
     .object({
