@@ -76,6 +76,13 @@ const detail = {
       createdAt: "2026-11-06T11:00:00Z",
       author: { id: "t1", name: "Trenér" },
     },
+    {
+      id: "m2",
+      workoutLogId: "act-1",
+      text: "Šlo to skvěle!",
+      createdAt: "2026-11-06T11:05:00Z",
+      author: { id: "u1", name: "Panička" },
+    },
   ],
 }
 
@@ -99,11 +106,12 @@ describe("TrainingRecordPage", () => {
     })
   })
 
-  it("renders record summary, steps and thread", async () => {
+  it("renders record summary, steps and thread with styled bubbles", async () => {
     render(
       <TrainingRecordPage
         dogId="dog-1"
         activityId="act-1"
+        currentUserId="u1"
       />,
       { wrapper: createWrapper() },
     )
@@ -117,6 +125,13 @@ describe("TrainingRecordPage", () => {
     expect(screen.getByText("Volně")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Vlákno s trenérem" })).toBeInTheDocument()
     expect(screen.getByText("Jak to šlo?")).toBeInTheDocument()
+    expect(screen.getByText("Šlo to skvěle!")).toBeInTheDocument()
+
+    const otherMsg = screen.getByText("Jak to šlo?").closest("li")
+    const myMsg = screen.getByText("Šlo to skvěle!").closest("li")
+    expect(otherMsg).toHaveClass("mr-auto", "bg-secondary")
+    expect(myMsg).toHaveClass("ml-auto", "bg-primary")
+
     expect(screen.getByRole("button", { name: "👍 Díky!" })).toBeInTheDocument()
   })
 

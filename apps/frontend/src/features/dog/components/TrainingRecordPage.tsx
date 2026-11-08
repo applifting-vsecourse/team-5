@@ -181,7 +181,13 @@ function StepsList({
   )
 }
 
-function ThreadComposer({ activityId }: { activityId: string }) {
+function ThreadComposer({
+  activityId,
+  currentUserId,
+}: {
+  activityId: string
+  currentUserId?: string | null
+}) {
   const client = useQueryClient()
   const detail = useQuery(conversationQueryOptions(activityId))
   const [text, setText] = useState("")
@@ -219,20 +225,33 @@ function ThreadComposer({ activityId }: { activityId: string }) {
         )}
       </div>
       <ol
-        className="space-y-3"
+        className="flex flex-col gap-3"
         aria-label="Zprávy u tréninku"
       >
-        {messages.map((message) => (
-          <li
-            key={message.id}
-            className="space-y-1 rounded-field bg-accent p-3"
-          >
-            <p className="text-xs font-bold">
-              {message.author.name} · {message.createdAt.toLocaleString("cs-CZ")}
-            </p>
-            <p className="text-sm break-words whitespace-pre-wrap">{message.text}</p>
-          </li>
-        ))}
+        {messages.map((message) => {
+          const isMe = Boolean(currentUserId && message.author.id === currentUserId)
+          return (
+            <li
+              key={message.id}
+              className={cn(
+                "max-w-[85%] space-y-1 rounded-field p-3 shadow-xs",
+                isMe
+                  ? "ml-auto rounded-br-xs bg-primary text-primary-foreground"
+                  : "mr-auto rounded-bl-xs bg-secondary text-secondary-foreground",
+              )}
+            >
+              <p
+                className={cn(
+                  "text-xs font-bold",
+                  isMe ? "text-primary-foreground/80" : "text-muted-foreground",
+                )}
+              >
+                {isMe ? "Já" : message.author.name} · {message.createdAt.toLocaleString("cs-CZ")}
+              </p>
+              <p className="text-sm break-words whitespace-pre-wrap">{message.text}</p>
+            </li>
+          )
+        })}
       </ol>
       {!messages.length && <p className="text-sm text-muted-foreground">Zatím žádná zpráva.</p>}
       <div className="flex flex-wrap gap-2">
@@ -280,7 +299,15 @@ function ThreadComposer({ activityId }: { activityId: string }) {
   )
 }
 
-export function TrainingRecordPage({ dogId, activityId }: { dogId: string; activityId: string }) {
+export function TrainingRecordPage({
+  dogId,
+  activityId,
+  currentUserId,
+}: {
+  dogId: string
+  activityId: string
+  currentUserId?: string | null
+}) {
   const detail = useQuery(conversationQueryOptions(activityId))
   const recordDogId = detail.data?.dog.id
   const hasDogMismatch = Boolean(recordDogId && recordDogId !== dogId)
@@ -329,7 +356,10 @@ export function TrainingRecordPage({ dogId, activityId }: { dogId: string; activ
                 isCompleted={detail.data.status === "COMPLETED"}
               />
             ) : null}
-            <ThreadComposer activityId={activityId} />
+            <ThreadComposer
+              activityId={activityId}
+              currentUserId={currentUserId}
+            />
           </>
         )}
       </QueryState>
