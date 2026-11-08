@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type * as Router from "@tanstack/react-router"
 import { render, screen } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { api } from "@/lib/api-client"
@@ -54,11 +53,6 @@ vi.mock("@/lib/api-client", () => ({
 
 vi.mock("./InviteClientDialog", () => ({
   InviteClientDialog: () => null,
-}))
-
-vi.mock("@/components/TrainingConversationDialog", () => ({
-  TrainingConversationDialog: ({ activityId }: { activityId: string | null }) =>
-    activityId ? <p>Konverzace {activityId}</p> : null,
 }))
 
 const dog = { id: "d-1", name: "Rex", color: 1 }
@@ -167,8 +161,10 @@ describe("TrainerOverview", () => {
       "href",
       "/dogs/d-2/goals/g-2",
     )
-    await userEvent.click(screen.getByRole("button", { name: "Odpovědět – Rex" }))
-    expect(screen.getByText("Konverzace a-1")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Odpovědět – Rex" })).toHaveAttribute(
+      "href",
+      "/dogs/d-1/activities/a-1",
+    )
   })
 
   it("shows clients with their last training and real trend", async () => {
