@@ -1,6 +1,7 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
 import {
   FocusLevel,
+  GoalStatus,
   MistakeLevel,
   TrainingStatus,
   WorkoutLog,
@@ -19,8 +20,8 @@ import { planOrder, resolveTraining } from './hierarchy.repository';
 export class ScheduledTrainingRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  // The week is the owner's own view (#72): trainings of their active dogs.
-  // A trainer sees clients' dogs elsewhere (Klienti), not in this week.
+  // The week is the owner's own view (#72): trainings of their active dogs
+  // and active goals (#69). A trainer sees clients elsewhere, not here.
   async getOwnerTrainingsBetween(
     ownerId: string,
     from: Date,
@@ -30,6 +31,7 @@ export class ScheduledTrainingRepository {
       where: {
         date: { gte: from, lte: to },
         dog: { ownerId, isArchived: false },
+        goal: { status: GoalStatus.ACTIVE },
       },
       include: {
         workoutLog: { select: { successRate: true } },
@@ -291,11 +293,24 @@ export class ScheduledTrainingRepository {
     });
   }
 
+  // Removes future calendar slots when a goal is completed or archived (#69).
+  // Completed and skipped records stay for the dog's history.
+  async deletePlannedForGoal(goalId: string): Promise<number> {
+    const { count } = await this.prisma.scheduledTraining.deleteMany({
+      where: { goalId, status: TrainingStatus.PLANNED },
+    });
+    return count;
+  }
+
   // A dog's trainings still to be done, for its Activities (#74): the owner
   // and a trainer with a share see the day each one is planned for.
   async getPlannedTrainingsByDogId(dogId: string): Promise<WeekTraining[]> {
     const rows = await this.prisma.scheduledTraining.findMany({
-      where: { dogId, status: TrainingStatus.PLANNED },
+      where: {
+        dogId,
+        status: TrainingStatus.PLANNED,
+        goal: { status: GoalStatus.ACTIVE },
+      },
       include: {
         dog: { select: { id: true, name: true, color: true } },
         goal: { select: { id: true, title: true } },
