@@ -37,8 +37,8 @@ function profileFacts(dog: Dog) {
   }
   return [
     dog.breed,
-    age,
-    dog.weightKg != null ? `${dog.weightKg.toLocaleString("cs-CZ")} kg` : null,
+    age ?? "Věk neuveden",
+    dog.weightKg != null ? `${dog.weightKg.toLocaleString("cs-CZ")} kg` : "Váha neuvedena",
   ]
     .filter(Boolean)
     .join(" · ")
@@ -282,6 +282,21 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
         />
       )}
       <div className="space-y-6 px-gutter pt-5 pb-6">
+        {metrics.data?.weeklyPlannedSessions != null && (
+          <section className="space-y-2 rounded-card border border-border bg-card p-4">
+            <h2 className="text-sm font-extrabold">Týdenní plán</h2>
+            <p className="text-lg font-extrabold">
+              {metrics.data.weeklyPlannedSessions === 0
+                ? "Zatím bez naplánovaných tréninků"
+                : `Hotové ${metrics.data.weeklyCompletedSessions} z ${metrics.data.weeklyPlannedSessions} tréninků`}
+            </p>
+            {Boolean(metrics.data.weeklySkippedSessions) && (
+              <p className="text-sm text-muted-foreground">
+                Přeskočené: {metrics.data.weeklySkippedSessions}
+              </p>
+            )}
+          </section>
+        )}
         {metrics.data && (
           <WeeklySuccessChart
             metrics={metrics.data}

@@ -204,6 +204,29 @@ describe('DogsService', () => {
   });
 
   describe('updateDog', () => {
+    it('persists profile facts and clears them when the owner removes them', async () => {
+      const repository = mock<DogRepository>();
+      const access = mock<DogAccessService>();
+      access.getOwnedDog.mockResolvedValue(aDog());
+      repository.updateDog.mockResolvedValue(aDog());
+      const service = new DogsService(repository, access);
+      const owner = { id: 'u1' } as Identity;
+      await service.updateDog(owner, 'd1', {
+        birthDate: '2020-01-01',
+        weightKg: 21.45,
+      });
+      expect(repository.updateDog).toHaveBeenLastCalledWith(
+        'd1',
+        'u1',
+        expect.objectContaining({ birthDate: '2020-01-01', weightKg: 21.45 }),
+      );
+      await service.updateDog(owner, 'd1', { birthDate: '', weightKg: null });
+      expect(repository.updateDog).toHaveBeenLastCalledWith(
+        'd1',
+        'u1',
+        expect.objectContaining({ birthDate: null, weightKg: null }),
+      );
+    });
     it('lets the owner edit the dog', async () => {
       const updated = aDog({ name: 'Rexík' });
       const repository = mock<DogRepository>();

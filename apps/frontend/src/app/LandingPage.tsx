@@ -1,172 +1,137 @@
-import { useState } from "react"
-import { Link, useNavigate } from "@tanstack/react-router"
-import { Check, PawPrint, Users } from "lucide-react"
+import { Link } from "@tanstack/react-router"
 
 import { ROUTES } from "@/app/routes"
-import { Header } from "@/components/Header/Header"
+import { DesignIcon } from "@/components/DesignIcon"
+import { InviteCodeDialog } from "@/components/InviteCodeDialog"
 import { Seo } from "@/components/Seo"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-
-const TRAINER_BENEFITS = [
-  "Zadání mezi lekcemi máte písemně u psa klienta",
-  "Klienta připojíte kódem, který mu dáte na lekci",
-  "Vidíte jen své klienty a jejich psy",
-] as const
-
-const HANDLER_BENEFITS = [
-  "V týdnu vidíte, co máte kdy cvičit",
-  "Trénink projdete cvik po cviku s kritériem",
-  "Po tréninku zapíšete, jak to šlo, trenér to uvidí",
-] as const
 
 export function LandingPage() {
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
-  const [inviteCode, setInviteCode] = useState("")
-  const navigate = useNavigate()
-
-  const handleInviteSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const trimmedCode = inviteCode.trim().toUpperCase()
-    if (!trimmedCode) return
-    setIsInviteDialogOpen(false)
-    void navigate({
-      to: ROUTES.invite,
-      search: { code: trimmedCode },
-    })
-  }
-
   return (
-    <div className="flex min-h-svh flex-col bg-background">
+    <main className="public-flow min-h-svh bg-background">
       <Seo title="TrainLoop" />
-      <Header nav={null} />
-
-      <main className="flex-1">
-        <div className="mx-auto flex w-full max-w-md flex-col gap-8 px-4 py-6 sm:max-w-xl sm:py-10">
-          {/* Úvod */}
-          <section className="flex flex-col gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Zadání z lekce, které klient nezapomene
-            </h1>
-            <p className="text-base leading-normal text-muted-foreground">
-              Trenér zapíše cíl a cviky s instrukcí a kritériem. Psovod je má v telefonu u psa,
-              odcvičí je a zapíše, jak to šlo.
-            </p>
-          </section>
-
-          {/* Akce */}
-          <section className="flex flex-col gap-2">
+      <div className="mx-auto w-full md:grid md:min-h-svh md:max-w-6xl md:grid-cols-2 md:items-center md:gap-12 md:px-8 md:py-12">
+        <section className="rounded-b-sheet bg-primary px-6 pt-3 pb-8 text-primary-foreground md:rounded-sheet md:pt-6">
+          <Link
+            to={ROUTES.home}
+            className="inline-flex min-h-touch items-center gap-2.5 text-brand font-extrabold"
+          >
+            <span className="flex size-10 items-center justify-center rounded-brand bg-card">
+              <DesignIcon name="landing-Paw" />
+            </span>
+            TrainLoop
+          </Link>
+          <h1 className="mt-5 text-title leading-tight font-extrabold tracking-tight">
+            Trénink psa, který nekončí na lekci.
+          </h1>
+          <p className="mt-5 text-public-body leading-normal font-medium">
+            Zadání od trenéra máš v telefonu u konkrétního psa. Po tréninku zapíšeš, jak to šlo, a
+            trenér ti odpoví přímo u něj.
+          </p>
+          <div
+            className="relative mt-5 h-64"
+            aria-label="Ukázka aplikace: Rex, úspěšnost 82 %, týdenní plán 3 z 5 a zpráva od trenéra"
+          >
+            <div className="absolute top-5 left-0 w-40 rotate-6 space-y-2 rounded-card bg-dog-2 p-3.5 text-dog-foreground">
+              <div className="flex items-center justify-between">
+                <span className="flex size-8 items-center justify-center rounded-full bg-card text-sm font-extrabold text-dog-2">
+                  R
+                </span>
+                <span className="text-sm font-extrabold">82 %</span>
+              </div>
+              <p className="text-lg font-extrabold">Rex</p>
+              <div
+                className="flex h-7 items-end gap-1"
+                aria-hidden="true"
+              >
+                {[3, 4, 3.5, 5, 4.5, 6, 7].map((height, index) => (
+                  <span
+                    key={index}
+                    className="w-2 rounded bg-dog-foreground"
+                    style={{ height: `${height * 4}px`, opacity: index === 6 ? 1 : 0.45 }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="absolute top-0 right-0 flex w-44 -rotate-5 items-center gap-2.5 rounded-card bg-card p-3 text-foreground">
+              <span className="relative flex size-12 shrink-0 items-center justify-center text-xs font-extrabold">
+                <img
+                  src="/assets/design/landing-Ring.svg"
+                  alt=""
+                  className="absolute inset-0"
+                />
+                <img
+                  src="/assets/design/landing-RingProgress.svg"
+                  alt=""
+                  className="absolute top-0 right-0"
+                />
+                3/5
+              </span>
+              <div>
+                <p className="text-xs text-muted-foreground">Týdenní plán</p>
+                <p className="text-sm font-extrabold">hotové 3 z 5</p>
+              </div>
+            </div>
+            <div className="absolute right-3 bottom-6 w-56 rotate-2 space-y-1 rounded-card bg-accent p-3 text-foreground">
+              <p className="text-xs font-bold text-primary">Marek · trenér</p>
+              <p className="text-sm font-semibold">Skvělá práce s přivoláním! 👏</p>
+            </div>
+          </div>
+        </section>
+        <section className="flex flex-col gap-6 px-5 pt-7 pb-10 md:px-0">
+          <ol
+            className="space-y-3"
+            aria-label="Jak TrainLoop funguje"
+          >
+            {[
+              "Trenér nastaví cíle a tréninky psa",
+              "Trénuješ venku podle kroků",
+              "Zapíšeš výsledek, trenér odpoví",
+            ].map((text, index) => (
+              <li
+                key={text}
+                className="flex items-center gap-3"
+              >
+                <span
+                  className={`flex size-9 shrink-0 items-center justify-center rounded-field font-extrabold text-dog-foreground ${["bg-dog-2", "bg-primary", "bg-dog-3"][index]}`}
+                >
+                  {index + 1}
+                </span>
+                <span className="text-sm font-bold">{text}</span>
+              </li>
+            ))}
+          </ol>
+          <div className="flex flex-col gap-2.5">
             <Button
               asChild
-              className="min-h-11 w-full"
+              size="lg"
             >
-              <Link to={ROUTES.signup}>Zaregistrovat se</Link>
+              <Link to={ROUTES.signup}>
+                <DesignIcon name="landing-ArrowR" />
+                Začít zdarma
+              </Link>
             </Button>
             <Button
+              asChild
               variant="outline"
-              className="min-h-11 w-full"
-              onClick={() => setIsInviteDialogOpen(true)}
-            >
-              Mám kód od trenéra
-            </Button>
-            <Button
-              asChild
-              variant="ghost"
-              className="min-h-11 w-full"
+              size="lg"
             >
               <Link to={ROUTES.login}>Přihlásit se</Link>
             </Button>
-          </section>
-
-          {/* Pro trenéra */}
-          <section className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <Users className="size-6 text-foreground" />
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">Pro trenéra</h2>
-            </div>
-            <ul className="flex flex-col gap-3">
-              {TRAINER_BENEFITS.map((text) => (
-                <li
-                  key={text}
-                  className="flex items-start gap-2.5"
+            <InviteCodeDialog
+              trigger={
+                <Button
+                  variant="ghost"
+                  className="text-primary"
                 >
-                  <Check className="mt-0.5 size-5 shrink-0 text-foreground" />
-                  <span className="text-base leading-normal text-foreground">{text}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          {/* Pro psovoda */}
-          <section className="flex flex-col gap-3">
-            <div className="flex items-center gap-2">
-              <PawPrint className="size-6 text-foreground" />
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">Pro psovoda</h2>
-            </div>
-            <ul className="flex flex-col gap-3">
-              {HANDLER_BENEFITS.map((text) => (
-                <li
-                  key={text}
-                  className="flex items-start gap-2.5"
-                >
-                  <Check className="mt-0.5 size-5 shrink-0 text-foreground" />
-                  <span className="text-base leading-normal text-foreground">{text}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        </div>
-      </main>
-
-      <Dialog
-        open={isInviteDialogOpen}
-        onOpenChange={setIsInviteDialogOpen}
-      >
-        <DialogContent className="sm:max-w-md">
-          <form
-            onSubmit={handleInviteSubmit}
-            className="space-y-4"
-          >
-            <DialogHeader>
-              <DialogTitle>Mám kód od trenéra</DialogTitle>
-              <DialogDescription>
-                Zadejte kód pozvánky, který jste obdrželi od trenéra na lekci.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-2">
-              <Label htmlFor="invite-code">Kód pozvánky</Label>
-              <Input
-                id="invite-code"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                placeholder="např. KOD123"
-                required
-              />
-            </div>
-
-            <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setIsInviteDialogOpen(false)}
-              >
-                Zrušit
-              </Button>
-              <Button type="submit">Pokračovat</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+                  <DesignIcon name="landing-Ticket" />
+                  Mám pozvánku od trenéra
+                </Button>
+              }
+            />
+          </div>
+        </section>
+      </div>
+    </main>
   )
 }

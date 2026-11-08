@@ -55,7 +55,8 @@ function SignUpPage() {
     <>
       <Seo title="Registrace" />
       <AuthLayout
-        title="Registrace"
+        shouldHideBack
+        title=""
         description={
           code
             ? "Dokončete registraci pro propojení se svým trenérem."
@@ -78,6 +79,8 @@ function SignUpPage() {
           isLoading={signUp.isPending}
           error={error}
           defaultEmail={email}
+          isInvitation={Boolean(code)}
+
           onSubmit={handleSubmit}
         />
       </AuthLayout>

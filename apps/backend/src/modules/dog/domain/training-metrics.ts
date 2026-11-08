@@ -19,6 +19,11 @@ export type MetricWeek = {
   ratedSessions: number;
   successRate: number | null;
 };
+export type WeeklyPlanSummary = {
+  weeklyPlannedSessions: number;
+  weeklyCompletedSessions: number;
+  weeklySkippedSessions: number;
+};
 export type TrainingMetrics = {
   completedSessions: number;
   timeZone: string;
@@ -27,6 +32,8 @@ export type TrainingMetrics = {
   weeklyTrainedDays: number;
   weeklyTargetReached: boolean;
   streak: number;
+  longestStreak?: number;
+  trainedDates?: string[];
   successRate: number | null;
   ratedSessions: number;
   weeklyChange: number | null;
@@ -84,6 +91,13 @@ export function calculateTrainingMetrics(
     .filter((log) => log.status === 'COMPLETED' && log.completedAt <= now)
     .map((log) => ({ ...log, day: todayInAppZone(log.completedAt) }));
   const days = new Set(completed.map((log) => log.day));
+  const sortedDays = [...days].sort();
+  let longestStreak = 0;
+  let run = 0;
+  sortedDays.forEach((day, index) => {
+    run = index > 0 && shiftDay(sortedDays[index - 1], 1) === day ? run + 1 : 1;
+    longestStreak = Math.max(longestStreak, run);
+  });
   let cursor = days.has(today) ? today : shiftDay(today, -1);
   let streak = 0;
   while (days.has(cursor)) {
@@ -117,6 +131,8 @@ export function calculateTrainingMetrics(
     weeklyTrainedDays: current.trainedDays,
     weeklyTargetReached: current.trainedDays >= weeklyTarget,
     streak,
+    longestStreak,
+    trainedDates: sortedDays.filter((day) => day >= monday),
     successRate: average(rated(recent)),
     ratedSessions: rated(recent).length,
     weeklyChange:

@@ -76,9 +76,11 @@ training walkthrough.
 
 Review decisions, 7 November 2026: Moji psi has one add-dog action, the bottom
 Přidat psa card; omit the duplicate header plus. Dog cards show completed goals
-out of all goals. Dnes aggregates all owned active dogs: sum each dog's weekly
-goal and trained days (a dog counts once per day), calculate the streak across
-the owner's training days and weight success rates by actual rated records.
+out of all goals. Dnes aggregates all owned active dogs. The weekly plan counts actual dated
+calendar trainings and their completed/skipped status, not a manually entered
+frequency or distinct training days (review decision for #175, 7 November).
+The same weekly plan is visible to a trainer on a shared dog's profile.
+Streak counts the owner's training days; success rates use actual rated records.
 
 Week day selection scrolls and focuses that day's agenda; it does not outline
 an otherwise unchanged section. An empty dog diary has only its empty-state
@@ -215,3 +217,16 @@ The desktop sidebar remains dark within the light app; this is a scoped surface,
 not a reactivation of dark mode. Text and neutral controls inside hero/sidebar
 surfaces must use their matching tokens. Do not put muted-foreground on a dark
 surface. Dialogs are portalled to neutral surfaces and use the normal ring token.
+
+## Public pages and account (#175 review decisions)
+
+Login and password recovery are standalone pages. Registration first selects a
+role, then collects account details and explicit privacy consent. Role selection
+is only available during registration; do not promise switching roles in Account.
+Reminders remain deferred, including onboarding. Appearance remains deferred as
+above. The account links to the real weekly plan; there is no second weekly goal.
+Onboarding shows completed invitation/dog-sharing steps and links to real plans;
+do not invent progress, trainer specialties, location, dates or dog names.
+Email changes require confirmation at the new address. Account deletion uses a
+mobile bottom sheet / desktop dialog, explains role-specific consequences, and
+always verifies the password. Privacy copy remains labelled as a project draft.
