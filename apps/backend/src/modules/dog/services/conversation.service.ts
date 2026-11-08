@@ -40,6 +40,17 @@ export class ConversationService {
       focus: row.focus,
       repeatedMistakes: row.repeatedMistakes,
       status: row.status,
+      goal: row.training
+        ? {
+            title: row.training.title,
+            blocks: row.training.steps.map((step) => ({
+              id: step.id,
+              title: step.title,
+              outcome: step.outcome,
+              position: step.position,
+            })),
+          }
+        : null,
       messages: row.messages.map(presentTrainingMessage),
     };
   }

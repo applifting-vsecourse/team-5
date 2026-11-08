@@ -4,7 +4,7 @@ import { Seo } from "@/components/Seo"
 
 import { HistoryView } from "@/features/dog/components/HistoryView"
 
-export const Route = createFileRoute("/_ProtectedPages/dogs/$dogId/activities")({
+export const Route = createFileRoute("/_ProtectedPages/dogs/$dogId/activities/")({
   component: DogHistoryPage,
 })
 function DogHistoryPage() {
