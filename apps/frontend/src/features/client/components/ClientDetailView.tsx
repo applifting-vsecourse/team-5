@@ -1,18 +1,18 @@
-import { useMemo } from "react"
-import { useInfiniteQuery, useQueries, useQuery } from "@tanstack/react-query"
+import { useQueries, useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { CalendarPlus, ChevronLeft, MessageSquare, PawPrint } from "lucide-react"
 
 import { EmptyState } from "@/components/EmptyState"
 import { Button } from "@/components/ui/button"
+import { dogColorClass } from "@/lib/dogColors"
+import { dogMetricsQueryOptions } from "@/lib/dogMetrics"
+import { dogHistoryFirstPageQueryOptions } from "@/lib/history"
+import { formatHistoryTime } from "@/lib/historyDate"
+import { cn } from "@/lib/utils"
+
 import { clientDogGoalsQueryOptions } from "@/features/client/api/clientDogGoals"
 import type { Client } from "@/features/client/api/clientSchemas"
 import { trainerOverviewQueryOptions } from "@/features/client/api/trainerOverview"
-import { dogColorClass } from "@/lib/dogColors"
-import { dogMetricsQueryOptions } from "@/lib/dogMetrics"
-import { historyQueryOptions } from "@/lib/history"
-import { formatHistoryTime } from "@/lib/historyDate"
-import { cn } from "@/lib/utils"
 
 type ClientDetailViewProps = {
   client: Client
@@ -20,21 +20,26 @@ type ClientDetailViewProps = {
 
 export function ClientDetailView({ client }: ClientDetailViewProps) {
   const overview = useQuery(trainerOverviewQueryOptions())
-  const dogIds = useMemo(() => new Set(client.dogs.map((dog) => dog.id)), [client.dogs])
   const metricsQueries = useQueries({
     queries: client.dogs.map((dog) => ({
       ...dogMetricsQueryOptions(dog.id),
     })),
   })
+  const historyQueries = useQueries({
+    queries: client.dogs.map((dog) => dogHistoryFirstPageQueryOptions(dog.id)),
+  })
   const primaryDog = client.dogs[0]
   const goalsQuery = useQuery(clientDogGoalsQueryOptions(primaryDog?.id ?? ""))
-  const historyQuery = useInfiniteQuery(historyQueryOptions({ commentsOnly: false }))
   const replyAttention = (overview.data?.attention ?? []).find(
     (item) => item.client.id === client.id && item.kind === "reply" && item.activityId,
   )
   const activeGoal = (goalsQuery.data ?? []).find((goal) => goal.status === "ACTIVE")
-  const recentRecords = (historyQuery.data?.pages.flatMap((page) => page.items) ?? [])
-    .filter((item) => dogIds.has(item.dog.id))
+  const recentRecords = [
+    ...new Map(
+      historyQueries.flatMap((query) => query.data?.items ?? []).map((item) => [item.id, item]),
+    ).values(),
+  ]
+    .sort((a, b) => b.completedAt.getTime() - a.completedAt.getTime())
     .slice(0, 5)
   const replyActivityIds = new Set(
     (overview.data?.attention ?? [])

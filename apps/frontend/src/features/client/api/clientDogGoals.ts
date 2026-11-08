@@ -2,7 +2,6 @@ import { queryOptions } from "@tanstack/react-query"
 import { z } from "zod"
 
 import { api } from "@/lib/api-client"
-import { dogKeys } from "@/lib/dogKeys"
 
 const clientDogGoalSchema = z.object({
   id: z.string(),
@@ -14,7 +13,7 @@ const clientDogGoalSchema = z.object({
 
 export function clientDogGoalsQueryOptions(dogId: string) {
   return queryOptions({
-    queryKey: dogKeys.goals(dogId),
+    queryKey: ["client-dog-goals", dogId],
     queryFn: async () =>
       z.array(clientDogGoalSchema).parse(await api.get(`dogs/${dogId}/goals`).json()),
     enabled: Boolean(dogId),
