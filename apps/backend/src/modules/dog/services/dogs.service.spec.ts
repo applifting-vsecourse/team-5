@@ -32,7 +32,51 @@ describe('DogsService', () => {
     const user = { id: 'u1' } as Identity;
 
     await expect(service.getDogs(user)).resolves.toEqual(dogs);
-    expect(repository.getDogsByOwnerId).toHaveBeenCalledWith('u1');
+    expect(repository.getDogsByOwnerId).toHaveBeenCalledWith('u1', {});
+  });
+
+  it('lists archived dogs when asked (#57)', async () => {
+    const dogs = [aDog({ isArchived: true })];
+    const repository = mock<DogRepository>();
+    repository.getDogsByOwnerId.mockResolvedValue(dogs);
+
+    const service = new DogsService(repository, mock<DogAccessService>());
+    const user = { id: 'u1' } as Identity;
+
+    await expect(service.getDogs(user, { archived: true })).resolves.toEqual(
+      dogs,
+    );
+    expect(repository.getDogsByOwnerId).toHaveBeenCalledWith('u1', {
+      archived: true,
+    });
+  });
+
+  it('archives an owned dog (#57)', async () => {
+    const archived = aDog({ isArchived: true });
+    const repository = mock<DogRepository>();
+    const dogAccess = mock<DogAccessService>();
+    dogAccess.getOwnedDog.mockResolvedValue(aDog());
+    repository.setArchived.mockResolvedValue(archived);
+
+    const service = new DogsService(repository, dogAccess);
+    const user = { id: 'u1' } as Identity;
+
+    await expect(service.archiveDog(user, 'd1')).resolves.toEqual(archived);
+    expect(repository.setArchived).toHaveBeenCalledWith('d1', 'u1', true);
+  });
+
+  it('restores an archived dog (#57)', async () => {
+    const restored = aDog({ isArchived: false });
+    const repository = mock<DogRepository>();
+    const dogAccess = mock<DogAccessService>();
+    dogAccess.getOwnedDog.mockResolvedValue(aDog({ isArchived: true }));
+    repository.setArchived.mockResolvedValue(restored);
+
+    const service = new DogsService(repository, dogAccess);
+    const user = { id: 'u1' } as Identity;
+
+    await expect(service.restoreDog(user, 'd1')).resolves.toEqual(restored);
+    expect(repository.setArchived).toHaveBeenCalledWith('d1', 'u1', false);
   });
 
   it('creates a dog owned by the signed-in user', async () => {

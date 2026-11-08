@@ -14,6 +14,7 @@ export const dogSchema = z.object({
   color: dogColorSchema,
   photoUrl: z.string().nullable().optional(),
   ownerId: z.string(),
+  isArchived: z.boolean().default(false),
   disciplines: z.array(z.string()).default([]),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
