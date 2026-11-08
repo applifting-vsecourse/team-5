@@ -115,6 +115,7 @@ describe("HistoryView calendar time zone", () => {
       const group = screen.getByRole("region", { name: `DNES · ${header}` })
       expect(within(group).getAllByRole("listitem")).toHaveLength(2)
       expect(within(group).getByText(`Rex · ${time}`)).toBeInTheDocument()
+      expect(within(group).getAllByRole("link", { name: /^Odpovědět k tréninku/ })).toHaveLength(2)
       expect(screen.getByText(`2 záznamů · od ${month}`)).toBeInTheDocument()
     },
   )

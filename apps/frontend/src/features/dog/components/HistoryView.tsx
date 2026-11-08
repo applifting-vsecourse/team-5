@@ -61,55 +61,76 @@ function HistoryRecord({ record }: { record: HistoryItem }) {
         aria-hidden
         className={cn("mt-5 size-2.5 shrink-0 rounded-full", dogColorClass(record.dog.color))}
       />
-      <Link
-        to="/dogs/$dogId/activities/$activityId"
-        params={{ dogId: record.dog.id, activityId: record.id }}
-        aria-label={`Otevřít záznam ${record.title}`}
-        className="flex h-auto min-h-touch min-w-0 flex-1 flex-col items-stretch gap-2 rounded-card border border-border bg-card p-4 text-left whitespace-normal outline-hidden transition-colors hover:bg-card/90 focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <span className="flex items-start justify-between gap-3">
-          <span className="text-sm font-extrabold break-words">{record.title}</span>
-          <span
-            className={cn(
-              "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-extrabold",
-              record.status === "SKIPPED"
-                ? "bg-secondary text-muted-foreground"
-                : record.successRate !== null && record.successRate < 75
-                  ? "bg-warning text-warning-foreground"
-                  : "bg-success text-success-foreground",
-            )}
-          >
+      <div className="flex min-w-0 flex-1 flex-col items-stretch gap-2 rounded-card border border-border bg-card p-4 text-left transition-colors hover:bg-card/90">
+        <Link
+          to="/dogs/$dogId/activities/$activityId"
+          params={{ dogId: record.dog.id, activityId: record.id }}
+          aria-label={`Otevřít záznam ${record.title}`}
+          className="flex flex-col items-stretch gap-2 outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="flex items-start justify-between gap-3">
+            <span className="text-sm font-extrabold break-words">{record.title}</span>
+            <span
+              className={cn(
+                "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-extrabold",
+                record.status === "SKIPPED"
+                  ? "bg-secondary text-muted-foreground"
+                  : record.successRate !== null && record.successRate < 75
+                    ? "bg-warning text-warning-foreground"
+                    : "bg-success text-success-foreground",
+              )}
+            >
+              {record.status === "SKIPPED"
+                ? "Přeskočeno"
+                : record.successRate === null
+                  ? "Hotovo"
+                  : `${record.successRate} %`}
+            </span>
+          </span>
+          <span className="text-xs font-normal text-muted-foreground">
+            {record.dog.name} · {formatHistoryTime(record.completedAt)}
             {record.status === "SKIPPED"
-              ? "Přeskočeno"
-              : record.successRate === null
-                ? "Hotovo"
-                : `${record.successRate} %`}
+              ? " · —"
+              : record.plannedDurationMinutes !== null
+                ? ` · ${record.plannedDurationMinutes} min`
+                : ""}
           </span>
-        </span>
-        <span className="text-xs font-normal text-muted-foreground">
-          {record.dog.name} · {formatHistoryTime(record.completedAt)}
-          {record.status === "SKIPPED"
-            ? " · —"
-            : record.plannedDurationMinutes !== null
-              ? ` · ${record.plannedDurationMinutes} min`
-              : ""}
-        </span>
-        {record.note && (
-          <span className="line-clamp-2 text-sm leading-relaxed font-normal">{record.note}</span>
-        )}
-        {record.messageCount > 0 && (
-          <span className="flex items-center gap-1.5 text-xs font-bold text-primary">
-            <DesignIcon name="history-Msg1" />
-            {record.lastMessage?.author.name ? `${record.lastMessage.author.name} · ` : ""}
-            {record.messageCount}{" "}
-            {record.messageCount === 1
-              ? "komentář"
-              : record.messageCount < 5
-                ? "komentáře"
-                : "komentářů"}
-          </span>
-        )}
-      </Link>
+          {record.note && (
+            <span className="line-clamp-2 text-sm leading-relaxed font-normal">{record.note}</span>
+          )}
+        </Link>
+        <div className="mt-1 flex items-center justify-between gap-2 border-t border-border/50 pt-2">
+          {record.messageCount > 0 ? (
+            <span className="flex items-center gap-1.5 text-xs font-bold text-primary">
+              <DesignIcon name="history-Msg1" />
+              {record.lastMessage?.author.name ? `${record.lastMessage.author.name} · ` : ""}
+              {record.messageCount}{" "}
+              {record.messageCount === 1
+                ? "komentář"
+                : record.messageCount < 5
+                  ? "komentáře"
+                  : "komentářů"}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">Bez komentářů</span>
+          )}
+          <Button
+            asChild
+            size="sm"
+            variant="secondary"
+            className="shrink-0 gap-1.5 rounded-field font-bold"
+          >
+            <Link
+              to="/dogs/$dogId/activities/$activityId"
+              params={{ dogId: record.dog.id, activityId: record.id }}
+              aria-label={`Odpovědět k tréninku ${record.title}`}
+            >
+              <DesignIcon name="trainer-Msg" />
+              Odpovědět
+            </Link>
+          </Button>
+        </div>
+      </div>
     </li>
   )
 }
