@@ -32,7 +32,7 @@ export class ScheduledTrainingRepository {
         dog: { ownerId, isArchived: false },
       },
       include: {
-        workoutLog: { select: { successRate: true } },
+        workoutLog: { select: { id: true, successRate: true } },
         dog: { select: { id: true, name: true, color: true } },
         goal: {
           select: {

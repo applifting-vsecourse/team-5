@@ -1,6 +1,5 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Link } from "@tanstack/react-router"
 import { ChevronLeft, Link2, Send } from "lucide-react"
 import { toast } from "sonner"
 
@@ -312,21 +311,30 @@ export function TrainingRecordPage({
   const recordDogId = detail.data?.dog.id
   const hasDogMismatch = Boolean(recordDogId && recordDogId !== dogId)
   const backDogId = recordDogId ?? dogId
+
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      window.history.back()
+    } else {
+      window.location.assign(`/dogs/${backDogId}/activities`)
+    }
+  }
+
   return (
     <div className="mx-auto flex w-full max-w-lg flex-col gap-6 pb-8">
       <header className="space-y-3">
         <nav aria-label="Navigace zpět">
-          <Link
-            to="/dogs/$dogId/activities"
-            params={{ dogId: backDogId }}
-            className="inline-flex min-h-touch items-center gap-1.5 text-sm font-medium text-muted-foreground outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          <button
+            type="button"
+            onClick={handleBack}
+            className="inline-flex min-h-touch cursor-pointer items-center gap-1.5 text-sm font-medium text-muted-foreground outline-hidden hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           >
             <ChevronLeft
               className="size-5"
               aria-hidden
             />
-            Historie
-          </Link>
+            Zpět
+          </button>
         </nav>
         <div>
           <h1 className="text-page font-extrabold tracking-tight">Záznam tréninku</h1>

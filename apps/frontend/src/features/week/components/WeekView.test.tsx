@@ -302,9 +302,18 @@ describe("WeekView", () => {
       expect(screen.queryByRole("button", { name: /^Vrátit přeskočení/ })).toBeNull()
     })
 
-    it("offers no action on a completed training", () => {
-      renderWeek([aTraining({ status: "COMPLETED" })])
+    it("links a completed training with activityId to its record and thread", () => {
+      renderWeek([
+        aTraining({
+          id: "t1",
+          status: "COMPLETED",
+          activityId: "act-1",
+          dog: { id: "dog-1", name: "Baryk", color: 1 },
+        }),
+      ])
 
+      const link = screen.getByRole("link", { name: /^Záznam tréninku/ })
+      expect(link).toHaveAttribute("href", "/dogs/dog-1/activities/act-1")
       expect(screen.queryByRole("button", { name: /^Přeskočit trénink/ })).toBeNull()
       expect(screen.queryByRole("button", { name: /^Vrátit přeskočení/ })).toBeNull()
     })
