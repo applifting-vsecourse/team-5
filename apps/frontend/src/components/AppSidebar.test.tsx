@@ -24,7 +24,7 @@ vi.mock("@tanstack/react-router", async () => {
 })
 
 describe("AppSidebar", () => {
-  it("renders handler navigation with Historie and Zprávy", () => {
+  it("renders handler navigation with Historie", () => {
     currentPath = "/dashboard"
     render(
       <AppSidebar
@@ -38,13 +38,12 @@ describe("AppSidebar", () => {
     expect(screen.getByRole("link", { name: /Týden/ })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Moji psi/ })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Historie/ })).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /Zprávy/ })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Účet/ })).toBeInTheDocument()
     expect(screen.queryByRole("link", { name: /Klienti/ })).not.toBeInTheDocument()
-    expect(screen.getByText("Psovod")).toBeInTheDocument()
+    expect(screen.getByText(/Psovod · Účet/)).toBeInTheDocument()
   })
 
-  it("renders trainer navigation with Klienti, Historie and Zprávy", () => {
+  it("renders trainer navigation with Klienti and Historie", () => {
     currentPath = "/dashboard"
     render(
       <AppSidebar
@@ -56,10 +55,9 @@ describe("AppSidebar", () => {
     expect(screen.getByRole("link", { name: /Přehled/ })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Klienti/ })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Kalendář/ })).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /Moji psi/ })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Historie/ })).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /Zprávy/ })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Účet/ })).toBeInTheDocument()
-    expect(screen.getByText("Trenér")).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: /Moji psi/ })).not.toBeInTheDocument()
+    expect(screen.getByText(/Trenér · Účet/)).toBeInTheDocument()
   })
 })

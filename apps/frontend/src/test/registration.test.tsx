@@ -332,9 +332,8 @@ describe("trainer registration", () => {
       "aria-current",
       "page",
     )
-    // Trainer tab bar uses Cíle (still routes to /dogs until #164).
-    await interaction.click(within(nav).getByRole("link", { name: "Cíle" }))
-    await screen.findByRole("heading", { name: "Moji psi" })
+    await interaction.click(within(nav).getByRole("link", { name: "Účet" }))
+    await screen.findByRole("heading", { name: "Účet" })
     await interaction.click(within(nav).getByRole("link", { name: "Klienti" }))
     expect(await screen.findByText("Pozvěte prvního klienta")).toBeInTheDocument()
   })
