@@ -8,7 +8,6 @@ import { ROUTES } from "@/app/routes"
 import { DesignIcon } from "@/components/DesignIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
-import { TrainingConversationDialog } from "@/components/TrainingConversationDialog"
 import { useTrainingUpdates } from "@/components/TrainingUpdates"
 import { Button } from "@/components/ui/button"
 import { formatDayLong, todayCalendarDate } from "@/lib/calendarDate"
@@ -99,13 +98,7 @@ const ATTENTION_STYLE: Record<
   reply: { icon: "trainer-Msg", surface: "bg-accent", action: "Odpovědět" },
 }
 
-function AttentionRow({
-  item,
-  onConversation,
-}: {
-  item: Attention
-  onConversation: (activityId: string) => void
-}) {
+function AttentionRow({ item }: { item: Attention }) {
   const style = ATTENTION_STYLE[item.kind]
   const actionLabel = `${style.action} – ${item.dog.name}`
   let action: React.ReactNode
@@ -136,16 +129,19 @@ function AttentionRow({
       </Button>
     )
   } else if (item.activityId) {
-    const activityId = item.activityId
     action = (
       <Button
-        type="button"
+        asChild
         variant="secondary"
         className="shrink-0 rounded-field font-bold"
-        aria-label={actionLabel}
-        onClick={() => onConversation(activityId)}
       >
-        {style.action}
+        <Link
+          to="/dogs/$dogId/activities/$activityId"
+          params={{ dogId: item.dog.id, activityId: item.activityId }}
+          aria-label={actionLabel}
+        >
+          {style.action}
+        </Link>
       </Button>
     )
   } else {
@@ -370,7 +366,6 @@ function OverviewShortcuts() {
 
 export function TrainerOverview({ userName }: { userName?: string }) {
   const [isInviteOpen, setIsInviteOpen] = useState(false)
-  const [activityId, setActivityId] = useState<string | null>(null)
   const query = useQuery(trainerOverviewQueryOptions())
   const updates = useTrainingUpdates()
   const now = new Date()
@@ -478,7 +473,6 @@ export function TrainerOverview({ userName }: { userName?: string }) {
                     <AttentionRow
                       key={item.id}
                       item={item}
-                      onConversation={setActivityId}
                     />
                   ))}
                 </ul>
@@ -554,10 +548,6 @@ export function TrainerOverview({ userName }: { userName?: string }) {
       <InviteClientDialog
         isOpen={isInviteOpen}
         onOpenChange={setIsInviteOpen}
-      />
-      <TrainingConversationDialog
-        activityId={activityId}
-        onClose={() => setActivityId(null)}
       />
     </div>
   )
