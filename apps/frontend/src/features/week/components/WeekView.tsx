@@ -66,7 +66,22 @@ function WeekTrainingCard({ training, today }: { training: WeekTraining; today: 
     >
       <div className="flex min-w-0 flex-1 items-center gap-2 py-3 pr-3 pl-3">
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-bold break-words">{title}</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-bold break-words">{title}</h3>
+            {!isPlanned && (
+              <span
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
+                  training.status === "COMPLETED"
+                    ? "bg-success text-success-foreground"
+                    : "bg-secondary text-muted-foreground",
+                )}
+              >
+                <DesignIcon name={training.status === "COMPLETED" ? "week-Check" : "week-X"} />
+                {training.status === "COMPLETED" ? "Hotovo" : "Přeskočeno"}
+              </span>
+            )}
+          </div>
           <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
         </div>
         {isPlanned ? (
@@ -88,19 +103,23 @@ function WeekTrainingCard({ training, today }: { training: WeekTraining; today: 
               {isTodayOrOverdue ? "Začít" : "Naplánováno"}
             </Link>
           </Button>
-        ) : (
-          <span
-            className={cn(
-              "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold",
-              training.status === "COMPLETED"
-                ? "bg-success text-success-foreground"
-                : "bg-secondary text-muted-foreground",
-            )}
+        ) : training.activityId ? (
+          <Button
+            asChild
+            size="sm"
+            variant="secondary"
+            className="shrink-0 gap-1.5 rounded-field font-bold"
           >
-            <DesignIcon name={training.status === "COMPLETED" ? "week-Check" : "week-X"} />
-            {training.status === "COMPLETED" ? "Hotovo" : "Přeskočeno"}
-          </span>
-        )}
+            <Link
+              to="/dogs/$dogId/activities/$activityId"
+              params={{ dogId: training.dog.id, activityId: training.activityId }}
+              aria-label={`Záznam tréninku ${heading}`}
+            >
+              <DesignIcon name="history-Msg1" />
+              Záznam
+            </Link>
+          </Button>
+        ) : null}
         {(isPlanned || canUndo) && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
