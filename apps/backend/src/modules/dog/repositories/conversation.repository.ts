@@ -12,22 +12,15 @@ export class ConversationRepository {
   updates(userId: string) {
     return this.prisma.trainingMessage.findMany({
       where: {
-        authorId: { not: userId },
-        OR: [
-          {
-            workoutLog: { dog: { ownerId: userId, isArchived: false } },
-            author: { role: { in: ['trainer', 'admin'] } },
+        workoutLog: {
+          dog: {
+            isArchived: false,
+            OR: [
+              { ownerId: userId },
+              { shares: { some: { trainerId: userId } } },
+            ],
           },
-          {
-            workoutLog: {
-              dog: {
-                isArchived: false,
-                shares: { some: { trainerId: userId } },
-              },
-            },
-            author: { role: { notIn: ['trainer', 'admin'] } },
-          },
-        ],
+        },
       },
       include: {
         ...messageInclude,

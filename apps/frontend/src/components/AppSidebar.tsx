@@ -6,12 +6,21 @@ import { cn } from "@/lib/utils"
 export function AppSidebar({ user, isTrainer }: { user: { name: string }; isTrainer: boolean }) {
   const { pathname } = useLocation()
   const isAccountActive = pathname === "/account" || pathname.startsWith("/account/")
-  const items = [
-    { to: "/dashboard", label: isTrainer ? "Přehled" : "Dnes", icon: "Home" },
-    ...(isTrainer ? [{ to: "/clients" as const, label: "Klienti", icon: "Users" }] : []),
-    { to: "/week", label: isTrainer ? "Kalendář" : "Týden", icon: "Cal" },
-    { to: "/dogs", label: "Moji psi", icon: "Paw1" },
-  ] as const
+  const items = isTrainer
+    ? ([
+        { to: "/dashboard", label: "Přehled", icon: "Home" },
+        { to: "/clients", label: "Klienti", icon: "Users" },
+        { to: "/week", label: "Kalendář", icon: "Cal" },
+        { to: "/history", label: "Historie", icon: "List" },
+        { to: "/account", label: "Účet", icon: "User" },
+      ] as const)
+    : ([
+        { to: "/dashboard", label: "Dnes", icon: "Home" },
+        { to: "/week", label: "Týden", icon: "Cal" },
+        ...(!isTrainer ? [{ to: "/dogs" as const, label: "Moji psi", icon: "Paw1" }] : []),
+        { to: "/history", label: "Historie", icon: "List" },
+        { to: "/account", label: "Účet", icon: "User" },
+      ] as const)
   return (
     <aside className="sticky top-0 hidden h-dvh w-sidebar shrink-0 flex-col gap-1.5 bg-sidebar px-4 py-6 text-sidebar-foreground md:flex">
       <Link
