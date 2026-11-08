@@ -73,3 +73,24 @@ export function historyQueryOptions(filters: {
       last.page * last.pageSize < last.total ? last.page + 1 : undefined,
   })
 }
+
+/** First history page for one dog — used by client detail without filtering a global feed. */
+export function dogHistoryFirstPageQueryOptions(dogId: string) {
+  return queryOptions({
+    queryKey: [...dogKeys.all, "history-first", dogId],
+    enabled: Boolean(dogId),
+    queryFn: async () =>
+      historyPageSchema.parse(
+        await api
+          .get("history", {
+            searchParams: {
+              page: 1,
+              pageSize: 5,
+              dogId,
+              commentsOnly: "false",
+            },
+          })
+          .json(),
+      ),
+  })
+}

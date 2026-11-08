@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import { HTTPError } from "ky"
@@ -10,12 +11,14 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 import { clientDetailQueryOptions } from "@/features/client/api/clientsQueryOptions"
 import { ClientDetailView } from "@/features/client/components/ClientDetailView"
+import { ClientScheduleFlow } from "@/features/dog/components/ClientScheduleFlow"
 
 export const Route = createFileRoute("/_ProtectedPages/clients/$clientId")({
   component: ClientDetailPage,
 })
 
 function ClientDetailPage() {
+  const [isScheduling, setScheduling] = useState(false)
   const { clientId } = Route.useParams()
   const clientQuery = useQuery(clientDetailQueryOptions(clientId))
 
@@ -95,8 +98,18 @@ function ClientDetailPage() {
   return (
     <>
       <Seo title={`${client.name} · Detail klienta`} />
-      <section className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
-        <ClientDetailView client={client} />
+      <section className="mx-auto w-full max-w-2xl px-gutter pt-3 pb-6 md:py-8">
+        <ClientDetailView
+          client={client}
+          onSchedule={() => setScheduling(true)}
+        />
+        {isScheduling && (
+          <ClientScheduleFlow
+            key={client.id}
+            client={client}
+            onClose={() => setScheduling(false)}
+          />
+        )}
       </section>
     </>
   )
