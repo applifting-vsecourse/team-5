@@ -30,6 +30,9 @@ updates:
       # PostgreSQL major upgrades require a separate data migration.
       - dependency-name: postgres
         update-types: [version-update:semver-major]
+      # Node.js major upgrades should be done deliberately to avoid unbundled corepack / runtime breakage.
+      - dependency-name: node
+        update-types: [version-update:semver-major]
   - package-ecosystem: docker-compose
     directories:
       - /
@@ -39,4 +42,6 @@ updates:
       interval: weekly
     ignore:
       - dependency-name: postgres
+        update-types: [version-update:semver-major]
+      - dependency-name: node
         update-types: [version-update:semver-major]
