@@ -76,6 +76,13 @@ const detail = {
       createdAt: "2026-11-06T11:00:00Z",
       author: { id: "t1", name: "Trenér" },
     },
+    {
+      id: "m2",
+      workoutLogId: "act-1",
+      text: "Šlo to skvěle!",
+      createdAt: "2026-11-06T11:05:00Z",
+      author: { id: "u1", name: "Panička" },
+    },
   ],
 }
 
@@ -99,11 +106,12 @@ describe("TrainingRecordPage", () => {
     })
   })
 
-  it("renders record summary, steps and thread", async () => {
+  it("renders record summary, steps and thread with styled bubbles", async () => {
     render(
       <TrainingRecordPage
         dogId="dog-1"
         activityId="act-1"
+        currentUserId="u1"
       />,
       { wrapper: createWrapper() },
     )
@@ -117,7 +125,32 @@ describe("TrainingRecordPage", () => {
     expect(screen.getByText("Volně")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Vlákno s trenérem" })).toBeInTheDocument()
     expect(screen.getByText("Jak to šlo?")).toBeInTheDocument()
+    expect(screen.getByText("Šlo to skvěle!")).toBeInTheDocument()
+
+    const otherMsg = screen.getByText("Jak to šlo?").closest("li")
+    const myMsg = screen.getByText("Šlo to skvěle!").closest("li")
+    expect(otherMsg).toHaveClass("mr-auto", "bg-card")
+    expect(myMsg).toHaveClass("ml-auto", "bg-accent")
+
     expect(screen.getByRole("button", { name: "👍 Díky!" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Zpět" })).toBeInTheDocument()
+  })
+
+  it("navigates back when clicking Zpět button", async () => {
+    const user = userEvent.setup()
+    Object.defineProperty(window.history, "length", { value: 2, configurable: true })
+    const backSpy = vi.spyOn(window.history, "back").mockReturnValue(undefined)
+    render(
+      <TrainingRecordPage
+        dogId="dog-1"
+        activityId="act-1"
+      />,
+      { wrapper: createWrapper() },
+    )
+
+    await user.click(screen.getByRole("button", { name: "Zpět" }))
+    expect(backSpy).toHaveBeenCalled()
+    backSpy.mockRestore()
   })
 
   it("fills composer from a quick reply chip", async () => {
