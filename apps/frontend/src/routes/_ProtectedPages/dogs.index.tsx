@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, redirect } from "@tanstack/react-router"
 
 import { Seo } from "@/components/Seo"
 
@@ -13,6 +13,11 @@ function dogCountLabel(count: number): string {
 }
 
 export const Route = createFileRoute("/_ProtectedPages/dogs/")({
+  beforeLoad: ({ context }) => {
+    if (context.user.role === "trainer" || context.user.role === "admin") {
+      throw redirect({ to: "/clients", replace: true })
+    }
+  },
   component: DogsPage,
 })
 

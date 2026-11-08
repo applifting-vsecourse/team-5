@@ -21,7 +21,8 @@ export const Route = createFileRoute("/_ProtectedPages/account")({ component: Ac
 export function AccountPage() {
   const { user } = useSession()
   const signOut = useSignOut()
-  const dogs = useQuery({ ...dogsQueryOptions(), enabled: Boolean(user) })
+  const isTrainer = user?.role === "trainer" || user?.role === "admin"
+  const dogs = useQuery({ ...dogsQueryOptions(), enabled: Boolean(user) && !isTrainer })
   const ownedDogs = (dogs.data ?? []).filter((dog) => dog.ownerId === user?.id)
   const trainers = [
     ...new Map(
@@ -52,7 +53,7 @@ export function AccountPage() {
                       : user.role === "admin"
                         ? "Administrátor"
                         : "Psovod"}
-                    {dogs.isSuccess
+                    {!isTrainer && dogs.isSuccess
                       ? ` · ${ownedDogs.length} ${ownedDogs.length === 1 ? "pes" : ownedDogs.length >= 2 && ownedDogs.length <= 4 ? "psi" : "psů"}`
                       : ""}
                   </p>
@@ -63,7 +64,7 @@ export function AccountPage() {
                 name={user.name}
               />
             </section>
-            {user.role !== "trainer" && (
+            {!isTrainer && (
               <section
                 className="space-y-3"
                 aria-labelledby="account-connections"

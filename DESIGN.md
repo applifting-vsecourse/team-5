@@ -124,6 +124,16 @@ have no shadows; shadow tokens are for floating menus, dialogs and toasts.
 
 ## Responsive layout and navigation
 
+Review decision, 8 November 2026: keep History as the single activity/comment
+destination in both roles; omit the separate Messages tab. History is a root tab
+without a back arrow. Dog-history links select the History tab with a dog filter.
+Reply links open the record and scroll to its composer. Trainer-owned dogs are
+temporarily deferred (#211): omit own-dog shortcuts and the mobile Goals alias
+that pointed to own dogs. Trainers reach shared dogs and their goals via Clients.
+Client scheduling selects a dog, active goal and training as needed, then opens
+the existing calendar; single choices are automatic. Create missing goals manually
+on the dog. These decisions override the navigation entries in the table below.
+
 Mobile first at roughly 390–402px, supporting 320px without horizontal page scroll.
 Keep actions reachable outdoors with one hand. Full-width main actions sit near
 the bottom of their flow, clear of navigation and safe areas. Reserve space for

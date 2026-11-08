@@ -23,6 +23,21 @@ const aDog = (overrides: Partial<Dog> = {}): Dog => ({
 });
 
 describe('DogsService', () => {
+  it.each(['trainer', 'admin'])(
+    'rejects own-dog creation for %s',
+    async (role) => {
+      const repository = mock<DogRepository>();
+      const service = new DogsService(repository, mock<DogAccessService>());
+      await expect(
+        service.createDog({ id: 'trainer', role } as Identity, {
+          name: 'Argo',
+          color: 1,
+        }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.createDog).not.toHaveBeenCalled();
+    },
+  );
+
   it('returns dogs from the repository for the given user', async () => {
     const dogs = [aDog()];
     const repository = mock<DogRepository>();

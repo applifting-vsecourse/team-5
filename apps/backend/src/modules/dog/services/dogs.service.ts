@@ -6,6 +6,7 @@ import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -94,6 +95,11 @@ export class DogsService {
       disciplines?: string[];
     },
   ): Promise<Dog> {
+    if (user.role === 'trainer' || user.role === 'admin') {
+      throw new ForbiddenException(
+        'Trainers cannot create their own dogs yet.',
+      );
+    }
     if (dogData.birthDate && dogData.birthDate > todayInAppZone())
       throw new BadRequestException('Datum narození nesmí být v budoucnosti.');
     const sanitizedDisciplines = dogData.disciplines
