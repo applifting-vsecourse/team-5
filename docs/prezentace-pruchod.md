@@ -2,7 +2,7 @@
 
 Scénář a tahák pro živou prezentaci 16. 11. 2026. Ukazuje jen to, co je od 26. 10. 2026 nasazené na stagingu (`main`, commit `8cb7d82`). Funkce ze sprintu 2 (pozvánka kódem, fotka psa, registrace) znovu neprocházíme.
 
-Podklady: [UX report](ux-report.md), [Security report](security-report.md), [kontrola proti Figmě](vystupy/figma-redesign-kontrola.md), Figma [Trainloop](https://www.figma.com/design/LBlhF1wiyl639ENDDG2RWE/Trainloop).
+Podklady: [UX report](ux-report.md), [Security report](security-report.md), [rozbor vizuálu Týdne](vystupy/figma-redesign-kontrola.md).
 
 ---
 
@@ -12,7 +12,7 @@ Podklady: [UX report](ux-report.md), [Security report](security-report.md), [kon
 | --------- | --------------------------------------------- | --------------------------------- |
 | 0:00–0:30 | Úvod a reakce na feedback ze sprintu 2        | 1 člověk                          |
 | 0:30–2:30 | UX audit: pain points a jejich náprava        | 1 člověk                          |
-| 2:30–3:15 | Brand a design systém (Figma → kód)           | stejný                            |
+| 2:30–3:15 | Brand a design systém                         | stejný                            |
 | 3:15–6:45 | Živé demo na mobilu: psovod a trenér          | 2 lidi (jeden kliká, druhý mluví) |
 | 6:45–8:15 | Security audit a testy, ukázka spadlého testu | 1 člověk                          |
 | 8:15–9:00 | Co zbývá a kde najdete reporty                | 1 člověk                          |
@@ -21,7 +21,7 @@ Podklady: [UX report](ux-report.md), [Security report](security-report.md), [kon
 
 ## 1. Úvod (0:00–0:30)
 
-> „Na konci sprintu 2 jsme slyšeli, že funkčně je to super, ale appka je nepřehledná. Tenhle sprint jsme proto nepřidávali hromadu funkcí. Prošli jsme celou aplikaci očima psovoda na cvičáku s mobilem v ruce a psem na vodítku. Klíčové obrazovky (Týden, Trénink, Detail psa, Cíl) jsme nejdřív navrhli ve Figmě a teprve pak postavili.“
+> „Na konci sprintu 2 jsme slyšeli, že funkčně je to super, ale appka je nepřehledná. Tenhle sprint jsme proto nepřidávali hromadu funkcí. Prošli jsme celou aplikaci očima psovoda na cvičáku s mobilem v ruce a psem na vodítku. Nejdřív jsme navrhli, jak má vypadat Týden, Trénink, Detail psa a Cíl, a teprve potom to postavili.“
 
 ## 2. UX audit: pain points a náprava (0:30–2:30)
 
@@ -42,12 +42,12 @@ Ukazovat **před a po** vedle sebe (screenshoty staré verze vs. staging).
 
 ## 3. Brand a design systém (2:30–3:15)
 
-Figma vedle běžící appky.
+Ukazovat přímo v běžící appce (Dnes, Týden, detail psa), Figmu neotevírat.
 
 - **Identita „deník psa“:** patkovým písmem je to, co je _napsané_ (jméno psa, cíl, zápis), bezpatkovým ovládání. Žádné ilustrace navíc, charakter dělá typografie.
 - **Každý pes má svou barvu (1–6),** všude stejnou: proužek v kalendáři, avatar, hlavička profilu.
 - **Slovník:** deník, zápis, zadání, odcvičeno. Žádné IT slovo „aktivita“.
-- **Pod kapotou:** tokeny shodné s Figmou, kontrast podle WCAG, sdílený UI kit, jednotné stavy načítání, prázdna a chyby. Nová landing page, přihlášení, registrace s výběrem role, e-maily.
+- **Pod kapotou:** jednotné barvy a zaoblení jako tokeny, kontrast podle WCAG, sdílený UI kit, jednotné stavy načítání, prázdna a chyby. Nová landing page, přihlášení, registrace s výběrem role, e-maily.
 
 ## 4. Živé demo (3:15–6:45)
 
@@ -75,7 +75,7 @@ Tip: projet demo předem 2× se stopkami a zkontrolovat, že Jan Novák má na s
 
 ## 6. Co zbývá a závěr (8:15–9:00)
 
-- **Týden** není proti Figmě 1:1 (tlačítko „Dnes“, nadpis, progress bar).
+- **Týden** ještě vizuálně dolaďujeme (tlačítko „Dnes“, nadpis, progress bar).
 - **Vlastní psi trenéra** jsou zatím skrytí, dokud nenavrhneme přepínání rolí (#211).
 - **Tmavý režim** je po domluvě s PO odložený.
 - **Security:** 4 moderate čekají na upstream, chybí skenování Docker obrazů na úrovni OS a globální rate limit a bezpečnostní hlavičky.
@@ -150,7 +150,7 @@ Hlavní pain points a náprava:
 - Záznam tréninku má vlastní stránku, zprávy trenér ↔ psovod přímo u záznamu, zvonek a „Zpráva od trenéra“ na Dnes.
 - Průchod tréninkem pro mobil v terénu: časovač, velká tlačítka, kritérium k odškrtnutí.
 - Archiv psa, dokončení a archiv cíle, ukončení disciplíny; historie zůstává.
-- Nový design systém „deník psa“ podle Figmy: barvy psů, typografie, sdílený UI kit, spodní navigace podle role.
+- Nový design systém „deník psa“: barvy psů, typografie, sdílený UI kit, spodní navigace podle role.
 
 Celý report: docs/ux-report.md
 ```
