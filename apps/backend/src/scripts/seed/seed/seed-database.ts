@@ -6,11 +6,13 @@ import {
 import { BetterAuth } from '@/shared/auth/providers/better-auth.provider';
 import { Config } from '@/shared/config/config.service';
 import { createUser } from './create-user';
+import { SeedTrainingCalendar } from './seed-training-calendar';
 
 export const seedDatabase = async (
   prisma: PrismaService,
   config: Config,
   betterAuth: BetterAuth,
+  now = new Date(),
 ): Promise<void> => {
   const auth = betterAuth;
 
@@ -63,18 +65,8 @@ export const seedDatabase = async (
       });
     }
 
-    await seedDogData(prisma, existingTrainer.id);
-    await seedClientData(prisma, auth, existingTrainer.id);
+    await seedClientData(prisma, auth, existingTrainer.id, now);
     return;
-  }
-
-  // Drop existing database data from all tables
-  try {
-    await prisma.$executeRawUnsafe(
-      'TRUNCATE TABLE "session", "account", "verification", "user" RESTART IDENTITY CASCADE;',
-    );
-  } catch (error) {
-    console.error('Error truncating tables:', error);
   }
 
   console.log('Creating superadmin user');
@@ -108,25 +100,20 @@ export const seedDatabase = async (
     username: 'evanow',
   });
 
-  await seedDogData(prisma, trainer.id);
-  await seedClientData(prisma, auth, trainer.id);
+  await seedClientData(prisma, auth, trainer.id, now);
 };
 
 export const seedDogData = async (
   prisma: PrismaService,
   userId: string,
+  now = new Date(),
 ): Promise<void> => {
   console.log('Seeding dog Rex with goals and activities for user', userId);
 
   // 1. Upsert Dog Rex
   const rex = await prisma.dog.upsert({
     where: { id: 'dog-rex-1' },
-    update: {
-      name: 'Rex',
-      breed: 'Border kolie',
-      color: 1,
-      disciplines: ['Poslušnost', 'Canicross'],
-    },
+    update: {},
     create: {
       id: 'dog-rex-1',
       name: 'Rex',
@@ -192,7 +179,7 @@ export const seedDogData = async (
 
   if (existingActivitiesCount === 0) {
     console.log('Creating initial activities for Rex');
-    const now = Date.now();
+    const timestamp = now.getTime();
     await prisma.workoutLog.createMany({
       data: [
         {
@@ -204,7 +191,7 @@ export const seedDogData = async (
           title: 'Chůze u nohy',
           discipline: 'Poslušnost',
           status: 'COMPLETED',
-          completedAt: new Date(now - 1 * 24 * 60 * 60 * 1000),
+          completedAt: new Date(timestamp - 1 * 24 * 60 * 60 * 1000),
           successRate: 70,
           rating: 4,
           focus: 'PARTIALLY',
@@ -220,7 +207,7 @@ export const seedDogData = async (
           title: 'Start na povel',
           discipline: 'Canicross',
           status: 'COMPLETED',
-          completedAt: new Date(now - 2 * 24 * 60 * 60 * 1000),
+          completedAt: new Date(timestamp - 2 * 24 * 60 * 60 * 1000),
           successRate: 85,
           rating: 5,
           focus: 'YES',
@@ -236,7 +223,7 @@ export const seedDogData = async (
           title: 'Trénink odložení',
           discipline: 'Poslušnost',
           status: 'SKIPPED',
-          completedAt: new Date(now - 3 * 24 * 60 * 60 * 1000),
+          completedAt: new Date(timestamp - 3 * 24 * 60 * 60 * 1000),
           skipReason:
             'Pršelo a pes byl unavený po návštěvě veterináře. Trénink jsme po dohodě přeskočili.',
           note: 'Přeskočeno po dohodě.',
@@ -248,7 +235,7 @@ export const seedDogData = async (
           title: 'Poslušnost v parku',
           discipline: 'Poslušnost',
           status: 'COMPLETED',
-          completedAt: new Date(now - 5 * 24 * 60 * 60 * 1000),
+          completedAt: new Date(timestamp - 5 * 24 * 60 * 60 * 1000),
           successRate: 95,
           rating: 5,
           focus: 'YES',
@@ -365,12 +352,7 @@ export const seedDogData = async (
   for (const block of rexGoalBlocks) {
     await prisma.planBlock.upsert({
       where: { id: block.id },
-      update: {
-        title: block.title,
-        instruction: block.instruction,
-        criterion: block.criterion,
-        position: block.position,
-      },
+      update: {},
       create: block,
     });
   }
@@ -380,6 +362,7 @@ export const seedClientData = async (
   prisma: PrismaService,
   auth: BetterAuth,
   trainerId: string,
+  now = new Date(),
 ): Promise<void> => {
   console.log('Seeding clients for trainer', trainerId);
 
@@ -442,9 +425,7 @@ export const seedClientData = async (
   // Dogs for Jan: Rex and Baryk
   const rex = await prisma.dog.upsert({
     where: { id: 'dog-rex-1' },
-    update: {
-      ownerId: jan.id,
-    },
+    update: {},
     create: {
       id: 'dog-rex-1',
       name: 'Rex',
@@ -457,9 +438,7 @@ export const seedClientData = async (
 
   const baryk = await prisma.dog.upsert({
     where: { id: 'dog-baryk-1' },
-    update: {
-      ownerId: jan.id,
-    },
+    update: {},
     create: {
       id: 'dog-baryk-1',
       name: 'Baryk',
@@ -473,9 +452,7 @@ export const seedClientData = async (
   // Dog for Petra: Alík
   const alik = await prisma.dog.upsert({
     where: { id: 'dog-alik-1' },
-    update: {
-      ownerId: petra.id,
-    },
+    update: {},
     create: {
       id: 'dog-alik-1',
       name: 'Alík',
@@ -489,9 +466,7 @@ export const seedClientData = async (
   // Dog for Tomáš: Lucky
   const lucky = await prisma.dog.upsert({
     where: { id: 'dog-lucky-1' },
-    update: {
-      ownerId: tomas.id,
-    },
+    update: {},
     create: {
       id: 'dog-lucky-1',
       name: 'Lucky',
@@ -519,18 +494,12 @@ export const seedClientData = async (
     });
   }
 
+  await seedDogData(prisma, jan.id, now);
+
   // Baryk's goal & blocks
   const barykGoal = await prisma.trainingGoal.upsert({
     where: { id: 'goal-baryk-1' },
-    update: {
-      dogId: baryk.id,
-      title: 'Překonání áčka v agility',
-      discipline: 'Agility',
-      principle:
-        'Plynulý náběh v plné rychlosti, bezpečný seběh s dotykem sestupné zóny 2on/2off.',
-      status: 'ACTIVE',
-      order: 1,
-    },
+    update: {},
     create: {
       id: 'goal-baryk-1',
       dogId: baryk.id,
@@ -568,67 +537,67 @@ export const seedClientData = async (
   for (const block of barykBlocks) {
     await prisma.planBlock.upsert({
       where: { id: block.id },
-      update: {
-        title: block.title,
-        instruction: block.instruction,
-        criterion: block.criterion,
-        position: block.position,
-      },
+      update: {},
       create: block,
     });
   }
 
-  await seedTrainingPlans(prisma, trainerId, [
-    {
-      id: rex.id,
-      ownerId: jan.id,
-      discipline: 'Poslušnost',
-      titles: [
-        'Přivolání s rozptýlením',
-        'Klidné míjení psů',
-        'Odložení na vzdálenost',
-      ],
-    },
-    {
-      id: baryk.id,
-      ownerId: jan.id,
-      discipline: 'Agility',
-      titles: [
-        'Samostatný slalom',
-        'Plynulý náběh do tunelu',
-        'Zastavení v kontaktní zóně',
-      ],
-    },
-    {
-      id: alik.id,
-      ownerId: petra.id,
-      discipline: 'Nosework',
-      titles: [
-        'Označení nalezeného pachu',
-        'Hledání v krabicích',
-        'Samostatné prohledání prostoru',
-      ],
-    },
-    {
-      id: lucky.id,
-      ownerId: tomas.id,
-      discipline: 'Canicross',
-      titles: [
-        'Plynulý tah v postroji',
-        'Změny směru na povel',
-        'Klidné míjení na trati',
-      ],
-    },
-  ]);
+  await seedTrainingPlans(
+    prisma,
+    trainerId,
+    [
+      {
+        id: rex.id,
+        ownerId: jan.id,
+        discipline: 'Poslušnost',
+        titles: [
+          'Přivolání s rozptýlením',
+          'Klidné míjení psů',
+          'Odložení na vzdálenost',
+        ],
+      },
+      {
+        id: baryk.id,
+        ownerId: jan.id,
+        discipline: 'Agility',
+        titles: [
+          'Samostatný slalom',
+          'Plynulý náběh do tunelu',
+          'Zastavení v kontaktní zóně',
+        ],
+      },
+      {
+        id: alik.id,
+        ownerId: petra.id,
+        discipline: 'Nosework',
+        titles: [
+          'Označení nalezeného pachu',
+          'Hledání v krabicích',
+          'Samostatné prohledání prostoru',
+        ],
+      },
+      {
+        id: lucky.id,
+        ownerId: tomas.id,
+        discipline: 'Canicross',
+        titles: [
+          'Plynulý tah v postroji',
+          'Změny směru na povel',
+          'Klidné míjení na trati',
+        ],
+      },
+    ],
+    now,
+  );
 
-  await seedClientActivity(prisma, trainerId, { jan, petra, tomas });
+  await seedClientActivity(prisma, trainerId, { jan, petra, tomas }, now);
 
   // Unused invitation
   const inviteCode = 'K7M2PQ';
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   await prisma.invitation.upsert({
     where: { code: inviteCode },
-    update: { expiresAt },
+    update: {},
     create: {
       code: inviteCode,
       trainerId,
@@ -642,7 +611,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // Recent records of the trainer's clients, so the trainer overview has real
 // data for every attention reason: a client message waiting for a reply (Rex),
 // falling success (Baryk), a quiet dog (Lucky) and a dog doing fine (Alík).
-// Dates are relative to the seed run and refreshed on every deploy.
+// Dates are relative to their first seed run and preserved on subsequent deploys.
 const seedClientActivity = async (
   prisma: PrismaService,
   trainerId: string,
@@ -651,9 +620,10 @@ const seedClientActivity = async (
     petra: { id: string };
     tomas: { id: string };
   },
+  referenceDate = new Date(),
 ): Promise<void> => {
   const { jan, petra, tomas } = clients;
-  const now = Date.now();
+  const now = referenceDate.getTime();
   const records = [
     // Rex (Jan): good progress; Jan asked a question under yesterday's record.
     {
@@ -799,13 +769,7 @@ const seedClientActivity = async (
     const completedAt = new Date(now - daysAgo * DAY_MS - 2 * 60 * 60 * 1000);
     await prisma.workoutLog.upsert({
       where: { id: record.id },
-      update: {
-        completedAt,
-        successRate: record.successRate,
-        note: record.note,
-        trainingId: (record as { trainingId?: string }).trainingId,
-        goalId: (record as { goalId?: string }).goalId,
-      },
+      update: {},
       create: { ...record, status: 'COMPLETED', completedAt },
     });
   }
@@ -829,7 +793,7 @@ const seedClientActivity = async (
     const createdAt = new Date(rexRecord + message.minutesAfter * 60 * 1000);
     await prisma.trainingMessage.upsert({
       where: { id: message.id },
-      update: { createdAt },
+      update: {},
       create: {
         id: message.id,
         workoutLogId: 'client-act-rex-1',
@@ -846,10 +810,25 @@ export async function seedTrainingPlans(
   prisma: PrismaService,
   trainerId: string,
   dogs: { id: string; ownerId: string; discipline: string; titles: string[] }[],
+  now = new Date(),
 ): Promise<void> {
-  const today = fromCalendarDate(todayInAppZone());
+  const today = fromCalendarDate(todayInAppZone(now));
   const day = (offset: number): Date =>
     new Date(today.getTime() + offset * DAY_MS);
+  const existingDays = await prisma.scheduledTraining.findMany({
+    where: {
+      dog: { ownerId: { in: [...new Set(dogs.map((dog) => dog.ownerId))] } },
+    },
+    select: { date: true, dogId: true, dog: { select: { ownerId: true } } },
+  });
+  const calendar = new SeedTrainingCalendar(
+    today,
+    existingDays.map((training) => ({
+      date: training.date,
+      dogId: training.dogId,
+      ownerId: training.dog.ownerId,
+    })),
+  );
   for (const dog of dogs) {
     for (const [g, title] of dog.titles.entries()) {
       const goalId = `seed-${dog.id}-goal-${g}`;
@@ -909,51 +888,54 @@ export async function seedTrainingPlans(
         }
         for (let n = 0; n < 7; n++) {
           const id = `${trainingId}-date-${n}`;
-          const offset = [-21, -14, -7, 0, 3, 7, 12][n] + t + g;
-          const skipped = offset < 0 && n === 1 && t === 2;
-          const status =
-            offset >= 0 ? 'PLANNED' : skipped ? 'SKIPPED' : 'COMPLETED';
-          await prisma.scheduledTraining.upsert({
-            where: { id },
-            update: {},
-            create: {
-              id,
-              dogId: dog.id,
-              goalId,
-              trainingId,
-              createdById: trainerId,
-              date: day(offset),
-              status,
-            },
-          });
-          // Only create history for fixtures that still have their original state.
-          if (offset >= 0) continue;
-          const scheduled = await prisma.scheduledTraining.findUniqueOrThrow({
-            where: { id },
-            include: { workoutLog: true },
-          });
-          if (scheduled.workoutLog || scheduled.status !== status) continue;
-          await prisma.workoutLog.create({
-            data: {
-              id: `${id}-log`,
-              scheduledTrainingId: id,
-              dogId: dog.id,
-              goalId,
-              trainingId,
-              authorId: dog.ownerId,
-              title: trainingTitle,
-              discipline: dog.discipline,
-              status: skipped ? 'SKIPPED' : 'COMPLETED',
-              completedAt: new Date(scheduled.date.getTime() + 12 * 3_600_000),
-              successRate: skipped ? null : 50 + ((g + t + n) % 6) * 10,
-              rating: skipped ? null : 4,
-              focus: skipped ? null : 'PARTIALLY',
-              repeatedMistakes: skipped ? null : 'NO',
-              note: skipped
-                ? null
-                : 'Po krátké pauze lepší soustředění. Příště přidáme vzdálenost.',
-              skipReason: skipped ? 'Odpočinek po náročném dni.' : null,
-            },
+          // Existing fixtures (including manual moves/completions) are never reset.
+          if (await prisma.scheduledTraining.findUnique({ where: { id } }))
+            continue;
+          const planned = n >= 3;
+          const skipped = !planned && n === 1 && t === 2;
+          const status = planned
+            ? 'PLANNED'
+            : skipped
+              ? 'SKIPPED'
+              : 'COMPLETED';
+          const date = calendar.allocate(id, dog.ownerId, dog.id, planned);
+          await prisma.$transaction(async (tx) => {
+            const scheduled = await tx.scheduledTraining.create({
+              data: {
+                id,
+                dogId: dog.id,
+                goalId,
+                trainingId,
+                createdById: trainerId,
+                date,
+                status,
+              },
+            });
+            if (planned) return;
+            await tx.workoutLog.create({
+              data: {
+                id: `${id}-log`,
+                scheduledTrainingId: id,
+                dogId: dog.id,
+                goalId,
+                trainingId,
+                authorId: dog.ownerId,
+                title: trainingTitle,
+                discipline: dog.discipline,
+                status: skipped ? 'SKIPPED' : 'COMPLETED',
+                completedAt: new Date(
+                  scheduled.date.getTime() + 12 * 3_600_000,
+                ),
+                successRate: skipped ? null : 50 + ((g + t + n) % 6) * 10,
+                rating: skipped ? null : 4,
+                focus: skipped ? null : 'PARTIALLY',
+                repeatedMistakes: skipped ? null : 'NO',
+                note: skipped
+                  ? null
+                  : 'Po krátké pauze lepší soustředění. Příště přidáme vzdálenost.',
+                skipReason: skipped ? 'Odpočinek po náročném dni.' : null,
+              },
+            });
           });
         }
       }

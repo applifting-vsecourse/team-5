@@ -377,7 +377,8 @@ test(
       },
     };
     try {
-      await seedDatabase(prisma, {}, auth);
+      const firstRun = new Date('2026-11-09T10:00:00Z');
+      await seedDatabase(prisma, {}, auth, firstRun);
       const countFixtures = () =>
         Promise.all([
           prisma.trainingGoal.count({
@@ -402,7 +403,155 @@ test(
         await prisma.dogShare.count({ where: { trainerId: trainer.id } }),
         4,
       );
-      await seedDatabase(prisma, {}, auth);
+      const jan = await prisma.user.findUniqueOrThrow({
+        where: { email: 'jan.novak@seznam.cz' },
+      });
+      const janDates = await prisma.scheduledTraining.findMany({
+        where: { dog: { ownerId: jan.id } },
+        select: { date: true, dogId: true },
+      });
+      const daily = new Map();
+      for (const term of janDates) {
+        const key = term.date.toISOString();
+        const dogs = daily.get(key) ?? [];
+        dogs.push(term.dogId);
+        daily.set(key, dogs);
+      }
+      assert.ok(
+        [...daily.values()].every(
+          (dogs) => dogs.length <= 2 && new Set(dogs).size === dogs.length,
+        ),
+        'at most two terms per owner/day and one per dog/day',
+      );
+      assert.ok(
+        [...daily.values()].some((dogs) => dogs.length === 2),
+        'both dogs can train on the same day',
+      );
+
+      // Simulate real edits, the one-off SQL redistribution, and a completed term.
+      await prisma.dog.update({
+        where: { id: 'dog-rex-1' },
+        data: { name: 'Můj Rex', disciplines: ['Triky'] },
+      });
+      await prisma.trainingGoal.update({
+        where: { id: 'goal-baryk-1' },
+        data: { title: 'Můj upravený cíl', status: 'COMPLETED' },
+      });
+      await prisma.planBlock.update({
+        where: { id: 'block-1-1' },
+        data: {
+          title: 'Můj krok',
+          instruction: 'Vlastní postup',
+          position: 15,
+        },
+      });
+      await prisma.workoutLog.update({
+        where: { id: 'client-act-rex-1' },
+        data: {
+          note: 'Moje zpětná vazba',
+          successRate: 30,
+          completedAt: new Date('2026-11-01T12:00:00Z'),
+        },
+      });
+      await prisma.trainingMessage.update({
+        where: { id: 'client-msg-rex-1' },
+        data: {
+          text: 'Moje odpověď',
+          createdAt: new Date('2026-11-02T12:00:00Z'),
+        },
+      });
+      await prisma.dogNote.update({
+        where: { id: 'note-1' },
+        data: { text: 'Můj deník' },
+      });
+      const planned = await prisma.scheduledTraining.findMany({
+        where: { dogId: 'dog-rex-1', status: 'PLANNED' },
+        take: 2,
+        orderBy: { id: 'asc' },
+      });
+      await prisma.scheduledTraining.update({
+        where: { id: planned[0].id },
+        data: { date: new Date('2030-01-15T00:00:00Z') },
+      });
+      await prisma.scheduledTraining.update({
+        where: { id: planned[1].id },
+        data: { status: 'COMPLETED' },
+      });
+      await prisma.workoutLog.create({
+        data: {
+          id: 'regular-manual-completion',
+          dogId: planned[1].dogId,
+          goalId: planned[1].goalId,
+          trainingId: planned[1].trainingId,
+          scheduledTrainingId: planned[1].id,
+          title: 'Odcvičeno psovodem',
+          note: 'Zachovat při deployi',
+          completedAt: firstRun,
+        },
+      });
+      await prisma.scheduledTraining.create({
+        data: {
+          id: 'regular-manual-term',
+          dogId: planned[0].dogId,
+          goalId: planned[0].goalId,
+          trainingId: planned[0].trainingId,
+          date: new Date('2031-01-01T00:00:00Z'),
+        },
+      });
+      const dogIds = ['dog-rex-1', 'dog-baryk-1', 'dog-alik-1', 'dog-lucky-1'];
+      const snapshot = () =>
+        Promise.all([
+          prisma.dog.findMany({
+            where: { id: { in: dogIds } },
+            orderBy: { id: 'asc' },
+          }),
+          prisma.trainingGoal.findMany({
+            where: { dogId: { in: dogIds } },
+            orderBy: { id: 'asc' },
+          }),
+          prisma.goalTraining.findMany({
+            where: { goal: { dogId: { in: dogIds } } },
+            orderBy: { id: 'asc' },
+          }),
+          prisma.planBlock.findMany({
+            where: { goal: { dogId: { in: dogIds } } },
+            orderBy: { id: 'asc' },
+          }),
+          prisma.scheduledTraining.findMany({
+            where: { dogId: { in: dogIds } },
+            orderBy: { id: 'asc' },
+          }),
+          prisma.workoutLog.findMany({
+            where: { dogId: { in: dogIds } },
+            orderBy: { id: 'asc' },
+          }),
+          prisma.trainingMessage.findMany({
+            where: { workoutLog: { dogId: { in: dogIds } } },
+            orderBy: { id: 'asc' },
+          }),
+          prisma.dogNote.findMany({
+            where: { dogId: { in: dogIds } },
+            orderBy: { id: 'asc' },
+          }),
+          prisma.dogDiscipline.findMany({
+            where: { dogId: { in: dogIds } },
+            orderBy: { id: 'asc' },
+          }),
+          prisma.invitation.findMany({ where: { code: 'K7M2PQ' } }),
+        ]);
+      const beforeDeploy = await snapshot();
+      await seedDatabase(prisma, {}, auth, new Date('2026-12-24T10:00:00Z'));
+      assert.deepEqual(
+        await snapshot(),
+        beforeDeploy,
+        'a later deployment must preserve all data, dates, status, edits and timestamps',
+      );
+      await seedDatabase(prisma, {}, auth, new Date('2027-02-01T10:00:00Z'));
+      assert.deepEqual(
+        await snapshot(),
+        beforeDeploy,
+        'another deployment is also a no-op',
+      );
       assert.deepEqual(await countFixtures(), [12, 48, 336]);
     } finally {
       await prisma.$disconnect();
