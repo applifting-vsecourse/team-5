@@ -27,6 +27,7 @@ export function SessionScheduleSheet({
   description,
   isOpen,
   onOpenChange,
+  onBack,
 }: {
   sessionId: string
   goalId: string
@@ -34,6 +35,7 @@ export function SessionScheduleSheet({
   description: string
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
+  onBack?: () => void
 }) {
   const client = useQueryClient()
   const planned = useQuery(goalTrainingsQueryOptions(goalId))
@@ -86,6 +88,16 @@ export function SessionScheduleSheet({
       title="Naplánovat trénink"
       description={description}
     >
+      {onBack && (
+        <Button
+          variant="outline"
+          className="mb-3 w-full"
+          disabled={isPending}
+          onClick={onBack}
+        >
+          Změnit cíl nebo trénink
+        </Button>
+      )}
       {planned.isLoading ? (
         <p role="status">Načítám naplánované dny…</p>
       ) : planned.isError ? (
@@ -125,8 +137,8 @@ export function SessionScheduleSheet({
             }}
           />
           <p className="mt-3 text-sm text-muted-foreground">
-            Vyber jeden nebo více dnů. Označené dny už mají trénink. Termíny můžeš později přesunout
-            v Týdnu.
+            Vyber jeden nebo více dnů. Označené dny už mají trénink. Naplánované termíny najdeš v
+            plánu psa.
           </p>
           {days.length ? (
             <p

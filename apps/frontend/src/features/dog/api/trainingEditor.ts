@@ -13,6 +13,7 @@ export const sessionSchema = z.object({
   position: z.number(),
   isArchived: z.boolean(),
   steps: z.array(planBlockSchema),
+  workoutLogs: z.array(z.object({ id: z.string(), completedAt: z.coerce.date() })).optional(),
   scheduledTrainings: z
     .array(
       z.object({
@@ -26,6 +27,7 @@ export const sessionSchema = z.object({
 export const planGoalSchema = z.object({
   id: z.string(),
   title: z.string(),
+  createdBy: z.object({ name: z.string() }).nullable().optional(),
   criterion: z.string().nullable(),
   principle: z.string().nullable(),
   deadline: z.string().nullable().optional(),

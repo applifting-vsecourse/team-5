@@ -117,10 +117,15 @@ export class HierarchyRepository {
         goals: {
           orderBy: [{ order: 'asc' }, { id: 'asc' }],
           include: {
+            createdBy: { select: { name: true } },
             sessions: {
               orderBy: [...planOrder],
               include: {
                 steps: { orderBy: [...planOrder] },
+                workoutLogs: {
+                  where: { scheduledTrainingId: null, status: 'COMPLETED' },
+                  select: { id: true, completedAt: true },
+                },
                 scheduledTrainings: {
                   select: { id: true, date: true, status: true },
                   orderBy: { date: 'asc' },

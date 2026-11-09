@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router"
-import { ChevronRight, Clock } from "lucide-react"
+import { ChevronRight } from "lucide-react"
 
 import { dogColorClass } from "@/lib/dogColors"
+import { performanceBandForRate } from "@/lib/performanceBands"
 import { cn } from "@/lib/utils"
 
 import type { Client } from "@/features/client/api/clientSchemas"
@@ -9,8 +10,6 @@ import type { Client } from "@/features/client/api/clientSchemas"
 export type ClientListExtras = {
   successRate: number | null
   lastActivity: string
-  attentionLabel: string | null
-  attentionKind: "reply" | "inactive" | "low-success" | null
 }
 
 type ClientCardProps = {
@@ -20,28 +19,25 @@ type ClientCardProps = {
 
 export function ClientCard({ client, extras }: ClientCardProps) {
   const dogs = client.dogs.slice(0, 4)
-  const badge =
-    extras?.attentionKind === "inactive" && extras.attentionLabel ? (
-      <span className="inline-flex items-center gap-1 rounded-full bg-warning px-2.5 py-0.5 text-xs font-extrabold text-warning-foreground">
-        <Clock
-          className="size-3"
-          aria-hidden
-        />
-        {extras.attentionLabel
-          .replace(/^Bez tréninku\s+/i, "")
-          .replace(/^Zatím bez tréninku ·\s*/i, "")}
-      </span>
-    ) : extras?.attentionKind === "low-success" && extras.successRate != null ? (
-      <span className="rounded-full bg-danger-surface px-2.5 py-0.5 text-xs font-extrabold text-danger-foreground">
-        {Math.round(extras.successRate)} %
-      </span>
-    ) : extras?.successRate != null ? (
-      <span className="rounded-full bg-success px-2.5 py-0.5 text-xs font-extrabold text-success-foreground">
-        {Math.round(extras.successRate)} %
-      </span>
-    ) : (
-      <span className="text-sm font-extrabold text-muted-foreground">—</span>
-    )
+  const rate = extras?.successRate
+  const band = performanceBandForRate(rate)
+  const badge = (
+    <span
+      aria-label={rate != null ? `Úspěšnost ${Math.round(rate)} %` : "Bez hodnocení"}
+      className={cn(
+        "rounded-full px-2.5 py-0.5 text-xs font-extrabold",
+        band === "empty"
+          ? "bg-secondary text-muted-foreground"
+          : band === "low"
+            ? "bg-danger-surface text-danger-foreground"
+            : band === "medium"
+              ? "bg-warning text-warning-foreground"
+              : "bg-success text-success-foreground",
+      )}
+    >
+      {rate != null ? `${Math.round(rate)} %` : "Bez hodnocení"}
+    </span>
+  )
 
   return (
     <li>

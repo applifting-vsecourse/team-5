@@ -2,13 +2,12 @@ import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { differenceInCalendarDays } from "date-fns"
-import { Calendar, UserPlus, Users } from "lucide-react"
+import { UserPlus, Users } from "lucide-react"
 
 import { ROUTES } from "@/app/routes"
 import { DesignIcon } from "@/components/DesignIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
-import { useTrainingUpdates } from "@/components/TrainingUpdates"
 import { Button } from "@/components/ui/button"
 import { formatDayLong, todayCalendarDate } from "@/lib/calendarDate"
 import { dogColorClass } from "@/lib/dogColors"
@@ -338,12 +337,9 @@ function OverviewShortcuts() {
   return (
     <nav
       aria-label="Rychlé odkazy"
-      className="grid grid-cols-2 gap-2"
+      className="grid gap-2"
     >
-      {[
-        { to: ROUTES.clients, label: "Klienti", icon: Users },
-        { to: ROUTES.week, label: "Kalendář", icon: Calendar },
-      ].map(({ to, label, icon: Icon }) => (
+      {[{ to: ROUTES.clients, label: "Klienti", icon: Users }].map(({ to, label, icon: Icon }) => (
         <Button
           key={to}
           asChild
@@ -366,7 +362,6 @@ function OverviewShortcuts() {
 export function TrainerOverview({ userName }: { userName?: string }) {
   const [isInviteOpen, setIsInviteOpen] = useState(false)
   const query = useQuery(trainerOverviewQueryOptions())
-  const updates = useTrainingUpdates()
   const now = new Date()
   const today = todayCalendarDate()
   const dayHeading = formatDayLong(today)
@@ -384,16 +379,7 @@ export function TrainerOverview({ userName }: { userName?: string }) {
             {userName ? `${greeting(now)}, ${firstName(userName)}` : "Přehled"}
           </h1>
         </div>
-        {updates.bell}
-        <span
-          aria-label={userName ?? "Trenér"}
-          role="img"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-hero text-lg font-extrabold text-hero-foreground xl:hidden"
-        >
-          {firstName(userName ?? "Trenér").charAt(0)}
-        </span>
       </header>
-      {updates.notifications}
 
       <QueryState
         isLoading={query.isLoading}
