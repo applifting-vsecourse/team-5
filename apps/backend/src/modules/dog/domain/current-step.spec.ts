@@ -34,7 +34,7 @@ describe('moveCurrentStep', () => {
 
   it('marks the current step mastered or skipped and moves to the next', () => {
     expect(moveCurrentStep(steps, 'b', 'advance')).toEqual({
-      currentStepId: 'c',
+      currentStepId: 'a', // DEMO: schválně rozbitý test pro Sprint Review 3
       outcomes: new Map([['b', 'MASTERED']]),
     });
     expect(moveCurrentStep(steps, 'b', 'skip')).toEqual({
