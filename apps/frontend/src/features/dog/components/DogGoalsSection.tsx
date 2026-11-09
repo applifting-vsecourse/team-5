@@ -7,21 +7,24 @@ import { EditorIcon } from "@/components/EditorIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
+import { goalTrainingProgress } from "@/lib/goalTrainingProgress"
 import { cn } from "@/lib/utils"
 
 import { dogPlanQueryOptions, type PlanGoal } from "@/features/dog/api/trainingEditor"
 import { useSetDogDiscipline } from "@/features/dog/hooks/useSetDogDiscipline"
 
 export function GoalProgressCard({ goal, dogId }: { goal: PlanGoal; dogId: string }) {
-  const completed = goal.sessions.filter((s) =>
-    s.scheduledTrainings?.some((t) => t.status === "COMPLETED"),
-  ).length
-  const count = goal.sessions.length
-  const percent = count ? Math.round((completed / count) * 100) : 0
-  const next = goal.sessions
-    .filter((s) => !s.isArchived)
-    .find((s) => !s.scheduledTrainings?.some((t) => t.status === "COMPLETED"))
-  const planned = next?.scheduledTrainings?.find((t) => t.status === "PLANNED")
+  const { trainings, completed, total: count, percent } = goalTrainingProgress(goal)
+  const upcoming = goal.sessions
+    .filter((session) => !session.isArchived)
+    .flatMap((session) =>
+      (session.scheduledTrainings ?? [])
+        .filter((training) => training.status === "PLANNED")
+        .map((training) => ({ session, training })),
+    )
+    .sort((a, b) => a.training.date.getTime() - b.training.date.getTime())[0]
+  const next = upcoming?.session
+  const planned = upcoming?.training
   return (
     <article className="space-y-3 rounded-card border border-border bg-card p-4">
       <Link
@@ -30,8 +33,9 @@ export function GoalProgressCard({ goal, dogId }: { goal: PlanGoal; dogId: strin
         className="flex min-h-touch items-center justify-between gap-3 rounded-field"
       >
         <span className="min-w-0">
-          <span className="block text-sm font-extrabold break-words">{goal.title}</span>
+          <span className="block text-base font-extrabold break-words">{goal.title}</span>
           <span className="text-xs text-muted-foreground">
+            {goal.createdBy ? `Cíl nastavil ${goal.createdBy.name} · ` : ""}
             {goal.deadline
               ? `do ${new Date(`${goal.deadline}T12:00:00`).toLocaleDateString("cs-CZ")}`
               : "Bez termínu"}
@@ -57,19 +61,21 @@ export function GoalProgressCard({ goal, dogId }: { goal: PlanGoal; dogId: strin
           <span>Hotovo, když: {goal.criterion}</span>
         </p>
       )}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div
           className="flex min-w-0 flex-1 gap-1"
           aria-hidden="true"
         >
-          {goal.sessions.map((s) => (
+          {trainings.map((training) => (
             <span
-              key={s.id}
+              key={training.id}
               className={cn(
-                "h-3.5 min-w-0 flex-1 rounded-sm",
-                s.scheduledTrainings?.some((t) => t.status === "COMPLETED")
+                "h-4 max-w-4 min-w-0 flex-1 rounded-sm",
+                training.status === "COMPLETED"
                   ? "bg-success-foreground"
-                  : "bg-secondary",
+                  : training.id === planned?.id
+                    ? "bg-primary"
+                    : "bg-secondary",
               )}
             />
           ))}
@@ -86,11 +92,11 @@ export function GoalProgressCard({ goal, dogId }: { goal: PlanGoal; dogId: strin
           className="flex min-h-touch items-center gap-3 rounded-field border border-border bg-background p-3"
         >
           <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-sm font-extrabold text-primary-foreground">
-            {next.position + 1}
+            {completed + 1}
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-xs text-muted-foreground">
-              DALŠÍ · TRÉNINK {next.position + 1}
+              DALŠÍ · TRÉNINK {completed + 1}
               {planned
                 ? ` · ${planned.date.toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" })}`
                 : ""}
@@ -127,34 +133,43 @@ export function DogGoalsSection({
       className="space-y-6"
       aria-labelledby="goals-heading"
     >
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2
-            id="goals-heading"
-            className={shouldHideTitle ? "sr-only" : "text-section font-extrabold"}
-          >
-            Cíle
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            {dogName} · {groups.length} disciplín ·{" "}
-            {groups.flatMap((d) => d.goals).filter((g) => g.status === "ACTIVE").length} aktivní
-            cíle
-          </p>
-        </div>
-        <Button
-          asChild
-          size="icon"
-          className="rounded-field"
+      {shouldHideTitle ? (
+        <h2
+          id="goals-heading"
+          className="sr-only"
         >
-          <Link
-            to="/dogs/$dogId/goals/new"
-            params={{ dogId }}
-            aria-label="Nový cíl"
+          Cíle podle disciplín
+        </h2>
+      ) : (
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2
+              id="goals-heading"
+              className={shouldHideTitle ? "sr-only" : "text-section font-extrabold"}
+            >
+              Cíle
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              {dogName} · {groups.length} disciplín ·{" "}
+              {groups.flatMap((d) => d.goals).filter((g) => g.status === "ACTIVE").length} aktivní
+              cíle
+            </p>
+          </div>
+          <Button
+            asChild
+            size="icon"
+            className="rounded-field"
           >
-            <Plus />
-          </Link>
-        </Button>
-      </div>
+            <Link
+              to="/dogs/$dogId/goals/new"
+              params={{ dogId }}
+              aria-label="Nový cíl"
+            >
+              <Plus />
+            </Link>
+          </Button>
+        </div>
+      )}
       <QueryState
         isLoading={query.isLoading}
         error={query.error}
@@ -241,7 +256,9 @@ export function DogGoalsSection({
                     <Check className="size-8 shrink-0" />
                     <span>
                       <span className="block text-sm font-bold">{goal.title}</span>
-                      <span className="text-xs">Splněný cíl · {goal.sessions.length} tréninků</span>
+                      <span className="text-xs">
+                        Splněný cíl · {goalTrainingProgress(goal).completed} odcvičených tréninků
+                      </span>
                     </span>
                   </Link>
                 ) : (

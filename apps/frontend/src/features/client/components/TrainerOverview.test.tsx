@@ -144,6 +144,8 @@ describe("TrainerOverview", () => {
 
     expect(await screen.findByText("aktivních klientů")).toBeInTheDocument()
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/, Marek$/)
+    expect(screen.queryByRole("button", { name: "Oznámení" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("img", { name: "Marek Dvořák" })).not.toBeInTheDocument()
     expect(screen.getByText("3")).toBeInTheDocument()
     expect(screen.getByText("+1 za měsíc")).toBeInTheDocument()
     expect(screen.getByText("7")).toBeInTheDocument()
@@ -208,7 +210,7 @@ describe("TrainerOverview", () => {
 
     expect(await screen.findByText("Přehled se nepodařilo načíst")).toBeInTheDocument()
     expect(screen.queryByText("aktivních klientů")).not.toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /kalendář/i })).toHaveAttribute("href", "/week")
+    expect(screen.queryByRole("link", { name: /kalendář/i })).not.toBeInTheDocument()
     expect(screen.queryByRole("link", { name: /moji psi/i })).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: /^klienti$/i })).toHaveAttribute("href", "/clients")
   })

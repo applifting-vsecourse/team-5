@@ -7,7 +7,6 @@ import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
 
 import { useCancelInvitation } from "@/features/client/api/cancelInvitation"
 import type { Invitation } from "@/features/client/api/clientSchemas"
@@ -20,8 +19,6 @@ import { trainerOverviewQueryOptions } from "@/features/client/api/trainerOvervi
 import { ClientCard, type ClientListExtras } from "./ClientCard"
 import { CopyInviteLinkButton } from "./CopyInviteLinkButton"
 import { InviteClientDialog } from "./InviteClientDialog"
-
-type FilterId = "all" | "attention" | "active" | "invite"
 
 function lastActivityLabel(
   lastTraining: { title: string; completedAt: Date } | null | undefined,
@@ -76,7 +73,6 @@ function InviteRow({ invitation }: { invitation: Invitation }) {
 
 export function ClientList() {
   const [isInviteOpen, setIsInviteOpen] = useState(false)
-  const [filter, setFilter] = useState<FilterId>("all")
   const [search, setSearch] = useState("")
   const clientsQuery = useQuery(clientsQueryOptions())
   const overviewQuery = useQuery(trainerOverviewQueryOptions())
@@ -85,15 +81,6 @@ export function ClientList() {
   const clients = useMemo(() => clientsQuery.data ?? [], [clientsQuery.data])
   const invitations = invitationsQuery.data ?? []
   const overview = overviewQuery.data
-  const attentionByClient = useMemo(() => {
-    const map = new Map<string, { kind: "reply" | "inactive" | "low-success"; label: string }>()
-    for (const item of overview?.attention ?? []) {
-      if (!map.has(item.client.id)) {
-        map.set(item.client.id, { kind: item.kind, label: item.label })
-      }
-    }
-    return map
-  }, [overview?.attention])
   const overviewByClient = useMemo(() => {
     return new Map((overview?.clients ?? []).map((client) => [client.id, client]))
   }, [overview?.clients])
@@ -101,7 +88,6 @@ export function ClientList() {
     const map = new Map<string, ClientListExtras>()
     for (const client of clients) {
       const overviewClient = overviewByClient.get(client.id)
-      const attention = attentionByClient.get(client.id)
       map.set(client.id, {
         successRate: overviewClient?.successRate ?? null,
         lastActivity: lastActivityLabel(
@@ -109,44 +95,28 @@ export function ClientList() {
           client.dogs.length,
           now,
         ),
-        attentionLabel: attention?.label ?? null,
-        attentionKind: attention?.kind ?? null,
       })
     }
     return map
-  }, [attentionByClient, clients, now, overviewByClient])
+  }, [clients, now, overviewByClient])
   const query = search.trim().toLowerCase()
   const filteredClients = clients.filter((client) => {
-    if (filter === "invite") return false
-    if (filter === "attention" && !attentionByClient.has(client.id)) return false
-    if (filter === "active" && client.dogs.length === 0) return false
     if (!query) return true
     const haystack = [client.name, client.email, ...client.dogs.map((dog) => dog.name)]
       .join(" ")
       .toLowerCase()
     return haystack.includes(query)
   })
-  const filteredInvites =
-    filter === "all" || filter === "invite"
-      ? invitations.filter((invitation) => {
-          if (!query) return true
-          return `${invitation.email ?? ""} ${invitation.code}`.toLowerCase().includes(query)
-        })
-      : []
+  const filteredInvites = invitations.filter((invitation) => {
+    if (!query) return true
+    return `${invitation.email ?? ""} ${invitation.code}`.toLowerCase().includes(query)
+  })
   const isLoading = clientsQuery.isLoading
   const isError = clientsQuery.isError
   const counts = {
-    all: clients.length + invitations.length,
-    attention: attentionByClient.size,
     active: clients.filter((client) => client.dogs.length > 0).length,
     invite: invitations.length,
   }
-  const filters: { id: FilterId; label: string; count: number }[] = [
-    { id: "all", label: "Vše", count: counts.all },
-    { id: "attention", label: "Pozornost", count: counts.attention },
-    { id: "active", label: "Aktivní", count: counts.active },
-    { id: "invite", label: "Pozvání", count: counts.invite },
-  ]
   const isListEmpty = filteredClients.length === 0 && filteredInvites.length === 0
   const hasNoClientsAtAll = clients.length === 0 && invitations.length === 0
 
@@ -188,33 +158,6 @@ export function ClientList() {
         />
       </div>
 
-      <div
-        role="tablist"
-        aria-label="Filtr klientů"
-        className="flex gap-2 overflow-x-auto pb-1"
-      >
-        {filters.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={filter === item.id}
-            onClick={() => setFilter(item.id)}
-            className={cn(
-              "inline-flex min-h-touch shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-bold",
-              filter === item.id
-                ? "border-foreground bg-foreground text-background"
-                : item.id === "attention"
-                  ? "border-primary/30 bg-accent text-primary"
-                  : "border-border bg-card text-foreground",
-            )}
-          >
-            {item.label}
-            <span className="tabular-nums opacity-80">{item.count}</span>
-          </button>
-        ))}
-      </div>
-
       <QueryState
         isLoading={isLoading}
         error={isError ? (clientsQuery.error ?? new Error("Nepodařilo se načíst klienty.")) : null}
@@ -246,7 +189,7 @@ export function ClientList() {
         }
       >
         {isListEmpty ? (
-          <p className="text-sm text-muted-foreground">Nic neodpovídá filtru nebo hledání.</p>
+          <p className="text-sm text-muted-foreground">Nic neodpovídá hledání.</p>
         ) : (
           <ul className="flex flex-col gap-2.5">
             {filteredClients.map((client) => (

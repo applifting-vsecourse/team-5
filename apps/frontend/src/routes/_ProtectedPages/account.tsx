@@ -127,23 +127,7 @@ export function AccountPage() {
                 />
               </section>
             )}
-            <section className="space-y-3 rounded-card border border-border bg-card p-4">
-              <h2 className="text-sm font-bold text-muted-foreground">Tréninky</h2>
-              <Button
-                asChild
-                variant="ghost"
-                className="w-full justify-start"
-              >
-                <Link to={ROUTES.week}>
-                  <DesignIcon name="auth-120-1291-IconTarget" />
-                  Týdenní plán
-                  <DesignIcon name="auth-120-1291-IconChevR" />
-                </Link>
-              </Button>
-              <p className="text-sm text-muted-foreground">
-                Skutečně naplánované a dokončené tréninky najdeš v týdnu a u každého psa.
-              </p>
-            </section>
+
             <section className="space-y-2 rounded-card border border-border bg-card p-4">
               <h2 className="text-sm font-bold text-muted-foreground">Přihlášení</h2>
               <div className="divide-y divide-border">

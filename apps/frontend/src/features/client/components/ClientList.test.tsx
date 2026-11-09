@@ -97,6 +97,22 @@ const createWrapper = () => {
 }
 
 describe("ClientCard", () => {
+  it.each([0, 49, 50, 64, 65, 80, 100, null])(
+    "shows success rate %s without activity-status labels",
+    (rate) => {
+      render(
+        <ClientCard
+          client={mockClients[0]!}
+          extras={{ successRate: rate, lastActivity: "Před 7 dny" }}
+        />,
+        { wrapper: createWrapper() },
+      )
+      expect(
+        screen.getByLabelText(rate === null ? "Bez hodnocení" : `Úspěšnost ${rate} %`),
+      ).toHaveTextContent(rate === null ? "Bez hodnocení" : `${rate} %`)
+    },
+  )
+
   it("renders client name, dog chips and link", () => {
     render(<ClientCard client={mockClients[0]!} />, { wrapper: createWrapper() })
 
@@ -114,7 +130,7 @@ describe("ClientList", () => {
     vi.clearAllMocks()
   })
 
-  it("renders clients list with search, filters and invites", async () => {
+  it("renders clients list with search and invites without filter tabs", async () => {
     vi.mocked(api.get).mockImplementation((url: unknown) => {
       const urlStr = String(url)
       if (urlStr === "clients") {
@@ -158,7 +174,7 @@ describe("ClientList", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Klienti" })).toBeInTheDocument()
     expect(screen.getByLabelText("Hledat klienta nebo psa")).toBeInTheDocument()
-    expect(screen.getByRole("tab", { name: /vše/i })).toBeInTheDocument()
+    expect(screen.queryByRole("tablist", { name: "Filtr klientů" })).not.toBeInTheDocument()
 
     await waitFor(() => {
       expect(screen.getByText("Jan Novák")).toBeInTheDocument()

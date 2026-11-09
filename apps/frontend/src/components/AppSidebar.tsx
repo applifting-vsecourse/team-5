@@ -10,7 +10,6 @@ export function AppSidebar({ user, isTrainer }: { user: { name: string }; isTrai
     ? ([
         { to: "/dashboard", label: "Přehled", icon: "Home" },
         { to: "/clients", label: "Klienti", icon: "Users" },
-        { to: "/week", label: "Kalendář", icon: "Cal" },
         { to: "/history", label: "Historie", icon: "List" },
       ] as const)
     : ([

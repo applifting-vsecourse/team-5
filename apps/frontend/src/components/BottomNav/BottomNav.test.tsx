@@ -44,6 +44,7 @@ describe("BottomNav", () => {
 
     expect(screen.getByRole("link", { name: "Přehled" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Klienti" })).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "Kalendář" })).not.toBeInTheDocument()
     expect(screen.queryByRole("link", { name: "Cíle" })).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Historie" })).toBeInTheDocument()
     expect(screen.queryByRole("link", { name: "Zprávy" })).not.toBeInTheDocument()

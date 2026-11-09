@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { dogColorClass } from "@/lib/dogColors"
 import type { DogMetrics } from "@/lib/dogMetrics"
+import { goalTrainingProgress } from "@/lib/goalTrainingProgress"
 import { cn } from "@/lib/utils"
 
 import type { Dog } from "@/features/dog/api/dogSchemas"
@@ -330,16 +331,8 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
             empty={null}
           >
             {goals.slice(0, 3).map((goal) => {
-              const sessions = goal.sessions.filter((session) => !session.isArchived)
-              const completed = sessions.filter((session) =>
-                session.scheduledTrainings?.some((training) => training.status === "COMPLETED"),
-              ).length
+              const { completed, total, percent } = goalTrainingProgress(goal)
               const isCompleted = goal.status === "COMPLETED"
-              const percent = isCompleted
-                ? 100
-                : sessions.length
-                  ? Math.round((completed / sessions.length) * 100)
-                  : 0
               return (
                 <Link
                   key={goal.id}
@@ -360,7 +353,7 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
                       <span className="block text-sm font-bold break-words">{goal.title}</span>
                       <span className="block text-xs text-muted-foreground">
                         {goal.discipline} ·{" "}
-                        {isCompleted ? "splněno" : `${completed} z ${sessions.length} tréninků`}
+                        {isCompleted ? "splněno" : `${completed} z ${total} tréninků odcvičeno`}
                         {goal.deadline
                           ? ` · do ${parseISO(goal.deadline).toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" })}`
                           : ""}
