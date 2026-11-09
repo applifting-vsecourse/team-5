@@ -135,3 +135,11 @@ each, and 336 dated terms spanning recent history and upcoming weeks. Historical
 terms have linked completed/skipped records. These fixtures use stable IDs and
 preserve edits, moved dates and recorded results when the seed runs again. Trainers
 in a fresh seed have only shared client dogs.
+
+The ordinary deploy seed only inserts missing fixtures; it does not refresh dates,
+reset goals/steps, or overwrite recorded feedback. New dates are spread across the
+owner's dogs, with at most two terms per owner/day and one per dog/day, with varied
+rest days. Existing/manual dates occupy their slots and remain unchanged. To fix
+already crowded Jan Novák plans once, use `scripts/spread-jan-trainings.sql`; the
+deploy seed will preserve those moves. `seed:demo` remains an explicit demo reset
+and is never run during deployment.
