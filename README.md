@@ -54,14 +54,14 @@ The ports are deliberately odd — 3050, 4050, and Postgres on 5433 rather than 
 
 Pro rozsáhlejší kontrolu obrazovek spusťte `pnpm backend seed:demo`: přidá 25 psů, 15 účtů a osm týdnů historie. [Přihlašovací údaje a scénáře](docs/demo-seed.md). Velký seed se spouští samostatně a obnovuje své demo záznamy.
 
-| Email                      | Password        | Role / Note                             |
-| -------------------------- | --------------- | --------------------------------------- |
-| `trener@trainloop.cz`      | `password1`     | Trenér (Marek Trenér, vlastní pes Argo) |
-| `jan.novak@seznam.cz`      | `password1`     | Klient (Jan Novák, psi Rex & Baryk)     |
-| `petra.svobodova@email.cz` | `password1`     | Klientka (Petra Svobodová, pes Alík)    |
-| `tomas.dvorak@gmail.com`   | `password1`     | Klient (Tomáš Dvořák, pes Lucky)        |
-| `eva.novotna@email.cz`     | `password2`     | Psovod (Eva Novotná)                    |
-| `admin@example.com`        | `adminpassword` | Administrátor                           |
+| Email                      | Password        | Role / Note                                |
+| -------------------------- | --------------- | ------------------------------------------ |
+| `trener@trainloop.cz`      | `password1`     | Trenér (Marek Trenér, sdílení psi klientů) |
+| `jan.novak@seznam.cz`      | `password1`     | Klient (Jan Novák, psi Rex & Baryk)        |
+| `petra.svobodova@email.cz` | `password1`     | Klientka (Petra Svobodová, pes Alík)       |
+| `tomas.dvorak@gmail.com`   | `password1`     | Klient (Tomáš Dvořák, pes Lucky)           |
+| `eva.novotna@email.cz`     | `password2`     | Psovod (Eva Novotná)                       |
+| `admin@example.com`        | `adminpassword` | Administrátor                              |
 
 Verification/reset emails are printed to the backend terminal (console mailer) unless you configure Resend or SMTP in `apps/backend/.env`.
 
@@ -129,3 +129,9 @@ apps/frontend/  React — src/routes (pages), src/features (feature folders), sr
 ```
 
 Working conventions for AI-assisted development: [`CLAUDE.md`](CLAUDE.md). UI rules every screen must follow: [`DESIGN.md`](DESIGN.md).
+
+The regular seed also adds 12 client goals, 48 training definitions with three steps
+each, and 336 dated terms spanning recent history and upcoming weeks. Historical
+terms have linked completed/skipped records. These fixtures use stable IDs and
+preserve edits, moved dates and recorded results when the seed runs again. Trainers
+in a fresh seed have only shared client dogs.

@@ -113,6 +113,8 @@ export function NewGoalPage({ dogId }: { dogId: string }) {
 export function EditGoalPage({
   dogId,
   goalId,
+  isNewTrainingRequested,
+  onNewTrainingRequestHandled,
   selectedSessionId,
   onSessionChange,
   isScheduleRequested,
@@ -120,6 +122,8 @@ export function EditGoalPage({
 }: {
   dogId: string
   goalId: string
+  isNewTrainingRequested?: boolean
+  onNewTrainingRequestHandled?: () => void
   selectedSessionId?: string
   onSessionChange?: (id: string | undefined) => void
   isScheduleRequested?: boolean
@@ -154,6 +158,7 @@ export function EditGoalPage({
     onSuccess: async (session) => {
       await refresh()
       setNewTraining(false)
+      onNewTrainingRequestHandled?.()
       setTitle("")
       setSessionId(session.id)
     },
@@ -423,9 +428,12 @@ export function EditGoalPage({
               />
             </EditorSheet>
             <EditorSheet
-              isOpen={isNewTrainingOpen}
+              isOpen={isNewTrainingOpen || isNewTrainingRequested === true}
               onOpenChange={(isOpen) => {
-                if (!create.isPending) setNewTraining(isOpen)
+                if (!create.isPending) {
+                  setNewTraining(isOpen)
+                  if (!isOpen) onNewTrainingRequestHandled?.()
+                }
               }}
               title="Nový trénink"
               description={goal.title}

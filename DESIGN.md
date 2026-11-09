@@ -240,3 +240,16 @@ do not invent progress, trainer specialties, location, dates or dog names.
 Email changes require confirmation at the new address. Account deletion uses a
 mobile bottom sheet / desktop dialog, explains role-specific consequences, and
 always verifies the password. Privacy copy remains labelled as a project draft.
+
+Review decisions, 9 November 2026: trainers have no own calendar; remove calendar
+shortcuts from both navigation layouts and their overview. Account has no Training
+card in either role. Dog goals follow Figma 120:1151: grouped disciplines, criterion,
+completion ring, dated training markers and the next planned term. Progress counts
+completed terms out of completed plus planned terms, including repeated dates for
+the same training definition; skipped terms do not count. Client scheduling shows
+the selected goal, training and steps before date selection, with access to creating
+another goal or training and a way back from the calendar.
+
+The trainer overview header omits the notification bell and profile avatar (9 November 2026).
+
+The Clients list keeps search and invitations, but omits the All/Attention/Active/Invited filters. Client badges show only success rate (or Bez hodnocení); badge tone follows the actual rate, independently of activity or reply status.

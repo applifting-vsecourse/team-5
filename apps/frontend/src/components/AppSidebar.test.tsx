@@ -54,7 +54,7 @@ describe("AppSidebar", () => {
 
     expect(screen.getByRole("link", { name: /Přehled/ })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Klienti/ })).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /Kalendář/ })).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: /Kalendář/ })).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Historie/ })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Účet/ })).toBeInTheDocument()
     expect(screen.queryByRole("link", { name: /Moji psi/ })).not.toBeInTheDocument()

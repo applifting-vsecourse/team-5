@@ -22,11 +22,10 @@ const HANDLER_ITEMS: NavItem[] = [
   { label: "Účet", to: ROUTES.account, icon: User, matchPrefix: ROUTES.account },
 ]
 
-/** Trainer: Přehled · Klienti · Kalendář · Historie · Účet */
+/** Trainer: Přehled · Klienti · Historie · Účet */
 const TRAINER_ITEMS: NavItem[] = [
   { label: "Přehled", to: ROUTES.dashboard, icon: Home, matchPrefix: ROUTES.dashboard },
   { label: "Klienti", to: ROUTES.clients, icon: Users, matchPrefix: ROUTES.clients },
-  { label: "Kalendář", to: ROUTES.week, icon: Calendar, matchPrefix: ROUTES.week },
   { label: "Historie", to: ROUTES.history, icon: ListChecks, matchPrefix: ROUTES.history },
   { label: "Účet", to: ROUTES.account, icon: User, matchPrefix: ROUTES.account },
 ]

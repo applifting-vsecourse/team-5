@@ -158,7 +158,9 @@ export async function seedDemoDatabase(
       for (const [i, name] of dogNames.entries()) {
         const dogId = `demo-dog-${i}`;
         const ownerId =
-          i === 24 ? trainer : owners[i < 4 ? 0 : Math.floor((i - 4) / 2) + 1];
+          i === 24
+            ? owners[10]
+            : owners[i < 4 ? 0 : Math.floor((i - 4) / 2) + 1];
         const isArchived = i === 9 || i === 19;
         const empty = i === 3;
         const categories = empty

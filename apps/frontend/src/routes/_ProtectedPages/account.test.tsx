@@ -77,6 +77,13 @@ describe("AccountPage", () => {
     }
   })
 
+  it.each(["user", "trainer"])("omits the training card for %s", (role) => {
+    mockUser = { name: "Jan", email: "jan@example.test", role }
+    render(<AccountPage />)
+    expect(screen.queryByRole("heading", { name: "Tréninky" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: /Týdenní plán/ })).not.toBeInTheDocument()
+  })
+
   it("renders page title and actual user details", () => {
     render(<AccountPage />)
 

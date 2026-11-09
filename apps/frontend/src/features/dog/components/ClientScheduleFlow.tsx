@@ -18,6 +18,7 @@ export function ClientScheduleFlow({
   onClose: () => void
 }) {
   const [dogId, setDogId] = useState(client.dogs.length === 1 ? (client.dogs[0]?.id ?? "") : "")
+  const [isCalendarOpen, setCalendarOpen] = useState(false)
   const [goalId, setGoalId] = useState("")
   const [sessionId, setSessionId] = useState("")
   const dog = client.dogs.find((item) => item.id === dogId)
@@ -33,13 +34,14 @@ export function ClientScheduleFlow({
     sessions.find((item) => item.id === sessionId) ??
     (sessions.length === 1 ? sessions[0] : undefined)
 
-  if (dog && goal && session) {
+  if (dog && goal && session && isCalendarOpen) {
     return (
       <SessionScheduleSheet
         sessionId={session.id}
         goalId={goal.id}
         dogId={dog.id}
         description={`${dog.name} · ${goal.title} · ${session.title}`}
+        onBack={() => setCalendarOpen(false)}
         isOpen
         onOpenChange={(isOpen) => {
           if (!isOpen) onClose()
@@ -92,10 +94,10 @@ export function ClientScheduleFlow({
                     className="w-full"
                   >
                     <Link
-                      to="/dogs/$dogId"
+                      to="/dogs/$dogId/goals/new"
                       params={{ dogId: dog.id }}
                     >
-                      Otevřít psa a založit cíl
+                      Vytvořit nový cíl
                     </Link>
                   </Button>
                 </div>
@@ -113,34 +115,77 @@ export function ClientScheduleFlow({
                     {item.title}
                   </Button>
                 ))
-              ) : sessions.length === 0 ? (
+              ) : (
                 <div className="space-y-3">
-                  <p>K tomuto cíli zatím není vytvořený trénink.</p>
+                  {goal.criterion && (
+                    <p className="text-sm text-muted-foreground">Hotovo, když: {goal.criterion}</p>
+                  )}
+                  {session && (
+                    <div className="space-y-2 rounded-field bg-secondary p-3">
+                      <p className="font-bold">{session.title}</p>
+                      <p className="text-sm">
+                        {session.steps.length} kroků ·{" "}
+                        {session.steps.reduce((sum, step) => sum + (step.durationMinutes ?? 0), 0)}{" "}
+                        min
+                      </p>
+                      {session.steps.map((step) => (
+                        <p
+                          key={step.id}
+                          className="text-sm"
+                        >
+                          {step.title}
+                        </p>
+                      ))}
+                      <Button
+                        className="w-full"
+                        onClick={() => setCalendarOpen(true)}
+                      >
+                        Vybrat termíny
+                      </Button>
+                    </div>
+                  )}
+                  {sessions.length === 0 && <p>K tomuto cíli zatím není vytvořený trénink.</p>}
+                  {sessions.length > 1 &&
+                    sessions.map((item) => (
+                      <Button
+                        key={item.id}
+                        variant="outline"
+                        className="w-full justify-start bg-card"
+                        onClick={() => setSessionId(item.id)}
+                      >
+                        {item.title}
+                      </Button>
+                    ))}
                   <Button
                     asChild
+                    variant="outline"
                     className="w-full"
                   >
                     <Link
                       to="/dogs/$dogId/goals/$goalId"
                       params={{ dogId: dog.id, goalId: goal.id }}
+                      search={{ novyTrenink: true }}
                     >
-                      Vytvořit trénink
+                      Vytvořit nový trénink
                     </Link>
                   </Button>
                 </div>
-              ) : (
-                sessions.map((item) => (
-                  <Button
-                    key={item.id}
-                    variant="outline"
-                    className="w-full justify-start bg-card"
-                    onClick={() => setSessionId(item.id)}
-                  >
-                    {item.title}
-                  </Button>
-                ))
               ))}
           </QueryState>
+        )}
+        {dog && plan.isSuccess && goals.length > 0 && (
+          <Button
+            asChild
+            variant="outline"
+            className="w-full"
+          >
+            <Link
+              to="/dogs/$dogId/goals/new"
+              params={{ dogId: dog.id }}
+            >
+              Vytvořit nový cíl
+            </Link>
+          </Button>
         )}
         {dog && client.dogs.length > 1 && (
           <Button
