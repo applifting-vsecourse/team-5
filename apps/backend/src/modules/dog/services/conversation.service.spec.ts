@@ -6,6 +6,47 @@ import { mock } from 'jest-mock-extended';
 import { ConversationService } from './conversation.service';
 
 describe('training conversations', () => {
+  it.each([false, true])(
+    'shows the initial note once (saved message: %s)',
+    async (saved) => {
+      const repo = mock<ConversationRepository>();
+      const access = mock<DogAccessService>();
+      const createdAt = new Date('2026-11-01');
+      const author = { id: 'owner', name: 'Owner' };
+      const opening = {
+        id: 'message',
+        workoutLogId: 'record',
+        authorId: author.id,
+        author,
+        text: 'First comment',
+        createdAt,
+      };
+      repo.record.mockResolvedValue({
+        id: 'record',
+        dogId: 'dog',
+        authorId: author.id,
+        author,
+        completedAt: createdAt,
+        note: 'First comment',
+        messages: saved ? [opening] : [],
+      } as never);
+      const service = new ConversationService(repo, access);
+      const user = new Identity(
+        'owner',
+        'owner@example.test',
+        'Owner',
+        'owner',
+      );
+      const result = await service.detail(user, 'record');
+      expect(result.messages).toHaveLength(1);
+      expect(result.messages[0]).toMatchObject({
+        text: 'First comment',
+        author,
+        createdAt,
+      });
+    },
+  );
+
   it('checks the current dog share before returning a thread or inserting a reply', async () => {
     const repo = mock<ConversationRepository>();
     const access = mock<DogAccessService>();

@@ -29,6 +29,27 @@ function setup(): {
 
 // The current step of a goal (#66) moves only through its own endpoints.
 describe('closing a planned training', () => {
+  it('creates the opening chat message together with the record', async () => {
+    const { repository, tx } = setup();
+    await repository.completeTraining('t1', 'u1', {
+      note: '  First message  ',
+    });
+    expect(tx.workoutLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        note: 'First message',
+        messages: { create: { authorId: 'u1', text: 'First message' } },
+      }),
+    });
+  });
+
+  it('does not create an empty opening message', async () => {
+    const { repository, tx } = setup();
+    await repository.completeTraining('t1', 'u1', { note: '   ' });
+    expect(tx.workoutLog.create.mock.calls[0][0].data).not.toHaveProperty(
+      'messages',
+    );
+  });
+
   it('does not move the current step when completing', async () => {
     const { repository, tx } = setup();
     await repository.completeTraining('t1', 'u1', {});
