@@ -132,7 +132,11 @@ Test logiky posunu kroku v cíli (`apps/backend/src/modules/dog/domain/current-s
    git checkout apps/backend/src/modules/dog/domain/current-step.spec.ts
    ```
 
-Spadlý běh v GitHub Actions: v záložce _Actions_ najít libovolný červený běh `verify` nebo `Deploy` a ukázat, že krok `build-and-deploy` se nespustil.
+**Zastavený deploy v GitHub Actions** (připravený běh, stačí otevřít): <https://github.com/applifting-vsecourse/team-5/actions/runs/42634611572>
+
+- Workflow _Build & Deploy_ spuštěný ručně na větvi `demo/failing-deploy` (kód z `main` + jeden schválně rozbitý test, nikam nemergováno).
+- Ukázat: `tests` ❌ (1 failed, 358 passed), `security-audit` ✅, **`build-and-deploy` přeskočeno**, na staging se nic nenasadilo.
+- Kliknout na `tests` → krok _Run pnpm backend test_ → `● moveCurrentStep › marks the current step mastered or skipped and moves to the next` s rozdílem _Expected / Received_.
 
 ---
 
