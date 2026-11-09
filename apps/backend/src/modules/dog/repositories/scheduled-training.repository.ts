@@ -393,6 +393,11 @@ export class ScheduledTrainingRepository {
             ],
           }),
           note: data.note?.trim() || null,
+          ...(data.note?.trim() && {
+            messages: {
+              create: { authorId: authorId, text: data.note.trim() },
+            },
+          }),
           videoUrl: data.videoUrl?.trim() || null,
         },
       });

@@ -41,6 +41,7 @@ export class ConversationRepository {
     return this.prisma.workoutLog.findUnique({
       where: { id },
       include: {
+        author: { select: { id: true, name: true } },
         dog: { select: { id: true, name: true, color: true } },
         training: {
           select: {
