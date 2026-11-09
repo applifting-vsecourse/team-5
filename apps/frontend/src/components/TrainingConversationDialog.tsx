@@ -54,11 +54,6 @@ function Thread({ activityId }: { activityId: string }) {
               {detail.data.successRate != null ? ` · ${detail.data.successRate} %` : ""}
             </p>
           </div>
-          {detail.data.note && (
-            <p className="rounded-field bg-secondary p-3 text-sm whitespace-pre-wrap">
-              {detail.data.note}
-            </p>
-          )}
           {detail.data.focus && (
             <p className="text-sm">
               <strong>Soustředění:</strong> {ANSWER_LABELS[detail.data.focus]}

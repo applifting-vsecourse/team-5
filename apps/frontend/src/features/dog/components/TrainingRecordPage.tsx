@@ -84,9 +84,7 @@ function RecordSummary({ detail }: { detail: ConversationDetail }) {
               </span>
             ) : (
               <span className="rounded-full bg-success px-2.5 py-1 text-xs font-bold text-success-foreground">
-                {detail.goal?.blocks.length
-                  ? `${detail.goal.blocks.filter((block) => block.outcome === "MASTERED" || block.outcome === "SKIPPED").length} ze ${detail.goal.blocks.length} kroků`
-                  : "Hotovo"}
+                Hotovo
               </span>
             )}
           </div>
@@ -109,9 +107,6 @@ function RecordSummary({ detail }: { detail: ConversationDetail }) {
           </div>
         )}
       </dl>
-      {detail.note && (
-        <p className="rounded-field bg-secondary p-3 text-sm whitespace-pre-wrap">{detail.note}</p>
-      )}
       {detail.videoUrl?.startsWith("https://") && (
         <a
           href={detail.videoUrl}
@@ -123,56 +118,6 @@ function RecordSummary({ detail }: { detail: ConversationDetail }) {
           {detail.videoUrl.replace(/^https?:\/\//, "")}
         </a>
       )}
-    </section>
-  )
-}
-
-function StepsList({
-  blocks,
-  isCompleted,
-}: {
-  blocks: NonNullable<ConversationDetail["goal"]>["blocks"]
-  isCompleted: boolean
-}) {
-  if (!blocks.length) return null
-  return (
-    <section
-      aria-labelledby="record-steps"
-      className="space-y-3 rounded-card border border-border bg-card p-4"
-    >
-      <h2
-        id="record-steps"
-        className="text-section font-extrabold"
-      >
-        Kroky
-      </h2>
-      <ol className="space-y-2">
-        {blocks.map((block) => {
-          const isDone = isCompleted || block.outcome === "MASTERED" || block.outcome === "SKIPPED"
-          const label =
-            block.outcome === "SKIPPED" ? "přeskočeno" : isDone ? "hotovo" : "bez výsledku"
-          return (
-            <li
-              key={block.id}
-              className="flex min-h-touch items-center gap-3 py-2"
-            >
-              <span
-                className={cn(
-                  "flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                  isDone
-                    ? "bg-success text-success-foreground"
-                    : "bg-secondary text-muted-foreground",
-                )}
-                aria-hidden
-              >
-                {isDone ? "✓" : block.position + 1}
-              </span>
-              <span className="min-w-0 flex-1 text-sm font-bold break-words">{block.title}</span>
-              <span className="shrink-0 text-xs font-semibold text-muted-foreground">{label}</span>
-            </li>
-          )
-        })}
-      </ol>
     </section>
   )
 }
@@ -213,7 +158,7 @@ function ThreadComposer({
   return (
     <section
       aria-labelledby="record-thread"
-      className="space-y-4"
+      className="space-y-4 rounded-card border border-border bg-card p-4"
     >
       <div className="flex items-center justify-between gap-3">
         <h2
@@ -325,7 +270,7 @@ export function TrainingRecordPage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-gutter pt-3 pb-6 md:py-8">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-5 py-6 md:px-8 md:py-8">
       <header className="flex items-center gap-3">
         <Button
           type="button"
@@ -359,12 +304,6 @@ export function TrainingRecordPage({
         {detail.data && !hasDogMismatch && (
           <>
             <RecordSummary detail={detail.data} />
-            {detail.data.goal?.blocks.length ? (
-              <StepsList
-                blocks={detail.data.goal.blocks}
-                isCompleted={detail.data.status === "COMPLETED"}
-              />
-            ) : null}
             <ThreadComposer
               activityId={activityId}
               currentUserId={currentUserId}

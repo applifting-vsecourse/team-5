@@ -28,6 +28,27 @@ export class ConversationService {
 
   async detail(user: Identity, id: string) {
     const row = await this.record(user, id);
+    const messages = row.messages.map(presentTrainingMessage);
+    // Older records stored the opening message only as a note.
+    if (
+      row.note?.trim() &&
+      !row.messages.some(
+        (message) =>
+          message.authorId === row.authorId &&
+          message.text === row.note?.trim(),
+      )
+    ) {
+      messages.unshift(
+        presentTrainingMessage({
+          id: `note-${row.id}`,
+          workoutLogId: row.id,
+          authorId: row.authorId,
+          author: row.author,
+          text: row.note.trim(),
+          createdAt: row.completedAt,
+        }),
+      );
+    }
     return {
       id: row.id,
       dog: row.dog,
@@ -51,7 +72,7 @@ export class ConversationService {
             })),
           }
         : null,
-      messages: row.messages.map(presentTrainingMessage),
+      messages,
     };
   }
 

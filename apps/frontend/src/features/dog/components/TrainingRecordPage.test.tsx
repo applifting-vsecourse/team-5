@@ -70,6 +70,13 @@ const detail = {
   },
   messages: [
     {
+      id: "opening",
+      workoutLogId: "act-1",
+      text: "Dobrá nálada",
+      createdAt: "2026-11-06T10:00:00Z",
+      author: { id: "u1", name: "Panička" },
+    },
+    {
       id: "m1",
       workoutLogId: "act-1",
       text: "Jak to šlo?",
@@ -106,7 +113,7 @@ describe("TrainingRecordPage", () => {
     })
   })
 
-  it("renders record summary, steps and thread with styled bubbles", async () => {
+  it("renders record summary and thread without plan steps", async () => {
     render(
       <TrainingRecordPage
         dogId="dog-1"
@@ -120,9 +127,10 @@ describe("TrainingRecordPage", () => {
     expect(await screen.findByRole("heading", { name: "Přivolání v parku" })).toBeInTheDocument()
     expect(screen.getByText("Přivolání")).toBeInTheDocument()
     expect(screen.getByText("80 %")).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "Kroky" })).toBeInTheDocument()
-    expect(screen.getByText("Na vodítku")).toBeInTheDocument()
-    expect(screen.getByText("Volně")).toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "Kroky" })).not.toBeInTheDocument()
+    expect(screen.queryByText("Na vodítku")).not.toBeInTheDocument()
+    expect(screen.queryByText("Volně")).not.toBeInTheDocument()
+    expect(screen.getByText("Hotovo")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Vlákno s trenérem" })).toBeInTheDocument()
     expect(screen.getByText("Jak to šlo?")).toBeInTheDocument()
     expect(screen.getByText("Šlo to skvěle!")).toBeInTheDocument()
@@ -131,6 +139,8 @@ describe("TrainingRecordPage", () => {
     const myMsg = screen.getByText("Šlo to skvěle!").closest("li")
     expect(otherMsg).toHaveClass("mr-auto", "bg-card")
     expect(myMsg).toHaveClass("ml-auto", "bg-accent")
+    expect(screen.getAllByText("Dobrá nálada")).toHaveLength(1)
+    expect(screen.getByText("Dobrá nálada").closest("li")).toHaveClass("ml-auto", "bg-accent")
 
     expect(screen.getByRole("button", { name: "👍 Díky!" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Zpět" })).toBeInTheDocument()

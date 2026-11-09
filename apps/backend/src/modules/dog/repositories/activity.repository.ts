@@ -64,6 +64,11 @@ export class ActivityRepository {
         focus: data.focus ?? null,
         repeatedMistakes: data.repeatedMistakes ?? null,
         note: data.note ?? null,
+        ...(data.note?.trim() && {
+          messages: {
+            create: { authorId: data.authorId, text: data.note.trim() },
+          },
+        }),
         videoUrl: data.videoUrl ?? null,
         skipReason: data.skipReason ?? null,
       },
