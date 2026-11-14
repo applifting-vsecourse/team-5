@@ -4,6 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router"
 import { HTTPError } from "ky"
 import { AlertCircle, ChevronLeft } from "lucide-react"
 
+import { EndCollaborationButton } from "@/components/EndCollaborationButton"
 import { Seo } from "@/components/Seo"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -103,6 +104,12 @@ function ClientDetailPage() {
           client={client}
           onSchedule={() => setScheduling(true)}
         />
+        <div className="mt-6">
+          <EndCollaborationButton
+            clientId={client.id}
+            clientName={client.name}
+          />
+        </div>
         {isScheduling && (
           <ClientScheduleFlow
             key={client.id}

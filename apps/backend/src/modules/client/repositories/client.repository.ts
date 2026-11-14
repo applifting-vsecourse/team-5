@@ -6,6 +6,22 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 export class ClientRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async endCollaboration(
+    clientId: string,
+    trainerId: string,
+  ): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) => {
+      const removed = await tx.clientConnection.deleteMany({
+        where: { clientId, trainerId },
+      });
+      if (!removed.count) return false;
+      await tx.dogShare.deleteMany({
+        where: { trainerId, dog: { ownerId: clientId } },
+      });
+      return true;
+    });
+  }
+
   private mapToDomainClient(conn: {
     client: {
       id: string;
