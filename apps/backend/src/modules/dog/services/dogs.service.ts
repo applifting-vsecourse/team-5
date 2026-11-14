@@ -54,6 +54,17 @@ export class DogsService {
     return this.dogAccess.getAccessibleDog(user, id);
   }
 
+  async endSharing(
+    user: Identity,
+    dogId: string,
+    trainerId: string,
+  ): Promise<void> {
+    await this.dogAccess.getOwnedDog(user, dogId);
+    if (!(await this.dogRepository.endSharing(dogId, user.id, trainerId))) {
+      throw new NotFoundException('Sharing not found');
+    }
+  }
+
   // Callers: DogsController POST :id/archive|restore. Existing DogsService.
   // Dog.isArchived soft flag. User asked to split PRs and re-review.
   async archiveDog(user: Identity, dogId: string): Promise<Dog> {
