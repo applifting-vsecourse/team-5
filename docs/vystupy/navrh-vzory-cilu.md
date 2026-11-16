@@ -38,6 +38,12 @@ Navržená ADR jsou v `docs/adr` (větev `docs/94-vzory-cilu-adr`). Po refinemen
 - [ADR 0001 Vzor cíle je JSON snímek s verzí](../adr/0001-vzor-cile-je-json-snimek.md): jedna tabulka `GoalTemplate`, obsah v JSON hlídaný zod schématem. Zamítli jsme tři tabulky jako u cíle a příznak `isTemplate` na cíli.
 - [ADR 0002 Disciplíny se párují podle názvu bez ohledu na velikost písmen](../adr/0002-discipliny-se-paruji-podle-nazvu-bez-velikosti-pismen.md): katalog se teď nesjednocuje a zůstává jako technický dluh.
 
-## Doplněk: Duplikace tréninku (#103)
+## Doplněk: Naplánovat trénink znovu z Týdne (#103)
 
-Volná nice to have na podobné téma „nepsat totéž znovu“, jen v menším: zkopírovat jeden naplánovaný trénink na jiný den v _Týdnu_. Velikost S. Vzory ji nenahrazují, protože kopírují celý cíl, ne jeden termín. Otázka na PO: zařadit hned po #94?
+Původně „Duplikace tréninku“. Volná nice to have na podobné téma „nepsat totéž znovu“, jen v menším. Od modelu #160 jde jeden trénink naplánovat na víc dní a backend to umí, takže kopie není potřeba. Chybí jen akce _Naplánovat znovu_ na kartě v _Týdnu_ s výběrem dne jako u přesunu. Velikost XS–S, hlavně frontend.
+
+Vzory ji nenahrazují, protože kopírují celý cíl, ne jeden termín. Otázky na PO:
+
+- Zařadit hned po #94?
+- Platí, že úprava kroků tréninku se projeví ve všech dosud neodcvičených termínech?
+- Kde akci potřebuje trenér, když _Týden_ je pohled psovoda?
