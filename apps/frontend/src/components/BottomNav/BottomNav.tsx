@@ -4,6 +4,7 @@ import { Calendar, Home, ListChecks, PawPrint, User, Users } from "lucide-react"
 
 import { ROUTES } from "@/app/routes"
 import { DesignIcon } from "@/components/DesignIcon"
+import { UnreadNavDot } from "@/components/UnreadReplies"
 import { cn } from "@/lib/utils"
 
 type NavItem = {
@@ -111,7 +112,12 @@ export function BottomNav({ isTrainer = false }: BottomNavProps) {
                   />
                 )}
               </span>
-              <span>{item.label}</span>
+              <span className="flex items-center gap-1">
+                {item.label}
+                {(item.to === "/history" || item.to === (isTrainer ? "/clients" : "/week")) && (
+                  <UnreadNavDot />
+                )}
+              </span>
             </Link>
           )
         })}

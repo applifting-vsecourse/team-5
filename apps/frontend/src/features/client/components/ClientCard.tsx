@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router"
 import { ChevronRight } from "lucide-react"
 
+import { RecordUnreadBadge } from "@/components/UnreadReplies"
 import { dogColorClass } from "@/lib/dogColors"
 import { performanceBandForRate } from "@/lib/performanceBands"
 import { cn } from "@/lib/utils"
@@ -59,6 +60,7 @@ export function ClientCard({ client, extras }: ClientCardProps) {
         </span>
         <span className="min-w-0 flex-1 space-y-1">
           <span className="block truncate text-sm font-bold">{client.name}</span>
+          <RecordUnreadBadge dogIds={client.dogs.map((dog) => dog.id)} />
           <span className="flex flex-wrap items-center gap-1.5">
             {dogs.length ? (
               dogs.map((dog) => (

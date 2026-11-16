@@ -14,6 +14,7 @@ import {
 } from './controllers/metrics.controller';
 import { PlanBlocksController } from './controllers/plan-blocks.controller';
 import { TrainerOverviewController } from './controllers/trainer-overview.controller';
+import { TrainingRepliesController } from './controllers/training-replies.controller';
 import { TrainingsController } from './controllers/trainings.controller';
 import { ActivityRepository } from './repositories/activity.repository';
 import { ConversationRepository } from './repositories/conversation.repository';
@@ -26,6 +27,7 @@ import { MetricsRepository } from './repositories/metrics.repository';
 import { PlanBlockRepository } from './repositories/plan-block.repository';
 import { ScheduledTrainingRepository } from './repositories/scheduled-training.repository';
 import { TrainerOverviewRepository } from './repositories/trainer-overview.repository';
+import { TrainingReplyRepository } from './repositories/training-reply.repository';
 import { ActivitiesService } from './services/activities.service';
 import { ConversationService } from './services/conversation.service';
 import { DogAccessService } from './services/dog-access.service';
@@ -43,6 +45,7 @@ import { TrainingsService } from './services/trainings.service';
 @Module({
   imports: [AuthModule, PrismaModule],
   controllers: [
+    TrainingRepliesController,
     TrainerOverviewController,
     HistoryController,
     ConversationController,
@@ -57,6 +60,7 @@ import { TrainingsService } from './services/trainings.service';
     DogNotesController,
   ],
   providers: [
+    TrainingReplyRepository,
     TrainerOverviewRepository,
     TrainerOverviewService,
     HistoryRepository,

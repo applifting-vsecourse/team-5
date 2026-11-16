@@ -6,6 +6,7 @@ import { DesignIcon } from "@/components/DesignIcon"
 import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { ReadReplyReceipt } from "@/components/UnreadReplies"
 import { api } from "@/lib/api-client"
 import { conversationQueryOptions, type ConversationDetail } from "@/lib/conversations"
 import { dogColorClass } from "@/lib/dogColors"
@@ -140,6 +141,7 @@ function ThreadComposer({
       await Promise.all([
         client.invalidateQueries({ queryKey: ["training-conversation", activityId] }),
         client.invalidateQueries({ queryKey: ["training-updates"] }),
+        client.invalidateQueries({ queryKey: ["unread-training-replies"] }),
         client.invalidateQueries({ queryKey: dogKeys.all }),
       ])
     },
@@ -303,6 +305,7 @@ export function TrainingRecordPage({
       >
         {detail.data && !hasDogMismatch && (
           <>
+            <ReadReplyReceipt ids={detail.data.unreadReplyIds} />
             <RecordSummary detail={detail.data} />
             <ThreadComposer
               activityId={activityId}

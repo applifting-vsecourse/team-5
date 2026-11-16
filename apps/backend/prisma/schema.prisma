@@ -72,6 +72,7 @@ model Verification {
 }
 
 model User {
+  unreadReplies TrainingReply[]
   id                 String              @id
   name               String
   email              String
@@ -231,6 +232,7 @@ enum TrainingStatus {
 // A goal has many independent dated sessions. ScheduledTrainingRepository
 // locks the goal row to prevent duplicate PLANNED sessions on the same day.
 model ScheduledTraining {
+  unreadReplies TrainingReply[]
   id          String         @id @default(cuid())
   goalId      String
   goal        TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
@@ -253,6 +255,7 @@ model ScheduledTraining {
 }
 
 model WorkoutLog {
+  unreadReplies TrainingReply[]
   mistakeDetails String[] @default([])
   id                  String             @id @default(cuid())
   dogId               String
@@ -400,4 +403,19 @@ model TrainingMessage {
   @@index([workoutLogId, createdAt])
   @@index([authorId])
   @@map("training_message")
+}
+
+// One receipt per recipient and event; deleting only displayed IDs preserves late replies.
+model TrainingReply {
+  id String @id @default(cuid())
+  recipientId String
+  recipient User @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  workoutLogId String?
+  workoutLog WorkoutLog? @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  scheduledTrainingId String?
+  scheduledTraining ScheduledTraining? @relation(fields: [scheduledTrainingId], references: [id], onDelete: Cascade)
+  kind String
+  createdAt DateTime @default(now())
+  @@index([recipientId])
+  @@map("training_reply")
 }

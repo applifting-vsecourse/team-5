@@ -51,6 +51,7 @@ export const trainingDetailExerciseSchema = z.object({
 export type TrainingDetailExercise = z.infer<typeof trainingDetailExerciseSchema>
 
 export const trainingDetailSchema = z.object({
+  unreadReplyIds: z.array(z.string()).default([]),
   canTrain: z.boolean().optional(),
   training: z.object({ id: z.string(), title: z.string() }).optional(),
   id: z.string(),

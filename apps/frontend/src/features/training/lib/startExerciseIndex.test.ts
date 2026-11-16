@@ -11,6 +11,7 @@ const aTraining = (overrides: Partial<TrainingDetail> = {}): TrainingDetail => (
   dog: { id: "d1", name: "Rex", color: 1 },
   goal: { id: "g1", title: "Chůze" },
   currentStepId: null,
+  unreadReplyIds: [],
   exercises: [
     { id: "b1", position: 1, title: "A", instruction: null, criterion: null, outcome: null },
     { id: "b2", position: 2, title: "B", instruction: null, criterion: null, outcome: null },
