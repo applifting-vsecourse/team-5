@@ -1,13 +1,22 @@
 import {
   FocusLevel,
   MistakeLevel,
+  SleepQuality,
+  TrainingEnvironment,
   TrainingMessage,
   WorkoutLog,
   WorkoutStatus,
 } from '@/generated/prisma/client';
 import { Author } from '@/shared/auth/domain/present-author';
 
-export type { FocusLevel, MistakeLevel, WorkoutLog, WorkoutStatus };
+export type {
+  FocusLevel,
+  MistakeLevel,
+  SleepQuality,
+  TrainingEnvironment,
+  WorkoutLog,
+  WorkoutStatus,
+};
 
 export type ActivityWithMessages = WorkoutLog & {
   messages: (TrainingMessage & { author: Author | null })[];
@@ -28,6 +37,8 @@ export type CreateActivityData = {
   rating?: number;
   focus?: FocusLevel;
   repeatedMistakes?: MistakeLevel;
+  sleepQuality?: SleepQuality;
+  environment?: TrainingEnvironment;
   note?: string;
   videoUrl?: string;
   skipReason?: string;

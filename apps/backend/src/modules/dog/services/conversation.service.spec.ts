@@ -112,6 +112,8 @@ describe('training conversations', () => {
       mistakeDetails: [],
       focus: null,
       repeatedMistakes: null,
+      sleepQuality: 'POOR',
+      environment: 'TRAINING_GROUND',
       status: 'COMPLETED',
       training: {
         title: 'Přivolání',
@@ -130,6 +132,8 @@ describe('training conversations', () => {
       'trainer',
     );
     await expect(service.detail(user, 'record')).resolves.toMatchObject({
+      sleepQuality: 'POOR',
+      environment: 'TRAINING_GROUND',
       goal: {
         title: 'Přivolání',
         blocks: [

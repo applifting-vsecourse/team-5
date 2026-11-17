@@ -188,6 +188,8 @@ export const dogActivitySchema = z.object({
   rating: z.number().min(1).max(5).nullable().optional(),
   focus: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
   repeatedMistakes: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
+  sleepQuality: z.enum(["GOOD", "POOR"]).nullable().optional(),
+  environment: z.enum(["HOME", "OUTDOORS", "TRAINING_GROUND"]).nullable().optional(),
   note: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
   skipReason: z.string().nullable().optional(),

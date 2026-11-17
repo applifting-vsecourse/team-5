@@ -1,7 +1,9 @@
 import {
   FocusLevel,
   MistakeLevel,
+  SleepQuality,
   StepOutcome,
+  TrainingEnvironment,
   TrainingStatus,
 } from '@/generated/prisma/client';
 import {
@@ -330,6 +332,22 @@ export class CompleteTrainingDto {
   @IsOptional()
   @IsEnum(MistakeLevel)
   repeatedMistakes?: MistakeLevel;
+
+  @ApiPropertyOptional({
+    enum: SleepQuality,
+    example: SleepQuality.GOOD,
+  })
+  @IsOptional()
+  @IsEnum(SleepQuality)
+  sleepQuality?: SleepQuality;
+
+  @ApiPropertyOptional({
+    enum: TrainingEnvironment,
+    example: TrainingEnvironment.OUTDOORS,
+  })
+  @IsOptional()
+  @IsEnum(TrainingEnvironment)
+  environment?: TrainingEnvironment;
 
   @ApiPropertyOptional({
     description: 'Workout note',
