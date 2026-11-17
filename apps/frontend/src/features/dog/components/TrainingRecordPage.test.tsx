@@ -179,14 +179,17 @@ describe("TrainingRecordPage", () => {
   })
 
   it("shows filled sleep quality and environment context above the thread (#96)", async () => {
-    vi.mocked(api.get).mockImplementation(() => ({
-      json: () =>
-        Promise.resolve({
-          ...detail,
-          sleepQuality: "POOR",
-          environment: "OUTDOORS",
-        }),
-    }) as ReturnType<typeof api.get>)
+    vi.mocked(api.get).mockImplementation(
+      () =>
+        ({
+          json: () =>
+            Promise.resolve({
+              ...detail,
+              sleepQuality: "POOR",
+              environment: "OUTDOORS",
+            }),
+        }) as ReturnType<typeof api.get>,
+    )
 
     render(
       <TrainingRecordPage
