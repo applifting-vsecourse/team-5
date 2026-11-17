@@ -52,6 +52,7 @@ export class ConversationService {
     return {
       id: row.id,
       dog: row.dog,
+      goalId: row.goalId ?? null,
       title: row.title,
       completedAt: row.completedAt,
       successRate: row.successRate,
