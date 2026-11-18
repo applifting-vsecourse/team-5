@@ -186,12 +186,30 @@ describe("training editor", () => {
       }),
     )
   })
+  it("shows the desktop library panel and owner preview for the current steps", () => {
+    const withSteps: TrainingSession = {
+      ...session,
+      steps: [aStep("s1", "Kontakt"), aStep("s2", "Volně")],
+    }
+    mount(false, { session: withSteps })
+    expect(screen.getByRole("heading", { name: "Knihovna kroků" })).toBeInTheDocument()
+    expect(screen.getByRole("complementary", { name: "Náhled pro psovoda" })).toBeInTheDocument()
+    expect(screen.getByText(/2 kroky/)).toBeInTheDocument()
+    expect(screen.queryByText("Uloženo automaticky")).not.toBeInTheDocument()
+  })
   it("offers preview but no editing or scheduling for read-only history", () => {
     mount(true)
     expect(screen.queryByRole("button", { name: "Nový krok" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Z knihovny" })).not.toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Naplánovat" })).toBeDisabled()
-    expect(screen.getByRole("button", { name: "Náhled" })).toBeEnabled()
+    // Desktop + mobile action bars both mount; jsdom does not apply Tailwind `hidden`.
+    expect(
+      screen
+        .getAllByRole("button", { name: "Naplánovat" })
+        .every((b) => b.hasAttribute("disabled")),
+    ).toBe(true)
+    expect(
+      screen.getAllByRole("button", { name: "Náhled" }).some((b) => !b.hasAttribute("disabled")),
+    ).toBe(true)
   })
   it("marks the current step and moves it via current-step API", async () => {
     const user = userEvent.setup()

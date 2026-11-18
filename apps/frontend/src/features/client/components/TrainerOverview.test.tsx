@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import type * as Router from "@tanstack/react-router"
 import { render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { api } from "@/lib/api-client"
@@ -66,6 +67,7 @@ const overview: TrainerDashboard = {
     weeklySessionChange: -2,
     successRate: 76.4,
     weeklyRateChange: 4,
+    unreadNotes: 1,
   },
   clients: [
     {
@@ -80,6 +82,21 @@ const overview: TrainerDashboard = {
       lastTraining: { id: "a-1", title: "Přivolání v parku", completedAt: new Date() },
     },
   ],
+  activityMatrix: {
+    days: ["2026-10-20", "2026-10-21"],
+    rows: [
+      {
+        clientId: jan.id,
+        clientName: jan.name,
+        dogs: [dog],
+        cells: [
+          { date: "2026-10-20", successRate: 80, activityId: "a-1", dogId: dog.id },
+          { date: "2026-10-21", successRate: null, activityId: null, dogId: null },
+        ],
+        averageSuccessRate: 80,
+      },
+    ],
+  },
   attention: [
     {
       id: "reply-d-1",
@@ -152,6 +169,163 @@ describe("TrainerOverview", () => {
     expect(screen.getByText("−2")).toBeInTheDocument()
     expect(screen.getByText("76 %")).toBeInTheDocument()
     expect(screen.getByText("+4 b.")).toBeInTheDocument()
+    expect(screen.getByText("čeká na odpověď")).toBeInTheDocument()
+    expect(screen.getByText("1")).toBeInTheDocument()
+  })
+
+  it("opens the dog panel from the activity heatmap row", async () => {
+    const user = userEvent.setup()
+    respond({
+      "overview/trainer": () => Promise.resolve(overview),
+      "clients/invitations": () => Promise.resolve(invitations),
+      updates: () => Promise.resolve([]),
+      "dogs/d-1/metrics": () =>
+        Promise.resolve({
+          timeZone: "Europe/Prague",
+          asOf: "2026-10-28",
+          weeklyTarget: 4,
+          weeklyPlannedSessions: 4,
+          weeklyCompletedSessions: 2,
+          weeklySkippedSessions: 0,
+          weeklyTrainedDays: 2,
+          weeklyTargetReached: false,
+          streak: 1,
+          successRate: 82,
+          ratedSessions: 3,
+          weeklyChange: 2,
+          weeks: [
+            {
+              from: "2026-10-20",
+              to: "2026-10-26",
+              completedSessions: 2,
+              trainedDays: 2,
+              ratedSessions: 2,
+              successRate: 82,
+            },
+          ],
+        }),
+      history: () =>
+        Promise.resolve({
+          items: [
+            {
+              id: "a-1",
+              dog: { id: dog.id, name: dog.name, color: dog.color },
+              title: "Přivolání v parku",
+              status: "COMPLETED",
+              completedAt: new Date().toISOString(),
+              successRate: 80,
+              note: "Šlo to dobře",
+              plannedDurationMinutes: 25,
+              messageCount: 0,
+              lastMessage: null,
+            },
+          ],
+          total: 1,
+          page: 1,
+          pageSize: 5,
+          firstRecordedAt: new Date().toISOString(),
+          summary: {
+            month: "2026-10",
+            completedSessions: 1,
+            trainedDays: 1,
+            successRate: 80,
+          },
+        }),
+      "dogs/d-1/goals": () =>
+        Promise.resolve([
+          {
+            id: "g-1",
+            title: "Přivolání",
+            discipline: "Poslušnost",
+            status: "ACTIVE",
+            criterion: null,
+          },
+        ]),
+    })
+
+    render(<TrainerOverview />, { wrapper: createWrapper() })
+
+    expect(await screen.findByRole("heading", { name: /Aktivita klientů/ })).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Vybrat klienta Jan Novák" }))
+    expect(await screen.findByRole("complementary", { name: "Panel psa Rex" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Rex" })).toBeInTheDocument()
+    expect(await screen.findByText("Přivolání")).toBeInTheDocument()
+  })
+
+  it("switches the panel dog when the client has more than one dog", async () => {
+    const user = userEvent.setup()
+    const baryk = { id: "d-2", name: "Baryk", color: 3 }
+    const multiDogOverview: TrainerDashboard = {
+      ...overview,
+      activityMatrix: {
+        days: overview.activityMatrix.days,
+        rows: [
+          {
+            ...overview.activityMatrix.rows[0],
+            dogs: [dog, baryk],
+          },
+        ],
+      },
+    }
+    respond({
+      "overview/trainer": () => Promise.resolve(multiDogOverview),
+      "clients/invitations": () => Promise.resolve(invitations),
+      updates: () => Promise.resolve([]),
+      "dogs/d-1/metrics": () =>
+        Promise.resolve({
+          timeZone: "Europe/Prague",
+          asOf: "2026-10-28",
+          weeklyTarget: 4,
+          weeklyTrainedDays: 1,
+          weeklyTargetReached: false,
+          streak: 0,
+          successRate: 82,
+          ratedSessions: 1,
+          weeklyChange: null,
+          weeks: [],
+        }),
+      "dogs/d-2/metrics": () =>
+        Promise.resolve({
+          timeZone: "Europe/Prague",
+          asOf: "2026-10-28",
+          weeklyTarget: 4,
+          weeklyTrainedDays: 1,
+          weeklyTargetReached: false,
+          streak: 0,
+          successRate: 48,
+          ratedSessions: 1,
+          weeklyChange: null,
+          weeks: [],
+        }),
+      history: () =>
+        Promise.resolve({
+          items: [],
+          total: 0,
+          page: 1,
+          pageSize: 5,
+          firstRecordedAt: null,
+          summary: {
+            month: "2026-10",
+            completedSessions: 0,
+            trainedDays: 0,
+            successRate: null,
+          },
+        }),
+      "dogs/d-1/goals": () => Promise.resolve([]),
+      "dogs/d-2/goals": () =>
+        Promise.resolve([
+          { id: "g-2", title: "Áčko", discipline: "Poslušnost", status: "ACTIVE", criterion: null },
+        ]),
+    })
+
+    render(<TrainerOverview />, { wrapper: createWrapper() })
+    await user.click(
+      await screen.findByRole("button", { name: "Vybrat klienta Jan Novák" }),
+    )
+    expect(await screen.findByRole("complementary", { name: "Panel psa Rex" })).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Baryk" }))
+    expect(await screen.findByRole("complementary", { name: "Panel psa Baryk" })).toBeInTheDocument()
+    expect(await screen.findByText("Áčko")).toBeInTheDocument()
   })
 
   it("lists attention reasons with their own actions", async () => {
@@ -187,7 +361,14 @@ describe("TrainerOverview", () => {
 
   it("shows an empty state when the trainer has no clients", async () => {
     respond({
-      "overview/trainer": () => Promise.resolve({ ...overview, clients: [], attention: [] }),
+      "overview/trainer": () =>
+        Promise.resolve({
+          ...overview,
+          clients: [],
+          attention: [],
+          activityMatrix: { days: overview.activityMatrix.days, rows: [] },
+          metrics: { ...overview.metrics, unreadNotes: 0, activeClients: 0 },
+        }),
       "clients/invitations": () => Promise.resolve([]),
       updates: () => Promise.resolve([]),
     })
@@ -195,8 +376,9 @@ describe("TrainerOverview", () => {
     render(<TrainerOverview />, { wrapper: createWrapper() })
 
     expect(await screen.findByText("Zatím nemáte žádné klienty")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /pozvat klienta/i })).toBeInTheDocument()
+    expect(screen.getAllByRole("button", { name: /pozvat klienta/i }).length).toBeGreaterThan(0)
     expect(screen.queryByRole("heading", { name: "Čekající pozvánky" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: /Aktivita klientů/ })).not.toBeInTheDocument()
   })
 
   it("keeps the shortcuts when the overview fails to load", async () => {

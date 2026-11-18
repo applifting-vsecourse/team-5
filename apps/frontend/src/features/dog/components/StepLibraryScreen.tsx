@@ -28,6 +28,7 @@ export function StepLibraryScreen({
   onInsert,
   onBack,
   onCreate,
+  variant = "page",
 }: {
   selected: string[]
   onSelectedChange: (ids: string[]) => void
@@ -36,32 +37,50 @@ export function StepLibraryScreen({
   onInsert: () => void
   onBack: () => void
   onCreate: () => void
+  /** `panel` = desktop sidebar column without full-page chrome (Figma 132:1413). */
+  variant?: "page" | "panel"
 }) {
   const [search, setSearch] = useState("")
   const [category, setCategory] = useState("Vše")
+  const isPanel = variant === "panel"
   const templates = stepTemplates.filter(
     (t) =>
       (category === "Vše" || t.category === category) &&
       `${t.title} ${t.criterion}`.toLocaleLowerCase("cs").includes(search.toLocaleLowerCase("cs")),
   )
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 px-gutter pt-6 pb-32">
+    <div
+      className={cn(
+        "space-y-4",
+        isPanel
+          ? "flex h-full min-h-0 flex-col rounded-card border border-border bg-card p-4"
+          : "mx-auto w-full max-w-2xl space-y-6 px-gutter pt-6 pb-32",
+      )}
+    >
       <header className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="icon"
-          className="rounded-field"
-          onClick={onBack}
-          disabled={isPending}
-          aria-label="Zpět do tréninku"
-        >
-          <EditorIcon name="ChevL" />
-        </Button>
+        {!isPanel && (
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-field"
+            onClick={onBack}
+            disabled={isPending}
+            aria-label="Zpět do tréninku"
+          >
+            <EditorIcon name="ChevL" />
+          </Button>
+        )}
         <div className="min-w-0 flex-1">
-          <h1 className="text-page font-extrabold tracking-tight">Knihovna kroků</h1>
-          <p className="mt-1 text-label text-muted-foreground">
-            {stepTemplates.length} vzorových kroků
-          </p>
+          {isPanel ? (
+            <h2 className="text-section font-extrabold tracking-tight">Knihovna kroků</h2>
+          ) : (
+            <h1 className="text-page font-extrabold tracking-tight">Knihovna kroků</h1>
+          )}
+          {!isPanel && (
+            <p className="mt-1 text-label text-muted-foreground">
+              {stepTemplates.length} vzorových kroků
+            </p>
+          )}
         </div>
         <Button
           variant="outline"
@@ -112,59 +131,61 @@ export function StepLibraryScreen({
           </Button>
         ))}
       </div>
-      {!templates.length ? (
-        <EmptyState
-          icon={Target}
-          title="Žádný odpovídající krok"
-          description="Zkus jiný název nebo kategorii."
-        />
-      ) : (
-        <ul className="space-y-3">
-          {templates.map((t) => (
-            <li key={t.id}>
-              <button
-                type="button"
-                disabled={isPending}
-                aria-pressed={selected.includes(t.id)}
-                onClick={() =>
-                  onSelectedChange(
-                    selected.includes(t.id)
-                      ? selected.filter((id) => id !== t.id)
-                      : [...selected, t.id],
-                  )
-                }
-                className={cn(
-                  "flex min-h-touch w-full items-center gap-3 rounded-card border border-border bg-card p-3 text-left",
-                  selected.includes(t.id) && "border-primary bg-accent ring-1 ring-primary",
-                )}
-              >
-                <span
+      <div className={cn(isPanel && "min-h-0 flex-1 overflow-y-auto")}>
+        {!templates.length ? (
+          <EmptyState
+            icon={Target}
+            title="Žádný odpovídající krok"
+            description="Zkus jiný název nebo kategorii."
+          />
+        ) : (
+          <ul className="space-y-3">
+            {templates.map((t) => (
+              <li key={t.id}>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  aria-pressed={selected.includes(t.id)}
+                  onClick={() =>
+                    onSelectedChange(
+                      selected.includes(t.id)
+                        ? selected.filter((id) => id !== t.id)
+                        : [...selected, t.id],
+                    )
+                  }
                   className={cn(
-                    "flex size-11 shrink-0 items-center justify-center rounded-field",
-                    iconSurfaces[t.id],
+                    "flex min-h-touch w-full items-center gap-3 rounded-card border border-border bg-card p-3 text-left",
+                    selected.includes(t.id) && "border-primary bg-accent ring-1 ring-primary",
                   )}
                 >
-                  <EditorIcon name={t.icon} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-bold">{t.title}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {t.durationMinutes} min · {t.category}
+                  <span
+                    className={cn(
+                      "flex size-11 shrink-0 items-center justify-center rounded-field",
+                      iconSurfaces[t.id],
+                    )}
+                  >
+                    <EditorIcon name={t.icon} />
                   </span>
-                </span>
-                <span
-                  className={cn(
-                    "flex size-8 shrink-0 items-center justify-center rounded-full",
-                    selected.includes(t.id) ? "bg-primary" : "border border-border",
-                  )}
-                >
-                  <EditorIcon name={selected.includes(t.id) ? "Check" : "Plus1"} />
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-bold">{t.title}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {t.durationMinutes} min · {t.category}
+                    </span>
+                  </span>
+                  <span
+                    className={cn(
+                      "flex size-8 shrink-0 items-center justify-center rounded-full",
+                      selected.includes(t.id) ? "bg-primary" : "border border-border",
+                    )}
+                  >
+                    <EditorIcon name={selected.includes(t.id) ? "Check" : "Plus1"} />
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       {error && (
         <p
           role="alert"
@@ -173,7 +194,13 @@ export function StepLibraryScreen({
           {error}
         </p>
       )}
-      <div className="fixed right-gutter bottom-[calc(var(--spacing-tab-bar)+var(--spacing-safe-bottom))] left-gutter z-20 mx-auto mb-4 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-card bg-hero p-4 text-hero-foreground md:bottom-4">
+      <div
+        className={cn(
+          "flex flex-wrap items-center justify-between gap-3 rounded-card bg-hero p-4 text-hero-foreground",
+          !isPanel &&
+            "fixed right-gutter bottom-[calc(var(--spacing-tab-bar)+var(--spacing-safe-bottom))] left-gutter z-20 mx-auto mb-4 max-w-2xl md:bottom-4",
+        )}
+      >
         <span className="text-sm font-bold">{selected.length} vybrané</span>
         <Button
           disabled={isPending || !selected.length}
