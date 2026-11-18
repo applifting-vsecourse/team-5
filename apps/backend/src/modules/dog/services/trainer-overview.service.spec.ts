@@ -133,4 +133,38 @@ describe('TrainerOverviewService', () => {
       lastTraining: null,
     });
   });
+
+  it('builds a client × day activity matrix for the current and previous week', async () => {
+    const service = setup([
+      {
+        createdAt: daysAgo(3),
+        client: {
+          id: 'c1',
+          name: 'Jana',
+          dogs: [
+            dog('Rex', [
+              log('r-today', 0, 80),
+              log('r-yesterday', 1, 60),
+              log('r-old', 10, 40),
+            ]),
+          ],
+        },
+      },
+    ]);
+
+    const result = await service.overview(trainer, now);
+
+    expect(result.activityMatrix.days).toHaveLength(14);
+    expect(result.activityMatrix.days.at(-1)).toBe('2026-11-01');
+    expect(result.activityMatrix.rows).toHaveLength(1);
+    const row = result.activityMatrix.rows[0];
+    expect(row.clientName).toBe('Jana');
+    const todayCell = row.cells.find((cell) => cell.date === '2026-10-28');
+    expect(todayCell).toMatchObject({
+      successRate: 80,
+      activityId: 'r-today',
+      dogId: 'Rex',
+    });
+    expect(result.metrics.unreadNotes).toBe(0);
+  });
 });
