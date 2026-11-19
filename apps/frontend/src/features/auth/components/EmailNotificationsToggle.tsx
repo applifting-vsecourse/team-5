@@ -13,10 +13,7 @@ type EmailNotificationsToggleProps = {
   isTrainer: boolean
 }
 
-export function EmailNotificationsToggle({
-  isEnabled,
-  isTrainer,
-}: EmailNotificationsToggleProps) {
+export function EmailNotificationsToggle({ isEnabled, isTrainer }: EmailNotificationsToggleProps) {
   const queryClient = useQueryClient()
   const [isPending, setPending] = useState(false)
   const [error, setError] = useState("")
@@ -35,9 +32,7 @@ export function EmailNotificationsToggle({
       }
       await queryClient.invalidateQueries({ queryKey: authSessionQueryOptions().queryKey })
       toast.success(
-        isNextEnabled
-          ? "E-mailová upozornění byla zapnuta."
-          : "E-mailová upozornění byla vypnuta.",
+        isNextEnabled ? "E-mailová upozornění byla zapnuta." : "E-mailová upozornění byla vypnuta.",
       )
     } catch {
       setError("Nastavení upozornění se nepodařilo uložit. Zkontroluj připojení a zkus to znovu.")

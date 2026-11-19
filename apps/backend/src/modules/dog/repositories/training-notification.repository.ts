@@ -45,11 +45,7 @@ export class TrainingNotificationRepository {
     });
   }
 
-  recordImmediateSend(
-    workoutLogId: string,
-    recipientId: string,
-    sentAt: Date,
-  ) {
+  recordImmediateSend(workoutLogId: string, recipientId: string, sentAt: Date) {
     return this.prisma.trainingEmailNotification.upsert({
       where: {
         workoutLogId_recipientId: { workoutLogId, recipientId },

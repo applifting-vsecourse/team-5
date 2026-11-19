@@ -200,7 +200,9 @@ describe('TrainingNotificationService', () => {
     expect(emailService.sendEmail).toHaveBeenCalledTimes(1);
     const [to, subject, html] = emailService.sendEmail.mock.calls[0];
     expect(to).toBe('veronika@example.test');
-    expect(subject).toBe('Shrnutí zpráv k tréninku (2) – Rex: Přivolání v parku');
+    expect(subject).toBe(
+      'Shrnutí zpráv k tréninku (2) – Rex: Přivolání v parku',
+    );
     expect(html).toContain('První doplnění');
     expect(html).toContain('Druhé doplnění');
     expect(repository.markDigestSent).toHaveBeenCalledWith(

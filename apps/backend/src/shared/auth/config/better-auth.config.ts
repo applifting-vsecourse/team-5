@@ -88,7 +88,8 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
         ) {
           throw new APIError('BAD_REQUEST', {
             code: 'INVALID_EMAIL_NOTIFICATIONS',
-            message: 'Nastavení e-mailových upozornění musí být pravda/nepravda.',
+            message:
+              'Nastavení e-mailových upozornění musí být pravda/nepravda.',
           });
         }
         if (ctx.body?.name !== undefined) {

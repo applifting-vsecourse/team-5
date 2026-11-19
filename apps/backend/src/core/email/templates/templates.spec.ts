@@ -124,9 +124,7 @@ describe('Email templates', () => {
     expect(tree).toContain('Přivolání v parku');
     expect(tree).toContain('Rex');
     expect(tree).toContain('Skvělý posun v přivolání!');
-    expect(tree).toContain(
-      'https://trainloop.app/dogs/dog-1/activities/log-1',
-    );
+    expect(tree).toContain('https://trainloop.app/dogs/dog-1/activities/log-1');
     expect(tree).toContain('https://trainloop.app/account');
     expect(tree).toContain('Otevřít záznam tréninku');
     expect(tree).toContain('#c2410c');
