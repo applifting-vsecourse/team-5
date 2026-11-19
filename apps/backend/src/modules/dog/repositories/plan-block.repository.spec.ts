@@ -60,7 +60,10 @@ describe('legacy plan reads', () => {
     goal.dog.isArchived = false;
     goal.disciplineEntity.isArchived = false;
     tx.trainingGoal.findUnique.mockResolvedValue(goal);
-    await repository.reorderBlocks('goal', []);
+    tx.planBlock.findMany.mockResolvedValue([
+      { id: 'a', parentId: null, position: 0 },
+    ] as never);
+    await repository.reorderBlocks('goal', ['a']);
     expect(tx.planBlock.findMany).toHaveBeenLastCalledWith(
       expect.objectContaining({ where: { trainingId: 'one' } }),
     );

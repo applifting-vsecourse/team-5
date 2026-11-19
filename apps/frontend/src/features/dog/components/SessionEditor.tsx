@@ -54,26 +54,14 @@ import {
 } from "@/features/dog/api/dogSchemas"
 import { deletePlanBlock, updatePlanBlock } from "@/features/dog/api/savePlanBlock"
 import { stepTemplates, type TrainingSession } from "@/features/dog/api/trainingEditor"
+import { walkOrderIds } from "@/features/dog/lib/stepOrder"
 
 import { EditorSheet } from "./EditorSheet"
 import { SessionScheduleSheet } from "./SessionScheduleSheet"
 import { StepLibraryScreen } from "./StepLibraryScreen"
 import { TrainingPreview } from "./TrainingPreview"
 
-function StepRow({
-  step,
-  index,
-  isReadOnly,
-  isBusy,
-  isCurrent,
-  isFirstInGoal,
-  canMoveStep,
-  isStepBusy,
-  onEdit,
-  onAdvance,
-  onSkip,
-  onBack,
-}: {
+type StepRowProps = {
   step: PlanBlock
   index: number
   isReadOnly: boolean
@@ -86,15 +74,64 @@ function StepRow({
   onAdvance: () => void
   onSkip: () => void
   onBack: () => void
-}) {
+}
+
+// Sub-steps stay outside SortableContext; only roots register with dnd-kit (#67).
+function StepRow(props: StepRowProps) {
+  if (props.step.parentId) return <StaticStepRow {...props} />
+  return <SortableStepRow {...props} />
+}
+
+function SortableStepRow(props: StepRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: step.id,
-    disabled: isReadOnly || isBusy,
+    id: props.step.id,
+    disabled: props.isReadOnly || props.isBusy,
   })
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
+  return (
+    <StepRowView
+      {...props}
+      setNodeRef={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      isDragging={isDragging}
+      dragHandle={{ attributes, listeners }}
+    />
+  )
+}
+
+function StaticStepRow(props: StepRowProps) {
+  return <StepRowView {...props} />
+}
+
+function StepRowView({
+  step,
+  index,
+  isReadOnly,
+  isBusy,
+  isCurrent,
+  isFirstInGoal,
+  canMoveStep,
+  isStepBusy,
+  onEdit,
+  onAdvance,
+  onSkip,
+  onBack,
+  setNodeRef,
+  style,
+  isDragging,
+  dragHandle,
+}: StepRowProps & {
+  setNodeRef?: (node: HTMLElement | null) => void
+  style?: CSSProperties
+  isDragging?: boolean
+  dragHandle?: {
+    attributes: ReturnType<typeof useSortable>["attributes"]
+    listeners: ReturnType<typeof useSortable>["listeners"]
   }
+}) {
+  const isSubStep = Boolean(step.parentId)
   return (
     <li
       ref={setNodeRef}
@@ -102,16 +139,17 @@ function StepRow({
       aria-current={isCurrent ? "step" : undefined}
       className={cn(
         "flex flex-col gap-3 rounded-card border border-border bg-card px-3 py-3",
+        isSubStep && "ml-6 border-dashed",
         isCurrent && "border-primary ring-2 ring-primary/30",
         isDragging && "z-10 opacity-60",
       )}
     >
       <div className="flex items-start gap-2">
-        {!isReadOnly && (
+        {!isReadOnly && dragHandle && (
           <button
             type="button"
-            {...attributes}
-            {...listeners}
+            {...dragHandle.attributes}
+            {...dragHandle.listeners}
             aria-label={`Přetáhnout krok ${step.title}`}
             className="flex min-h-touch min-w-touch touch-none items-center justify-center rounded-field"
             disabled={isBusy}
@@ -119,16 +157,25 @@ function StepRow({
             <EditorIcon name="Grip" />
           </button>
         )}
-        <span
-          className={cn(
-            "mt-1 flex size-7 shrink-0 items-center justify-center rounded-md text-sm font-extrabold",
-            isCurrent
-              ? "bg-primary text-primary-foreground"
-              : cn("text-dog-foreground", dogColorClass((index % 6) + 1)),
-          )}
-        >
-          {index + 1}
-        </span>
+        {isSubStep ? (
+          <span
+            className="mt-1 flex size-7 shrink-0 items-center justify-center text-muted-foreground"
+            aria-hidden
+          >
+            →
+          </span>
+        ) : (
+          <span
+            className={cn(
+              "mt-1 flex size-7 shrink-0 items-center justify-center rounded-md text-sm font-extrabold",
+              isCurrent
+                ? "bg-primary text-primary-foreground"
+                : cn("text-dog-foreground", dogColorClass((index % 6) + 1)),
+            )}
+          >
+            {index + 1}
+          </span>
+        )}
         <button
           type="button"
           onClick={onEdit}
@@ -334,11 +381,20 @@ export function SessionEditor({
 }) {
   const client = useQueryClient()
   const moveStep = useMoveCurrentStep(goal.id, dog.id)
-  const goalStepIds = sessions.flatMap((s) => s.steps.map((block) => block.id))
+  const goalStepIds = sessions.flatMap((s) =>
+    walkOrderIds(
+      s.steps.map((block) => ({
+        id: block.id,
+        parentId: block.parentId ?? null,
+        position: block.position,
+      })),
+    ),
+  )
   const effectiveCurrentStepId = currentStepId ?? goalStepIds[0] ?? null
   const isFirstInGoal =
     effectiveCurrentStepId == null || goalStepIds.indexOf(effectiveCurrentStepId) <= 0
   const [step, setStep] = useState<PlanBlock | "new" | null>(null)
+  const [parentForNew, setParentForNew] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<PlanBlock | null>(null)
   const [isLibraryOpen, setLibrary] = useState(false)
   const [isPreviewOpen, setPreview] = useState(false)
@@ -358,11 +414,16 @@ export function SessionEditor({
   const save = useMutation({
     mutationFn: async (values: ExerciseFormValues) => {
       if (step && step !== "new") await updatePlanBlock(step.id, values)
-      else await api.post(`goal-trainings/${session.id}/steps`, { json: values })
+      else {
+        await api.post(`goal-trainings/${session.id}/steps`, {
+          json: { ...values, ...(parentForNew ? { parentId: parentForNew } : {}) },
+        })
+      }
     },
     onSuccess: async () => {
       await refresh()
       setStep(null)
+      setParentForNew(null)
     },
     onError: () => toast.error("Krok se nepodařilo uložit. Změny zůstaly ve formuláři."),
   })
@@ -406,6 +467,7 @@ export function SessionEditor({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
   const blocks = session.steps
+  const roots = blocks.filter((block) => !block.parentId)
   const isBusy =
     save.isPending ||
     remove.isPending ||
@@ -413,18 +475,29 @@ export function SessionEditor({
     pause.isPending ||
     isLibraryBusy ||
     moveStep.isPending
-  const move = (from: number, to: number) => {
-    if (isReadOnly || isBusy || to < 0 || to >= blocks.length) return
-    reorder.mutate(arrayMove(blocks, from, to).map((s) => s.id))
+  const siblingsOf = (block: PlanBlock) =>
+    blocks.filter((item) => (item.parentId ?? null) === (block.parentId ?? null))
+  const moveSibling = (block: PlanBlock, delta: number) => {
+    if (isReadOnly || isBusy) return
+    const siblings = siblingsOf(block)
+    const from = siblings.findIndex((item) => item.id === block.id)
+    const to = from + delta
+    if (from < 0 || to < 0 || to >= siblings.length) return
+    reorder.mutate(arrayMove(siblings, from, to).map((item) => item.id))
   }
   const drag = ({ active, over }: DragEndEvent) => {
-    if (over && active.id !== over.id) {
-      move(
-        blocks.findIndex((s) => s.id === active.id),
-        blocks.findIndex((s) => s.id === over.id),
-      )
-    }
+    if (!over || active.id === over.id) return
+    const from = roots.findIndex((s) => s.id === active.id)
+    const to = roots.findIndex((s) => s.id === over.id)
+    if (from < 0 || to < 0) return
+    reorder.mutate(arrayMove(roots, from, to).map((s) => s.id))
   }
+  const openNew = (parentId: string | null = null) => {
+    setParentForNew(parentId)
+    setStep("new")
+  }
+  const rootIndex = (block: PlanBlock) =>
+    roots.findIndex((root) => root.id === (block.parentId ?? block.id))
   const insertTemplates = async () => {
     if (libraryLock.current || !selected.length) return
     libraryLock.current = true
@@ -467,7 +540,7 @@ export function SessionEditor({
         onBack={() => setLibrary(false)}
         onCreate={() => {
           setLibrary(false)
-          setStep("new")
+          openNew()
         }}
       />
     )
@@ -513,15 +586,15 @@ export function SessionEditor({
             onDragEnd={drag}
           >
             <SortableContext
-              items={blocks.map((s) => s.id)}
+              items={roots.map((s) => s.id)}
               strategy={verticalListSortingStrategy}
             >
               <ol className="space-y-3">
-                {blocks.map((b, i) => (
+                {blocks.map((b) => (
                   <StepRow
                     key={b.id}
                     step={b}
-                    index={i}
+                    index={Math.max(0, rootIndex(b))}
                     isReadOnly={isReadOnly}
                     isBusy={isBusy}
                     isCurrent={b.id === effectiveCurrentStepId}
@@ -553,7 +626,7 @@ export function SessionEditor({
                 className="rounded-field"
                 aria-label="Přidat vlastní krok"
                 disabled={isBusy}
-                onClick={() => setStep("new")}
+                onClick={() => openNew()}
               >
                 <EditorIcon name="Plus" />
               </Button>
@@ -572,7 +645,7 @@ export function SessionEditor({
                 variant="outline"
                 className="gap-1.5 rounded-full bg-card px-2.5 text-xs"
                 disabled={isBusy}
-                onClick={() => setStep("new")}
+                onClick={() => openNew()}
               >
                 <EditorIcon name="Edit" />
                 Nový krok
@@ -622,14 +695,29 @@ export function SessionEditor({
       <EditorSheet
         isOpen={step !== null}
         onOpenChange={(isOpen) => {
-          if (!isOpen && !save.isPending) setStep(null)
+          if (!isOpen && !save.isPending) {
+            setStep(null)
+            setParentForNew(null)
+          }
         }}
-        title={step === "new" ? "Nový krok" : isReadOnly ? "Krok tréninku" : "Upravit krok"}
-        description={session.title}
+        title={
+          step === "new"
+            ? parentForNew
+              ? "Dílčí krok"
+              : "Nový krok"
+            : isReadOnly
+              ? "Krok tréninku"
+              : "Upravit krok"
+        }
+        description={
+          step === "new" && parentForNew
+            ? `Pod „${blocks.find((b) => b.id === parentForNew)?.title ?? "krokem"}“`
+            : session.title
+        }
       >
         {step !== null && (
           <StepForm
-            key={step === "new" ? "new" : step.id}
+            key={step === "new" ? `new-${parentForNew ?? "root"}` : step.id}
             initial={step === "new" ? undefined : step}
             isPending={save.isPending}
             onSave={(values) => save.mutate(values)}
@@ -640,26 +728,45 @@ export function SessionEditor({
           <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
             <Button
               variant="outline"
-              disabled={isBusy || blocks.findIndex((b) => b.id === step.id) === 0}
-              onClick={() => {
-                const index = blocks.findIndex((b) => b.id === step.id)
-                move(index, index - 1)
-              }}
+              disabled={
+                isBusy ||
+                (() => {
+                  const siblings = siblingsOf(step)
+                  return siblings.findIndex((b) => b.id === step.id) <= 0
+                })()
+              }
+              onClick={() => moveSibling(step, -1)}
             >
               <ChevronUp />
               Posunout nahoru
             </Button>
             <Button
               variant="outline"
-              disabled={isBusy || blocks.findIndex((b) => b.id === step.id) === blocks.length - 1}
-              onClick={() => {
-                const index = blocks.findIndex((b) => b.id === step.id)
-                move(index, index + 1)
-              }}
+              disabled={
+                isBusy ||
+                (() => {
+                  const siblings = siblingsOf(step)
+                  return siblings.findIndex((b) => b.id === step.id) >= siblings.length - 1
+                })()
+              }
+              onClick={() => moveSibling(step, 1)}
             >
               <ChevronDown />
               Posunout dolů
             </Button>
+            {!step.parentId && (
+              <Button
+                variant="outline"
+                disabled={isBusy}
+                onClick={() => {
+                  const parentId = step.id
+                  setStep(null)
+                  openNew(parentId)
+                }}
+              >
+                Rozdělit na dílčí kroky
+              </Button>
+            )}
             <Button
               variant="ghost"
               className="text-destructive"

@@ -15,6 +15,7 @@ import {
   ScheduledTrainingDetail,
   WeekTraining,
 } from '@/modules/dog/domain/scheduled-training';
+import { walkOrder, walkOrderIds } from '@/modules/dog/domain/step-order';
 import { Injectable } from '@nestjs/common';
 import { planOrder, resolveTraining } from './hierarchy.repository';
 
@@ -109,6 +110,7 @@ export class ScheduledTrainingRepository {
             steps: {
               select: {
                 id: true,
+                parentId: true,
                 position: true,
                 title: true,
                 instruction: true,
@@ -125,20 +127,29 @@ export class ScheduledTrainingRepository {
     if (!row) return null;
     // Walkthrough compares the pointer to this training's steps; expose the
     // effective first step of the whole goal when the stored pointer is null.
-    const goalSteps = await this.prisma.planBlock.findMany({
-      where: { goalId: row.goal.id, training: { isArchived: false } },
-      select: { id: true },
-      orderBy: [{ training: { position: 'asc' } }, ...planOrder],
+    const trainings = await this.prisma.goalTraining.findMany({
+      where: { goalId: row.goal.id, isArchived: false },
+      select: {
+        steps: {
+          select: { id: true, parentId: true, position: true },
+          orderBy: [...planOrder],
+        },
+      },
+      orderBy: [...planOrder],
     });
+    const goalStepIds = trainings.flatMap((training) =>
+      walkOrderIds(training.steps),
+    );
     return {
       ...row,
       goal: {
         ...row.goal,
         currentStepId: effectiveCurrentStepId(
-          goalSteps.map((step) => step.id),
+          goalStepIds,
           row.goal.currentStepId,
         ),
-        blocks: row.training.steps,
+        // Practice order is parts-then-whole (#67).
+        blocks: walkOrder(row.training.steps),
       },
     };
   }

@@ -48,6 +48,7 @@ export type ScheduledTrainingDetail = ScheduledTraining & {
     currentStepId: string | null;
     blocks: {
       id: string;
+      parentId?: string | null;
       position: number;
       durationMinutes: number;
       title: string;

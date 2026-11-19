@@ -66,6 +66,7 @@ export class PlanBlocksService {
       }),
       criterion: optionalText(data.criterion) ?? null,
       insertAt: data.insertAt,
+      parentId: data.parentId,
     });
   }
 

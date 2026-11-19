@@ -120,6 +120,7 @@ export type GoalFormValues = z.infer<typeof goalFormSchema>
 export const planBlockSchema = z.object({
   id: z.string(),
   goalId: z.string(),
+  parentId: z.string().nullable().optional(),
   position: z.number(),
   durationMinutes: z.number().int().min(0).max(480).optional(),
   title: z.string(),

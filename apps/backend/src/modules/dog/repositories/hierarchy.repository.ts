@@ -15,6 +15,7 @@ import {
   EditableGoal,
   TrainingDetail,
 } from '@/modules/dog/domain/hierarchy';
+import { displayOrder, walkOrderIds } from '@/modules/dog/domain/step-order';
 import {
   BadRequestException,
   ConflictException,
@@ -88,6 +89,23 @@ export async function resolveTraining(
   );
 }
 
+// Depth-1 only: parent must be a root step of this training (#67).
+export async function resolveSubStepParent(
+  tx: Prisma.TransactionClient,
+  trainingId: string,
+  parentId: string | undefined,
+): Promise<string | null> {
+  if (!parentId) return null;
+  const parent = await tx.planBlock.findFirst({
+    where: { id: parentId, trainingId },
+  });
+  if (!parent) throw new NotFoundException('Parent step not found');
+  if (parent.parentId != null) {
+    throw new BadRequestException('A sub-step cannot be split further');
+  }
+  return parent.id;
+}
+
 function validateOrder(current: { id: string }[], ids: string[]): void {
   const allowed = new Set(current.map((item) => item.id));
   if (
@@ -109,8 +127,8 @@ export class HierarchyRepository {
     return this.prisma.discipline.findMany({ orderBy: { name: 'asc' } });
   }
 
-  getPlan(dogId: string): Promise<DogPlan> {
-    return this.prisma.dogDiscipline.findMany({
+  async getPlan(dogId: string): Promise<DogPlan> {
+    const plan = await this.prisma.dogDiscipline.findMany({
       where: { dogId },
       include: {
         discipline: true,
@@ -137,6 +155,16 @@ export class HierarchyRepository {
       },
       orderBy: { id: 'asc' },
     });
+    return plan.map((link) => ({
+      ...link,
+      goals: link.goals.map((goal) => ({
+        ...goal,
+        sessions: goal.sessions.map((session) => ({
+          ...session,
+          steps: displayOrder(session.steps),
+        })),
+      })),
+    }));
   }
 
   async setDiscipline(
@@ -179,7 +207,11 @@ export class HierarchyRepository {
     });
     if (!row) return null;
     const { goal, ...training } = row;
-    return { ...training, currentStepId: goal.currentStepId };
+    return {
+      ...training,
+      steps: displayOrder(training.steps),
+      currentStepId: goal.currentStepId,
+    };
   }
 
   // Walks the goal's current step (#66) over the plan of its non-archived
@@ -191,16 +223,21 @@ export class HierarchyRepository {
   ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       const goal = await lockEditableGoal(tx, goalId);
-      const steps = await tx.planBlock.findMany({
-        where: { goalId, training: { isArchived: false } },
-        select: { id: true },
-        orderBy: [{ training: { position: 'asc' } }, ...planOrder],
+      const trainings = await tx.goalTraining.findMany({
+        where: { goalId, isArchived: false },
+        select: {
+          position: true,
+          steps: {
+            select: { id: true, parentId: true, position: true },
+            orderBy: [...planOrder],
+          },
+        },
+        orderBy: [...planOrder],
       });
-      const move = moveCurrentStep(
-        steps.map((step) => step.id),
-        goal.currentStepId,
-        action,
+      const stepIds = trainings.flatMap((training) =>
+        walkOrderIds(training.steps),
       );
+      const move = moveCurrentStep(stepIds, goal.currentStepId, action);
       if (!move) throw new ConflictException('The goal has no steps');
       for (const [id, outcome] of move.outcomes)
         await tx.planBlock.update({ where: { id }, data: { outcome } });
@@ -282,13 +319,19 @@ export class HierarchyRepository {
       criterion?: string;
       durationMinutes?: number;
       insertAt?: number;
+      parentId?: string;
     },
   ): Promise<PlanBlock> {
     return this.prisma.$transaction(async (tx) => {
       await resolveTraining(tx, goalId, trainingId);
       await assertTrainingContentEditable(tx, trainingId);
+      const parentId = await resolveSubStepParent(
+        tx,
+        trainingId,
+        data.parentId,
+      );
       const siblings = await tx.planBlock.findMany({
-        where: { trainingId },
+        where: { trainingId, parentId },
         orderBy: [...planOrder],
       });
       const position = Math.min(
@@ -299,6 +342,7 @@ export class HierarchyRepository {
         data: {
           goalId,
           trainingId,
+          parentId,
           position,
           title: data.title.trim(),
           instruction: data.instruction?.trim() || null,
@@ -316,6 +360,7 @@ export class HierarchyRepository {
     });
   }
 
+  // Reorders one sibling group (roots or children of one parent).
   reorderSteps(
     goalId: string,
     trainingId: string,
@@ -325,13 +370,25 @@ export class HierarchyRepository {
       await resolveTraining(tx, goalId, trainingId);
       await assertTrainingContentEditable(tx, trainingId);
       const current = await tx.planBlock.findMany({ where: { trainingId } });
-      validateOrder(current, ids);
+      const byId = new Map(current.map((step) => [step.id, step]));
+      const first = byId.get(ids[0] ?? '');
+      if (!first) {
+        throw new BadRequestException(
+          'List every item of this parent exactly once',
+        );
+      }
+      const siblings = current.filter(
+        (step) => step.parentId === first.parentId,
+      );
+      validateOrder(siblings, ids);
       for (const [position, id] of ids.entries())
         await tx.planBlock.update({ where: { id }, data: { position } });
-      return tx.planBlock.findMany({
-        where: { trainingId },
-        orderBy: [...planOrder],
-      });
+      return displayOrder(
+        await tx.planBlock.findMany({
+          where: { trainingId },
+          orderBy: [...planOrder],
+        }),
+      );
     });
   }
 }

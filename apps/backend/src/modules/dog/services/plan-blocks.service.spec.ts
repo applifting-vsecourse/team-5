@@ -20,6 +20,7 @@ const aBlock = (overrides: Partial<PlanBlock> = {}): PlanBlock => ({
   createdAt: new Date('2026-01-01T12:00:00Z'),
   updatedAt: new Date('2026-01-01T12:00:00Z'),
   ...overrides,
+  parentId: overrides.parentId ?? null,
 });
 
 const owner = { id: 'u1' } as Identity;
