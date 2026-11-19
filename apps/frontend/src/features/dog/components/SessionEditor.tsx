@@ -414,10 +414,11 @@ export function SessionEditor({
   const save = useMutation({
     mutationFn: async (values: ExerciseFormValues) => {
       if (step && step !== "new") await updatePlanBlock(step.id, values)
-      else
-        {await api.post(`goal-trainings/${session.id}/steps`, {
+      else {
+        await api.post(`goal-trainings/${session.id}/steps`, {
           json: { ...values, ...(parentForNew ? { parentId: parentForNew } : {}) },
-        })}
+        })
+      }
     },
     onSuccess: async () => {
       await refresh()
