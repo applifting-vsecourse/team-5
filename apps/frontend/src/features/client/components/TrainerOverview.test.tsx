@@ -319,12 +319,12 @@ describe("TrainerOverview", () => {
     })
 
     render(<TrainerOverview />, { wrapper: createWrapper() })
-    await user.click(
-      await screen.findByRole("button", { name: "Vybrat klienta Jan Novák" }),
-    )
+    await user.click(await screen.findByRole("button", { name: "Vybrat klienta Jan Novák" }))
     expect(await screen.findByRole("complementary", { name: "Panel psa Rex" })).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "Baryk" }))
-    expect(await screen.findByRole("complementary", { name: "Panel psa Baryk" })).toBeInTheDocument()
+    expect(
+      await screen.findByRole("complementary", { name: "Panel psa Baryk" }),
+    ).toBeInTheDocument()
     expect(await screen.findByText("Áčko")).toBeInTheDocument()
   })
 
