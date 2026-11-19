@@ -326,18 +326,15 @@ describe("login and logout", () => {
     "/clients",
     "/week",
     "/account",
-  ])(
-    "returns to the original protected destination %s after login",
-    async (destination) => {
-      const { interaction, router } = await openPage(destination)
-      await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
-      expect(router.state.location.pathname).toBe("/login")
-      acceptLogin(destination === "/clients" ? "trainer" : "user")
-      await fillForm(interaction)
-      await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-      await waitFor(() => expect(router.state.location.href).toBe(destination))
-    },
-  )
+  ])("returns to the original protected destination %s after login", async (destination) => {
+    const { interaction, router } = await openPage(destination)
+    await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
+    expect(router.state.location.pathname).toBe("/login")
+    acceptLogin(destination === "/clients" ? "trainer" : "user")
+    await fillForm(interaction)
+    await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
+    await waitFor(() => expect(router.state.location.href).toBe(destination))
+  })
 
   it("uses a remembered session after loading the app with an empty query cache", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
