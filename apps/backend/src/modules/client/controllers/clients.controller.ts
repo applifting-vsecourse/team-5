@@ -46,6 +46,20 @@ import {
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'End collaboration with a client (#61)' })
+  @ApiResponse({
+    status: 204,
+    description: 'All dog shares removed; client data preserved',
+  })
+  async endCollaboration(
+    @Param('id') id: string,
+    @User() user: Identity,
+  ): Promise<void> {
+    await this.clientsService.endCollaboration(id, user);
+  }
+
   @Get()
   @ApiOperation({ summary: 'List all clients of authenticated trainer' })
   @ApiResponse({ status: 200, type: [ClientResponseDto] })

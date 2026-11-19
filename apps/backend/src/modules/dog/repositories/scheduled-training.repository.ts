@@ -3,6 +3,8 @@ import {
   FocusLevel,
   GoalStatus,
   MistakeLevel,
+  SleepQuality,
+  TrainingEnvironment,
   TrainingStatus,
   WorkoutLog,
   WorkoutStatus,
@@ -341,6 +343,8 @@ export class ScheduledTrainingRepository {
       successRate?: number | null;
       focus?: FocusLevel | null;
       repeatedMistakes?: MistakeLevel | null;
+      sleepQuality?: SleepQuality | null;
+      environment?: TrainingEnvironment | null;
       mistakeDetails?: string[];
       note?: string | null;
       videoUrl?: string | null;
@@ -388,6 +392,8 @@ export class ScheduledTrainingRepository {
           successRate: data.successRate ?? null,
           focus: data.focus ?? null,
           repeatedMistakes: data.repeatedMistakes ?? null,
+          sleepQuality: data.sleepQuality ?? null,
+          environment: data.environment ?? null,
           ...(data.mistakeDetails !== undefined && {
             mistakeDetails: [
               ...new Set(data.mistakeDetails.map((detail) => detail.trim())),

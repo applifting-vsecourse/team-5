@@ -1,6 +1,34 @@
 # Bezpečnostní zpráva závislostí
 
-**Datum**: 05. 11. 2026. **Rozsah**: Úkol #165, npm závislosti workspace (včetně vývojových nástrojů), Node.js, základní obrazy Dockeru a GitHub Actions. **Výchozí stav (baseline)**: větev `dev` na commitu `c8bd6da`.
+**Datum**: 05. 11. 2026, aktualizováno 09. 11. 2026 (stav `main` na commitu `8cb7d82`). **Rozsah**: Úkol #165, npm závislosti workspace (včetně vývojových nástrojů), Node.js, základní obrazy Dockeru a GitHub Actions; doplněn přehled bezpečnostních kontrol v samotné aplikaci. **Výchozí stav (baseline)**: větev `dev` na commitu `c8bd6da`.
+
+## Shrnutí pro review (stav k 09. 11. 2026)
+
+**Výsledek:** z původních **56 high a 10 critical** nálezů v závislostech je **0 high a 0 critical**. Zbývá 4× moderate a 1× low (3 unikátní hlášení, viz [Zbývající nálezy](#zbývající-nálezy)). Audit `pnpm audit` spuštěný 09. 11. 2026 nad lockfilem z `main` dává stejný výsledek jako 07. 11.
+
+**Zapracováno:**
+
+- [x] Aktualizace přímých i tranzitivních npm závislostí (Better Auth, Prisma, NestJS, Vite, React, Zod, Nodemailer 10 …).
+- [x] Node.js zamčený na **24.22.2**, který obsahuje opravu Brotli (CVE-2026-111497), v `.nvmrc`, Dockerfilech i CI.
+- [x] Aktualizované Docker obrazy (`node:24.22.2-alpine`, `nginx:1.31.7-alpine`, `postgres:17.11-alpine`, `mailpit:v1.33.0`) a GitHub Actions.
+- [x] Sledování zranitelností: Dependabot alerts a security updates zapnuté, týdenní Dependabot PR pro npm, Actions a Docker, CI s `pnpm security:audit` při každé změně i každé pondělí v 07:00 UTC.
+- [x] **Nasazení na staging je blokované**, pokud audit najde high/critical nález nebo spadne test: v `deploy.yml` má `build-and-deploy` podmínku `needs: [security-audit, tests]`.
+- [x] Dependabot funguje v praxi: 07. 11. navrhl nginx 1.31.7 (začleněno) a Node 26 (major). Node 26 jsme vrátili na 24.22.2 (PR #216) a major verze Node a PostgreSQL vyloučili z automatických návrhů, protože vyžadují řízený přechod.
+
+**Kontroly v aplikaci (ověřeno v kódu):**
+
+- Všechna API mimo veřejné stránky chrání `AuthenticatedUserGuard`, autor se bere ze session, ne z požadavku.
+- Přístup k cizímu psovi vrací 404, takže neprozradí ani jeho existenci (`dog-access.service.ts`, test `dog-access.postgres.test.mjs`). Akce vyhrazené majiteli vrací 403.
+- Vstupy validuje `ValidationPipe` s `whitelist` a `forbidNonWhitelisted`, zprávy jsou omezené na 2000 znaků.
+- Upload fotky psa: limit 10 MB a 50 Mpx, kontrola MIME typu.
+- Ověřování pozvánkových kódů má rate limit (`InvitationRateLimitGuard`).
+
+**Zbývá:**
+
+- [ ] 4× moderate (`glob`, `minimatch`) a 1× low (`deepmerge`): čekají na upstream opravu, nejsou zneužitelné vstupem od uživatele.
+- [ ] Skenování Docker obrazů na úrovni OS (např. Trivy v CI).
+- [ ] Globální rate limiting a bezpečnostní HTTP hlavičky (např. `helmet`) na backendu; rate limit má zatím jen ověřování pozvánek.
+- [ ] Samostatný penetrační test aplikace (tento report je audit závislostí a revize kontrol v kódu).
 
 ## Nálezy a jejich náprava
 
@@ -22,7 +50,7 @@ Nová pravidla linteru si vyžádala použití volitelného řetězení (optiona
 
 Verze Node.js je uzamčena na 24.22.2 v `.nvmrc` a ve všech Dockerfilech a manifesty vyžadují alespoň verzi 24.22.2. CI čte `.nvmrc`; pnpm je aktualizován na 10.34.9. Node 24.22.2 obsahuje [bezpečnostní opravy z verze 24.22.1](https://nodejs.org/en/blog/release/v24.22.1), včetně problému s Brotli kompresí CVE-2026-111497 zmiňovaného v zadání úkolu. Brotli je součástí samotného Node.js, takže samotný čistý audit npm by tuto opravu neověřil.
 
-Kontejnerové obrazy byly zkontrolovány vůči Docker Hubu a aktualizovány na `node:24.22.2-alpine`, `nginx:1.30.6-alpine`, `postgres:17.11-alpine` a `axllent/mailpit:v1.33.0`. PostgreSQL zůstává na hlavní verzi 17, což zachovává stávající strukturu datového adresáře. Vydání nginx obsahuje opravy uvedené v [oficiálních oznámeních o vydání](https://nginx.org/). Sestavení používají při ověřování přepínač `--pull`. Značky obrazů (image tags) jsou verzované, ale měnitelné; tato zpráva netvrdí, že všechny systémové balíčky v Alpine jsou zcela bez CVE. Bezpečnostní skenování obrazů na úrovni operačního systému je nad rámec výše uvedených výsledků auditu npm.
+Kontejnerové obrazy byly zkontrolovány vůči Docker Hubu a aktualizovány na `node:24.22.2-alpine`, `nginx:1.30.6-alpine`, `postgres:17.11-alpine` a `axllent/mailpit:v1.33.0`. Dependabot následně 07. 11. 2026 zvedl nginx na `1.31.7-alpine` (aktuální stav). Současně navrhl Node 26 (`node:26.12.1-alpine`); tento major přechod byl 08. 11. 2026 vrácen na 24.22.2 (PR #216) a Dependabot má major verze Node vyloučené. PostgreSQL zůstává na hlavní verzi 17, což zachovává stávající strukturu datového adresáře. Vydání nginx obsahuje opravy uvedené v [oficiálních oznámeních o vydání](https://nginx.org/). Sestavení používají při ověřování přepínač `--pull`. Značky obrazů (image tags) jsou verzované, ale měnitelné; tato zpráva netvrdí, že všechny systémové balíčky v Alpine jsou zcela bez CVE. Bezpečnostní skenování obrazů na úrovni operačního systému je nad rámec výše uvedených výsledků auditu npm.
 
 GitHub Actions byly zkontrolovány vůči jejich upstreamovým vydáním: checkout 7.0.1, setup-node 7.1.0, pnpm/action-setup 6.1.1, docker/login-action 4.8.0 a docker/build-push-action 7.4.0.
 

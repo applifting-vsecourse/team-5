@@ -3,6 +3,14 @@ import { z } from "zod"
 
 import { api } from "@/lib/api-client"
 
+export const ANSWER_LABELS = { YES: "Ano", PARTIALLY: "Částečně", NO: "Ne" } as const
+export const SLEEP_QUALITY_LABELS = { GOOD: "Dobře", POOR: "Špatně" } as const
+export const TRAINING_ENVIRONMENT_LABELS = {
+  HOME: "Doma",
+  OUTDOORS: "Venku",
+  TRAINING_GROUND: "Cvičák",
+} as const
+
 const dog = z.object({ id: z.string(), name: z.string(), color: z.number() })
 const message = z.object({
   id: z.string(),
@@ -28,6 +36,8 @@ const conversationDetail = z.object({
   mistakeDetails: z.array(z.string()).optional(),
   focus: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
   repeatedMistakes: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
+  sleepQuality: z.enum(["GOOD", "POOR"]).nullable().optional(),
+  environment: z.enum(["HOME", "OUTDOORS", "TRAINING_GROUND"]).nullable().optional(),
   status: z.enum(["COMPLETED", "SKIPPED"]).optional(),
   goal: z
     .object({

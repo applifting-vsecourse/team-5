@@ -13,6 +13,8 @@ import type {
   CompleteTrainingInput,
   FocusLevel,
   MistakeLevel,
+  SleepQuality,
+  TrainingEnvironment,
 } from "@/features/training/api/trainingSchemas"
 import { useCompleteTraining } from "@/features/training/hooks/useCompleteTraining"
 
@@ -45,6 +47,8 @@ export function FinishTrainingForm({
   const submissionLock = useRef(false)
   const [successRate, setRate] = useState<number | null>(null)
   const [focus, setFocus] = useState<FocusLevel | null>(null)
+  const [sleepQuality, setSleepQuality] = useState<SleepQuality | null>(null)
+  const [environment, setEnvironment] = useState<TrainingEnvironment | null>(null)
   const [repeatedMistakes, setMistakes] = useState<MistakeLevel | null>(null)
   const [mistakeDetails, setDetails] = useState<string[]>([])
   const [customMistakes, setCustomMistakes] = useState<string[]>([])
@@ -70,6 +74,8 @@ export function FinishTrainingForm({
     const payload: CompleteTrainingInput = {}
     if (successRate !== null) payload.successRate = successRate
     if (focus) payload.focus = focus
+    if (sleepQuality) payload.sleepQuality = sleepQuality
+    if (environment) payload.environment = environment
     if (repeatedMistakes) payload.repeatedMistakes = repeatedMistakes
     if (repeatedMistakes === "YES" && mistakeDetails.length) payload.mistakeDetails = mistakeDetails
     if (videoUrl.trim()) payload.videoUrl = videoUrl.trim()
@@ -173,104 +179,173 @@ export function FinishTrainingForm({
               ))}
             </ToggleGroup>
           </section>
-          <section className="space-y-3 rounded-card border border-border bg-card p-4">
-            <Label className="font-bold">Opakoval chyby?</Label>
-            <ToggleGroup
-              type="single"
-              spacing={1}
-              value={repeatedMistakes ?? ""}
-              onValueChange={(value) => setMistakes(value ? (value as MistakeLevel) : null)}
-              aria-label="Opakované chyby"
-              className="flex w-full rounded-control bg-secondary p-1"
-            >
-              {(
-                [
-                  ["YES", "Ano"],
-                  ["NO", "Ne"],
-                ] as const
-              ).map(([value, label]) => (
-                <ToggleGroupItem
-                  key={value}
-                  value={value}
-                  className={selectedClass}
-                >
-                  {label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-            {repeatedMistakes === "YES" && (
-              <>
-                <div
-                  className="flex flex-wrap gap-2"
-                  role="group"
-                  aria-label="Podrobnosti opakovaných chyb"
-                >
-                  {[...mistakeSuggestions, ...customMistakes].map((detail) => {
-                    const isSelected = mistakeDetails.includes(detail)
-                    return (
-                      <Button
-                        key={detail}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        aria-pressed={isSelected}
-                        disabled={!isSelected && mistakeDetails.length >= 10}
-                        onClick={() =>
-                          setDetails((items) =>
-                            items.includes(detail)
-                              ? items.filter((item) => item !== detail)
-                              : [...items, detail],
-                          )
-                        }
-                        className={cn(
-                          "rounded-full text-xs",
-                          isSelected && "border-primary bg-accent text-primary",
-                        )}
-                      >
-                        {isSelected && <DesignIcon name="finish-Check1" />}
-                        {detail}
-                      </Button>
-                    )
-                  })}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full text-xs"
-                    onClick={() => setAddCustom(!shouldAddCustom)}
-                    disabled={mistakeDetails.length >= 10}
+          <section
+            aria-labelledby="circumstances-heading"
+            className="space-y-4 rounded-card border border-border bg-card p-4"
+          >
+            <div className="flex items-baseline justify-between gap-2">
+              <h2
+                id="circumstances-heading"
+                className="text-section font-extrabold"
+              >
+                Okolnosti
+              </h2>
+              <span className="text-xs font-medium text-muted-foreground">Volitelné</span>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold">Jak pes spal</Label>
+              <ToggleGroup
+                type="single"
+                spacing={1}
+                value={sleepQuality ?? ""}
+                onValueChange={(value) => setSleepQuality(value ? (value as SleepQuality) : null)}
+                aria-label="Jak pes spal"
+                className="flex w-full rounded-control bg-secondary p-1"
+              >
+                {(
+                  [
+                    ["GOOD", "Dobře"],
+                    ["POOR", "Špatně"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <ToggleGroupItem
+                    key={value}
+                    value={value}
+                    className={selectedClass}
                   >
-                    + vlastní
-                  </Button>
-                </div>
-                {shouldAddCustom && (
-                  <div className="flex items-end gap-2">
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <Label htmlFor="custom-mistake">Vlastní chyba</Label>
-                      <Input
-                        id="custom-mistake"
-                        value={customMistake}
-                        onChange={(event) => setCustomMistake(event.target.value)}
-                        maxLength={60}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault()
-                            addCustom()
+                    {label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold">Prostředí</Label>
+              <ToggleGroup
+                type="single"
+                spacing={1}
+                value={environment ?? ""}
+                onValueChange={(value) =>
+                  setEnvironment(value ? (value as TrainingEnvironment) : null)
+                }
+                aria-label="Prostředí"
+                className="flex w-full rounded-control bg-secondary p-1"
+              >
+                {(
+                  [
+                    ["HOME", "Doma"],
+                    ["OUTDOORS", "Venku"],
+                    ["TRAINING_GROUND", "Cvičák"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <ToggleGroupItem
+                    key={value}
+                    value={value}
+                    className={selectedClass}
+                  >
+                    {label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
+            <div className="space-y-3">
+              <Label className="font-bold">Opakoval chyby?</Label>
+              <ToggleGroup
+                type="single"
+                spacing={1}
+                value={repeatedMistakes ?? ""}
+                onValueChange={(value) => setMistakes(value ? (value as MistakeLevel) : null)}
+                aria-label="Opakované chyby"
+                className="flex w-full rounded-control bg-secondary p-1"
+              >
+                {(
+                  [
+                    ["YES", "Ano"],
+                    ["NO", "Ne"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <ToggleGroupItem
+                    key={value}
+                    value={value}
+                    className={selectedClass}
+                  >
+                    {label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              {repeatedMistakes === "YES" && (
+                <>
+                  <div
+                    className="flex flex-wrap gap-2"
+                    role="group"
+                    aria-label="Podrobnosti opakovaných chyb"
+                  >
+                    {[...mistakeSuggestions, ...customMistakes].map((detail) => {
+                      const isSelected = mistakeDetails.includes(detail)
+                      return (
+                        <Button
+                          key={detail}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          aria-pressed={isSelected}
+                          disabled={!isSelected && mistakeDetails.length >= 10}
+                          onClick={() =>
+                            setDetails((items) =>
+                              items.includes(detail)
+                                ? items.filter((item) => item !== detail)
+                                : [...items, detail],
+                            )
                           }
-                        }}
-                      />
-                    </div>
+                          className={cn(
+                            "rounded-full text-xs",
+                            isSelected && "border-primary bg-accent text-primary",
+                          )}
+                        >
+                          {isSelected && <DesignIcon name="finish-Check1" />}
+                          {detail}
+                        </Button>
+                      )
+                    })}
                     <Button
                       type="button"
-                      onClick={addCustom}
-                      disabled={!customMistake.trim()}
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full text-xs"
+                      onClick={() => setAddCustom(!shouldAddCustom)}
+                      disabled={mistakeDetails.length >= 10}
                     >
-                      Přidat
+                      + vlastní
                     </Button>
                   </div>
-                )}
-              </>
-            )}
+                  {shouldAddCustom && (
+                    <div className="flex items-end gap-2">
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <Label htmlFor="custom-mistake">Vlastní chyba</Label>
+                        <Input
+                          id="custom-mistake"
+                          value={customMistake}
+                          onChange={(event) => setCustomMistake(event.target.value)}
+                          maxLength={60}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault()
+                              addCustom()
+                            }
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={addCustom}
+                        disabled={!customMistake.trim()}
+                      >
+                        Přidat
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </section>
           <div className="space-y-2">
             <Label

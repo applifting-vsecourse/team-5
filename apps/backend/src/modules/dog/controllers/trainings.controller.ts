@@ -223,6 +223,8 @@ export class TrainingsController {
       rating: a.rating,
       focus: a.focus,
       repeatedMistakes: a.repeatedMistakes,
+      sleepQuality: a.sleepQuality,
+      environment: a.environment,
       mistakeDetails: a.mistakeDetails,
       note: a.note,
       videoUrl: a.videoUrl,

@@ -238,6 +238,8 @@ describe('TrainingsService', () => {
       rating: null,
       focus: 'YES' as const,
       repeatedMistakes: 'NO' as const,
+      sleepQuality: null,
+      environment: null,
       note: 'Super výkon.',
       videoUrl: null,
       skipReason: null,
