@@ -55,6 +55,7 @@ export function FinishTrainingForm({
   const [shouldAddCustom, setAddCustom] = useState(false)
   const [customMistake, setCustomMistake] = useState("")
   const [videoUrl, setVideo] = useState("")
+  const [videoUrlError, setVideoUrlError] = useState("")
   const [note, setNote] = useState("")
   const addCustom = () => {
     const value = customMistake.trim()
@@ -71,6 +72,21 @@ export function FinishTrainingForm({
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (submissionLock.current || isPending) return
+    const trimmedVideoUrl = videoUrl.trim()
+    if (trimmedVideoUrl) {
+      let isValidVideoUrl = false
+      try {
+        const parsed = new URL(trimmedVideoUrl)
+        isValidVideoUrl = parsed.protocol === "http:" || parsed.protocol === "https:"
+      } catch {
+        isValidVideoUrl = false
+      }
+      if (!isValidVideoUrl) {
+        setVideoUrlError("Zadej platný odkaz začínající http:// nebo https://.")
+        return
+      }
+    }
+    setVideoUrlError("")
     const payload: CompleteTrainingInput = {}
     if (successRate !== null) payload.successRate = successRate
     if (focus) payload.focus = focus
@@ -78,7 +94,7 @@ export function FinishTrainingForm({
     if (environment) payload.environment = environment
     if (repeatedMistakes) payload.repeatedMistakes = repeatedMistakes
     if (repeatedMistakes === "YES" && mistakeDetails.length) payload.mistakeDetails = mistakeDetails
-    if (videoUrl.trim()) payload.videoUrl = videoUrl.trim()
+    if (trimmedVideoUrl) payload.videoUrl = trimmedVideoUrl
     if (note.trim()) payload.note = note.trim()
     submissionLock.current = true
     try {
@@ -107,7 +123,10 @@ export function FinishTrainingForm({
             : ""}
         </p>
       </header>
-      <form onSubmit={(event) => void submit(event)}>
+      <form
+        noValidate
+        onSubmit={(event) => void submit(event)}
+      >
         <fieldset
           disabled={isPending}
           className="space-y-6"
@@ -363,14 +382,36 @@ export function FinishTrainingForm({
                 type="url"
                 inputMode="url"
                 value={videoUrl}
-                onChange={(event) => setVideo(event.target.value)}
+                onChange={(event) => {
+                  setVideo(event.target.value)
+                  if (videoUrlError) setVideoUrlError("")
+                }}
                 placeholder="https://youtube.com/watch?v=…"
                 maxLength={500}
+                aria-invalid={Boolean(videoUrlError)}
+                aria-describedby={
+                  videoUrlError
+                    ? "training-video-url-error training-video-url-hint"
+                    : "training-video-url-hint"
+                }
                 className="pl-10"
               />
             </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Video se nenahrává, stačí odkaz (YouTube neveřejné, Google Disk).
+            {videoUrlError && (
+              <p
+                id="training-video-url-error"
+                role="alert"
+                className="text-xs font-medium text-destructive"
+              >
+                {videoUrlError}
+              </p>
+            )}
+            <p
+              id="training-video-url-hint"
+              className="text-xs leading-relaxed text-muted-foreground"
+            >
+              Video se nenahrává — nahraj ho na YouTube jako neveřejné nebo na Google Disk (kdokoli
+              s odkazem) a vlož sem odkaz.
             </p>
           </div>
           <div className="space-y-2">
