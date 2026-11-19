@@ -1,6 +1,7 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
 import { Prisma } from '@/generated/prisma/client';
 import { PlanBlock } from '@/modules/dog/domain/plan-block';
+import { displayOrder } from '@/modules/dog/domain/step-order';
 import {
   BadRequestException,
   ConflictException,
@@ -8,6 +9,7 @@ import {
 } from '@nestjs/common';
 import {
   assertTrainingContentEditable,
+  resolveSubStepParent,
   resolveTraining,
 } from './hierarchy.repository';
 import { recordPlanReply } from './training-reply.repository';
@@ -44,10 +46,12 @@ export class PlanBlockRepository {
       if (trainings.length > 1)
         throw new ConflictException('Select a concrete training');
       if (!trainings[0]) return [];
-      return tx.planBlock.findMany({
-        where: { trainingId: trainings[0].id },
-        orderBy: inPlanOrder,
-      });
+      return displayOrder(
+        await tx.planBlock.findMany({
+          where: { trainingId: trainings[0].id },
+          orderBy: inPlanOrder,
+        }),
+      );
     });
   }
 
@@ -55,8 +59,9 @@ export class PlanBlockRepository {
     return this.prisma.planBlock.findUnique({ where: { id } });
   }
 
-  // Without insertAt the block goes to the end of the plan; with it, the
-  // block becomes a step between existing ones (#65).
+  // Without insertAt the block goes to the end of its sibling group; with it,
+  // the block becomes a step between existing ones (#65). parentId nests a
+  // sub-step under a root (#67).
   async createBlock(
     data: {
       goalId: string;
@@ -65,14 +70,20 @@ export class PlanBlockRepository {
       durationMinutes?: number;
       criterion: string | null;
       insertAt?: number;
+      parentId?: string;
     },
     actorId?: string,
   ): Promise<PlanBlock> {
     return this.prisma.$transaction(async (tx) => {
       const training = await resolveTraining(tx, data.goalId);
       await assertTrainingContentEditable(tx, training.id);
+      const parentId = await resolveSubStepParent(
+        tx,
+        training.id,
+        data.parentId,
+      );
       const existing = await tx.planBlock.findMany({
-        where: { trainingId: training.id },
+        where: { trainingId: training.id, parentId },
         orderBy: inPlanOrder,
         select: { id: true },
       });
@@ -82,6 +93,7 @@ export class PlanBlockRepository {
         data: {
           goal: { connect: { id: data.goalId } },
           training: { connect: { id: training.id } },
+          ...(parentId ? { parent: { connect: { id: parentId } } } : {}),
           position: index,
           title: data.title,
           instruction: data.instruction,
@@ -142,17 +154,18 @@ export class PlanBlockRepository {
       await tx.planBlock.delete({ where: { id } });
       await recordPlanReply(tx, block.trainingId, actorId);
       const remaining = await tx.planBlock.findMany({
-        where: { trainingId: block.trainingId },
+        where: { trainingId: block.trainingId, parentId: block.parentId },
         orderBy: inPlanOrder,
         select: { id: true },
       });
       await writePositions(
         tx,
-        remaining.map((block) => block.id),
+        remaining.map((sibling) => sibling.id),
       );
     });
   }
 
+  // Reorders one sibling group (roots or children of one parent).
   async reorderBlocks(
     goalId: string,
     blockIds: string[],
@@ -163,9 +176,18 @@ export class PlanBlockRepository {
       await assertTrainingContentEditable(tx, training.id);
       const current = await tx.planBlock.findMany({
         where: { trainingId: training.id },
-        select: { id: true },
       });
-      const allowed = new Set(current.map((block) => block.id));
+      const byId = new Map(current.map((block) => [block.id, block]));
+      const first = byId.get(blockIds[0] ?? '');
+      if (!first) {
+        throw new BadRequestException(
+          'List every step of this training exactly once',
+        );
+      }
+      const siblings = current.filter(
+        (block) => block.parentId === first.parentId,
+      );
+      const allowed = new Set(siblings.map((block) => block.id));
       if (
         blockIds.length !== allowed.size ||
         new Set(blockIds).size !== blockIds.length ||
@@ -177,10 +199,12 @@ export class PlanBlockRepository {
       }
       await writePositions(tx, blockIds);
       await recordPlanReply(tx, training.id, actorId);
-      return tx.planBlock.findMany({
-        where: { trainingId: training.id },
-        orderBy: inPlanOrder,
-      });
+      return displayOrder(
+        await tx.planBlock.findMany({
+          where: { trainingId: training.id },
+          orderBy: inPlanOrder,
+        }),
+      );
     });
   }
 }
