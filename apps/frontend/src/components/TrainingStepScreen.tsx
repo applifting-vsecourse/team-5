@@ -15,16 +15,14 @@ type Step = {
   outcome?: "MASTERED" | "SKIPPED" | null
 }
 
-function formatTime(seconds: number) {
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
-}
-
 function StepTimer({ minutes, shouldAutoStart }: { minutes: number; shouldAutoStart: boolean }) {
   const total = Math.max(0, minutes * 60)
   const [elapsed, setElapsed] = useState(0)
   const [isRunning, setRunning] = useState(shouldAutoStart)
   const remaining = Math.max(0, total - elapsed)
   const hasFinished = total > 0 && remaining === 0
+  // Round remaining time up so 0 min means the step has actually finished.
+  const displayedMinutes = total > 0 ? Math.ceil(remaining / 60) : Math.floor(elapsed / 60)
   useEffect(() => {
     if (!isRunning || hasFinished) return
     const interval = window.setInterval(() => setElapsed((value) => value + 1), 1000)
@@ -43,10 +41,10 @@ function StepTimer({ minutes, shouldAutoStart }: { minutes: number; shouldAutoSt
             aria-label={total > 0 ? "Zbývající čas" : "Uplynulý čas"}
             className="text-timer font-extrabold tabular-nums"
           >
-            {formatTime(total > 0 ? remaining : elapsed)}
+            {displayedMinutes} <span className="text-lg font-semibold">min</span>
           </p>
           <p className="text-sm font-semibold text-muted-foreground">
-            {total > 0 ? `z ${formatTime(total)}` : "bez časového limitu"}
+            {total > 0 ? `z ${minutes} min` : "bez časového limitu"}
           </p>
         </div>
       </div>

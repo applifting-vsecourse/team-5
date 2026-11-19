@@ -165,11 +165,20 @@ describe("TrainingWalkthrough", () => {
     vi.useFakeTimers()
     renderWalkthrough()
 
-    expect(screen.getByRole("timer")).toHaveTextContent("1:00")
+    expect(screen.getByRole("timer")).toHaveTextContent("1 min")
     act(() => {
       vi.advanceTimersByTime(3000)
     })
-    expect(screen.getByRole("timer")).toHaveTextContent("0:57")
+    expect(screen.getByRole("timer")).toHaveTextContent("1 min")
+    act(() => {
+      vi.advanceTimersByTime(56000)
+    })
+    expect(screen.getByRole("timer")).toHaveTextContent("1 min")
+    act(() => {
+      vi.advanceTimersByTime(1000)
+    })
+    expect(screen.getByRole("timer")).toHaveTextContent("0 min")
+    expect(screen.getByRole("button", { name: "Spustit časovač" })).toBeDisabled()
     vi.useRealTimers()
   })
 
