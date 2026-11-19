@@ -20,6 +20,7 @@ import { dogDetailQueryOptions, goalQueryOptions } from "@/features/dog/api/dogs
 import { createSession, dogPlanQueryOptions } from "@/features/dog/api/trainingEditor"
 import { useCreateGoal } from "@/features/dog/hooks/useCreateGoal"
 import { useUpdateGoal } from "@/features/dog/hooks/useUpdateGoal"
+import { walkOrderIds } from "@/features/dog/lib/stepOrder"
 
 import { EditorSheet } from "./EditorSheet"
 import { GoalForm } from "./GoalForm"
@@ -150,8 +151,21 @@ export function EditGoalPage({
   const isReadOnly =
     goal?.status === "ARCHIVED" || goal?.status === "COMPLETED" || membership?.isArchived === true
   const canMoveStep = Boolean(goal?.status === "ACTIVE" && !isReadOnly)
-  const currentStepId =
-    goal?.currentStepId ?? sessions.flatMap((session) => session.steps).at(0)?.id ?? null
+  // Pass the stored pointer through; SessionEditor resolves null via walk order (#67).
+  // Session list highlight needs the same walk fallback so "Aktuální" matches practice.
+  const storedCurrentStepId = goal?.currentStepId ?? null
+  const highlightedStepId =
+    storedCurrentStepId ??
+    sessions.flatMap((session) =>
+      walkOrderIds(
+        session.steps.map((block) => ({
+          id: block.id,
+          parentId: block.parentId ?? null,
+          position: block.position,
+        })),
+      ),
+    )[0] ??
+    null
   const refresh = () => client.invalidateQueries({ queryKey: dogKeys.all })
   const create = useMutation({
     mutationFn: () => createSession(goalId, title.trim()),
@@ -219,7 +233,7 @@ export function EditGoalPage({
         }
         canSchedule={!isReadOnly && !selected.isArchived}
         canMoveStep={canMoveStep}
-        currentStepId={currentStepId}
+        currentStepId={storedCurrentStepId}
         onBack={() => setSessionId(null)}
         isScheduleRequested={isScheduleRequested}
         onScheduleRequestHandled={onScheduleRequestHandled}
@@ -291,7 +305,7 @@ export function EditGoalPage({
                 <ol className="space-y-3">
                   {sessions.map((s, index) => {
                     const hasCurrentStep = Boolean(
-                      currentStepId && s.steps.some((block) => block.id === currentStepId),
+                      highlightedStepId && s.steps.some((block) => block.id === highlightedStepId),
                     )
                     return (
                       <li

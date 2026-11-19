@@ -7,25 +7,25 @@ import { dogKeys } from "@/features/dog/api/dogKeys"
 import type { PlanBlock } from "@/features/dog/api/dogSchemas"
 import { reorderPlanBlocks } from "@/features/dog/api/savePlanBlock"
 
+export type ReorderPlanBlocksInput = PlanBlock[] | { ids: string[]; optimistic: PlanBlock[] }
+
 // Moving a block with the arrows should feel instant, so the new order shows
-// right away and is rolled back if the server refuses it.
+// right away and is rolled back if the server refuses it. Sibling reorder (#67)
+// sends only that group's ids while keeping the full plan in the optimistic cache.
 export function useReorderPlanBlocks(goalId: string) {
   const queryClient = useQueryClient()
   const queryKey = dogKeys.goalBlocks(goalId)
 
   return useMutation({
-    mutationFn: (blocks: PlanBlock[]) =>
-      reorderPlanBlocks(
-        goalId,
-        blocks.map((block) => block.id),
-      ),
-    onMutate: async (blocks) => {
+    mutationFn: (input: ReorderPlanBlocksInput) =>
+      reorderPlanBlocks(goalId, Array.isArray(input) ? input.map((block) => block.id) : input.ids),
+    onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey })
       const previous = queryClient.getQueryData<PlanBlock[]>(queryKey)
-      queryClient.setQueryData(queryKey, blocks)
+      queryClient.setQueryData(queryKey, Array.isArray(input) ? input : input.optimistic)
       return { previous }
     },
-    onError: (_error, _blocks, context) => {
+    onError: (_error, _input, context) => {
       queryClient.setQueryData(queryKey, context?.previous)
       toast.error("Pořadí se nepodařilo uložit. Zkuste to prosím znovu.")
     },

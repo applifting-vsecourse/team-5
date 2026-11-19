@@ -188,13 +188,16 @@ model TrainingGoal {
 }
 
 // One step of a goal's plan, shown top to bottom by position (#63).
-// Sequences (#64) and sub-steps (#67) will build on this model.
+// Sub-steps (#67) nest one level via parentId; sequences (#64) will build on this.
 model PlanBlock {
   id              String         @id @default(cuid())
   goalId          String
   goal            TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
   trainingId      String         @default(dbgenerated())
   training        GoalTraining   @relation(fields: [trainingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  parentId        String?
+  parent          PlanBlock?     @relation("PlanBlockSubSteps", fields: [parentId], references: [id], onDelete: Cascade)
+  children        PlanBlock[]    @relation("PlanBlockSubSteps")
   position        Int
   title           String         @db.VarChar(100)
   durationMinutes Int            @default(0)
@@ -207,6 +210,7 @@ model PlanBlock {
 
   @@index([goalId, position])
   @@index([trainingId, position])
+  @@index([parentId, position])
   @@map("plan_block")
 }
 

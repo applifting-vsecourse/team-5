@@ -50,8 +50,29 @@ import { useCreatePlanBlock } from "@/features/dog/hooks/useCreatePlanBlock"
 import { useDeletePlanBlock } from "@/features/dog/hooks/useDeletePlanBlock"
 import { useReorderPlanBlocks } from "@/features/dog/hooks/useReorderPlanBlocks"
 import { useUpdatePlanBlock } from "@/features/dog/hooks/useUpdatePlanBlock"
+import { walkOrderIds } from "@/features/dog/lib/stepOrder"
 
 import { ExerciseDialog, type ExerciseDialogMode } from "./ExerciseDialog"
+
+function siblingsOf(blocks: PlanBlock[], block: PlanBlock) {
+  return blocks.filter((item) => (item.parentId ?? null) === (block.parentId ?? null))
+}
+
+// Keep parent-then-children display while a sibling group is reordered (#67).
+function withReorderedSiblings(blocks: PlanBlock[], siblings: PlanBlock[]): PlanBlock[] {
+  const parentId = siblings[0]?.parentId ?? null
+  if (parentId == null) {
+    return siblings.flatMap((root) => [
+      root,
+      ...blocks.filter((block) => block.parentId === root.id),
+    ])
+  }
+  return blocks.flatMap((block) => {
+    if (block.id === parentId) return [block, ...siblings]
+    if (block.parentId === parentId) return []
+    return [block]
+  })
+}
 
 type PlanBlockItemProps = {
   block: PlanBlock
@@ -254,6 +275,13 @@ function PlanBlockItem({
 function SortablePlanBlockItem(
   props: Omit<PlanBlockItemProps, "dragHandleProps" | "isDragging" | "style" | "setNodeRef">,
 ) {
+  if (props.block.parentId) return <PlanBlockItem {...props} />
+  return <RootSortablePlanBlockItem {...props} />
+}
+
+function RootSortablePlanBlockItem(
+  props: Omit<PlanBlockItemProps, "dragHandleProps" | "isDragging" | "style" | "setNodeRef">,
+) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: props.block.id,
   })
@@ -287,9 +315,18 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
   const moveStep = useMoveCurrentStep(goalId, goalQuery.data?.dogId ?? "")
 
   const blocks = blocksQuery.data ?? []
+  const roots = blocks.filter((block) => !block.parentId)
   // Wait for the goal so a loading null does not flash the first block as current.
   const currentStepId = goalQuery.isSuccess
-    ? (goalQuery.data.currentStepId ?? blocks[0]?.id ?? null)
+    ? (goalQuery.data.currentStepId ??
+      walkOrderIds(
+        blocks.map((block) => ({
+          id: block.id,
+          parentId: block.parentId ?? null,
+          position: block.position,
+        })),
+      )[0] ??
+      null)
     : null
 
   const sensors = useSensors(
@@ -317,30 +354,34 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
     }
   }
 
-  const handleMove = (index: number, direction: -1 | 1) => {
-    const target = index + direction
-    if (target < 0 || target >= blocks.length) return
-    const reordered = [...blocks]
-    const [moved] = reordered.splice(index, 1)
-    if (!moved) return
-    reordered.splice(target, 0, moved)
-    reorderBlocks.mutate(reordered)
+  const commitSiblingOrder = (siblings: PlanBlock[]) => {
+    reorderBlocks.mutate({
+      ids: siblings.map((block) => block.id),
+      optimistic: withReorderedSiblings(blocks, siblings),
+    })
+  }
+
+  const handleMove = (block: PlanBlock, direction: -1 | 1) => {
+    const siblings = siblingsOf(blocks, block)
+    const from = siblings.findIndex((item) => item.id === block.id)
+    const to = from + direction
+    if (from < 0 || to < 0 || to >= siblings.length) return
+    commitSiblingOrder(arrayMove(siblings, from, to))
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) return
 
-    const oldIndex = blocks.findIndex((b) => b.id === active.id)
-    const newIndex = blocks.findIndex((b) => b.id === over.id)
+    const oldIndex = roots.findIndex((b) => b.id === active.id)
+    const newIndex = roots.findIndex((b) => b.id === over.id)
     if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return
 
     if ("vibrate" in navigator && typeof navigator.vibrate === "function") {
       navigator.vibrate(20)
     }
 
-    const reordered = arrayMove(blocks, oldIndex, newIndex)
-    reorderBlocks.mutate(reordered)
+    commitSiblingOrder(arrayMove(roots, oldIndex, newIndex))
   }
 
   const handleConfirmDelete = () => {
@@ -400,28 +441,35 @@ export function PlanBlocksSection({ goalId }: { goalId: string }) {
           onDragEnd={handleDragEnd}
         >
           <SortableContext
-            items={blocks.map((b) => b.id)}
+            items={roots.map((b) => b.id)}
             strategy={verticalListSortingStrategy}
           >
             <ol className="flex flex-col gap-2">
-              {blocks.map((block, index) => (
-                <SortablePlanBlockItem
-                  key={block.id}
-                  block={block}
-                  number={index + 1}
-                  isFirst={index === 0}
-                  isLast={index === blocks.length - 1}
-                  isCurrent={block.id === currentStepId}
-                  isReordering={reorderBlocks.isPending}
-                  isStepBusy={moveStep.isPending}
-                  onEdit={() => setDialogMode({ kind: "edit", block })}
-                  onMove={(direction) => handleMove(index, direction)}
-                  onDelete={() => setBlockToDelete(block)}
-                  onAdvance={() => void moveStep.mutateAsync("advance")}
-                  onSkip={() => void moveStep.mutateAsync("skip")}
-                  onBack={() => void moveStep.mutateAsync("back")}
-                />
-              ))}
+              {blocks.map((block) => {
+                const siblings = siblingsOf(blocks, block)
+                const siblingIndex = siblings.findIndex((item) => item.id === block.id)
+                const rootIndex = roots.findIndex(
+                  (root) => root.id === (block.parentId ?? block.id),
+                )
+                return (
+                  <SortablePlanBlockItem
+                    key={block.id}
+                    block={block}
+                    number={Math.max(0, rootIndex) + 1}
+                    isFirst={siblingIndex <= 0}
+                    isLast={siblingIndex >= siblings.length - 1}
+                    isCurrent={block.id === currentStepId}
+                    isReordering={reorderBlocks.isPending}
+                    isStepBusy={moveStep.isPending}
+                    onEdit={() => setDialogMode({ kind: "edit", block })}
+                    onMove={(direction) => handleMove(block, direction)}
+                    onDelete={() => setBlockToDelete(block)}
+                    onAdvance={() => void moveStep.mutateAsync("advance")}
+                    onSkip={() => void moveStep.mutateAsync("skip")}
+                    onBack={() => void moveStep.mutateAsync("back")}
+                  />
+                )
+              })}
             </ol>
           </SortableContext>
         </DndContext>
