@@ -2,6 +2,8 @@ import { PrismaService } from '@/core/prisma/prisma.service';
 import {
   FocusLevel,
   MistakeLevel,
+  SleepQuality,
+  TrainingEnvironment,
   WorkoutLog,
   WorkoutStatus,
 } from '@/generated/prisma/client';
@@ -47,6 +49,8 @@ export class ActivityRepository {
     rating?: number | null;
     focus?: FocusLevel | null;
     repeatedMistakes?: MistakeLevel | null;
+    sleepQuality?: SleepQuality | null;
+    environment?: TrainingEnvironment | null;
     note?: string | null;
     videoUrl?: string | null;
     skipReason?: string | null;
@@ -63,6 +67,8 @@ export class ActivityRepository {
         rating: data.rating ?? null,
         focus: data.focus ?? null,
         repeatedMistakes: data.repeatedMistakes ?? null,
+        sleepQuality: data.sleepQuality ?? null,
+        environment: data.environment ?? null,
         note: data.note ?? null,
         ...(data.note?.trim() && {
           messages: {

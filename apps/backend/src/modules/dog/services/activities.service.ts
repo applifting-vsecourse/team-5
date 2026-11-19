@@ -49,6 +49,8 @@ export class ActivitiesService {
       rating: data.rating,
       focus: data.focus,
       repeatedMistakes: data.repeatedMistakes,
+      sleepQuality: data.sleepQuality,
+      environment: data.environment,
       note: data.note?.trim() || null,
       videoUrl: data.videoUrl?.trim() || null,
       skipReason: data.skipReason?.trim() || null,

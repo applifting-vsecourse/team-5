@@ -177,4 +177,47 @@ describe("TrainingRecordPage", () => {
     await user.click(screen.getByRole("button", { name: "👍 Díky!" }))
     expect(screen.getByLabelText("Napsat zprávu")).toHaveValue("👍 Díky!")
   })
+
+  it("shows filled sleep quality and environment context above the thread (#96)", async () => {
+    vi.mocked(api.get).mockImplementation(
+      () =>
+        ({
+          json: () =>
+            Promise.resolve({
+              ...detail,
+              sleepQuality: "POOR",
+              environment: "OUTDOORS",
+            }),
+        }) as ReturnType<typeof api.get>,
+    )
+
+    render(
+      <TrainingRecordPage
+        dogId="dog-1"
+        activityId="act-1"
+        currentUserId="t1"
+      />,
+      { wrapper: createWrapper() },
+    )
+
+    expect(await screen.findByText("Spánek")).toBeInTheDocument()
+    expect(screen.getByText("Špatně")).toBeInTheDocument()
+    expect(screen.getByText("Prostředí")).toBeInTheDocument()
+    expect(screen.getByText("Venku")).toBeInTheDocument()
+  })
+
+  it("omits sleep quality and environment labels when not provided", async () => {
+    render(
+      <TrainingRecordPage
+        dogId="dog-1"
+        activityId="act-1"
+        currentUserId="t1"
+      />,
+      { wrapper: createWrapper() },
+    )
+
+    await screen.findByRole("heading", { name: "Přivolání v parku" })
+    expect(screen.queryByText("Spánek")).not.toBeInTheDocument()
+    expect(screen.queryByText("Prostředí")).not.toBeInTheDocument()
+  })
 })

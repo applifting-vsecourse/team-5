@@ -6,11 +6,19 @@ export type FocusLevel = z.infer<typeof focusLevelSchema>
 export const mistakeLevelSchema = z.enum(["YES", "PARTIALLY", "NO"])
 export type MistakeLevel = z.infer<typeof mistakeLevelSchema>
 
+export const sleepQualitySchema = z.enum(["GOOD", "POOR"])
+export type SleepQuality = z.infer<typeof sleepQualitySchema>
+
+export const trainingEnvironmentSchema = z.enum(["HOME", "OUTDOORS", "TRAINING_GROUND"])
+export type TrainingEnvironment = z.infer<typeof trainingEnvironmentSchema>
+
 export const completeTrainingInputSchema = z.object({
   mistakeDetails: z.array(z.string().trim().min(1).max(60)).max(10).optional(),
   successRate: z.number().int().min(0).max(100).optional(),
   focus: focusLevelSchema.optional(),
   repeatedMistakes: mistakeLevelSchema.optional(),
+  sleepQuality: sleepQualitySchema.optional(),
+  environment: trainingEnvironmentSchema.optional(),
   note: z.string().max(2000).optional(),
   videoUrl: z.string().trim().url().max(500).optional(),
 })
@@ -29,6 +37,8 @@ export const completedActivitySchema = z.object({
   rating: z.number().nullable().optional(),
   focus: focusLevelSchema.nullable().optional(),
   repeatedMistakes: mistakeLevelSchema.nullable().optional(),
+  sleepQuality: sleepQualitySchema.nullable().optional(),
+  environment: trainingEnvironmentSchema.nullable().optional(),
   note: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
 })

@@ -14,10 +14,13 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { api } from "@/lib/api-client"
-import { conversationQueryOptions } from "@/lib/conversations"
+import {
+  ANSWER_LABELS,
+  conversationQueryOptions,
+  SLEEP_QUALITY_LABELS,
+  TRAINING_ENVIRONMENT_LABELS,
+} from "@/lib/conversations"
 import { dogKeys } from "@/lib/dogKeys"
-
-const ANSWER_LABELS = { YES: "Ano", PARTIALLY: "Částečně", NO: "Ne" } as const
 
 function Thread({ activityId }: { activityId: string }) {
   const client = useQueryClient()
@@ -57,6 +60,16 @@ function Thread({ activityId }: { activityId: string }) {
           {detail.data.focus && (
             <p className="text-sm">
               <strong>Soustředění:</strong> {ANSWER_LABELS[detail.data.focus]}
+            </p>
+          )}
+          {detail.data.sleepQuality && (
+            <p className="text-sm">
+              <strong>Spánek:</strong> {SLEEP_QUALITY_LABELS[detail.data.sleepQuality]}
+            </p>
+          )}
+          {detail.data.environment && (
+            <p className="text-sm">
+              <strong>Prostředí:</strong> {TRAINING_ENVIRONMENT_LABELS[detail.data.environment]}
             </p>
           )}
           {detail.data.repeatedMistakes && (

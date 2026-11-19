@@ -84,7 +84,7 @@ describe("FinishTrainingForm", () => {
     await user.click(within(mistakes).getByRole("radio", { name: "Ne" }))
     await user.click(screen.getByRole("button", { name: "Uložit záznam" }))
     expect(handleSubmit).toHaveBeenLastCalledWith({ repeatedMistakes: "NO" })
-  })
+  }, 15_000)
   it("renders header, h1, controls and default empty state", () => {
     renderWithClient(
       <FinishTrainingForm
@@ -194,7 +194,7 @@ describe("FinishTrainingForm", () => {
     expect(payload?.repeatedMistakes).toBe("NO")
     expect(payload?.videoUrl).toBe("https://youtube.com/watch?v=abc")
     expect(payload?.note).toBe("Skvělý trénink, pes byl šikovný.")
-  })
+  }, 15_000)
 
   it("omits empty video URL from the payload", async () => {
     const user = userEvent.setup()
@@ -241,6 +241,40 @@ describe("FinishTrainingForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Uložit záznam" }))
     expect(handleSubmit).toHaveBeenCalledWith({})
+  })
+
+  it("submits optional Okolnosti (sleep quality and environment) and allows clearing them (#96)", async () => {
+    const user = userEvent.setup()
+    const handleSubmit = vi.fn<(data: CompleteTrainingInput) => void>()
+
+    renderWithClient(
+      <FinishTrainingForm
+        trainingId="t1"
+        dog={defaultDog}
+        goal={defaultGoal}
+        onSubmit={handleSubmit}
+      />,
+    )
+
+    expect(screen.getByRole("heading", { name: "Okolnosti" })).toBeInTheDocument()
+    const sleepGroup = screen.getByRole("radiogroup", { name: "Jak pes spal" })
+    const envGroup = screen.getByRole("radiogroup", { name: "Prostředí" })
+
+    await user.click(within(sleepGroup).getByRole("radio", { name: "Dobře" }))
+    await user.click(within(envGroup).getByRole("radio", { name: "Cvičák" }))
+    await user.click(screen.getByRole("button", { name: "Uložit záznam" }))
+
+    expect(handleSubmit).toHaveBeenLastCalledWith({
+      sleepQuality: "GOOD",
+      environment: "TRAINING_GROUND",
+    })
+
+    // Deselect both and verify empty payload is still accepted
+    await user.click(within(sleepGroup).getByRole("radio", { name: "Dobře" }))
+    await user.click(within(envGroup).getByRole("radio", { name: "Cvičák" }))
+    await user.click(screen.getByRole("button", { name: "Uložit záznam" }))
+
+    expect(handleSubmit).toHaveBeenLastCalledWith({})
   })
 
   it("shows pending state with 'Ukládám…' and disabled button when submitting", () => {

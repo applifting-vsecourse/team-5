@@ -39,6 +39,8 @@ describe('TrainingsController', () => {
         rating: null,
         focus: 'YES',
         repeatedMistakes: 'NO',
+        sleepQuality: 'GOOD',
+        environment: 'OUTDOORS',
         note: 'Skvělý trénink',
         videoUrl: null,
         skipReason: null,
@@ -53,6 +55,8 @@ describe('TrainingsController', () => {
         successRate: 80,
         focus: 'YES',
         repeatedMistakes: 'NO',
+        sleepQuality: 'GOOD',
+        environment: 'OUTDOORS',
         note: 'Skvělý trénink',
       };
 
@@ -73,6 +77,8 @@ describe('TrainingsController', () => {
         rating: null,
         focus: 'YES',
         repeatedMistakes: 'NO',
+        sleepQuality: 'GOOD',
+        environment: 'OUTDOORS',
         note: 'Skvělý trénink',
         videoUrl: null,
         skipReason: null,

@@ -2,11 +2,20 @@ import {
   FocusLevel,
   MistakeLevel,
   ScheduledTraining,
+  SleepQuality,
   StepOutcome,
+  TrainingEnvironment,
   TrainingStatus,
 } from '@/generated/prisma/client';
 
-export type { FocusLevel, MistakeLevel, ScheduledTraining, TrainingStatus };
+export type {
+  FocusLevel,
+  MistakeLevel,
+  ScheduledTraining,
+  SleepQuality,
+  TrainingEnvironment,
+  TrainingStatus,
+};
 
 // A training as the week shows it (#72): which dog, which goal and the plan's
 // exercises in order, so a card can list them without more requests.
@@ -54,6 +63,8 @@ export type CompleteTrainingData = {
   successRate?: number;
   focus?: FocusLevel;
   repeatedMistakes?: MistakeLevel;
+  sleepQuality?: SleepQuality;
+  environment?: TrainingEnvironment;
   note?: string;
   videoUrl?: string;
 };
