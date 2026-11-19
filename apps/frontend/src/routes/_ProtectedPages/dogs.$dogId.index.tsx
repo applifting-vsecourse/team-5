@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import { HTTPError } from "ky"
 import { ChevronLeft } from "lucide-react"
 
 import { QueryState } from "@/components/QueryState"
@@ -36,9 +37,15 @@ function DogDetailPage() {
   const dogQuery = useQuery(dogDetailQueryOptions(dogId))
   const { user } = useSession()
 
-  const notFoundMessage = "Tento pes neexistuje nebo k němu nemáte přístup."
+  const isNotFound = dogQuery.error instanceof HTTPError && dogQuery.error.response.status === 404
+  const isAccessLost = user?.role === "trainer" && isNotFound
+  const notFoundMessage = isAccessLost
+    ? "K tomuto psovi už nemáte přístup"
+    : "Tento pes neexistuje nebo k němu nemáte přístup."
   const error = dogQuery.isError
-    ? (dogQuery.error ?? new Error(notFoundMessage))
+    ? isNotFound
+      ? new Error(notFoundMessage)
+      : (dogQuery.error ?? new Error(notFoundMessage))
     : !dogQuery.isLoading && !dogQuery.data
       ? new Error(notFoundMessage)
       : null
@@ -50,12 +57,14 @@ function DogDetailPage() {
         <div className="mx-auto w-full max-w-2xl px-4 py-6 md:py-8">
           <nav aria-label="Navigace zpět">
             <Link
-              to="/dogs"
+              to={user?.role === "trainer" ? "/clients" : "/dogs"}
               className="group mb-6 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-muted-foreground outline-hidden transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              aria-label="Zpět na seznam psů"
+              aria-label={
+                user?.role === "trainer" ? "Zpět na seznam klientů" : "Zpět na seznam psů"
+              }
             >
               <ChevronLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
-              <span>Psi</span>
+              <span>{user?.role === "trainer" ? "Klienti" : "Psi"}</span>
             </Link>
           </nav>
           <QueryState
@@ -63,8 +72,8 @@ function DogDetailPage() {
             error={error}
             isEmpty={false}
             empty={null}
-            onRetry={() => void dogQuery.refetch()}
-            errorTitle="Pes nebyl nalezen"
+            onRetry={isNotFound ? undefined : () => void dogQuery.refetch()}
+            errorTitle={isAccessLost ? "Přístup byl ukončen" : "Pes nebyl nalezen"}
             errorDescription={notFoundMessage}
           >
             {null}
