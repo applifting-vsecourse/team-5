@@ -255,16 +255,13 @@ describe("TrainerOverview", () => {
   it("switches the panel dog when the client has more than one dog", async () => {
     const user = userEvent.setup()
     const baryk = { id: "d-2", name: "Baryk", color: 3 }
+    const firstRow = overview.activityMatrix.rows[0]
+    if (!firstRow) throw new Error("expected activity matrix row")
     const multiDogOverview: TrainerDashboard = {
       ...overview,
       activityMatrix: {
         days: overview.activityMatrix.days,
-        rows: [
-          {
-            ...overview.activityMatrix.rows[0],
-            dogs: [dog, baryk],
-          },
-        ],
+        rows: [{ ...firstRow, dogs: [dog, baryk] }],
       },
     }
     respond({
