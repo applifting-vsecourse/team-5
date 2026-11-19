@@ -97,6 +97,29 @@ const emptyHistory = {
   },
 }
 
+const emptyOverview = {
+  metrics: {
+    activeClients: 0,
+    newClientsThisMonth: 0,
+    completedThisWeek: 0,
+    weeklySessionChange: 0,
+    successRate: null,
+    weeklyRateChange: null,
+    unreadNotes: 0,
+  },
+  clients: [],
+  attention: [] as {
+    id: string
+    kind: "reply" | "inactive" | "low-success"
+    dog: { id: string; name: string; color: number }
+    client: { id: string; name: string }
+    label: string
+    activityId: string | null
+    goalId: string | null
+  }[],
+  activityMatrix: { days: [] as string[], rows: [] },
+}
+
 function respond(routes: Record<string, () => Promise<unknown>>) {
   vi.mocked(api.get).mockImplementation((url: unknown) => {
     const path = String(url)
@@ -124,15 +147,8 @@ describe("ClientDetailView", () => {
     respond({
       "overview/trainer": () =>
         Promise.resolve({
-          metrics: {
-            activeClients: 1,
-            newClientsThisMonth: 0,
-            completedThisWeek: 0,
-            weeklySessionChange: 0,
-            successRate: null,
-            weeklyRateChange: null,
-          },
-          clients: [],
+          ...emptyOverview,
+          metrics: { ...emptyOverview.metrics, activeClients: 1, unreadNotes: 1 },
           attention: [
             {
               id: "att-1",
@@ -220,6 +236,7 @@ describe("ClientDetailView", () => {
 
   it("renders empty state when client shares no dogs", () => {
     respond({
+<<<<<<< HEAD
       "overview/trainer": () =>
         Promise.resolve({
           metrics: {
@@ -234,6 +251,9 @@ describe("ClientDetailView", () => {
           attention: [],
         }),
       "clients/c-123/notes": () => Promise.resolve([]),
+=======
+      "overview/trainer": () => Promise.resolve(emptyOverview),
+>>>>>>> 8f2d345 (fix(desktop): align ClientDetailView overview mock with schema (Refs #174))
       history: () => Promise.resolve(emptyHistory),
     })
     const clientWithoutDogs: Client = {
