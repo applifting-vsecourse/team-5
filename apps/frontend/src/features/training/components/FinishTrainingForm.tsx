@@ -74,7 +74,7 @@ export function FinishTrainingForm({
     if (submissionLock.current || isPending) return
     const trimmedVideoUrl = videoUrl.trim()
     if (trimmedVideoUrl) {
-      let isValidVideoUrl = false
+      let isValidVideoUrl: boolean
       try {
         const parsed = new URL(trimmedVideoUrl)
         isValidVideoUrl = parsed.protocol === "http:" || parsed.protocol === "https:"
