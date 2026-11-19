@@ -78,7 +78,6 @@ const mount = (
   options: {
     session?: TrainingSession
     sessions?: TrainingSession[]
-    canMoveStep?: boolean
     currentStepId?: string | null
   } = {},
 ) => {
@@ -97,7 +96,6 @@ const mount = (
         dog={dog}
         goal={goal}
         isReadOnly={isReadOnly}
-        canMoveStep={options.canMoveStep}
         currentStepId={options.currentStepId}
         onBack={vi.fn()}
       />
@@ -193,41 +191,31 @@ describe("training editor", () => {
     expect(screen.getByRole("button", { name: "Naplánovat" })).toBeDisabled()
     expect(screen.getByRole("button", { name: "Náhled" })).toBeEnabled()
   })
-  it("marks the current step and moves it via current-step API", async () => {
-    const user = userEvent.setup()
-    vi.mocked(api.post).mockImplementation(
-      () =>
-        ({
-          json: () => Promise.resolve({ id: "goal-1", dogId: "dog-1", currentStepId: "s3" }),
-        }) as ReturnType<typeof api.post>,
-    )
+  it("marks the current and mastered steps without showing walkthrough move controls", () => {
     const withSteps: TrainingSession = {
       ...session,
       steps: [aStep("s1", "Kontakt", "MASTERED"), aStep("s2", "Volně")],
     }
     mount(false, {
       session: withSteps,
-      canMoveStep: true,
       currentStepId: "s2",
     })
     expect(screen.getByText("Aktuální")).toBeInTheDocument()
     expect(screen.getByText("Zvládnuto")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Zvládnuto, další krok" })).toBeEnabled()
-    await user.click(screen.getByRole("button", { name: "Zvládnuto, další krok" }))
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith("goals/goal-1/current-step/advance"))
+    expect(screen.queryByRole("button", { name: "Zvládnuto, další krok" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Přeskočit" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Zpět o krok" })).not.toBeInTheDocument()
   })
-  it("hides move actions when the session does not hold the current step", () => {
+  it("hides the current step badge when the session does not hold the current step", () => {
     const withSteps: TrainingSession = {
       ...session,
       steps: [aStep("s1", "Kontakt"), aStep("s2", "Volně")],
     }
     mount(false, {
       session: withSteps,
-      canMoveStep: true,
       currentStepId: "other-training-step",
     })
     expect(screen.queryByText("Aktuální")).not.toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: "Zvládnuto, další krok" })).not.toBeInTheDocument()
   })
   it("opens scheduling when a request arrives without remounting the editor", async () => {
     const user = userEvent.setup()
@@ -254,5 +242,32 @@ describe("training editor", () => {
     expect(handled).toHaveBeenCalledOnce()
     rerender(view(false))
     expect(screen.queryByRole("button", { name: "Zavřít plánování" })).not.toBeInTheDocument()
+  })
+  it("notifies plan save and offers return to the training record", async () => {
+    const user = userEvent.setup()
+    const client = new QueryClient()
+    const onPlanSaved = vi.fn()
+    const onReturnToRecord = vi.fn()
+    const view = (hasSaved: boolean) => (
+      <QueryClientProvider client={client}>
+        <SessionEditor
+          session={session}
+          sessions={[session]}
+          dog={dog}
+          goal={goal}
+          isReadOnly={false}
+          onBack={vi.fn()}
+          hasSavedPlanChanges={hasSaved}
+          onPlanSaved={onPlanSaved}
+          onReturnToRecord={onReturnToRecord}
+        />
+      </QueryClientProvider>
+    )
+    const { rerender } = render(view(false))
+    await user.click(screen.getByRole("button", { name: "Pauza" }))
+    await waitFor(() => expect(onPlanSaved).toHaveBeenCalledOnce())
+    rerender(view(true))
+    await user.click(screen.getByRole("button", { name: "Hotovo, zpět na záznam" }))
+    expect(onReturnToRecord).toHaveBeenCalledOnce()
   })
 })

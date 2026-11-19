@@ -11,7 +11,12 @@ export const TRAINING_ENVIRONMENT_LABELS = {
   TRAINING_GROUND: "Cvičák",
 } as const
 
-const dog = z.object({ id: z.string(), name: z.string(), color: z.number() })
+const dog = z.object({
+  id: z.string(),
+  name: z.string(),
+  color: z.number(),
+  ownerId: z.string().optional(),
+})
 const message = z.object({
   id: z.string(),
   workoutLogId: z.string(),
@@ -29,6 +34,7 @@ const conversationDetail = z.object({
   id: z.string(),
   title: z.string(),
   dog,
+  goalId: z.string().nullable().optional(),
   completedAt: z.coerce.date(),
   successRate: z.number().nullable(),
   note: z.string().nullable(),

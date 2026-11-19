@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import { toast } from "sonner"
 
 import { DesignIcon } from "@/components/DesignIcon"
+import { EditorIcon } from "@/components/EditorIcon"
 import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -63,7 +65,13 @@ function SuccessRing({ rate }: { rate: number | null }) {
   )
 }
 
-function RecordSummary({ detail }: { detail: ConversationDetail }) {
+function RecordSummary({
+  detail,
+  canEditPlan,
+}: {
+  detail: ConversationDetail
+  canEditPlan: boolean
+}) {
   const mistakes = detail.mistakeDetails?.length ? detail.mistakeDetails.join(", ") : null
   const hasContext = Boolean(
     detail.focus ?? detail.sleepQuality ?? detail.environment ?? detail.repeatedMistakes,
@@ -141,6 +149,24 @@ function RecordSummary({ detail }: { detail: ConversationDetail }) {
           <DesignIcon name="record-Link" />
           {detail.videoUrl.replace(/^https?:\/\//, "")}
         </a>
+      )}
+      {canEditPlan && detail.goalId && (
+        <div className="pt-1">
+          <Button
+            asChild
+            variant="outline"
+            className="min-h-touch w-full font-bold sm:w-auto"
+          >
+            <Link
+              to="/dogs/$dogId/goals/$goalId"
+              params={{ dogId: detail.dog.id, goalId: detail.goalId }}
+              search={{ zaznam: detail.id }}
+            >
+              <EditorIcon name="Edit" />
+              Upravit plán
+            </Link>
+          </Button>
+        </div>
       )}
     </section>
   )
@@ -284,6 +310,12 @@ export function TrainingRecordPage({
   const recordDogId = detail.data?.dog.id
   const hasDogMismatch = Boolean(recordDogId && recordDogId !== dogId)
   const backDogId = recordDogId ?? dogId
+  const canEditPlan = Boolean(
+    detail.data?.goalId &&
+    currentUserId &&
+    detail.data.dog.ownerId &&
+    detail.data.dog.ownerId !== currentUserId,
+  )
 
   const handleBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -328,7 +360,10 @@ export function TrainingRecordPage({
       >
         {detail.data && !hasDogMismatch && (
           <>
-            <RecordSummary detail={detail.data} />
+            <RecordSummary
+              detail={detail.data}
+              canEditPlan={canEditPlan}
+            />
             <ThreadComposer
               activityId={activityId}
               currentUserId={currentUserId}
