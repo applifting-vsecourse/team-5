@@ -61,6 +61,8 @@ export class ConversationService {
       mistakeDetails: row.mistakeDetails,
       focus: row.focus,
       repeatedMistakes: row.repeatedMistakes,
+      sleepQuality: row.sleepQuality,
+      environment: row.environment,
       status: row.status,
       goal: row.training
         ? {

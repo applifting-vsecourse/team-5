@@ -6,6 +6,7 @@ import { getISOWeek, parseISO } from "date-fns"
 import { ConfirmDestructiveDialog } from "@/components/ConfirmDestructiveDialog"
 import { DesignIcon } from "@/components/DesignIcon"
 import { dogTextClass } from "@/components/DogPlayerCard"
+import { EndCollaborationButton } from "@/components/EndCollaborationButton"
 import { PesAvatar } from "@/components/PesAvatar"
 import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
@@ -469,6 +470,28 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
             </span>
             <DesignIcon name="profile-ChevR" />
           </Link>
+        )}
+        {isOwner && Boolean(dog.trainers?.length) && (
+          <section
+            className="space-y-3"
+            aria-label="Sdílení s trenéry"
+          >
+            <h2 className="text-section font-extrabold">Trenéři</h2>
+            {dog.trainers?.map((trainer) => (
+              <div
+                key={trainer.id}
+                className="flex flex-wrap items-center justify-between gap-3"
+              >
+                <span className="font-semibold">{trainer.name}</span>
+                <EndCollaborationButton
+                  dogId={dog.id}
+                  dogName={dog.name}
+                  trainerId={trainer.id}
+                  trainerName={trainer.name}
+                />
+              </div>
+            ))}
+          </section>
         )}
         {isOwner && !dog.isArchived && (
           <ConfirmDestructiveDialog

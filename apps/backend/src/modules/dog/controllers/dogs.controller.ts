@@ -48,6 +48,21 @@ import { UpdateDogDto } from './dto/update-dog.dto';
 export class DogsController {
   constructor(private readonly dogsService: DogsService) {}
 
+  @Delete(':id/trainers/:trainerId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'End sharing this dog with a trainer (#61)' })
+  @ApiResponse({
+    status: 204,
+    description: 'Sharing ended; dog data preserved',
+  })
+  async endSharing(
+    @User() user: Identity,
+    @Param('id') id: string,
+    @Param('trainerId') trainerId: string,
+  ): Promise<void> {
+    await this.dogsService.endSharing(user, id, trainerId);
+  }
+
   @Get()
   @ApiOperation({ summary: 'List dogs of authenticated user' })
   @ApiQuery({

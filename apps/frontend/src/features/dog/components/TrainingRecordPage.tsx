@@ -9,12 +9,17 @@ import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { api } from "@/lib/api-client"
-import { conversationQueryOptions, type ConversationDetail } from "@/lib/conversations"
+import {
+  ANSWER_LABELS,
+  conversationQueryOptions,
+  SLEEP_QUALITY_LABELS,
+  TRAINING_ENVIRONMENT_LABELS,
+  type ConversationDetail,
+} from "@/lib/conversations"
 import { dogColorClass } from "@/lib/dogColors"
 import { dogKeys } from "@/lib/dogKeys"
 import { cn } from "@/lib/utils"
 
-const ANSWER_LABELS = { YES: "Ano", PARTIALLY: "Částečně", NO: "Ne" } as const
 const QUICK_REPLIES = ["👍 Díky!", "Zkusíme zítra", "Mám otázku"] as const
 
 function SuccessRing({ rate }: { rate: number | null }) {
@@ -68,6 +73,9 @@ function RecordSummary({
   canEditPlan: boolean
 }) {
   const mistakes = detail.mistakeDetails?.length ? detail.mistakeDetails.join(", ") : null
+  const hasContext = Boolean(
+    detail.focus ?? detail.sleepQuality ?? detail.environment ?? detail.repeatedMistakes,
+  )
   return (
     <section
       aria-labelledby="record-title"
@@ -98,23 +106,39 @@ function RecordSummary({
           </div>
         </div>
       </div>
-      <dl className="grid grid-cols-2 gap-3">
-        {detail.focus && (
-          <div className="min-w-0">
-            <dt className="text-xs font-medium text-muted-foreground">Soustředění</dt>
-            <dd className="text-sm font-bold">{ANSWER_LABELS[detail.focus]}</dd>
-          </div>
-        )}
-        {detail.repeatedMistakes && (
-          <div className="min-w-0">
-            <dt className="text-xs font-medium text-muted-foreground">Opakoval chyby</dt>
-            <dd className="text-sm font-bold">
-              {ANSWER_LABELS[detail.repeatedMistakes]}
-              {mistakes ? ` · ${mistakes}` : ""}
-            </dd>
-          </div>
-        )}
-      </dl>
+      {hasContext && (
+        <dl className="grid grid-cols-2 gap-3">
+          {detail.focus && (
+            <div className="min-w-0">
+              <dt className="text-xs font-medium text-muted-foreground">Soustředění</dt>
+              <dd className="text-sm font-bold">{ANSWER_LABELS[detail.focus]}</dd>
+            </div>
+          )}
+          {detail.sleepQuality && (
+            <div className="min-w-0">
+              <dt className="text-xs font-medium text-muted-foreground">Spánek</dt>
+              <dd className="text-sm font-bold">{SLEEP_QUALITY_LABELS[detail.sleepQuality]}</dd>
+            </div>
+          )}
+          {detail.environment && (
+            <div className="min-w-0">
+              <dt className="text-xs font-medium text-muted-foreground">Prostředí</dt>
+              <dd className="text-sm font-bold">
+                {TRAINING_ENVIRONMENT_LABELS[detail.environment]}
+              </dd>
+            </div>
+          )}
+          {detail.repeatedMistakes && (
+            <div className="min-w-0">
+              <dt className="text-xs font-medium text-muted-foreground">Opakoval chyby</dt>
+              <dd className="text-sm font-bold">
+                {ANSWER_LABELS[detail.repeatedMistakes]}
+                {mistakes ? ` · ${mistakes}` : ""}
+              </dd>
+            </div>
+          )}
+        </dl>
+      )}
       {detail.videoUrl?.startsWith("https://") && (
         <a
           href={detail.videoUrl}

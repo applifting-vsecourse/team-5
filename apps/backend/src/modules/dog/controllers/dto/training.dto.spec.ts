@@ -59,4 +59,16 @@ describe('CompleteTrainingDto', () => {
       errorsFor({ videoUrl: `https://example.com/${'a'.repeat(500)}` }),
     ).resolves.toEqual(['videoUrl']);
   });
+
+  it('validates optional sleep quality and environment context fields (#96)', async () => {
+    await expect(
+      errorsFor({ sleepQuality: 'GOOD', environment: 'TRAINING_GROUND' }),
+    ).resolves.toEqual([]);
+    await expect(errorsFor({ sleepQuality: 'EXCELLENT' })).resolves.toEqual([
+      'sleepQuality',
+    ]);
+    await expect(errorsFor({ environment: 'BEACH' })).resolves.toEqual([
+      'environment',
+    ]);
+  });
 });

@@ -158,6 +158,21 @@ enum MistakeLevel {
   @@map("mistake_level")
 }
 
+enum SleepQuality {
+  GOOD
+  POOR
+
+  @@map("sleep_quality")
+}
+
+enum TrainingEnvironment {
+  HOME
+  OUTDOORS
+  TRAINING_GROUND
+
+  @@map("training_environment")
+}
+
 model TrainingGoal {
   id               String              @id @default(cuid())
   dogId            String
@@ -271,6 +286,8 @@ model WorkoutLog {
   rating              Int?
   focus               FocusLevel?
   repeatedMistakes    MistakeLevel?
+  sleepQuality        SleepQuality?
+  environment         TrainingEnvironment?
   note                String?            @db.Text
   videoUrl            String?            @db.VarChar(500)
   messages            TrainingMessage[]

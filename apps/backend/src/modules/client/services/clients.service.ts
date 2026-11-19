@@ -39,6 +39,12 @@ export class ClientsService {
     return this.clientRepository.getClientsByTrainerId(trainer.id);
   }
 
+  async endCollaboration(clientId: string, trainer: Identity): Promise<void> {
+    if (!(await this.clientRepository.endCollaboration(clientId, trainer.id))) {
+      throw new NotFoundException('Client not found');
+    }
+  }
+
   async getClientById(clientId: string, trainer: Identity): Promise<Client> {
     const client = await this.clientRepository.getClientById(
       clientId,
