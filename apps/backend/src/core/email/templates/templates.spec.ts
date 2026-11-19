@@ -1,6 +1,10 @@
 import { EMAIL_THEME, EmailLayout } from './components/email-layout';
 import { InviteClient } from './invite-client';
 import { ResetPassword } from './reset-password';
+import {
+  getTrainingNotificationSubject,
+  TrainingNotification,
+} from './training-notification';
 import { VerifyEmail } from './verify-email';
 
 describe('Email templates', () => {
@@ -95,5 +99,73 @@ describe('Email templates', () => {
     expect(tree).toContain('#c2410c');
     expect(tree).toContain('#1c2628');
     expect(tree).toContain('#e6dfd3');
+  });
+
+  it('instantiates TrainingNotification template for a single trainer reply', () => {
+    const items = [
+      {
+        kind: 'TRAINER_REPLY' as const,
+        actorName: 'Veronika Trenérka',
+        text: 'Skvělý posun v přivolání!',
+      },
+    ];
+    const element = TrainingNotification({
+      recipientName: 'Jan Novák',
+      dogName: 'Rex',
+      trainingTitle: 'Přivolání v parku',
+      recordUrl: 'https://trainloop.app/dogs/dog-1/activities/log-1',
+      accountUrl: 'https://trainloop.app/account',
+      items,
+    });
+
+    const tree = JSON.stringify(element);
+    expect(tree).toContain('Nová odpověď od trenéra');
+    expect(tree).toContain('Veronika Trenérka');
+    expect(tree).toContain('Přivolání v parku');
+    expect(tree).toContain('Rex');
+    expect(tree).toContain('Skvělý posun v přivolání!');
+    expect(tree).toContain(
+      'https://trainloop.app/dogs/dog-1/activities/log-1',
+    );
+    expect(tree).toContain('https://trainloop.app/account');
+    expect(tree).toContain('Otevřít záznam tréninku');
+    expect(tree).toContain('#c2410c');
+    expect(tree).toContain('#f2eee5');
+    expect(tree).toContain('#e6dfd3');
+    expect(
+      getTrainingNotificationSubject('Rex', 'Přivolání v parku', items),
+    ).toBe('Nová odpověď od trenéra – Rex: Přivolání v parku');
+  });
+
+  it('instantiates TrainingNotification template as a summary digest for multiple items', () => {
+    const items = [
+      {
+        kind: 'CLIENT_MESSAGE' as const,
+        actorName: 'Jan Novák',
+        text: 'První dotaz k videu',
+      },
+      {
+        kind: 'CLIENT_MESSAGE' as const,
+        actorName: 'Jan Novák',
+        text: 'Ještě doplňuji kontext',
+      },
+    ];
+    const element = TrainingNotification({
+      recipientName: 'Veronika Trenérka',
+      dogName: 'Rex',
+      trainingTitle: 'Přivolání v parku',
+      recordUrl: 'https://trainloop.app/dogs/dog-1/activities/log-1',
+      accountUrl: 'https://trainloop.app/account',
+      items,
+    });
+
+    const tree = JSON.stringify(element);
+    expect(tree).toContain('Shrnutí nových zpráv k tréninku');
+    expect(tree).toContain('2 nové zprávy');
+    expect(tree).toContain('První dotaz k videu');
+    expect(tree).toContain('Ještě doplňuji kontext');
+    expect(
+      getTrainingNotificationSubject('Rex', 'Přivolání v parku', items),
+    ).toBe('Shrnutí zpráv k tréninku (2) – Rex: Přivolání v parku');
   });
 });

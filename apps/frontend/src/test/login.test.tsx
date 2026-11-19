@@ -320,7 +320,13 @@ describe("login and logout", () => {
     },
   )
 
-  it.each(["/dogs?view=all#notes", "/clients", "/week", "/account"])(
+  it.each([
+    "/dogs?view=all#notes",
+    "/dogs/dog-1/activities/log-1",
+    "/clients",
+    "/week",
+    "/account",
+  ])(
     "returns to the original protected destination %s after login",
     async (destination) => {
       const { interaction, router } = await openPage(destination)

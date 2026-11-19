@@ -30,10 +30,23 @@ vi.mock("@/lib/api-client", () => ({
 
 const mockMutate = vi.fn()
 const mockNavigate = vi.fn()
-let mockUser: { name: string; email: string; role?: string } | null = {
+const mockUpdateUser = vi.fn()
+let mockUser: {
+  name: string
+  email: string
+  role?: string
+  emailNotificationsEnabled?: boolean
+} | null = {
   name: "Jan Novák",
   email: "jan.novak@example.com",
+  emailNotificationsEnabled: true,
 }
+
+vi.mock("@/features/auth/lib/auth-client", () => ({
+  authClient: {
+    updateUser: (...args: unknown[]) => mockUpdateUser(...args) as unknown,
+  },
+}))
 
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => () => ({}),
@@ -65,15 +78,18 @@ vi.mock("@/features/auth/hooks/useSignOut", () => ({
 vi.mock("sonner", () => ({
   toast: {
     error: vi.fn(),
+    success: vi.fn(),
   },
 }))
 
 describe("AccountPage", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockUpdateUser.mockResolvedValue({ data: { status: true }, error: null })
     mockUser = {
       name: "Jan Novák",
       email: "jan.novak@example.com",
+      emailNotificationsEnabled: true,
     }
   })
 
@@ -175,5 +191,17 @@ describe("AccountPage", () => {
     render(<AccountPage />)
 
     expect(screen.queryByRole("button", { name: /mám kód od trenéra/i })).not.toBeInTheDocument()
+  })
+
+  it("allows disabling e-mail notifications from Account", async () => {
+    const user = userEvent.setup()
+    render(<AccountPage />)
+
+    const toggle = screen.getByRole("checkbox", { name: /e-mailová upozornění/i })
+    expect(toggle).toBeChecked()
+
+    await user.click(toggle)
+
+    expect(mockUpdateUser).toHaveBeenCalledWith({ emailNotificationsEnabled: false })
   })
 })

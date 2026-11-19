@@ -1,14 +1,16 @@
 import { presentTrainingMessage } from '@/modules/dog/domain/training-message';
 import { ConversationRepository } from '@/modules/dog/repositories/conversation.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
+import { TrainingNotificationService } from '@/modules/dog/services/training-notification.service';
 import { Identity } from '@/shared/auth/domain/identity';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 
 @Injectable()
 export class ConversationService {
   constructor(
     private readonly repository: ConversationRepository,
     private readonly access: DogAccessService,
+    @Optional() private readonly notifications?: TrainingNotificationService,
   ) {}
 
   async updates(user: Identity) {
@@ -80,8 +82,11 @@ export class ConversationService {
 
   async reply(user: Identity, id: string, text: string) {
     await this.record(user, id);
-    return presentTrainingMessage(
-      await this.repository.reply(id, user.id, text.trim()),
+    const trimmed = text.trim();
+    const message = presentTrainingMessage(
+      await this.repository.reply(id, user.id, trimmed),
     );
+    await this.notifications?.notifyMessage(id, user.id, trimmed);
+    return message;
   }
 }
