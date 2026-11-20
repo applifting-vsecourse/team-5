@@ -9,8 +9,14 @@ import { Seo } from "@/components/Seo"
 
 import { authSessionQueryOptions } from "@/features/auth/api/authSessionQueryOptions"
 import { SignUpForm } from "@/features/auth/components/SignUpForm"
+import { GoogleSignInError, useGoogleSignIn } from "@/features/auth/hooks/useGoogleSignIn"
 import { useSignUp, type SignUpInput } from "@/features/auth/hooks/useSignUp"
 import { accountHome } from "@/features/auth/lib/account-home"
+import {
+  buildAuthCallbackUrl,
+  OAUTH_FAILED_MESSAGE,
+  oauthErrorMessage,
+} from "@/features/auth/lib/oauth-error"
 import { RegistrationError, registrationError } from "@/features/auth/lib/registration-errors"
 
 export const Route = createFileRoute("/signup")({
@@ -18,23 +24,37 @@ export const Route = createFileRoute("/signup")({
   validateSearch: z.object({
     code: z.string().optional(),
     email: z.string().optional(),
+    error: z.string().optional(),
   }),
-  loader: async ({ context }) => {
+  loaderDeps: ({ search }) => ({ code: search.code }),
+  loader: async ({ context, deps }) => {
     const session = await context.queryClient.ensureQueryData(authSessionQueryOptions())
     if (!session) return
+    if (deps.code) {
+      throw redirect({ to: ROUTES.invite, search: { code: deps.code } })
+    }
     throw redirect({ to: accountHome(session.user) })
   },
 })
 
 function SignUpPage() {
-  const { code, email } = Route.useSearch()
+  const { code, email, error: searchError } = Route.useSearch()
   const navigate = useNavigate()
   const signUp = useSignUp()
+  const googleSignIn = useGoogleSignIn()
   const queryClient = useQueryClient()
   const [error, setError] = useState<RegistrationError | null>(null)
+  const [dismissedSearchError, setDismissedSearchError] = useState<string | undefined>(undefined)
+
+  const displayedError =
+    error ??
+    (searchError && dismissedSearchError !== searchError
+      ? new RegistrationError(oauthErrorMessage(searchError))
+      : null)
 
   const handleSubmit = async (values: SignUpInput) => {
     setError(null)
+    setDismissedSearchError(searchError)
     try {
       await signUp.mutateAsync(values)
       const session = await queryClient.ensureQueryData(authSessionQueryOptions())
@@ -48,6 +68,24 @@ function SignUpPage() {
       await navigate({ to: accountHome(session.user) })
     } catch (error) {
       setError(error instanceof RegistrationError ? error : registrationError())
+    }
+  }
+
+  const handleGoogleSignIn = async (isTrainer: boolean) => {
+    setError(null)
+    setDismissedSearchError(searchError)
+    try {
+      await googleSignIn.mutateAsync({
+        callbackURL: buildAuthCallbackUrl(ROUTES.signup, { code }),
+        errorCallbackURL: buildAuthCallbackUrl(ROUTES.signup, { code, email }),
+        isTrainer: code ? false : isTrainer,
+      })
+    } catch (error) {
+      setError(
+        new RegistrationError(
+          error instanceof GoogleSignInError ? error.message : OAUTH_FAILED_MESSAGE,
+        ),
+      )
     }
   }
 
@@ -77,11 +115,12 @@ function SignUpPage() {
       >
         <SignUpForm
           isLoading={signUp.isPending}
-          error={error}
+          isGoogleLoading={googleSignIn.isPending}
+          error={displayedError}
           defaultEmail={email}
           isInvitation={Boolean(code)}
-
           onSubmit={handleSubmit}
+          onGoogleSignIn={handleGoogleSignIn}
         />
       </AuthLayout>
     </>

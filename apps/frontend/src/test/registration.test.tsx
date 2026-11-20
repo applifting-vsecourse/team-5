@@ -11,6 +11,7 @@ const auth = vi.hoisted(() => ({
   signUp: vi.fn(),
   getSession: vi.fn(),
   signIn: vi.fn(),
+  signInSocial: vi.fn(),
   signOut: vi.fn(),
 }))
 const dogApi = vi.hoisted(() => ({ get: vi.fn() }))
@@ -19,7 +20,7 @@ vi.mock("@/features/auth/lib/auth-client", () => ({
   authClient: {
     signUp: { email: auth.signUp },
     getSession: auth.getSession,
-    signIn: { email: auth.signIn },
+    signIn: { email: auth.signIn, social: auth.signInSocial },
     signOut: auth.signOut,
   },
 }))
@@ -398,5 +399,27 @@ describe("trainer registration", () => {
     await waitFor(() => expect(router.state.location.pathname).toBe("/login"))
     expect(screen.queryByRole("navigation", { name: "Spodní navigace" })).not.toBeInTheDocument()
     expect(screen.queryByText("Pozvěte prvního klienta")).not.toBeInTheDocument()
+  })
+
+  it("starts Google OAuth from registration with the selected trainer role", async () => {
+    auth.signInSocial.mockResolvedValue({ data: { redirect: true, url: "https://accounts.google.com/o/oauth2/v2/auth" }, error: null })
+    const { interaction } = await openPage()
+    await interaction.click(await screen.findByRole("radio", { name: "Trenér" }))
+    await interaction.click(screen.getByRole("button", { name: "Pokračovat přes Google" }))
+
+    await waitFor(() => expect(auth.signInSocial).toHaveBeenCalledTimes(1))
+    expect(auth.signInSocial).toHaveBeenCalledWith({
+      provider: "google",
+      callbackURL: `${window.location.origin}/signup`,
+      errorCallbackURL: `${window.location.origin}/signup`,
+      additionalData: { isTrainer: true },
+    })
+  })
+
+  it("shows a readable message on signup when Google OAuth is cancelled", async () => {
+    await openPage("/signup?error=access_denied")
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Přihlášení přes Google bylo zrušeno.",
+    )
   })
 })
