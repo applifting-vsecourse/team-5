@@ -467,7 +467,10 @@ describe("login and logout", () => {
   })
 
   it("starts Google OAuth from the login page preserving redirect parameters", async () => {
-    auth.signInSocial.mockResolvedValue({ data: { redirect: true, url: "https://accounts.google.com/o/oauth2/v2/auth" }, error: null })
+    auth.signInSocial.mockResolvedValue({
+      data: { redirect: true, url: "https://accounts.google.com/o/oauth2/v2/auth" },
+      error: null,
+    })
     const { interaction } = await openPage("/login?code=EXIST1")
     await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
     await interaction.click(screen.getByRole("button", { name: "Pokračovat přes Google" }))

@@ -402,7 +402,10 @@ describe("trainer registration", () => {
   })
 
   it("starts Google OAuth from registration with the selected trainer role", async () => {
-    auth.signInSocial.mockResolvedValue({ data: { redirect: true, url: "https://accounts.google.com/o/oauth2/v2/auth" }, error: null })
+    auth.signInSocial.mockResolvedValue({
+      data: { redirect: true, url: "https://accounts.google.com/o/oauth2/v2/auth" },
+      error: null,
+    })
     const { interaction } = await openPage()
     await interaction.click(await screen.findByRole("radio", { name: "Trenér" }))
     await interaction.click(screen.getByRole("button", { name: "Pokračovat přes Google" }))
