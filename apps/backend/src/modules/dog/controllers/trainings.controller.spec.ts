@@ -97,6 +97,7 @@ describe('TrainingsController', () => {
       createdById: 'u1',
       date: new Date('2026-10-22T00:00:00.000Z'),
       status,
+      reminderSentForDate: null,
       createdAt: new Date('2026-10-20T10:00:00Z'),
       updatedAt: new Date('2026-10-22T10:00:00Z'),
     });

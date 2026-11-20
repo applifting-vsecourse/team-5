@@ -30,10 +30,23 @@ vi.mock("@/lib/api-client", () => ({
 
 const mockMutate = vi.fn()
 const mockNavigate = vi.fn()
-let mockUser: { name: string; email: string; role?: string } | null = {
+const mockUpdateUser = vi.fn()
+let mockUser: {
+  name: string
+  email: string
+  role?: string
+  trainingRemindersEnabled?: boolean
+} | null = {
   name: "Jan Novák",
   email: "jan.novak@example.com",
+  trainingRemindersEnabled: true,
 }
+
+vi.mock("@/features/auth/lib/auth-client", () => ({
+  authClient: {
+    updateUser: (...args: unknown[]) => mockUpdateUser(...args) as unknown,
+  },
+}))
 
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => () => ({}),
@@ -65,6 +78,7 @@ vi.mock("@/features/auth/hooks/useSignOut", () => ({
 vi.mock("sonner", () => ({
   toast: {
     error: vi.fn(),
+    success: vi.fn(),
   },
 }))
 
@@ -175,5 +189,27 @@ describe("AccountPage", () => {
     render(<AccountPage />)
 
     expect(screen.queryByRole("button", { name: /mám kód od trenéra/i })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("switch", { name: /ranní připomínky tréninků/i }),
+    ).not.toBeInTheDocument()
+  })
+
+  it("toggles morning training reminders preference for handlers", async () => {
+    const user = userEvent.setup()
+    mockUpdateUser.mockResolvedValue({ data: { status: true }, error: null })
+    mockUser = {
+      name: "Jan Psovod",
+      email: "psovod@example.com",
+      role: "user",
+      trainingRemindersEnabled: true,
+    }
+    render(<AccountPage />)
+
+    const toggle = screen.getByRole("switch", { name: /ranní připomínky tréninků/i })
+    expect(toggle).toHaveAttribute("aria-checked", "true")
+
+    await user.click(toggle)
+
+    expect(mockUpdateUser).toHaveBeenCalledWith({ trainingRemindersEnabled: false })
   })
 })

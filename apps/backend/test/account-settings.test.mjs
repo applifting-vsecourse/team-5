@@ -69,6 +69,28 @@ test('profile changes validate names, trim them and cannot change a server-owned
   );
   assert.equal(database.user[0].name, 'Jana Nová');
   assert.equal(database.user[0].role, 'user');
+  assert.equal(database.user[0].trainingRemindersEnabled, true);
+});
+
+test('training reminders preference defaults to true, toggles via update-user, and rejects non-booleans', async () => {
+  const { database, post } = await setup();
+  assert.equal(database.user[0].trainingRemindersEnabled, true);
+
+  assert.equal(
+    (await post('update-user', { trainingRemindersEnabled: 'yes' })).status,
+    400,
+  );
+  assert.equal(
+    (await post('update-user', { trainingRemindersEnabled: false })).status,
+    200,
+  );
+  assert.equal(database.user[0].trainingRemindersEnabled, false);
+
+  assert.equal(
+    (await post('update-user', { trainingRemindersEnabled: true })).status,
+    200,
+  );
+  assert.equal(database.user[0].trainingRemindersEnabled, true);
 });
 
 test('changing email requires confirmation at the new address and preserves the current login until confirmed', async () => {

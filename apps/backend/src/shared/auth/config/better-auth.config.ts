@@ -81,19 +81,31 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
         }
         return;
       }
-      if (ctx.path === '/update-user' && ctx.body?.name !== undefined) {
-        const name = ctx.body.name;
+      if (ctx.path === '/update-user') {
         if (
-          typeof name !== 'string' ||
-          !name.trim() ||
-          name.trim().length > 100
+          ctx.body?.trainingRemindersEnabled !== undefined &&
+          typeof ctx.body.trainingRemindersEnabled !== 'boolean'
         ) {
           throw new APIError('BAD_REQUEST', {
-            code: 'INVALID_NAME',
-            message: 'Jméno musí mít 1 až 100 znaků.',
+            code: 'INVALID_TRAINING_REMINDERS',
+            message:
+              'Nastavení připomínek tréninků musí být pravda nebo nepravda.',
           });
         }
-        return { context: { body: { ...ctx.body, name: name.trim() } } };
+        if (ctx.body?.name !== undefined) {
+          const name = ctx.body.name;
+          if (
+            typeof name !== 'string' ||
+            !name.trim() ||
+            name.trim().length > 100
+          ) {
+            throw new APIError('BAD_REQUEST', {
+              code: 'INVALID_NAME',
+              message: 'Jméno musí mít 1 až 100 znaků.',
+            });
+          }
+          return { context: { body: { ...ctx.body, name: name.trim() } } };
+        }
       }
       if (ctx.path !== '/sign-up/email') return;
       try {
@@ -153,6 +165,12 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
         required: true,
         defaultValue: 'user',
         input: false,
+      },
+      trainingRemindersEnabled: {
+        type: 'boolean',
+        required: false,
+        defaultValue: true,
+        input: true,
       },
     },
   },

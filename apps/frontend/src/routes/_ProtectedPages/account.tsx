@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 
 import { DeleteAccountDialog } from "@/features/auth/components/DeleteAccountDialog"
 import { EditAccountDialog } from "@/features/auth/components/EditAccountDialog"
+import { TrainingRemindersToggle } from "@/features/auth/components/TrainingRemindersToggle"
 import { useSession } from "@/features/auth/hooks/useSession"
 import { useSignOut } from "@/features/auth/hooks/useSignOut"
 import { ConnectTrainerDialog } from "@/features/client/components/ConnectTrainerDialog"
@@ -125,6 +126,21 @@ export function AccountPage() {
                     />
                   }
                 />
+              </section>
+            )}
+
+            {!isTrainer && (
+              <section
+                className="space-y-2 rounded-card border border-border bg-card p-4"
+                aria-labelledby="account-notifications"
+              >
+                <h2
+                  id="account-notifications"
+                  className="text-sm font-bold text-muted-foreground"
+                >
+                  Notifikace
+                </h2>
+                <TrainingRemindersToggle isEnabled={user.trainingRemindersEnabled ?? true} />
               </section>
             )}
 

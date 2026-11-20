@@ -27,6 +27,7 @@ const aTraining = (
   createdById: 'u1',
   date: new Date('2026-10-22T00:00:00.000Z'),
   status: 'PLANNED',
+  reminderSentForDate: null,
   createdAt: new Date('2026-10-21T12:00:00Z'),
   updatedAt: new Date('2026-10-21T12:00:00Z'),
   ...overrides,

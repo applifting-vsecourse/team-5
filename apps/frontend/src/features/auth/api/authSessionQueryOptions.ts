@@ -11,6 +11,7 @@ export type SessionUser = {
   name: string
   username: string
   role?: string
+  trainingRemindersEnabled?: boolean
 }
 
 export type Session = {
@@ -33,6 +34,7 @@ export const authSessionQueryOptions = () =>
       const user = data.user as typeof data.user & {
         username?: string | null
         role?: string | null
+        trainingRemindersEnabled?: boolean | null
       }
 
       return {
@@ -42,6 +44,7 @@ export const authSessionQueryOptions = () =>
           name: user.name,
           username: user.username ?? "",
           role: user.role ?? undefined,
+          trainingRemindersEnabled: user.trainingRemindersEnabled ?? true,
         },
       }
     },

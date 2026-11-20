@@ -89,8 +89,9 @@ model User {
   clientConnections  ClientConnection[]  @relation("ClientTrainers")
   sharedDogs         DogShare[]          @relation("TrainerSharedDogs")
   invitations        Invitation[]        @relation("TrainerInvitations")
-  messages           TrainingMessage[]
-  role               UserRole            @default(user)
+  messages                 TrainingMessage[]
+  role                     UserRole            @default(user)
+  trainingRemindersEnabled Boolean             @default(true)
 
   username        String? @db.VarChar(50)
   displayUsername String? @db.VarChar(50)
@@ -255,15 +256,17 @@ model ScheduledTraining {
   dog         Dog            @relation(fields: [dogId], references: [id], onDelete: Cascade)
   createdById String?
   createdBy   User?          @relation("TrainingScheduler", fields: [createdById], references: [id], onDelete: SetNull)
-  date        DateTime       @db.Date
-  status      TrainingStatus @default(PLANNED)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @default(now()) @updatedAt
-  workoutLog  WorkoutLog?
+  date                DateTime       @db.Date
+  status              TrainingStatus @default(PLANNED)
+  reminderSentForDate DateTime?      @db.Date
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @default(now()) @updatedAt
+  workoutLog          WorkoutLog?
 
   @@index([dogId, date])
   @@index([goalId, status])
   @@index([trainingId, date])
+  @@index([status, date])
   @@map("scheduled_training")
 }
 

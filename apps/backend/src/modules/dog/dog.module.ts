@@ -26,6 +26,7 @@ import { MetricsRepository } from './repositories/metrics.repository';
 import { PlanBlockRepository } from './repositories/plan-block.repository';
 import { ScheduledTrainingRepository } from './repositories/scheduled-training.repository';
 import { TrainerOverviewRepository } from './repositories/trainer-overview.repository';
+import { TrainingReminderRepository } from './repositories/training-reminder.repository';
 import { ActivitiesService } from './services/activities.service';
 import { ConversationService } from './services/conversation.service';
 import { DogAccessService } from './services/dog-access.service';
@@ -38,6 +39,7 @@ import { HistoryService } from './services/history.service';
 import { MetricsService } from './services/metrics.service';
 import { PlanBlocksService } from './services/plan-blocks.service';
 import { TrainerOverviewService } from './services/trainer-overview.service';
+import { TrainingReminderService } from './services/training-reminder.service';
 import { TrainingsService } from './services/trainings.service';
 
 @Module({
@@ -77,6 +79,8 @@ import { TrainingsService } from './services/trainings.service';
     PlanBlockRepository,
     TrainingsService,
     ScheduledTrainingRepository,
+    TrainingReminderService,
+    TrainingReminderRepository,
     ActivitiesService,
     ActivityRepository,
     DogNotesService,

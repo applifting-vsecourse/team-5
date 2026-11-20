@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsSemVer,
   IsUrl,
+  Matches,
 } from 'class-validator';
 
 /**
@@ -96,4 +97,19 @@ export class Config {
   @Env('SMTP_PASSWORD')
   @IsOptional()
   readonly smtpPassword?: string;
+
+  @Env('TRAINING_REMINDER_ENABLED', { expose: true, defaultValue: true })
+  @IsBoolean()
+  readonly trainingReminderEnabled!: boolean;
+
+  @Env('TRAINING_REMINDER_TIME', { expose: true, defaultValue: '08:00' })
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/)
+  readonly trainingReminderTime!: string;
+
+  @Env('TRAINING_REMINDER_TIMEZONE', {
+    expose: true,
+    defaultValue: 'Europe/Prague',
+  })
+  @IsNotEmpty()
+  readonly trainingReminderTimezone!: string;
 }

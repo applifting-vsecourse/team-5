@@ -1,6 +1,7 @@
 import { EMAIL_THEME, EmailLayout } from './components/email-layout';
 import { InviteClient } from './invite-client';
 import { ResetPassword } from './reset-password';
+import { TrainingReminder } from './training-reminder';
 import { VerifyEmail } from './verify-email';
 
 describe('Email templates', () => {
@@ -95,5 +96,48 @@ describe('Email templates', () => {
     expect(tree).toContain('#c2410c');
     expect(tree).toContain('#1c2628');
     expect(tree).toContain('#e6dfd3');
+  });
+
+  it('instantiates TrainingReminder template with Czech text and training list', () => {
+    const element = TrainingReminder({
+      recipientName: 'Jana Nováková',
+      dateLabel: '20. 11. 2026',
+      trainings: [
+        {
+          dogName: 'Rex',
+          goalTitle: 'Přivolání u rušivek',
+          trainingTitle: 'Trénink 1 — Park',
+          discipline: 'Poslušnost',
+          stepCount: 3,
+          durationMinutes: 15,
+        },
+        {
+          dogName: 'Bela',
+          goalTitle: 'Chůze u nohy',
+          trainingTitle: 'Chůze u nohy',
+          discipline: null,
+          stepCount: 1,
+          durationMinutes: 10,
+        },
+      ],
+      todayUrl: 'https://trainloop.app/',
+      accountSettingsUrl: 'https://trainloop.app/account',
+    });
+
+    expect(element).toBeDefined();
+    const tree = JSON.stringify(element);
+    expect(tree).toContain('Dnešní tréninky (20. 11. 2026)');
+    expect(tree).toContain('Jana Nováková');
+    expect(tree).toContain('2 naplánované tréninky');
+    expect(tree).toContain('Rex');
+    expect(tree).toContain('Poslušnost');
+    expect(tree).toContain('Trénink 1 — Park');
+    expect(tree).toContain('Přivolání u rušivek');
+    expect(tree).toContain('3 kroky · cca 15 min');
+    expect(tree).toContain('Bela');
+    expect(tree).toContain('Chůze u nohy');
+    expect(tree).toContain('1 krok · cca 10 min');
+    expect(tree).toContain('Otevřít dnešní plán');
+    expect(tree).toContain('https://trainloop.app/account');
   });
 });
