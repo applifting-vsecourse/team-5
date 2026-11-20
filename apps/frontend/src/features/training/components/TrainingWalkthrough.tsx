@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { WalkthroughClickerBar } from "@/components/WalkthroughClickerBar"
 import { useMoveCurrentStep } from "@/lib/useMoveCurrentStep"
 
 import type { TrainingDetail } from "@/features/training/api/trainingSchemas"
@@ -152,82 +153,85 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
         ) : null
       }
       actions={
-        isOnCurrentStep && isPlanned ? (
-          <>
-            <Button
-              type="button"
-              size="lg"
-              disabled={isBusy}
-              onClick={() => void runAction("advance")}
-              className="w-full text-action font-bold"
-            >
-              <EditorIcon name="PreviewCheck" />
-              {isLastLocal ? "Hotovo, dokončit" : "Hotovo, další krok"}
-            </Button>
-            <div className="grid grid-cols-2 gap-3">
+        <>
+          {isPlanned && <WalkthroughClickerBar />}
+          {isOnCurrentStep && isPlanned ? (
+            <>
               <Button
                 type="button"
                 size="lg"
-                variant="outline"
-                className="bg-card"
                 disabled={isBusy}
-                onClick={() => void runAction("back")}
+                onClick={() => void runAction("advance")}
+                className="w-full text-action font-bold"
               >
-                Zpět o krok
+                <EditorIcon name="PreviewCheck" />
+                {isLastLocal ? "Hotovo, dokončit" : "Hotovo, další krok"}
               </Button>
-              <Button
-                type="button"
-                size="lg"
-                variant="outline"
-                className="bg-card"
-                disabled={isBusy}
-                onClick={() => void runAction("skip")}
-              >
-                <SkipForward />
-                Přeskočit krok
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                type="button"
-                size="lg"
-                variant="outline"
-                className="bg-card"
-                disabled={isFirstLocal}
-                onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-              >
-                Předchozí
-              </Button>
-              <Button
-                type="button"
-                size="lg"
-                variant="outline"
-                className="bg-card"
-                disabled={isLastLocal}
-                onClick={() => setCurrentIndex((prev) => Math.min(totalExercises - 1, prev + 1))}
-              >
-                Další krok
-              </Button>
-            </div>
-            {isPlanned && (
-              <Button
-                asChild
-                size="lg"
-                className="w-full"
-              >
-                <Link
-                  to="/trainings/$trainingId/finish"
-                  params={{ trainingId: training.id }}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="outline"
+                  className="bg-card"
+                  disabled={isBusy}
+                  onClick={() => void runAction("back")}
                 >
-                  Dokončit trénink
-                </Link>
-              </Button>
-            )}
-          </>
-        )
+                  Zpět o krok
+                </Button>
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="outline"
+                  className="bg-card"
+                  disabled={isBusy}
+                  onClick={() => void runAction("skip")}
+                >
+                  <SkipForward />
+                  Přeskočit krok
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="outline"
+                  className="bg-card"
+                  disabled={isFirstLocal}
+                  onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+                >
+                  Předchozí
+                </Button>
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="outline"
+                  className="bg-card"
+                  disabled={isLastLocal}
+                  onClick={() => setCurrentIndex((prev) => Math.min(totalExercises - 1, prev + 1))}
+                >
+                  Další krok
+                </Button>
+              </div>
+              {isPlanned && (
+                <Button
+                  asChild
+                  size="lg"
+                  className="w-full"
+                >
+                  <Link
+                    to="/trainings/$trainingId/finish"
+                    params={{ trainingId: training.id }}
+                  >
+                    Dokončit trénink
+                  </Link>
+                </Button>
+              )}
+            </>
+          )}
+        </>
       }
     />
   )
