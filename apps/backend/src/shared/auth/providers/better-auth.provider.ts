@@ -5,7 +5,10 @@ import { ResetPassword } from '@/core/email/templates/reset-password';
 import { VerifyEmail } from '@/core/email/templates/verify-email';
 import { PrismaService } from '@/core/prisma/prisma.service';
 import { deleteDogPhotoFiles } from '@/modules/dog/services/dog-photo.service';
-import { betterAuthCoreConfig } from '@/shared/auth/config/better-auth.config';
+import {
+  betterAuthCoreConfig,
+  buildSocialProviders,
+} from '@/shared/auth/config/better-auth.config';
 import { Config } from '@/shared/config/config.service';
 import { Inject, Provider } from '@nestjs/common';
 import { APIError, betterAuth } from 'better-auth';
@@ -16,13 +19,23 @@ const createAuth = (
   config: Config,
   emailProvider: EmailService,
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-) =>
-  betterAuth({
+) => {
+  const socialProviders = buildSocialProviders({
+    googleClientId: config.googleClientId,
+    googleClientSecret: config.googleClientSecret,
+  });
+
+  return betterAuth({
     // If change (setup) affects database, must be in core config, in order to be able to run migrations
     ...betterAuthCoreConfig,
     // Without this better-auth can only guess its own URL from the request,
     // which breaks callbacks and links built outside a request (e.g. the seed).
     baseURL: config.backendUrl,
+    ...(socialProviders ? { socialProviders } : {}),
+    onAPIError: {
+      ...betterAuthCoreConfig.onAPIError,
+      errorURL: `${config.frontendUrl}/login`,
+    },
     database: prismaAdapter(prismaService, {
       provider: 'postgresql',
     }),
@@ -109,6 +122,7 @@ const createAuth = (
     },
     plugins: [...(betterAuthCoreConfig.plugins ?? [])],
   });
+};
 
 export type BetterAuth = ReturnType<typeof createAuth>;
 
