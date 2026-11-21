@@ -68,3 +68,54 @@ it("schedules a concrete training and retries only the remaining day after a par
 it("uses the local calendar date instead of converting a selected day to UTC", () => {
   expect(localDay(new Date(2099, 10, 3, 0, 1))).toBe("2099-11-03")
 })
+
+it("clears selected days and validation error when closed and reopened", async () => {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+  })
+  client.setQueryData(dogKeys.goalTrainings("goal-1"), [])
+  const onOpenChange = vi.fn()
+  const { rerender } = render(
+    <QueryClientProvider client={client}>
+      <SessionScheduleSheet
+        sessionId="session-2"
+        goalId="goal-1"
+        dogId="dog-1"
+        description="Rex"
+        isOpen
+        onOpenChange={onOpenChange}
+      />
+    </QueryClientProvider>,
+  )
+  const user = userEvent.setup()
+  await user.click(screen.getByRole("button", { name: "Vybrat dva dny" }))
+  expect(screen.getByRole("button", { name: "Naplánovat 2 tréninky" })).toBeInTheDocument()
+
+  rerender(
+    <QueryClientProvider client={client}>
+      <SessionScheduleSheet
+        sessionId="session-2"
+        goalId="goal-1"
+        dogId="dog-1"
+        description="Rex"
+        isOpen={false}
+        onOpenChange={onOpenChange}
+      />
+    </QueryClientProvider>,
+  )
+  rerender(
+    <QueryClientProvider client={client}>
+      <SessionScheduleSheet
+        sessionId="session-2"
+        goalId="goal-1"
+        dogId="dog-1"
+        description="Rex"
+        isOpen
+        onOpenChange={onOpenChange}
+      />
+    </QueryClientProvider>,
+  )
+
+  expect(screen.getByRole("button", { name: "Naplánovat" })).toBeInTheDocument()
+  expect(screen.queryByText(/Náhled:/)).not.toBeInTheDocument()
+})
