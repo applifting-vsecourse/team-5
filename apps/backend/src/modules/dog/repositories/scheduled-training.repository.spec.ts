@@ -24,6 +24,10 @@ function setup(): {
     title: 'Goal',
     discipline: null,
   } as never);
+  tx.workoutLog.create.mockResolvedValue({ id: 'record-1' } as never);
+  tx.workoutLog.findUniqueOrThrow.mockResolvedValue({
+    dog: { ownerId: 'u1', shares: [{ trainerId: 'trainer-1' }] },
+  } as never);
   return { repository: new ScheduledTrainingRepository(prisma), tx };
 }
 

@@ -76,13 +76,16 @@ describe('PlanBlocksService', () => {
         }),
       ).resolves.toEqual(created);
 
-      expect(planBlockRepository.createBlock).toHaveBeenCalledWith({
-        goalId: 'g1',
-        title: 'Sedni u nohy',
-        instruction: 'Pes sedí u levé nohy.',
-        criterion: 'Sedí 5 s, i když kolem letí míček.',
-        insertAt: undefined,
-      });
+      expect(planBlockRepository.createBlock).toHaveBeenCalledWith(
+        {
+          goalId: 'g1',
+          title: 'Sedni u nohy',
+          instruction: 'Pes sedí u levé nohy.',
+          criterion: 'Sedí 5 s, i když kolem letí míček.',
+          insertAt: undefined,
+        },
+        owner.id,
+      );
     });
 
     it('stores a missing instruction and criterion as null', async () => {
@@ -96,6 +99,7 @@ describe('PlanBlocksService', () => {
 
       expect(planBlockRepository.createBlock).toHaveBeenCalledWith(
         expect.objectContaining({ instruction: null, criterion: null }),
+        owner.id,
       );
     });
 
@@ -112,6 +116,7 @@ describe('PlanBlocksService', () => {
 
       expect(planBlockRepository.createBlock).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Mezikrok', insertAt: 1 }),
+        owner.id,
       );
     });
 
@@ -145,11 +150,15 @@ describe('PlanBlocksService', () => {
         instruction: '',
       });
 
-      expect(planBlockRepository.updateBlock).toHaveBeenCalledWith('b1', {
-        title: 'Sedni',
-        instruction: null,
-        criterion: undefined,
-      });
+      expect(planBlockRepository.updateBlock).toHaveBeenCalledWith(
+        'b1',
+        {
+          title: 'Sedni',
+          instruction: null,
+          criterion: undefined,
+        },
+        owner.id,
+      );
     });
 
     it("does not update a block of another user's plan", async () => {
@@ -188,7 +197,11 @@ describe('PlanBlocksService', () => {
 
       await service.deleteBlock(owner, 'b1');
 
-      expect(planBlockRepository.deleteBlock).toHaveBeenCalledWith('b1', 'g1');
+      expect(planBlockRepository.deleteBlock).toHaveBeenCalledWith(
+        'b1',
+        'g1',
+        owner.id,
+      );
     });
 
     it("does not delete a block of another user's plan", async () => {
@@ -216,11 +229,11 @@ describe('PlanBlocksService', () => {
 
       await service.reorderBlocks(owner, 'g1', ['b2', 'b1', 'b3']);
 
-      expect(planBlockRepository.reorderBlocks).toHaveBeenCalledWith('g1', [
-        'b2',
-        'b1',
-        'b3',
-      ]);
+      expect(planBlockRepository.reorderBlocks).toHaveBeenCalledWith(
+        'g1',
+        ['b2', 'b1', 'b3'],
+        owner.id,
+      );
     });
 
     it.each([

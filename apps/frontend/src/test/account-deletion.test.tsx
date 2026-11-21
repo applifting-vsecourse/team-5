@@ -7,7 +7,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { authKeys } from "@/lib/auth-keys"
 import { routeTree } from "@/routeTree.gen"
 
-const auth = vi.hoisted(() => ({ deleteUser: vi.fn(), getSession: vi.fn(), signOut: vi.fn() }))
+const auth = vi.hoisted(() => ({
+  deleteUser: vi.fn(),
+  getSession: vi.fn(),
+  listAccounts: vi.fn(),
+  signOut: vi.fn(),
+}))
 vi.mock("@/features/auth/lib/auth-client", () => ({ authClient: auth }))
 vi.mock("@/lib/api-client", () => ({ api: { get: () => ({ json: () => Promise.resolve([]) }) } }))
 
@@ -40,6 +45,7 @@ async function openPage(path = "/account", role: string | null = "user") {
 
 beforeEach(() => {
   vi.resetAllMocks()
+  auth.listAccounts.mockResolvedValue({ data: [{ providerId: "credential" }], error: null })
   vi.stubGlobal(
     "matchMedia",
     vi.fn((query: string) => ({
@@ -181,6 +187,36 @@ describe("account deletion", () => {
     })
     await waitFor(() => expect(router.state.location.pathname).toBe("/login"))
     expect(screen.queryByText("jana@example.com")).not.toBeInTheDocument()
+  })
+
+  it("hides email/password edits and confirms deletion by email for Google-only accounts", async () => {
+    auth.listAccounts.mockResolvedValue({ data: [{ providerId: "google" }], error: null })
+    auth.deleteUser.mockImplementation(() => {
+      auth.getSession.mockResolvedValue({ data: null, error: null })
+      return Promise.resolve({ data: { success: true }, error: null })
+    })
+    const { interaction, router } = await openPage("/account", "user")
+    expect(
+      await screen.findByText(
+        "Účet je propojený s Googlem. E-mail a heslo spravuješ ve svém Google účtu.",
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Změnit e-mail" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Změnit heslo" })).not.toBeInTheDocument()
+
+    await interaction.click(screen.getByRole("button", { name: "Smazat účet" }))
+    const dialog = screen.getByRole("dialog")
+    expect(within(dialog).queryByLabelText("Heslo")).not.toBeInTheDocument()
+    await interaction.click(within(dialog).getByRole("button", { name: "Trvale smazat účet" }))
+    expect(
+      await screen.findByText("Pro smazání účtu zadejte e-mail svého účtu."),
+    ).toBeInTheDocument()
+    expect(auth.deleteUser).not.toHaveBeenCalled()
+
+    await interaction.type(screen.getByLabelText("Potvrď e-mail"), "jana@example.com")
+    await interaction.click(within(dialog).getByRole("button", { name: "Trvale smazat účet" }))
+    await waitFor(() => expect(router.state.location.pathname).toBe("/"))
+    expect(auth.deleteUser).toHaveBeenCalledWith({})
   })
 })
 

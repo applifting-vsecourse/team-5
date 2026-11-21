@@ -2,6 +2,8 @@ import {
   APIError,
   createAuthEndpoint,
   createAuthMiddleware,
+  getOAuthState,
+  getSessionFromCtx,
 } from 'better-auth/api';
 import { setSessionCookie } from 'better-auth/cookies';
 import { openAPI, username } from 'better-auth/plugins';
@@ -35,6 +37,21 @@ const resetPasswordTokenVerifierPlugin = {
   },
 };
 
+export function buildSocialProviders(options: {
+  googleClientId?: string;
+  googleClientSecret?: string;
+}): BetterAuthOptions['socialProviders'] | undefined {
+  const clientId = options.googleClientId?.trim();
+  const clientSecret = options.googleClientSecret?.trim();
+  if (!clientId || !clientSecret) return undefined;
+  return {
+    google: {
+      clientId,
+      clientSecret,
+    },
+  };
+}
+
 export const betterAuthCoreConfig: BetterAuthOptions = {
   emailAndPassword: {
     enabled: true,
@@ -55,16 +72,41 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
         });
       }
       if (ctx.path === '/delete-user') {
+        const session = await getSessionFromCtx(ctx);
+        if (!session) return;
+        const accounts = await ctx.context.internalAdapter.findAccounts(
+          session.user.id,
+        );
+        const hasPasswordAccount = accounts.some(
+          (account) => account.providerId === 'credential',
+        );
         if (
-          typeof ctx.body?.password !== 'string' ||
-          !ctx.body.password.length
+          hasPasswordAccount &&
+          (typeof ctx.body?.password !== 'string' || !ctx.body.password.length)
         ) {
           throw new APIError('BAD_REQUEST', {
             code: 'PASSWORD_REQUIRED',
             message: 'Pro smazání účtu zadejte heslo.',
           });
         }
-        // Password verification and session/credential removal stay in BetterAuth.
+        // Password verification (for credential accounts) and session/account removal stay in BetterAuth.
+        return;
+      }
+      if (ctx.path === '/change-email') {
+        const session = await getSessionFromCtx(ctx);
+        if (!session) return;
+        const accounts = await ctx.context.internalAdapter.findAccounts(
+          session.user.id,
+        );
+        const hasPasswordAccount = accounts.some(
+          (account) => account.providerId === 'credential',
+        );
+        if (!hasPasswordAccount) {
+          throw new APIError('BAD_REQUEST', {
+            code: 'OAUTH_EMAIL_CHANGE_NOT_ALLOWED',
+            message: 'E-mail u účtu přihlášeného přes Google nelze změnit.',
+          });
+        }
         return;
       }
       if (ctx.path === '/reset-password') {
@@ -143,15 +185,34 @@ export const betterAuthCoreConfig: BetterAuthOptions = {
     user: {
       create: {
         before: async (user, ctx) => {
-          if (ctx?.path !== '/sign-up/email') return;
-          // Only registration can select a trainer account. The role field
-          // remains server-owned, including on BetterAuth's update-user API.
-          return {
-            data: {
-              ...user,
-              role: ctx.body?.isTrainer === true ? 'trainer' : 'user',
-            },
-          };
+          if (ctx?.path === '/sign-up/email') {
+            // Only registration can select a trainer account. The role field
+            // remains server-owned, including on BetterAuth's update-user API.
+            return {
+              data: {
+                ...user,
+                role: ctx.body?.isTrainer === true ? 'trainer' : 'user',
+              },
+            };
+          }
+          if (ctx?.path?.startsWith('/callback/')) {
+            const oauthState = await getOAuthState();
+            const isTrainer = oauthState?.isTrainer === true;
+            const trimmedName =
+              typeof user.name === 'string' ? user.name.trim() : '';
+            const fallbackName =
+              typeof user.email === 'string' && user.email.includes('@')
+                ? user.email.split('@')[0]
+                : 'Uživatel';
+            return {
+              data: {
+                ...user,
+                name: trimmedName || fallbackName,
+                role: isTrainer ? 'trainer' : 'user',
+              },
+            };
+          }
+          return;
         },
       },
     },

@@ -271,4 +271,33 @@ describe('ClientRepository (Authorization & Multi-Tenancy)', () => {
       repository.acceptInvitation('inv-1', 'trainer-1', 'client-1', ['dog-1']),
     ).rejects.toThrow('Tato pozvánka již byla použita nebo vypršela');
   });
+
+  it('deletes dog shares and trainer notes when ending collaboration', async () => {
+    const prisma = mock<PrismaService>();
+    const tx = {
+      clientConnection: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      dogShare: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 2 }),
+      },
+      trainerNote: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 3 }),
+      },
+    };
+    (prisma.$transaction as jest.Mock).mockImplementation(
+      async (cb: (txArg: typeof tx) => Promise<unknown>) => cb(tx),
+    );
+
+    const repository = new ClientRepository(prisma);
+    const result = await repository.endCollaboration('client-1', 'trainer-1');
+
+    expect(result).toBe(true);
+    expect(tx.dogShare.deleteMany).toHaveBeenCalledWith({
+      where: { trainerId: 'trainer-1', dog: { ownerId: 'client-1' } },
+    });
+    expect(tx.trainerNote.deleteMany).toHaveBeenCalledWith({
+      where: { trainerId: 'trainer-1', clientId: 'client-1' },
+    });
+  });
 });

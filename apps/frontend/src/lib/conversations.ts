@@ -46,6 +46,7 @@ const conversationDetail = z.object({
     })
     .nullable()
     .optional(),
+  unreadReplyIds: z.array(z.string()).default([]),
   messages: z.array(message),
 })
 export type ConversationDetail = z.infer<typeof conversationDetail>

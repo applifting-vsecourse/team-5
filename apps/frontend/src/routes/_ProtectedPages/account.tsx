@@ -9,6 +9,7 @@ import { Seo } from "@/components/Seo"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 
+import { authAccountsQueryOptions } from "@/features/auth/api/authAccountsQueryOptions"
 import { DeleteAccountDialog } from "@/features/auth/components/DeleteAccountDialog"
 import { EditAccountDialog } from "@/features/auth/components/EditAccountDialog"
 import { EmailNotificationsToggle } from "@/features/auth/components/EmailNotificationsToggle"
@@ -23,6 +24,11 @@ export function AccountPage() {
   const { user } = useSession()
   const signOut = useSignOut()
   const isTrainer = user?.role === "trainer" || user?.role === "admin"
+  const accounts = useQuery({ ...authAccountsQueryOptions(), enabled: Boolean(user) })
+  const hasPassword = accounts.data
+    ? accounts.data.some((account) => account.providerId === "credential")
+    : true
+  const isOAuthOnly = Boolean(accounts.data && accounts.data.length > 0 && !hasPassword)
   const dogs = useQuery({ ...dogsQueryOptions(), enabled: Boolean(user) && !isTrainer })
   const ownedDogs = (dogs.data ?? []).filter((dog) => dog.ownerId === user?.id)
   const trainers = [
@@ -136,15 +142,24 @@ export function AccountPage() {
 
             <section className="space-y-2 rounded-card border border-border bg-card p-4">
               <h2 className="text-sm font-bold text-muted-foreground">Přihlášení</h2>
+              {isOAuthOnly && (
+                <p className="text-sm text-muted-foreground">
+                  Účet je propojený s Googlem. E-mail a heslo spravuješ ve svém Google účtu.
+                </p>
+              )}
               <div className="divide-y divide-border">
-                <EditAccountDialog
-                  mode="email"
-                  name={user.name}
-                />
-                <EditAccountDialog
-                  mode="password"
-                  name={user.name}
-                />
+                {!isOAuthOnly && (
+                  <>
+                    <EditAccountDialog
+                      mode="email"
+                      name={user.name}
+                    />
+                    <EditAccountDialog
+                      mode="password"
+                      name={user.name}
+                    />
+                  </>
+                )}
                 <Button
                   variant="ghost"
                   className="w-full justify-start text-destructive hover:text-destructive"
@@ -159,7 +174,11 @@ export function AccountPage() {
                   <DesignIcon name="auth-120-1291-IconLogout" />
                   {signOut.isPending ? "Odhlašuji…" : "Odhlásit se"}
                 </Button>
-                <DeleteAccountDialog isTrainer={user.role === "trainer"} />
+                <DeleteAccountDialog
+                  isTrainer={user.role === "trainer"}
+                  hasPassword={!isOAuthOnly}
+                  email={user.email}
+                />
               </div>
               {signOut.isError && (
                 <Alert variant="destructive">

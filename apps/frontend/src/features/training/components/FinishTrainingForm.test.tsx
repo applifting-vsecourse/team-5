@@ -215,6 +215,36 @@ describe("FinishTrainingForm", () => {
     expect(handleSubmit).toHaveBeenCalledWith({})
   })
 
+  it("validates http(s):// video URLs inline and accepts http:// links (#78)", async () => {
+    const user = userEvent.setup()
+    const handleSubmit = vi.fn<(data: CompleteTrainingInput) => void>()
+
+    renderWithClient(
+      <FinishTrainingForm
+        trainingId="t1"
+        dog={defaultDog}
+        goal={defaultGoal}
+        onSubmit={handleSubmit}
+      />,
+    )
+
+    const videoInput = screen.getByLabelText("Odkaz na video")
+    await user.type(videoInput, "ftp://example.com/video.mp4")
+    await user.click(screen.getByRole("button", { name: "Uložit záznam" }))
+
+    expect(handleSubmit).not.toHaveBeenCalled()
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Zadej platný odkaz začínající http:// nebo https://.",
+    )
+    expect(videoInput).toHaveAttribute("aria-invalid", "true")
+
+    await user.clear(videoInput)
+    await user.type(videoInput, "http://example.com/video")
+    await user.click(screen.getByRole("button", { name: "Uložit záznam" }))
+
+    expect(handleSubmit).toHaveBeenCalledWith({ videoUrl: "http://example.com/video" })
+  }, 15_000)
+
   it("allows deselecting toggle items", async () => {
     const user = userEvent.setup()
     const handleSubmit = vi.fn<(data: CompleteTrainingInput) => void>()

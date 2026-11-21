@@ -72,6 +72,7 @@ model Verification {
 }
 
 model User {
+  unreadReplies TrainingReply[]
   id                 String              @id
   name               String
   email              String
@@ -85,10 +86,12 @@ model User {
   createdGoals       TrainingGoal[]      @relation("GoalCreator")
   workoutLogs        WorkoutLog[]        @relation("LogAuthor")
   scheduledTrainings ScheduledTraining[] @relation("TrainingScheduler")
-  trainerConnections ClientConnection[]  @relation("TrainerClients")
-  clientConnections  ClientConnection[]  @relation("ClientTrainers")
-  sharedDogs         DogShare[]          @relation("TrainerSharedDogs")
+  trainerConnections              ClientConnection[]               @relation("TrainerClients")
+  clientConnections               ClientConnection[]               @relation("ClientTrainers")
+  sharedDogs                      DogShare[]                       @relation("TrainerSharedDogs")
   invitations                     Invitation[]                     @relation("TrainerInvitations")
+  authoredTrainerNotes            TrainerNote[]                    @relation("TrainerAuthoredNotes")
+  clientTrainerNotes              TrainerNote[]                    @relation("ClientTrainerNotes")
   messages                        TrainingMessage[]
   trainingEmailNotifications      TrainingEmailNotification[]      @relation("NotificationRecipient")
   trainingEmailNotificationEvents TrainingEmailNotificationEvent[] @relation("NotificationActor")
@@ -121,6 +124,7 @@ model Dog {
   workoutLogs        WorkoutLog[]
   shares             DogShare[]
   notes              DogNote[]
+  trainerNotes       TrainerNote[]
   trainings          ScheduledTraining[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @default(now()) @updatedAt
@@ -249,6 +253,7 @@ enum TrainingStatus {
 // A goal has many independent dated sessions. ScheduledTrainingRepository
 // locks the goal row to prevent duplicate PLANNED sessions on the same day.
 model ScheduledTraining {
+  unreadReplies TrainingReply[]
   id          String         @id @default(cuid())
   goalId      String
   goal        TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
@@ -271,6 +276,7 @@ model ScheduledTraining {
 }
 
 model WorkoutLog {
+  unreadReplies TrainingReply[]
   mistakeDetails String[] @default([])
   id                  String             @id @default(cuid())
   dogId               String
@@ -405,6 +411,31 @@ model DogNote {
   @@map("dog_note")
 }
 
+// Private notes authored by a trainer about a client or one of their shared
+// dogs (#236). Only the authoring trainer reads and writes them while an active
+// collaboration exists; clients and other trainers never see them.
+model TrainerNote {
+  id        String   @id @default(cuid())
+  trainerId String
+  trainer   User     @relation("TrainerAuthoredNotes", fields: [trainerId], references: [id], onDelete: Cascade)
+  clientId  String
+  client    User     @relation("ClientTrainerNotes", fields: [clientId], references: [id], onDelete: Cascade)
+  dogId     String?
+  dog       Dog?     @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  title     String   @db.VarChar(100)
+  text      String   @db.Text
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([trainerId, clientId, isPinned(sort: Desc), date(sort: Desc)])
+  @@index([trainerId, dogId, isPinned(sort: Desc), date(sort: Desc)])
+  @@index([clientId])
+  @@index([dogId])
+  @@map("trainer_note")
+}
+
 // The workout log is the thread (#88, F-21). Deleting the owner removes the
 // entire thread; deleting a trainer only removes the link to its author.
 // Do not copy author names/emails into messages: resolve deleted authors via
@@ -463,4 +494,20 @@ model TrainingEmailNotificationEvent {
 
   @@index([notificationId, createdAt])
   @@map("training_email_notification_event")
+}
+
+// One receipt per recipient and event; deleting only displayed IDs preserves late replies.
+model TrainingReply {
+  id                  String             @id @default(cuid())
+  recipientId         String
+  recipient           User               @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  workoutLogId        String?
+  workoutLog          WorkoutLog?        @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  scheduledTrainingId String?
+  scheduledTraining   ScheduledTraining? @relation(fields: [scheduledTrainingId], references: [id], onDelete: Cascade)
+  kind                String
+  createdAt           DateTime           @default(now())
+
+  @@index([recipientId])
+  @@map("training_reply")
 }

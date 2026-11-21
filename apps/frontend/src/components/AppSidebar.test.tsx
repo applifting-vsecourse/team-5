@@ -61,3 +61,5 @@ describe("AppSidebar", () => {
     expect(screen.getByText(/Trenér · Účet/)).toBeInTheDocument()
   })
 })
+
+vi.mock("@/components/UnreadReplies", () => ({ UnreadNavDot: () => null }))

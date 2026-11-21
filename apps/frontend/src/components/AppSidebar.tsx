@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router"
 
 import { DesignIcon } from "@/components/DesignIcon"
+import { UnreadNavDot } from "@/components/UnreadReplies"
 import { cn } from "@/lib/utils"
 
 export function AppSidebar({ user, isTrainer }: { user: { name: string }; isTrainer: boolean }) {
@@ -50,6 +51,9 @@ export function AppSidebar({ user, isTrainer }: { user: { name: string }; isTrai
             >
               <DesignIcon name={`sidebar-${item.icon}`} />
               {item.label}
+              {(item.to === "/history" || item.to === (isTrainer ? "/clients" : "/week")) && (
+                <UnreadNavDot />
+              )}
             </Link>
           )
         })}

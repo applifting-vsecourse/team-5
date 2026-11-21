@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { act, fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import type { PlanBlock } from "@/features/dog/api/dogSchemas"
 
@@ -22,6 +22,7 @@ const steps: PlanBlock[] = ["Přivolání", "Chůze u nohy"].map((title, index) 
 }))
 
 describe("training preview", () => {
+  afterEach(() => vi.useRealTimers())
   it("walks all steps locally and returns to the editor without saving progress", async () => {
     const close = vi.fn()
     const fetch = vi.spyOn(globalThis, "fetch")
@@ -36,7 +37,7 @@ describe("training preview", () => {
       />,
     )
     expect(screen.getByRole("heading", { name: "Přivolání" })).toBeInTheDocument()
-    expect(screen.getByRole("timer")).toHaveTextContent("1:00")
+    expect(screen.getByRole("timer")).toHaveTextContent("1 min")
     await user.click(screen.getByRole("button", { name: "Hotovo, další krok" }))
     expect(screen.getByRole("heading", { name: "Chůze u nohy" })).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "Dokončit náhled" }))
@@ -71,26 +72,31 @@ describe("training preview", () => {
       />,
     )
     expect(screen.getByRole("heading", { name: "Přivolání" })).toBeInTheDocument()
-    expect(screen.getByRole("timer")).toHaveTextContent("1:00")
+    expect(screen.getByRole("timer")).toHaveTextContent("1 min")
     expect(screen.getByRole("button", { name: "Zpět" })).toBeDisabled()
   })
-  it("starts, pauses and resets the timer", async () => {
-    const user = userEvent.setup()
+  it("starts, pauses and resets the timer", () => {
+    vi.useFakeTimers()
     render(
       <TrainingPreview
         dog={{ name: "Rex", color: 2 }}
         title="V parku"
-        steps={steps}
+        steps={steps.map((step) => ({ ...step, durationMinutes: 2 }))}
         isOpen
         onOpenChange={vi.fn()}
       />,
     )
-    await user.click(screen.getByRole("button", { name: "Spustit časovač" }))
-    await waitFor(() => expect(screen.getByRole("timer")).toHaveTextContent("0:59"), {
-      timeout: 3000,
+    fireEvent.click(screen.getByRole("button", { name: "Spustit časovač" }))
+    act(() => {
+      vi.advanceTimersByTime(60000)
     })
-    await user.click(screen.getByRole("button", { name: "Pozastavit časovač" }))
-    await user.click(screen.getByRole("button", { name: "Vynulovat časovač" }))
-    expect(screen.getByRole("timer")).toHaveTextContent("1:00")
+    expect(screen.getByRole("timer")).toHaveTextContent("1 min")
+    fireEvent.click(screen.getByRole("button", { name: "Pozastavit časovač" }))
+    act(() => {
+      vi.advanceTimersByTime(60000)
+    })
+    expect(screen.getByRole("timer")).toHaveTextContent("1 min")
+    fireEvent.click(screen.getByRole("button", { name: "Vynulovat časovač" }))
+    expect(screen.getByRole("timer")).toHaveTextContent("2 min")
   })
 })
