@@ -6,7 +6,7 @@ import { TrainingStepScreen } from "./TrainingStepScreen"
 describe("unlimited step timer", () => {
   afterEach(() => vi.useRealTimers())
 
-  it("shows completed minutes and resets when moving to another step", () => {
+  it("shows elapsed mm:ss and resets when moving to another step", () => {
     vi.useFakeTimers()
     const props = {
       title: "Trénink",
@@ -25,15 +25,15 @@ describe("unlimited step timer", () => {
         index={0}
       />,
     )
-    expect(screen.getByRole("timer", { name: "Uplynulý čas" })).toHaveTextContent("0 min")
+    expect(screen.getByRole("timer", { name: "Uplynulý čas" })).toHaveTextContent("0:00")
     act(() => {
       vi.advanceTimersByTime(59000)
     })
-    expect(screen.getByRole("timer")).toHaveTextContent("0 min")
+    expect(screen.getByRole("timer")).toHaveTextContent("0:59")
     act(() => {
       vi.advanceTimersByTime(1000)
     })
-    expect(screen.getByRole("timer")).toHaveTextContent("1 min")
+    expect(screen.getByRole("timer")).toHaveTextContent("1:00")
     expect(screen.getByText("bez časového limitu")).toBeInTheDocument()
     rerender(
       <TrainingStepScreen
@@ -41,6 +41,6 @@ describe("unlimited step timer", () => {
         index={1}
       />,
     )
-    expect(screen.getByRole("timer")).toHaveTextContent("0 min")
+    expect(screen.getByRole("timer")).toHaveTextContent("0:00")
   })
 })

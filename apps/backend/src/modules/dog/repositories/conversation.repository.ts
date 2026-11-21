@@ -67,7 +67,6 @@ export class ConversationRepository {
               select: {
                 id: true,
                 title: true,
-                outcome: true,
                 position: true,
               },
             },

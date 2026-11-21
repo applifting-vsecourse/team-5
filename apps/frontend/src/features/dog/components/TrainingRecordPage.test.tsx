@@ -64,8 +64,8 @@ const detail = {
   goal: {
     title: "Přivolání",
     blocks: [
-      { id: "b1", title: "Na vodítku", outcome: "MASTERED" as const, position: 0 },
-      { id: "b2", title: "Volně", outcome: null, position: 1 },
+      { id: "b1", title: "Na vodítku", position: 0 },
+      { id: "b2", title: "Volně", position: 1 },
     ],
   },
   messages: [

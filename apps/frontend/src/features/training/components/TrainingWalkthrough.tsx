@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { SkipForward } from "lucide-react"
 
@@ -11,74 +11,61 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useMoveCurrentStep } from "@/lib/useMoveCurrentStep"
 
 import type { TrainingDetail } from "@/features/training/api/trainingSchemas"
-import { startExerciseIndex } from "@/features/training/lib/startExerciseIndex"
 
 type TrainingWalkthroughProps = {
   training: TrainingDetail
 }
 
+type LocalStepOutcome = "MASTERED" | "SKIPPED"
+
 export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
   const navigate = useNavigate()
-  const actionLock = useRef(false)
-  const [currentIndex, setCurrentIndex] = useState(() => startExerciseIndex(training))
-  // Optimistic pointer until the parent refetch lands a new currentStepId.
-  const [movedPointer, setMovedPointer] = useState<{
-    basedOn: string | null
-    value: string | null
-  } | null>(null)
-  const moveStep = useMoveCurrentStep(training.goal.id, training.dog.id, training.id)
-
-  const pointerId =
-    movedPointer?.basedOn === training.currentStepId ? movedPointer.value : training.currentStepId
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [outcomes, setOutcomes] = useState<Record<string, LocalStepOutcome>>({})
 
   const exercises = training.exercises
   const totalExercises = exercises.length
   const currentExercise = exercises[currentIndex]
   const isFirstLocal = currentIndex === 0
   const isLastLocal = currentIndex === totalExercises - 1
-  const isBusy = moveStep.isPending
   const isPlanned = training.status === "PLANNED" && training.canTrain !== false
-  // Training detail resolves null to the first step of the whole goal, so a
-  // missing id here only means an empty plan — never "this training's first".
-  const isPointerInThisTraining =
-    pointerId != null && exercises.some((exercise) => exercise.id === pointerId)
-  const isPointerElsewhere = !isPointerInThisTraining
-  const isOnCurrentStep = pointerId != null && pointerId === currentExercise?.id
 
-  const followPointer = (currentStepId: string | null) => {
-    setMovedPointer({ basedOn: training.currentStepId, value: currentStepId })
-    if (!currentStepId) {
-      setCurrentIndex(0)
+  const stepsWithOutcomes = exercises.map((exercise) => ({
+    ...exercise,
+    outcome: outcomes[exercise.id] ?? null,
+  }))
+
+  const advanceWith = (outcome: LocalStepOutcome) => {
+    if (!isPlanned || !currentExercise) return
+    setOutcomes((prev) => ({ ...prev, [currentExercise.id]: outcome }))
+    if (isLastLocal) {
+      void navigate({ to: "/trainings/$trainingId/finish", params: { trainingId: training.id } })
       return
     }
-    const next = exercises.findIndex((exercise) => exercise.id === currentStepId)
-    if (next >= 0) setCurrentIndex(next)
+    setCurrentIndex((prev) => Math.min(totalExercises - 1, prev + 1))
   }
 
-  const runAction = async (action: "advance" | "skip" | "back") => {
-    if (!isOnCurrentStep || !isPlanned || actionLock.current) return
-    actionLock.current = true
-    try {
-      const goal = await moveStep.mutateAsync(action)
-      followPointer(goal.currentStepId)
-      if (isLastLocal && action !== "back") {
-        void navigate({ to: "/trainings/$trainingId/finish", params: { trainingId: training.id } })
-      }
-    } catch {
-      // Hook reports failure; keep this step and allow retry.
-    } finally {
-      actionLock.current = false
+  const goBack = () => {
+    if (!isPlanned || isFirstLocal) return
+    const previousIndex = Math.max(0, currentIndex - 1)
+    const previousExercise = exercises[previousIndex]
+    if (previousExercise) {
+      setOutcomes((prev) => {
+        const next = { ...prev }
+        delete next[previousExercise.id]
+        return next
+      })
     }
+    setCurrentIndex(previousIndex)
   }
 
   return (
     <TrainingStepScreen
       title={training.training?.title ?? training.goal.title}
       dog={training.dog}
-      steps={exercises}
+      steps={stepsWithOutcomes}
       index={currentIndex}
       shouldAutoStartTimer={isPlanned}
       closeControl={
@@ -144,21 +131,15 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
               ? "Náhled tréninku. Záznam a postup v průchodu ovládá psovod."
               : "Trénink je uzavřený. Kroky si můžeš prohlédnout bez změny postupu."}
           </p>
-        ) : isPointerElsewhere ? (
-          <p className="text-sm text-muted-foreground">
-            Aktuální krok cíle je v jiném tréninku. Můžeš si projít kroky tohoto tréninku nebo ho
-            dokončit.
-          </p>
         ) : null
       }
       actions={
-        isOnCurrentStep && isPlanned ? (
+        isPlanned ? (
           <>
             <Button
               type="button"
               size="lg"
-              disabled={isBusy}
-              onClick={() => void runAction("advance")}
+              onClick={() => advanceWith("MASTERED")}
               className="w-full text-action font-bold"
             >
               <EditorIcon name="PreviewCheck" />
@@ -170,8 +151,8 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
                 size="lg"
                 variant="outline"
                 className="bg-card"
-                disabled={isBusy}
-                onClick={() => void runAction("back")}
+                disabled={isFirstLocal}
+                onClick={goBack}
               >
                 Zpět o krok
               </Button>
@@ -180,8 +161,7 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
                 size="lg"
                 variant="outline"
                 className="bg-card"
-                disabled={isBusy}
-                onClick={() => void runAction("skip")}
+                onClick={() => advanceWith("SKIPPED")}
               >
                 <SkipForward />
                 Přeskočit krok
@@ -189,44 +169,28 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
             </div>
           </>
         ) : (
-          <>
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                type="button"
-                size="lg"
-                variant="outline"
-                className="bg-card"
-                disabled={isFirstLocal}
-                onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
-              >
-                Předchozí
-              </Button>
-              <Button
-                type="button"
-                size="lg"
-                variant="outline"
-                className="bg-card"
-                disabled={isLastLocal}
-                onClick={() => setCurrentIndex((prev) => Math.min(totalExercises - 1, prev + 1))}
-              >
-                Další krok
-              </Button>
-            </div>
-            {isPlanned && (
-              <Button
-                asChild
-                size="lg"
-                className="w-full"
-              >
-                <Link
-                  to="/trainings/$trainingId/finish"
-                  params={{ trainingId: training.id }}
-                >
-                  Dokončit trénink
-                </Link>
-              </Button>
-            )}
-          </>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              size="lg"
+              variant="outline"
+              className="bg-card"
+              disabled={isFirstLocal}
+              onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+            >
+              Předchozí
+            </Button>
+            <Button
+              type="button"
+              size="lg"
+              variant="outline"
+              className="bg-card"
+              disabled={isLastLocal}
+              onClick={() => setCurrentIndex((prev) => Math.min(totalExercises - 1, prev + 1))}
+            >
+              Další krok
+            </Button>
+          </div>
         )
       }
     />

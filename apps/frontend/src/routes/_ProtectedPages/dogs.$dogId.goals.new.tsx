@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router"
 
 import { Seo } from "@/components/Seo"
 
+import { useSession } from "@/features/auth/hooks/useSession"
 import { NewGoalPage } from "@/features/dog/components/GoalEditorPage"
 
 export const Route = createFileRoute("/_ProtectedPages/dogs/$dogId/goals/new")({
@@ -10,11 +11,15 @@ export const Route = createFileRoute("/_ProtectedPages/dogs/$dogId/goals/new")({
 
 function NewGoalRoute() {
   const { dogId } = Route.useParams()
+  const { user } = useSession()
 
   return (
     <>
       <Seo title="Nový cíl" />
-      <NewGoalPage dogId={dogId} />
+      <NewGoalPage
+        dogId={dogId}
+        currentUserId={user?.id}
+      />
     </>
   )
 }

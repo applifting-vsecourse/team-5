@@ -32,16 +32,34 @@ describe("GoalForm", () => {
     })
   })
 
-  it("explains the principle field", () => {
+  it("allows adding a new discipline inline and selects it for submission", async () => {
+    const user = userEvent.setup()
+    const onAddDiscipline = vi.fn().mockResolvedValue(undefined)
+    const onSubmit = vi.fn()
     render(
       <GoalForm
-        disciplines={["Poslušnost"]}
+        disciplines={[]}
         isPending={false}
-        onSubmit={vi.fn()}
+        onAddDiscipline={onAddDiscipline}
+        onSubmit={onSubmit}
       />,
     )
 
-    expect(screen.getByText("Čeho docílit a na co si dát pozor.")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Nová disciplína" }))
+    await user.type(screen.getByLabelText("Nová disciplína"), "Agility")
+    await user.click(screen.getByRole("button", { name: "Přidat" }))
+
+    await waitFor(() => expect(onAddDiscipline).toHaveBeenCalledWith("Agility"))
+
+    await user.type(screen.getByLabelText("Název cíle"), "Slalom")
+    await user.click(screen.getByRole("button", { name: "Uložit" }))
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith(
+        { title: "Slalom", discipline: "Agility", principle: "" },
+        expect.anything(),
+      )
+    })
   })
 
   it("shows a message under the title when it is missing", async () => {

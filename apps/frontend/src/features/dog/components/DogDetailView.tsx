@@ -126,15 +126,7 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
       .map((goal) => ({ ...goal, discipline: group.discipline.name })),
   )
   const skills = [
-    ...new Set(
-      goals.flatMap((goal) =>
-        goal.sessions
-          .filter((session) => !session.isArchived)
-          .flatMap((session) =>
-            session.steps.filter((step) => step.outcome === "MASTERED").map((step) => step.title),
-          ),
-      ),
-    ),
+    ...new Set(goals.filter((goal) => goal.status === "COMPLETED").map((goal) => goal.title)),
   ]
   const facts = profileFacts(dog)
   return (
@@ -414,9 +406,7 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
               ))}
             </ul>
             {!skills.length && (
-              <p className="text-sm text-muted-foreground">
-                Zatím nejsou označené žádné zvládnuté kroky.
-              </p>
+              <p className="text-sm text-muted-foreground">Zatím nejsou splněné žádné cíle.</p>
             )}
             {skills.length > 6 && (
               <Button

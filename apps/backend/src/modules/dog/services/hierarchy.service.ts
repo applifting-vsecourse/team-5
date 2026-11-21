@@ -4,8 +4,6 @@ import {
   PlanBlock,
   ScheduledTraining,
 } from '@/generated/prisma/client';
-import { CurrentStepAction } from '@/modules/dog/domain/current-step';
-import { Goal } from '@/modules/dog/domain/goal';
 import {
   CreateGoalTrainingData,
   DisciplineMembership,
@@ -117,17 +115,6 @@ export class HierarchyService {
   ): Promise<PlanBlock[]> {
     const training = await this.getTraining(user, id);
     return this.repository.reorderSteps(training.goalId, id, ids, user.id);
-  }
-
-  // Owner and a shared trainer may walk the plan (getGoal checks the dog).
-  async moveCurrentStep(
-    user: Identity,
-    goalId: string,
-    action: CurrentStepAction,
-  ): Promise<Goal> {
-    await this.goals.getGoal(user, goalId);
-    await this.repository.moveCurrentStep(goalId, action);
-    return this.goals.getGoal(user, goalId);
   }
 
   async schedule(

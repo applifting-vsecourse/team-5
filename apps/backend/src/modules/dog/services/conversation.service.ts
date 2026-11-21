@@ -69,7 +69,6 @@ export class ConversationService {
             blocks: row.training.steps.map((step) => ({
               id: step.id,
               title: step.title,
-              outcome: step.outcome,
               position: step.position,
             })),
           }
