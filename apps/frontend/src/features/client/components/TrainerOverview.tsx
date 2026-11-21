@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { Link } from "@tanstack/react-router"
+import { Link, useNavigate } from "@tanstack/react-router"
 import { differenceInCalendarDays } from "date-fns"
 import { UserPlus, Users } from "lucide-react"
 
@@ -19,7 +19,11 @@ import {
   type TrainerDashboard,
 } from "@/features/client/api/trainerOverview"
 
+import { ClientActivityHeatmap } from "./ClientActivityHeatmap"
 import { InviteClientDialog } from "./InviteClientDialog"
+import { TrainerDogPanel } from "./TrainerDogPanel"
+
+type MatrixRow = NonNullable<TrainerDashboard["activityMatrix"]>["rows"][number]
 
 type Attention = TrainerDashboard["attention"][number]
 type OverviewClient = TrainerDashboard["clients"][number]
@@ -361,16 +365,28 @@ function OverviewShortcuts() {
 
 export function TrainerOverview({ userName }: { userName?: string }) {
   const [isInviteOpen, setIsInviteOpen] = useState(false)
+  const [selectedRow, setSelectedRow] = useState<MatrixRow | null>(null)
+  const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
+  const navigate = useNavigate()
   const query = useQuery(trainerOverviewQueryOptions())
   const now = new Date()
   const today = todayCalendarDate()
   const dayHeading = formatDayLong(today)
   const data = query.data
   const metrics = data?.metrics
+  const matrix = data?.activityMatrix
+  const panelDog =
+    selectedRow?.dogs.find((dog) => dog.id === selectedDogId) ?? selectedRow?.dogs[0] ?? null
+  const unreadNotes = metrics?.unreadNotes ?? 0
+
+  function selectMatrixRow(row: MatrixRow, dogId?: string | null) {
+    setSelectedRow(row)
+    setSelectedDogId(dogId ?? row.dogs[0]?.id ?? null)
+  }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-gutter pt-3 pb-6 md:py-8">
-      <header className="flex items-center gap-2.5">
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-gutter pt-3 pb-6 md:max-w-7xl md:px-gutter-desktop md:py-8">
+      <header className="flex flex-wrap items-center gap-2.5">
         <div className="min-w-0 flex-1 space-y-0.5">
           <p className="text-label font-semibold text-muted-foreground">
             {dayHeading.charAt(0).toUpperCase() + dayHeading.slice(1)}
@@ -379,6 +395,17 @@ export function TrainerOverview({ userName }: { userName?: string }) {
             {userName ? `${greeting(now)}, ${firstName(userName)}` : "Přehled"}
           </h1>
         </div>
+        <Button
+          type="button"
+          className="hidden font-bold md:inline-flex"
+          onClick={() => setIsInviteOpen(true)}
+        >
+          <UserPlus
+            className="size-4"
+            aria-hidden
+          />
+          Pozvat klienta
+        </Button>
       </header>
 
       <QueryState
@@ -395,7 +422,7 @@ export function TrainerOverview({ userName }: { userName?: string }) {
           <div className="flex flex-col gap-6">
             <section
               aria-label="Metriky"
-              className="flex gap-2.5"
+              className="flex gap-2.5 overflow-x-auto"
             >
               <Kpi
                 isOnHero
@@ -433,96 +460,143 @@ export function TrainerOverview({ userName }: { userName?: string }) {
                   )
                 }
               />
-            </section>
-
-            <section
-              aria-labelledby="overview-attention-heading"
-              className="flex flex-col gap-2.5"
-            >
-              <div className="flex items-center gap-3">
-                <h2
-                  id="overview-attention-heading"
-                  className="flex-1 text-section font-extrabold"
-                >
-                  Potřebuje pozornost
-                </h2>
-                {data.attention.length > 0 && (
-                  <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-extrabold text-primary-foreground">
-                    {data.attention.length}
-                  </span>
-                )}
-              </div>
-              {data.attention.length ? (
-                <ul className="flex flex-col gap-2.5">
-                  {data.attention.map((item) => (
-                    <AttentionRow
-                      key={item.id}
-                      item={item}
-                    />
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Nikdo teď nečeká na odpověď, všichni psi trénují a drží úspěšnost.
-                </p>
-              )}
-            </section>
-
-            <section
-              aria-labelledby="overview-clients-heading"
-              className="flex flex-col gap-2.5"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <h2
-                  id="overview-clients-heading"
-                  className="text-section font-extrabold"
-                >
-                  Klienti
-                </h2>
-                {data.clients.length > 0 && (
-                  <Link
-                    to={ROUTES.clients}
-                    className="flex min-h-touch items-center text-sm font-bold text-primary"
-                  >
-                    Všech {data.clients.length}
-                  </Link>
-                )}
-              </div>
-              {data.clients.length === 0 ? (
-                <EmptyState
-                  icon={Users}
-                  chip="BEZ KLIENTŮ"
-                  title="Zatím nemáte žádné klienty"
-                  titleAs="p"
-                  description="Pozvěte prvního klienta kódem nebo e-mailem a uvidíte tady jeho sdílené psy."
-                  action={
-                    <Button
-                      size="lg"
-                      className="w-full"
-                      onClick={() => setIsInviteOpen(true)}
-                    >
-                      <UserPlus
-                        className="size-4"
-                        aria-hidden
-                      />
-                      Pozvat klienta
-                    </Button>
+              <div className="hidden min-w-0 flex-1 md:block">
+                <Kpi
+                  value={String(unreadNotes)}
+                  label="čeká na odpověď"
+                  trend={
+                    <p className="text-xs font-medium text-muted-foreground">
+                      nové zprávy u záznamů
+                    </p>
                   }
                 />
-              ) : (
-                <ul className="flex flex-col gap-2.5">
-                  {data.clients.slice(0, 5).map((client) => (
-                    <ClientRow
-                      key={client.id}
-                      client={client}
-                      now={now}
-                    />
-                  ))}
-                </ul>
-              )}
+              </div>
             </section>
 
-            <PendingInvitations onInvite={() => setIsInviteOpen(true)} />
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+              <div className="flex min-w-0 flex-1 flex-col gap-6">
+                <section
+                  aria-labelledby="overview-attention-heading"
+                  className="flex flex-col gap-2.5"
+                >
+                  <div className="flex items-center gap-3">
+                    <h2
+                      id="overview-attention-heading"
+                      className="flex-1 text-section font-extrabold"
+                    >
+                      Potřebuje pozornost
+                    </h2>
+                    {data.attention.length > 0 && (
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-extrabold text-primary-foreground">
+                        {data.attention.length}
+                      </span>
+                    )}
+                  </div>
+                  {data.attention.length ? (
+                    <ul className="flex flex-col gap-2.5">
+                      {data.attention.map((item) => (
+                        <AttentionRow
+                          key={item.id}
+                          item={item}
+                        />
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Nikdo teď nečeká na odpověď, všichni psi trénují a drží úspěšnost.
+                    </p>
+                  )}
+                </section>
+
+                {matrix && matrix.rows.length > 0 ? (
+                  <div className="hidden lg:block">
+                    <ClientActivityHeatmap
+                      matrix={matrix}
+                      today={today}
+                      selectedClientId={selectedRow?.clientId ?? null}
+                      onSelectRow={(row) => selectMatrixRow(row)}
+                    />
+                  </div>
+                ) : null}
+
+                <section
+                  aria-labelledby="overview-clients-heading"
+                  className={cn("flex flex-col gap-2.5", matrix?.rows.length ? "lg:hidden" : null)}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <h2
+                      id="overview-clients-heading"
+                      className="text-section font-extrabold"
+                    >
+                      Klienti
+                    </h2>
+                    {data.clients.length > 0 && (
+                      <Link
+                        to={ROUTES.clients}
+                        className="flex min-h-touch items-center text-sm font-bold text-primary"
+                      >
+                        Všech {data.clients.length}
+                      </Link>
+                    )}
+                  </div>
+                  {data.clients.length === 0 ? (
+                    <EmptyState
+                      icon={Users}
+                      chip="BEZ KLIENTŮ"
+                      title="Zatím nemáte žádné klienty"
+                      titleAs="p"
+                      description="Pozvěte prvního klienta kódem nebo e-mailem a uvidíte tady jeho sdílené psy."
+                      action={
+                        <Button
+                          size="lg"
+                          className="w-full"
+                          onClick={() => setIsInviteOpen(true)}
+                        >
+                          <UserPlus
+                            className="size-4"
+                            aria-hidden
+                          />
+                          Pozvat klienta
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <ul className="flex flex-col gap-2.5">
+                      {data.clients.slice(0, 5).map((client) => (
+                        <ClientRow
+                          key={client.id}
+                          client={client}
+                          now={now}
+                        />
+                      ))}
+                    </ul>
+                  )}
+                </section>
+
+                <PendingInvitations onInvite={() => setIsInviteOpen(true)} />
+              </div>
+
+              {panelDog && selectedRow ? (
+                <div className="hidden lg:block">
+                  <TrainerDogPanel
+                    dog={panelDog}
+                    dogs={selectedRow.dogs}
+                    clientName={selectedRow.clientName}
+                    onClose={() => {
+                      setSelectedRow(null)
+                      setSelectedDogId(null)
+                    }}
+                    onSelectDog={setSelectedDogId}
+                    onSchedule={() =>
+                      void navigate({
+                        to: "/clients/$clientId",
+                        params: { clientId: selectedRow.clientId },
+                      })
+                    }
+                  />
+                </div>
+              ) : null}
+            </div>
           </div>
         )}
       </QueryState>

@@ -187,4 +187,15 @@ describe("TodayView", () => {
     )
     expect(screen.getByText(/Další trénink sobota 7\. 11\./)).toBeInTheDocument()
   })
+
+  it("renders the desktop week strip with Tento týden and Celý týden", () => {
+    renderToday([aTraining()])
+
+    expect(screen.getByRole("heading", { name: "Tento týden" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Celý týden" })).toHaveAttribute("href", "/week")
+    expect(screen.getByRole("link", { name: "Otevřít celý týden →" })).toHaveAttribute(
+      "href",
+      "/week",
+    )
+  })
 })

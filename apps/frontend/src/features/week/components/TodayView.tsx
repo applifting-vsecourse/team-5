@@ -165,14 +165,16 @@ export function TodayView({ userName }: TodayViewProps) {
             <span aria-hidden> 👋</span>
           </h1>
         </div>
-        {updates.bell}
-        <LogFreeTrainingDialog dogs={dogs} />
-        <span
-          aria-label={userName ?? "Psovod"}
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-extrabold text-primary-foreground xl:hidden"
-        >
-          {firstName(userName ?? "Psovod").charAt(0)}
-        </span>
+        <div className="flex items-center gap-2 xl:hidden">
+          {updates.bell}
+          <LogFreeTrainingDialog dogs={dogs} />
+          <span
+            aria-label={userName ?? "Psovod"}
+            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-extrabold text-primary-foreground"
+          >
+            {firstName(userName ?? "Psovod").charAt(0)}
+          </span>
+        </div>
       </header>
       {updates.notifications}
 
@@ -238,8 +240,13 @@ export function TodayView({ userName }: TodayViewProps) {
             />
           )}
 
+          <div className="hidden items-center justify-end gap-2 xl:col-start-2 xl:row-start-1 xl:flex">
+            {updates.bell}
+            <LogFreeTrainingDialog dogs={dogs} />
+          </div>
+
           <QueryState
-            className="xl:col-start-2 xl:row-start-1"
+            className="xl:col-start-2 xl:row-start-2"
             isLoading={ownerMetrics.isLoading}
             error={ownerMetrics.error}
             onRetry={() => void ownerMetrics.refetch()}
@@ -306,13 +313,14 @@ export function TodayView({ userName }: TodayViewProps) {
           </QueryState>
 
           <TodayWeekPreview
+            key={weekStart}
             weekStart={weekStart}
             today={today}
           />
           {dogs.length > 0 ? (
             <section
               aria-labelledby="today-dogs-heading"
-              className="flex flex-col gap-3 xl:col-start-2 xl:row-start-2"
+              className="flex flex-col gap-3 xl:col-start-2 xl:row-start-3"
             >
               <div className="flex items-center justify-between gap-3">
                 <h2
@@ -353,7 +361,7 @@ export function TodayView({ userName }: TodayViewProps) {
               </ul>
             </section>
           ) : null}
-          <div className="xl:col-start-2 xl:row-start-3">{updates.message}</div>
+          <div className="xl:col-start-2 xl:row-start-4">{updates.message}</div>
         </div>
       </QueryState>
     </div>
