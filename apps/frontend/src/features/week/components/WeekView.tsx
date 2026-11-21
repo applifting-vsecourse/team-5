@@ -10,6 +10,7 @@ import { StripCard } from "@/components/StripCard"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { RecordUnreadBadge, UnreadReplyList } from "@/components/UnreadReplies"
 import {
   addCalendarDays,
   daysOfWeek,
@@ -61,6 +62,10 @@ function WeekTrainingCard({ training, today }: { training: WeekTraining; today: 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-bold break-words">{title}</h3>
+            <RecordUnreadBadge
+              scheduledId={training.id}
+              activityId={training.activityId ?? undefined}
+            />
             {!isPlanned && (
               <span
                 className={cn(
@@ -199,6 +204,7 @@ export function WeekView({
           <DesignIcon name="week-ChevR" />
         </Button>
       </header>
+      <UnreadReplyList />
       <ToggleGroup
         type="single"
         spacing={1.5}

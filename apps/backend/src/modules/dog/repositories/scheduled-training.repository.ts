@@ -17,6 +17,7 @@ import {
 } from '@/modules/dog/domain/scheduled-training';
 import { Injectable } from '@nestjs/common';
 import { planOrder, resolveTraining } from './hierarchy.repository';
+import { recordMessageReply } from './training-reply.repository';
 
 @Injectable()
 export class ScheduledTrainingRepository {
@@ -377,7 +378,7 @@ export class ScheduledTrainingRepository {
         },
       });
 
-      return tx.workoutLog.create({
+      const record = await tx.workoutLog.create({
         data: {
           dog: { connect: { id: training.dogId } },
           goal: { connect: { id: training.goalId } },
@@ -407,6 +408,8 @@ export class ScheduledTrainingRepository {
           videoUrl: data.videoUrl?.trim() || null,
         },
       });
+      if (data.note?.trim()) await recordMessageReply(tx, record.id, authorId);
+      return record;
     });
   }
 }

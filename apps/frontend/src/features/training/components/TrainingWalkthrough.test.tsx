@@ -74,6 +74,7 @@ const aTraining = (overrides: Partial<TrainingDetail> = {}): TrainingDetail => (
   goal: { id: "g1", title: "Chůze u nohy" },
   // Detail API resolves a stored null to the first step of the whole goal.
   currentStepId: "b1",
+  unreadReplyIds: [],
   exercises: [
     {
       id: "b1",
@@ -190,6 +191,7 @@ describe("TrainingWalkthrough", () => {
       aTraining({
         id: "scheduled-b",
         currentStepId: "a1",
+        unreadReplyIds: [],
         exercises: [
           {
             id: "b1",
@@ -272,6 +274,7 @@ describe("TrainingWalkthrough", () => {
   it("displays fallback text when instruction or criterion is missing", () => {
     renderWalkthrough(
       aTraining({
+        unreadReplyIds: [],
         exercises: [
           {
             id: "b1",

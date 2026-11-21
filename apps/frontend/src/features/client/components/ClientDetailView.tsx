@@ -5,6 +5,7 @@ import { PawPrint } from "lucide-react"
 import { DesignIcon } from "@/components/DesignIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { Button } from "@/components/ui/button"
+import { UnreadReplyList } from "@/components/UnreadReplies"
 import { dogColorClass } from "@/lib/dogColors"
 import { dogMetricsQueryOptions } from "@/lib/dogMetrics"
 import { dogHistoryFirstPageQueryOptions } from "@/lib/history"
@@ -100,6 +101,8 @@ export function ClientDetailView({ client, onSchedule }: ClientDetailViewProps) 
           </Button>
         )}
       </header>
+
+      <UnreadReplyList dogIds={client.dogs.map((dog) => dog.id)} />
 
       <section
         aria-label="Sdílení psi"

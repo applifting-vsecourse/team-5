@@ -10,6 +10,7 @@ import {
   assertTrainingContentEditable,
   resolveTraining,
 } from './hierarchy.repository';
+import { recordPlanReply } from './training-reply.repository';
 
 const inPlanOrder = [
   { position: 'asc' },
@@ -56,14 +57,17 @@ export class PlanBlockRepository {
 
   // Without insertAt the block goes to the end of the plan; with it, the
   // block becomes a step between existing ones (#65).
-  async createBlock(data: {
-    goalId: string;
-    title: string;
-    instruction: string | null;
-    durationMinutes?: number;
-    criterion: string | null;
-    insertAt?: number;
-  }): Promise<PlanBlock> {
+  async createBlock(
+    data: {
+      goalId: string;
+      title: string;
+      instruction: string | null;
+      durationMinutes?: number;
+      criterion: string | null;
+      insertAt?: number;
+    },
+    actorId?: string,
+  ): Promise<PlanBlock> {
     return this.prisma.$transaction(async (tx) => {
       const training = await resolveTraining(tx, data.goalId);
       await assertTrainingContentEditable(tx, training.id);
@@ -90,6 +94,7 @@ export class PlanBlockRepository {
       ids.splice(index, 0, created.id);
       await writePositions(tx, ids);
 
+      await recordPlanReply(tx, training.id, actorId);
       return { ...created, position: index };
     });
   }
@@ -102,11 +107,13 @@ export class PlanBlockRepository {
       durationMinutes?: number;
       criterion?: string | null;
     },
+    actorId?: string,
   ): Promise<PlanBlock> {
     return this.prisma.$transaction(async (tx) => {
       const block = await tx.planBlock.findUniqueOrThrow({ where: { id } });
       await resolveTraining(tx, block.goalId, block.trainingId);
       await assertTrainingContentEditable(tx, block.trainingId);
+      await recordPlanReply(tx, block.trainingId, actorId);
       return tx.planBlock.update({
         where: { id },
         data: {
@@ -123,12 +130,17 @@ export class PlanBlockRepository {
     });
   }
 
-  async deleteBlock(id: string, goalId: string): Promise<void> {
+  async deleteBlock(
+    id: string,
+    goalId: string,
+    actorId?: string,
+  ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       const block = await tx.planBlock.findUniqueOrThrow({ where: { id } });
       await resolveTraining(tx, goalId, block.trainingId);
       await assertTrainingContentEditable(tx, block.trainingId);
       await tx.planBlock.delete({ where: { id } });
+      await recordPlanReply(tx, block.trainingId, actorId);
       const remaining = await tx.planBlock.findMany({
         where: { trainingId: block.trainingId },
         orderBy: inPlanOrder,
@@ -144,6 +156,7 @@ export class PlanBlockRepository {
   async reorderBlocks(
     goalId: string,
     blockIds: string[],
+    actorId?: string,
   ): Promise<PlanBlock[]> {
     return this.prisma.$transaction(async (tx) => {
       const training = await resolveTraining(tx, goalId);
@@ -163,6 +176,7 @@ export class PlanBlockRepository {
         );
       }
       await writePositions(tx, blockIds);
+      await recordPlanReply(tx, training.id, actorId);
       return tx.planBlock.findMany({
         where: { trainingId: training.id },
         orderBy: inPlanOrder,

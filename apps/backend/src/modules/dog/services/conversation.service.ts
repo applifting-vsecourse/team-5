@@ -20,7 +20,7 @@ export class ConversationService {
   }
 
   async record(user: Identity, id: string) {
-    const row = await this.repository.record(id);
+    const row = await this.repository.record(id, user.id);
     if (!row) throw new NotFoundException('Training record not found');
     await this.access.getAccessibleDog(user, row.dogId);
     return row;
@@ -74,6 +74,10 @@ export class ConversationService {
             })),
           }
         : null,
+      unreadReplyIds: [
+        ...(row.unreadReplies ?? []),
+        ...(row.scheduledTraining?.unreadReplies ?? []),
+      ].map((reply) => reply.id),
       messages,
     };
   }

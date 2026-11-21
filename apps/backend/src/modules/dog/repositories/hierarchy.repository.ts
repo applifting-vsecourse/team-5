@@ -21,6 +21,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { recordPlanReply } from './training-reply.repository';
 
 export const planOrder = [{ position: 'asc' }, { id: 'asc' }] as const;
 
@@ -241,6 +242,7 @@ export class HierarchyRepository {
     id: string,
     goalId: string,
     data: { title?: string; isArchived?: boolean },
+    actorId?: string,
   ): Promise<GoalTraining> {
     return this.prisma.$transaction(async (tx) => {
       await lockEditableGoal(tx, goalId);
@@ -255,6 +257,7 @@ export class HierarchyRepository {
       ) {
         throw new ConflictException('Restore the training before editing it');
       }
+      await recordPlanReply(tx, id, actorId);
       return tx.goalTraining.update({ where: { id }, data });
     });
   }
@@ -283,6 +286,7 @@ export class HierarchyRepository {
       durationMinutes?: number;
       insertAt?: number;
     },
+    actorId?: string,
   ): Promise<PlanBlock> {
     return this.prisma.$transaction(async (tx) => {
       await resolveTraining(tx, goalId, trainingId);
@@ -312,6 +316,7 @@ export class HierarchyRepository {
           where: { id: sibling.id },
           data: { position: index },
         });
+      await recordPlanReply(tx, trainingId, actorId);
       return created;
     });
   }
@@ -320,6 +325,7 @@ export class HierarchyRepository {
     goalId: string,
     trainingId: string,
     ids: string[],
+    actorId?: string,
   ): Promise<PlanBlock[]> {
     return this.prisma.$transaction(async (tx) => {
       await resolveTraining(tx, goalId, trainingId);
@@ -328,6 +334,7 @@ export class HierarchyRepository {
       validateOrder(current, ids);
       for (const [position, id] of ids.entries())
         await tx.planBlock.update({ where: { id }, data: { position } });
+      await recordPlanReply(tx, trainingId, actorId);
       return tx.planBlock.findMany({
         where: { trainingId },
         orderBy: [...planOrder],

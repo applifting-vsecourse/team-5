@@ -46,6 +46,7 @@ const aTraining = (): TrainingDetail => ({
   dog: { id: "d1", name: "Rex", color: 1 },
   goal: { id: "g1", title: "Chůze u nohy" },
   currentStepId: null,
+  unreadReplyIds: [],
   exercises: [],
 })
 

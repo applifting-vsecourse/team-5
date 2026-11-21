@@ -81,10 +81,15 @@ export class HierarchyService {
     data: UpdateGoalTrainingData,
   ): Promise<GoalTraining> {
     const training = await this.getTraining(user, id);
-    return this.repository.updateTraining(id, training.goalId, {
-      ...data,
-      title: data.title?.trim(),
-    });
+    return this.repository.updateTraining(
+      id,
+      training.goalId,
+      {
+        ...data,
+        title: data.title?.trim(),
+      },
+      user.id,
+    );
   }
 
   async reorderTrainings(
@@ -102,7 +107,7 @@ export class HierarchyService {
     data: CreatePlanBlockData,
   ): Promise<PlanBlock> {
     const training = await this.getTraining(user, id);
-    return this.repository.createStep(training.goalId, id, data);
+    return this.repository.createStep(training.goalId, id, data, user.id);
   }
 
   async reorderSteps(
@@ -111,7 +116,7 @@ export class HierarchyService {
     ids: string[],
   ): Promise<PlanBlock[]> {
     const training = await this.getTraining(user, id);
-    return this.repository.reorderSteps(training.goalId, id, ids);
+    return this.repository.reorderSteps(training.goalId, id, ids, user.id);
   }
 
   // Owner and a shared trainer may walk the plan (getGoal checks the dog).
