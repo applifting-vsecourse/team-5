@@ -1,12 +1,12 @@
+import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2 } from "lucide-react"
+import { Loader2, Plus } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -29,6 +29,7 @@ type GoalFormProps = {
   disciplines: string[]
   defaultValues?: Partial<GoalFormValues>
   isPending: boolean
+  onAddDiscipline?: (name: string) => void | Promise<void>
   onSubmit: (values: GoalFormValues) => void | Promise<void>
   // When given, the form offers "Uložit a naplánovat" as its main action (#71).
   onSubmitAndSchedule?: (values: GoalFormValues) => void | Promise<void>
@@ -42,16 +43,31 @@ export function GoalForm({
   disciplines,
   defaultValues,
   isPending,
+  onAddDiscipline,
   onSubmit,
   onSubmitAndSchedule,
   submitLabel = "Uložit",
 }: GoalFormProps) {
+  const [addedDisciplines, setAddedDisciplines] = useState<string[]>([])
+  const [isAddingDiscipline, setIsAddingDiscipline] = useState(false)
+  const [newDiscipline, setNewDiscipline] = useState("")
+  const [isSavingDiscipline, setIsSavingDiscipline] = useState(false)
+  const [disciplineError, setDisciplineError] = useState<string | null>(null)
+
   // Keep a discipline the goal already has selectable even if the dog no
   // longer lists it, so opening the form never silently changes the goal.
   // An empty discipline means "none".
   const current = defaultValues?.discipline === "" ? undefined : defaultValues?.discipline
+  const mergedDisciplines = [
+    ...disciplines,
+    ...addedDisciplines.filter(
+      (item) => !disciplines.some((existing) => existing.toLowerCase() === item.toLowerCase()),
+    ),
+  ]
   const disciplineOptions =
-    current && !disciplines.includes(current) ? [...disciplines, current] : disciplines
+    current && !mergedDisciplines.includes(current)
+      ? [...mergedDisciplines, current]
+      : mergedDisciplines
 
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalFormSchema),
@@ -65,6 +81,40 @@ export function GoalForm({
       deadline: defaultValues?.deadline,
     },
   })
+
+  const handleAddDiscipline = async () => {
+    if (!onAddDiscipline || isSavingDiscipline) return
+    const trimmed = newDiscipline.trim()
+    if (!trimmed) {
+      setDisciplineError("Zadej název disciplíny.")
+      return
+    }
+    if (trimmed.length > 40) {
+      setDisciplineError("Název disciplíny může mít nejvýš 40 znaků.")
+      return
+    }
+    const existing = disciplineOptions.find((item) => item.toLowerCase() === trimmed.toLowerCase())
+    if (existing) {
+      form.setValue("discipline", existing, { shouldDirty: true })
+      setNewDiscipline("")
+      setDisciplineError(null)
+      setIsAddingDiscipline(false)
+      return
+    }
+    setIsSavingDiscipline(true)
+    setDisciplineError(null)
+    try {
+      await onAddDiscipline(trimmed)
+      setAddedDisciplines((prev) => [...prev, trimmed])
+      form.setValue("discipline", trimmed, { shouldDirty: true })
+      setNewDiscipline("")
+      setIsAddingDiscipline(false)
+    } catch {
+      setDisciplineError("Disciplínu se nepodařilo přidat. Zkus to znovu.")
+    } finally {
+      setIsSavingDiscipline(false)
+    }
+  }
 
   return (
     <Form {...form}>
@@ -91,34 +141,102 @@ export function GoalForm({
           )}
         />
 
-        {disciplineOptions.length > 0 ? (
+        {disciplineOptions.length > 0 || onAddDiscipline ? (
           <FormField
             control={form.control}
             name="discipline"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Disciplína</FormLabel>
-                <Select
-                  value={field.value || NO_DISCIPLINE}
-                  onValueChange={(value) => field.onChange(value === NO_DISCIPLINE ? "" : value)}
-                >
-                  <FormControl>
-                    <SelectTrigger className="min-h-field w-full rounded-field">
-                      <SelectValue placeholder="Vyberte disciplínu" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value={NO_DISCIPLINE}>Bez disciplíny</SelectItem>
-                    {disciplineOptions.map((discipline) => (
-                      <SelectItem
-                        key={discipline}
-                        value={discipline}
-                      >
-                        {discipline}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {disciplineOptions.length > 0 && (
+                  <Select
+                    value={field.value || NO_DISCIPLINE}
+                    onValueChange={(value) => field.onChange(value === NO_DISCIPLINE ? "" : value)}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="min-h-field w-full rounded-field">
+                        <SelectValue placeholder="Vyberte disciplínu" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value={NO_DISCIPLINE}>Bez disciplíny</SelectItem>
+                      {disciplineOptions.map((discipline) => (
+                        <SelectItem
+                          key={discipline}
+                          value={discipline}
+                        >
+                          {discipline}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {onAddDiscipline &&
+                  (isAddingDiscipline ? (
+                    <div className="space-y-2 pt-1">
+                      <div className="flex gap-2">
+                        <Input
+                          aria-label="Nová disciplína"
+                          placeholder="např. Agility"
+                          value={newDiscipline}
+                          maxLength={40}
+                          disabled={isSavingDiscipline}
+                          className="min-h-field rounded-field"
+                          onChange={(e) => {
+                            setNewDiscipline(e.target.value)
+                            setDisciplineError(null)
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault()
+                              void handleAddDiscipline()
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          className="min-h-field shrink-0 rounded-field"
+                          disabled={isSavingDiscipline}
+                          onClick={() => void handleAddDiscipline()}
+                        >
+                          {isSavingDiscipline ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            "Přidat"
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="min-h-field shrink-0 rounded-field"
+                          disabled={isSavingDiscipline}
+                          onClick={() => {
+                            setIsAddingDiscipline(false)
+                            setNewDiscipline("")
+                            setDisciplineError(null)
+                          }}
+                        >
+                          Zrušit
+                        </Button>
+                      </div>
+                      {disciplineError && (
+                        <p className="text-sm font-medium text-destructive">{disciplineError}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="min-h-touch w-fit rounded-field"
+                      disabled={isPending}
+                      onClick={() => setIsAddingDiscipline(true)}
+                    >
+                      <Plus className="size-4" />
+                      Nová disciplína
+                    </Button>
+                  ))}
                 <FormMessage />
               </FormItem>
             )}
@@ -142,7 +260,6 @@ export function GoalForm({
                   {...field}
                 />
               </FormControl>
-              <FormDescription>Čeho docílit a na co si dát pozor.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
