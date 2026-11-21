@@ -4,6 +4,7 @@ import { PawPrint } from "lucide-react"
 
 import { DesignIcon } from "@/components/DesignIcon"
 import { EmptyState } from "@/components/EmptyState"
+import { TrainerNotesSection } from "@/components/TrainerNotesSection"
 import { Button } from "@/components/ui/button"
 import { UnreadReplyList } from "@/components/UnreadReplies"
 import { dogColorClass } from "@/lib/dogColors"
@@ -252,6 +253,11 @@ export function ClientDetailView({ client, onSchedule }: ClientDetailViewProps) 
           </ul>
         )}
       </section>
+
+      <TrainerNotesSection
+        clientId={client.id}
+        dogs={client.dogs.map((dog) => ({ id: dog.id, name: dog.name, color: dog.color }))}
+      />
     </div>
   )
 }

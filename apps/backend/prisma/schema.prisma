@@ -86,11 +86,13 @@ model User {
   createdGoals       TrainingGoal[]      @relation("GoalCreator")
   workoutLogs        WorkoutLog[]        @relation("LogAuthor")
   scheduledTrainings ScheduledTraining[] @relation("TrainingScheduler")
-  trainerConnections ClientConnection[]  @relation("TrainerClients")
-  clientConnections  ClientConnection[]  @relation("ClientTrainers")
-  sharedDogs         DogShare[]          @relation("TrainerSharedDogs")
-  invitations        Invitation[]        @relation("TrainerInvitations")
-  messages           TrainingMessage[]
+  trainerConnections   ClientConnection[]  @relation("TrainerClients")
+  clientConnections    ClientConnection[]  @relation("ClientTrainers")
+  sharedDogs           DogShare[]          @relation("TrainerSharedDogs")
+  invitations          Invitation[]        @relation("TrainerInvitations")
+  authoredTrainerNotes TrainerNote[]       @relation("TrainerAuthoredNotes")
+  clientTrainerNotes   TrainerNote[]       @relation("ClientTrainerNotes")
+  messages             TrainingMessage[]
   role               UserRole            @default(user)
 
   username        String? @db.VarChar(50)
@@ -119,6 +121,7 @@ model Dog {
   workoutLogs        WorkoutLog[]
   shares             DogShare[]
   notes              DogNote[]
+  trainerNotes       TrainerNote[]
   trainings          ScheduledTraining[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @default(now()) @updatedAt
@@ -402,6 +405,31 @@ model DogNote {
 
   @@index([dogId, date(sort: Desc)])
   @@map("dog_note")
+}
+
+// Private notes authored by a trainer about a client or one of their shared
+// dogs (#236). Only the authoring trainer reads and writes them while an active
+// collaboration exists; clients and other trainers never see them.
+model TrainerNote {
+  id        String   @id @default(cuid())
+  trainerId String
+  trainer   User     @relation("TrainerAuthoredNotes", fields: [trainerId], references: [id], onDelete: Cascade)
+  clientId  String
+  client    User     @relation("ClientTrainerNotes", fields: [clientId], references: [id], onDelete: Cascade)
+  dogId     String?
+  dog       Dog?     @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  title     String   @db.VarChar(100)
+  text      String   @db.Text
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([trainerId, clientId, isPinned(sort: Desc), date(sort: Desc)])
+  @@index([trainerId, dogId, isPinned(sort: Desc), date(sort: Desc)])
+  @@index([clientId])
+  @@index([dogId])
+  @@map("trainer_note")
 }
 
 // The workout log is the thread (#88, F-21). Deleting the owner removes the

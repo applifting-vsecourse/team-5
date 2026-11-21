@@ -38,9 +38,12 @@ export class DogRepository {
         where: { dogId, trainerId, dog: { ownerId } },
       });
       if (!removed.count) return false;
+      await tx.trainerNote.deleteMany({
+        where: { trainerId, dogId },
+      });
       // Keep the client connection while any other dog is still shared,
       // including archived dogs that the owner may restore later.
-      await tx.clientConnection.deleteMany({
+      const removedConn = await tx.clientConnection.deleteMany({
         where: {
           trainerId,
           clientId: ownerId,
@@ -49,6 +52,11 @@ export class DogRepository {
           },
         },
       });
+      if (removedConn.count > 0) {
+        await tx.trainerNote.deleteMany({
+          where: { trainerId, clientId: ownerId },
+        });
+      }
       return true;
     });
   }

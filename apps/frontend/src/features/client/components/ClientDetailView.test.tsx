@@ -165,6 +165,7 @@ describe("ClientDetailView", () => {
             updatedAt: "2026-10-01T10:00:00Z",
           },
         ]),
+      "clients/c-123/notes": () => Promise.resolve([]),
       history: () =>
         Promise.resolve({
           ...emptyHistory,
@@ -233,6 +234,7 @@ describe("ClientDetailView", () => {
           clients: [],
           attention: [],
         }),
+      "clients/c-123/notes": () => Promise.resolve([]),
       history: () => Promise.resolve(emptyHistory),
     })
     const clientWithoutDogs: Client = {
