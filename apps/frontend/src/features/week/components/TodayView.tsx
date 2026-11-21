@@ -2,6 +2,7 @@ import { useQueries, useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { Calendar } from "lucide-react"
 
+import { ClickerToolDialog } from "@/components/ClickerToolDialog"
 import { DesignIcon } from "@/components/DesignIcon"
 import { dayLabel, DogPlayerCard } from "@/components/DogPlayerCard"
 import { EmptyState } from "@/components/EmptyState"
@@ -166,6 +167,7 @@ export function TodayView({ userName }: TodayViewProps) {
           </h1>
         </div>
         {updates.bell}
+        <ClickerToolDialog />
         <LogFreeTrainingDialog dogs={dogs} />
         <span
           aria-label={userName ?? "Psovod"}

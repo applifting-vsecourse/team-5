@@ -339,3 +339,18 @@ it("keeps a shared trainer read-only even when viewing the current planned step"
   await user.click(screen.getByRole("button", { name: "Další krok" }))
   expect(moveCurrentStep).not.toHaveBeenCalled()
 })
+
+it("shows the Klikr bar in active planned walkthroughs and hides it in completed trainings", async () => {
+  const user = userEvent.setup()
+  const { unmount } = renderWalkthrough(aTraining({ status: "PLANNED" }))
+
+  const clicker = screen.getByRole("button", { name: /Klikr/i })
+  expect(clicker).toBeInTheDocument()
+  await user.click(clicker)
+  expect(screen.getByRole("status", { name: "Počet kliknutí: 1" })).toBeInTheDocument()
+
+  unmount()
+
+  renderWalkthrough(aTraining({ status: "COMPLETED" }))
+  expect(screen.queryByRole("button", { name: /Klikr/i })).not.toBeInTheDocument()
+})
