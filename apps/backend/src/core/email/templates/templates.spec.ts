@@ -20,7 +20,7 @@ describe('Email templates', () => {
     expect(tree).toContain('Train');
     expect(tree).toContain('Loop');
     expect(tree).toContain(EMAIL_THEME.colors.background); // #faf8f5
-    expect(tree).toContain(EMAIL_THEME.colors.primary); // #c2410c
+    expect(tree).toContain(EMAIL_THEME.colors.primary); // #8b5a2b
     expect(tree).toContain(EMAIL_THEME.colors.border); // #e6dfd3
     expect(tree).toContain('TrainLoop · Tréninkový deník psa');
   });
@@ -41,7 +41,7 @@ describe('Email templates', () => {
     expect(tree).toContain('https://trainloop.app/invite?code=K7M2PQ');
     expect(tree).toContain('Přijmout pozvánku');
     // Design tokens & styling
-    expect(tree).toContain('#c2410c'); // Primary brand/button color
+    expect(tree).toContain('#8b5a2b'); // Primary brand/button color
     expect(tree).toContain('#f2eee5'); // Muted code box
     expect(tree).toContain('#e6dfd3'); // Border
     expect(tree).toContain('TrainLoop');
@@ -78,7 +78,7 @@ describe('Email templates', () => {
     expect(tree).toContain('Obnovit heslo');
     expect(tree).toContain('Pokud jste o obnovu hesla nežádali');
     // Design tokens & styling
-    expect(tree).toContain('#c2410c');
+    expect(tree).toContain('#8b5a2b');
     expect(tree).toContain('#1c2628');
     expect(tree).toContain('#e6dfd3');
   });
@@ -96,7 +96,7 @@ describe('Email templates', () => {
     expect(tree).toContain('Ověřit e-mail');
     expect(tree).toContain('Pokud jste si účet v TrainLoop nevytvořili');
     // Design tokens & styling
-    expect(tree).toContain('#c2410c');
+    expect(tree).toContain('#8b5a2b');
     expect(tree).toContain('#1c2628');
     expect(tree).toContain('#e6dfd3');
   });
@@ -127,7 +127,7 @@ describe('Email templates', () => {
     expect(tree).toContain('https://trainloop.app/dogs/dog-1/activities/log-1');
     expect(tree).toContain('https://trainloop.app/account');
     expect(tree).toContain('Otevřít záznam tréninku');
-    expect(tree).toContain('#c2410c');
+    expect(tree).toContain('#8b5a2b');
     expect(tree).toContain('#f2eee5');
     expect(tree).toContain('#e6dfd3');
     expect(

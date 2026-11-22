@@ -231,7 +231,7 @@ export const TrainingNotification = ({
       >
         <Button
           href={recordUrl}
-          className="bg-[#c2410c] text-white font-semibold rounded-md px-6 py-3.5 text-center inline-block"
+          className="bg-[#8b5a2b] text-white font-semibold rounded-md px-6 py-3.5 text-center inline-block"
           style={{
             backgroundColor: EMAIL_THEME.colors.primary,
             color: EMAIL_THEME.colors.primaryForeground,
@@ -261,7 +261,7 @@ export const TrainingNotification = ({
         prohlížeče:
       </Text>
       <Text
-        className="text-[#c2410c] text-sm break-all m-0"
+        className="text-[#8b5a2b] text-sm break-all m-0"
         style={{
           color: EMAIL_THEME.colors.primary,
           fontSize: '14px',
@@ -271,7 +271,7 @@ export const TrainingNotification = ({
       >
         <Link
           href={recordUrl}
-          className="text-[#c2410c] underline"
+          className="text-[#8b5a2b] underline"
           style={{
             color: EMAIL_THEME.colors.primary,
             textDecoration: 'underline',
@@ -296,7 +296,7 @@ export const TrainingNotification = ({
         E-mailová upozornění můžete kdykoli vypnout v nastavení{' '}
         <Link
           href={accountUrl}
-          className="text-[#c2410c] underline"
+          className="text-[#8b5a2b] underline"
           style={{
             color: EMAIL_THEME.colors.primary,
             textDecoration: 'underline',
