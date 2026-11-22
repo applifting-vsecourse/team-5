@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { RecordUnreadBadge, UnreadReplyList } from "@/components/UnreadReplies"
-import { replyRecordId, unreadRepliesOptions } from "@/lib/trainingReplies"
 import {
   addCalendarDays,
   daysOfWeek,
@@ -23,6 +22,7 @@ import {
   type CalendarDate,
 } from "@/lib/calendarDate"
 import { dogColorClass } from "@/lib/dogColors"
+import { replyRecordId, unreadRepliesOptions } from "@/lib/trainingReplies"
 import { cn } from "@/lib/utils"
 
 import {
