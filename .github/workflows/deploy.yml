@@ -83,6 +83,8 @@ jobs:
           build-args: |
             CI_COMMIT_SHA=${{ github.sha }}
             RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
           tags: ${{ env.REGISTRY }}/${{ steps.slug.outputs.slug }}-backend:latest
       - name: Build & push frontend
         uses: docker/build-push-action@v7.4.0
