@@ -118,8 +118,8 @@ describe('training conversations', () => {
       training: {
         title: 'Přivolání',
         steps: [
-          { id: 's1', title: 'Píšťalka', outcome: 'MASTERED', position: 0 },
-          { id: 's2', title: 'Sedni', outcome: null, position: 1 },
+          { id: 's1', title: 'Píšťalka', position: 0 },
+          { id: 's2', title: 'Sedni', position: 1 },
         ],
       },
       messages: [],
@@ -137,8 +137,8 @@ describe('training conversations', () => {
       goal: {
         title: 'Přivolání',
         blocks: [
-          { id: 's1', title: 'Píšťalka', outcome: 'MASTERED', position: 0 },
-          { id: 's2', title: 'Sedni', outcome: null, position: 1 },
+          { id: 's1', title: 'Píšťalka', position: 0 },
+          { id: 's2', title: 'Sedni', position: 1 },
         ],
       },
     });

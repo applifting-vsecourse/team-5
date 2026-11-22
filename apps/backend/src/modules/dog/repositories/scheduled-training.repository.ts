@@ -9,7 +9,6 @@ import {
   WorkoutLog,
   WorkoutStatus,
 } from '@/generated/prisma/client';
-import { effectiveCurrentStepId } from '@/modules/dog/domain/current-step';
 import {
   ScheduledTraining,
   ScheduledTrainingDetail,
@@ -102,7 +101,7 @@ export class ScheduledTrainingRepository {
             },
           },
         },
-        goal: { select: { id: true, title: true, currentStepId: true } },
+        goal: { select: { id: true, title: true } },
         training: {
           select: {
             id: true,
@@ -115,7 +114,6 @@ export class ScheduledTrainingRepository {
                 instruction: true,
                 criterion: true,
                 durationMinutes: true,
-                outcome: true,
               },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },
@@ -124,21 +122,10 @@ export class ScheduledTrainingRepository {
       },
     });
     if (!row) return null;
-    // Walkthrough compares the pointer to this training's steps; expose the
-    // effective first step of the whole goal when the stored pointer is null.
-    const goalSteps = await this.prisma.planBlock.findMany({
-      where: { goalId: row.goal.id, training: { isArchived: false } },
-      select: { id: true },
-      orderBy: [{ training: { position: 'asc' } }, ...planOrder],
-    });
     return {
       ...row,
       goal: {
         ...row.goal,
-        currentStepId: effectiveCurrentStepId(
-          goalSteps.map((step) => step.id),
-          row.goal.currentStepId,
-        ),
         blocks: row.training.steps,
       },
     };

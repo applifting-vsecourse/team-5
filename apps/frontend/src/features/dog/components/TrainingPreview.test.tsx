@@ -6,9 +6,6 @@ import type { PlanBlock } from "@/features/dog/api/dogSchemas"
 
 import { TrainingPreview } from "./TrainingPreview"
 
-const { moveCurrentStep } = vi.hoisted(() => ({ moveCurrentStep: vi.fn() }))
-vi.mock("@/lib/moveCurrentStep", () => ({ moveCurrentStep }))
-
 const steps: PlanBlock[] = ["Přivolání", "Chůze u nohy"].map((title, index) => ({
   id: `step-${index}`,
   goalId: "goal",
@@ -37,13 +34,12 @@ describe("training preview", () => {
       />,
     )
     expect(screen.getByRole("heading", { name: "Přivolání" })).toBeInTheDocument()
-    expect(screen.getByRole("timer")).toHaveTextContent("1 min")
+    expect(screen.getByRole("timer")).toHaveTextContent("1:00")
     await user.click(screen.getByRole("button", { name: "Hotovo, další krok" }))
     expect(screen.getByRole("heading", { name: "Chůze u nohy" })).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "Dokončit náhled" }))
     expect(close).toHaveBeenCalledWith(false)
     expect(fetch).not.toHaveBeenCalled()
-    expect(moveCurrentStep).not.toHaveBeenCalled()
     fetch.mockRestore()
   })
   it("restarts at the first step with a fresh timer when reopened after editing", async () => {
@@ -72,7 +68,7 @@ describe("training preview", () => {
       />,
     )
     expect(screen.getByRole("heading", { name: "Přivolání" })).toBeInTheDocument()
-    expect(screen.getByRole("timer")).toHaveTextContent("1 min")
+    expect(screen.getByRole("timer")).toHaveTextContent("1:00")
     expect(screen.getByRole("button", { name: "Zpět" })).toBeDisabled()
   })
   it("starts, pauses and resets the timer", () => {
@@ -90,13 +86,13 @@ describe("training preview", () => {
     act(() => {
       vi.advanceTimersByTime(60000)
     })
-    expect(screen.getByRole("timer")).toHaveTextContent("1 min")
+    expect(screen.getByRole("timer")).toHaveTextContent("1:00")
     fireEvent.click(screen.getByRole("button", { name: "Pozastavit časovač" }))
     act(() => {
       vi.advanceTimersByTime(60000)
     })
-    expect(screen.getByRole("timer")).toHaveTextContent("1 min")
+    expect(screen.getByRole("timer")).toHaveTextContent("1:00")
     fireEvent.click(screen.getByRole("button", { name: "Vynulovat časovač" }))
-    expect(screen.getByRole("timer")).toHaveTextContent("2 min")
+    expect(screen.getByRole("timer")).toHaveTextContent("2:00")
   })
 })

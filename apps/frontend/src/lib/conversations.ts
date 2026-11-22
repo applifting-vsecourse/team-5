@@ -22,7 +22,6 @@ const message = z.object({
 const block = z.object({
   id: z.string(),
   title: z.string(),
-  outcome: z.enum(["MASTERED", "SKIPPED"]).nullable(),
   position: z.number(),
 })
 const conversationDetail = z.object({

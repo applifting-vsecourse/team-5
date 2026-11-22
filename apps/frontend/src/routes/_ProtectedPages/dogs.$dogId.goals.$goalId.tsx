@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router"
 
 import { Seo } from "@/components/Seo"
 
+import { useSession } from "@/features/auth/hooks/useSession"
 import { EditGoalPage } from "@/features/dog/components/GoalEditorPage"
 
 type GoalSearch = {
@@ -25,6 +26,7 @@ function EditGoalRoute() {
   const { dogId, goalId } = Route.useParams()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
+  const { user } = useSession()
 
   // Drop the flag once handled, so a reload does not open the picker again.
   const clearScheduleRequest = useCallback(() => {
@@ -37,6 +39,7 @@ function EditGoalRoute() {
       <EditGoalPage
         dogId={dogId}
         goalId={goalId}
+        currentUserId={user?.id}
         isNewTrainingRequested={search.novyTrenink === true}
         onNewTrainingRequestHandled={() =>
           void navigate({

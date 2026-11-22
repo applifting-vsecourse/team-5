@@ -17,6 +17,7 @@ import { weekKeys } from "@/lib/weekKeys"
 
 import type { GoalFormValues } from "@/features/dog/api/dogSchemas"
 import { dogDetailQueryOptions, goalQueryOptions } from "@/features/dog/api/dogsQueryOptions"
+import { setDogDiscipline } from "@/features/dog/api/setDogDiscipline"
 import { createSession, dogPlanQueryOptions } from "@/features/dog/api/trainingEditor"
 import { useCreateGoal } from "@/features/dog/hooks/useCreateGoal"
 import { useUpdateGoal } from "@/features/dog/hooks/useUpdateGoal"
@@ -63,10 +64,26 @@ function GoalShell({
   )
 }
 
-export function NewGoalPage({ dogId }: { dogId: string }) {
+export function NewGoalPage({
+  dogId,
+  currentUserId,
+}: {
+  dogId: string
+  currentUserId?: string | null
+}) {
+  const client = useQueryClient()
   const dogQuery = useQuery(dogDetailQueryOptions(dogId))
   const create = useCreateGoal(dogId)
   const navigate = useNavigate()
+  const isOwner = Boolean(currentUserId && dogQuery.data?.ownerId === currentUserId)
+  const addDiscipline = async (name: string) => {
+    await setDogDiscipline(dogId, { name, isArchived: false })
+    await Promise.all([
+      client.invalidateQueries({ queryKey: dogKeys.detail(dogId) }),
+      client.invalidateQueries({ queryKey: dogKeys.all }),
+    ])
+    toast.success(`Disciplína „${name}“ byla přidána`)
+  }
   return (
     <GoalShell
       dogId={dogId}
@@ -93,6 +110,7 @@ export function NewGoalPage({ dogId }: { dogId: string }) {
             disciplines={dogQuery.data?.disciplines ?? []}
             isPending={create.isPending}
             submitLabel="Vytvořit cíl"
+            onAddDiscipline={isOwner ? addDiscipline : undefined}
             onSubmit={(values) =>
               create.mutate(values, {
                 onSuccess: (goal) =>
@@ -113,6 +131,7 @@ export function NewGoalPage({ dogId }: { dogId: string }) {
 export function EditGoalPage({
   dogId,
   goalId,
+  currentUserId,
   isNewTrainingRequested,
   onNewTrainingRequestHandled,
   selectedSessionId,
@@ -122,6 +141,7 @@ export function EditGoalPage({
 }: {
   dogId: string
   goalId: string
+  currentUserId?: string | null
   isNewTrainingRequested?: boolean
   onNewTrainingRequestHandled?: () => void
   selectedSessionId?: string
@@ -134,6 +154,15 @@ export function EditGoalPage({
   const planQuery = useQuery(dogPlanQueryOptions(dogId))
   const client = useQueryClient()
   const navigate = useNavigate()
+  const isOwner = Boolean(currentUserId && dogQuery.data?.ownerId === currentUserId)
+  const addDiscipline = async (name: string) => {
+    await setDogDiscipline(dogId, { name, isArchived: false })
+    await Promise.all([
+      client.invalidateQueries({ queryKey: dogKeys.detail(dogId) }),
+      client.invalidateQueries({ queryKey: dogKeys.all }),
+    ])
+    toast.success(`Disciplína „${name}“ byla přidána`)
+  }
   const [isEditing, setEditing] = useState(false)
   const [isNewTrainingOpen, setNewTraining] = useState(false)
   const [title, setTitle] = useState("")
@@ -149,9 +178,6 @@ export function EditGoalPage({
   const selected = sessions.find((s) => s.id === sessionId)
   const isReadOnly =
     goal?.status === "ARCHIVED" || goal?.status === "COMPLETED" || membership?.isArchived === true
-  const canMoveStep = Boolean(goal?.status === "ACTIVE" && !isReadOnly)
-  const currentStepId =
-    goal?.currentStepId ?? sessions.flatMap((session) => session.steps).at(0)?.id ?? null
   const refresh = () => client.invalidateQueries({ queryKey: dogKeys.all })
   const create = useMutation({
     mutationFn: () => createSession(goalId, title.trim()),
@@ -218,8 +244,6 @@ export function EditGoalPage({
           Boolean(selected.scheduledTrainings?.some((t) => t.status === "COMPLETED"))
         }
         canSchedule={!isReadOnly && !selected.isArchived}
-        canMoveStep={canMoveStep}
-        currentStepId={currentStepId}
         onBack={() => setSessionId(null)}
         isScheduleRequested={isScheduleRequested}
         onScheduleRequestHandled={onScheduleRequestHandled}
@@ -233,6 +257,7 @@ export function EditGoalPage({
       subtitle={goal ? `${dogQuery.data?.name ?? ""} · ${goal.discipline ?? "Obecné"}` : undefined}
     >
       <QueryState
+        className="space-y-6"
         isLoading={dogQuery.isLoading || goalQuery.isLoading || planQuery.isLoading}
         error={failure}
         onRetry={() => {
@@ -262,15 +287,17 @@ export function EditGoalPage({
                 </Button>
               )}
             </div>
-            <section className="space-y-3 rounded-card bg-accent p-4">
-              <h2 className="text-label font-bold text-muted-foreground">Princip tréninku</h2>
+            <section className="space-y-1.5 rounded-card bg-accent p-4">
+              <h2 className="text-label font-bold text-muted-foreground">Princip cíle</h2>
               <p className="leading-relaxed whitespace-pre-wrap">
                 {goal.principle?.trim() ? goal.principle : "Princip zatím není doplněný."}
               </p>
             </section>
             {goal.criterion && (
-              <div className="flex gap-2 rounded-field bg-secondary p-4">
-                <EditorIcon name="Target" />
+              <div className="flex items-start gap-2.5 rounded-field bg-secondary p-4">
+                <span className="mt-0.5 shrink-0">
+                  <EditorIcon name="Target" />
+                </span>
                 <p className="text-sm whitespace-pre-wrap">Hotovo, když: {goal.criterion}</p>
               </div>
             )}
@@ -290,15 +317,24 @@ export function EditGoalPage({
               ) : (
                 <ol className="space-y-3">
                   {sessions.map((s, index) => {
-                    const hasCurrentStep = Boolean(
-                      currentStepId && s.steps.some((block) => block.id === currentStepId),
+                    const planned = (s.scheduledTrainings ?? []).filter(
+                      (item) => item.status === "PLANNED",
                     )
+                    const completedCount =
+                      (s.scheduledTrainings ?? []).filter((item) => item.status === "COMPLETED")
+                        .length + (s.workoutLogs?.length ?? 0)
+                    const plannedDates = planned.slice(0, 2).map((item) =>
+                      item.date.toLocaleDateString("cs-CZ", {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "numeric",
+                      }),
+                    )
+                    const extraPlanned = planned.length - plannedDates.length
                     return (
                       <li
                         key={s.id}
-                        className={`rounded-card border bg-card p-3 ${
-                          hasCurrentStep ? "border-primary ring-2 ring-primary/30" : "border-border"
-                        }`}
+                        className="rounded-card border border-border bg-card p-3"
                       >
                         <button
                           type="button"
@@ -308,17 +344,18 @@ export function EditGoalPage({
                           <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-secondary font-extrabold">
                             {index + 1}
                           </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="flex flex-wrap items-center gap-2">
-                              <span className="block font-bold break-words">{s.title}</span>
-                              {hasCurrentStep ? (
-                                <StatusChip tone="accent">Aktuální</StatusChip>
-                              ) : null}
-                            </span>
-                            <span className="text-label text-muted-foreground">
+                          <span className="min-w-0 flex-1 space-y-0.5">
+                            <span className="block font-bold break-words">{s.title}</span>
+                            <span className="block text-label text-muted-foreground">
                               {s.steps.length} kroků ·{" "}
                               {s.steps.reduce((n, step) => n + (step.durationMinutes ?? 0), 0)} min
+                              {completedCount > 0 ? ` · Odcvičeno ${completedCount}×` : ""}
                               {s.isArchived ? " · Archiv" : ""}
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              {plannedDates.length > 0
+                                ? `Naplánováno: ${plannedDates.join(", ")}${extraPlanned > 0 ? ` + ${extraPlanned} další` : ""}`
+                                : "Nenaplánováno"}
                             </span>
                           </span>
                           <ChevronRight className="size-5 shrink-0" />
@@ -412,6 +449,7 @@ export function EditGoalPage({
               <GoalForm
                 key={goal.updatedAt.toISOString()}
                 disciplines={dogQuery.data?.disciplines ?? []}
+                onAddDiscipline={isOwner ? addDiscipline : undefined}
                 defaultValues={{
                   title: goal.title,
                   discipline: goal.discipline ?? "",
