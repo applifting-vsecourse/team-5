@@ -6,11 +6,7 @@ import {
 import { PlanBlockRepository } from '@/modules/dog/repositories/plan-block.repository';
 import { GoalsService } from '@/modules/dog/services/goals.service';
 import { Identity } from '@/shared/auth/domain/identity';
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 // An empty optional text means "none" and is stored as null.
 const optionalText = (value: string | undefined): string | null | undefined =>
@@ -57,16 +53,20 @@ export class PlanBlocksService {
     data: CreatePlanBlockData,
   ): Promise<PlanBlock> {
     await this.goalsService.getGoal(user, goalId);
-    return this.planBlockRepository.createBlock({
-      goalId,
-      title: data.title.trim(),
-      instruction: optionalText(data.instruction) ?? null,
-      ...(data.durationMinutes !== undefined && {
-        durationMinutes: data.durationMinutes,
-      }),
-      criterion: optionalText(data.criterion) ?? null,
-      insertAt: data.insertAt,
-    });
+    return this.planBlockRepository.createBlock(
+      {
+        goalId,
+        title: data.title.trim(),
+        instruction: optionalText(data.instruction) ?? null,
+        ...(data.durationMinutes !== undefined && {
+          durationMinutes: data.durationMinutes,
+        }),
+        criterion: optionalText(data.criterion) ?? null,
+        insertAt: data.insertAt,
+        parentId: data.parentId,
+      },
+      user.id,
+    );
   }
 
   async updateBlock(
@@ -75,40 +75,33 @@ export class PlanBlocksService {
     data: UpdatePlanBlockData,
   ): Promise<PlanBlock> {
     await this.getAccessibleBlock(user, blockId);
-    return this.planBlockRepository.updateBlock(blockId, {
-      title: data.title?.trim(),
-      instruction: optionalText(data.instruction),
-      ...(data.durationMinutes !== undefined && {
-        durationMinutes: data.durationMinutes,
-      }),
-      criterion: optionalText(data.criterion),
-    });
+    return this.planBlockRepository.updateBlock(
+      blockId,
+      {
+        title: data.title?.trim(),
+        instruction: optionalText(data.instruction),
+        ...(data.durationMinutes !== undefined && {
+          durationMinutes: data.durationMinutes,
+        }),
+        criterion: optionalText(data.criterion),
+      },
+      user.id,
+    );
   }
 
   async deleteBlock(user: Identity, blockId: string): Promise<void> {
     const block = await this.getAccessibleBlock(user, blockId);
-    await this.planBlockRepository.deleteBlock(blockId, block.goalId);
+    await this.planBlockRepository.deleteBlock(blockId, block.goalId, user.id);
   }
 
-  // The new order must list every block of the plan exactly once, so a stale
-  // screen cannot drop or duplicate a block.
+  // Sibling-group order is validated in the repository (#67), same as
+  // HierarchyService.reorderSteps — the client may send only one parent group.
   async reorderBlocks(
     user: Identity,
     goalId: string,
     blockIds: string[],
   ): Promise<PlanBlock[]> {
     await this.goalsService.getGoal(user, goalId);
-    const current = await this.planBlockRepository.getBlocksByGoalId(goalId);
-    const currentIds = new Set(current.map((block) => block.id));
-    const isSamePlan =
-      blockIds.length === currentIds.size &&
-      new Set(blockIds).size === blockIds.length &&
-      blockIds.every((id) => currentIds.has(id));
-    if (!isSamePlan) {
-      throw new BadRequestException(
-        'The new order must contain every block of the plan exactly once',
-      );
-    }
-    return this.planBlockRepository.reorderBlocks(goalId, blockIds);
+    return this.planBlockRepository.reorderBlocks(goalId, blockIds, user.id);
   }
 }

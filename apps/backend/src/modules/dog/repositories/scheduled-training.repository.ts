@@ -3,18 +3,21 @@ import {
   FocusLevel,
   GoalStatus,
   MistakeLevel,
+  SleepQuality,
+  TrainingEnvironment,
   TrainingStatus,
   WorkoutLog,
   WorkoutStatus,
 } from '@/generated/prisma/client';
-import { effectiveCurrentStepId } from '@/modules/dog/domain/current-step';
 import {
   ScheduledTraining,
   ScheduledTrainingDetail,
   WeekTraining,
 } from '@/modules/dog/domain/scheduled-training';
+import { walkOrder } from '@/modules/dog/domain/step-order';
 import { Injectable } from '@nestjs/common';
 import { planOrder, resolveTraining } from './hierarchy.repository';
+import { recordMessageReply } from './training-reply.repository';
 
 @Injectable()
 export class ScheduledTrainingRepository {
@@ -53,7 +56,13 @@ export class ScheduledTrainingRepository {
             id: true,
             title: true,
             steps: {
-              select: { id: true, title: true, durationMinutes: true },
+              select: {
+                id: true,
+                parentId: true,
+                position: true,
+                title: true,
+                durationMinutes: true,
+              },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },
           },
@@ -73,7 +82,14 @@ export class ScheduledTrainingRepository {
         ),
         total: row.goal.sessions.length,
       },
-      goal: { ...row.goal, blocks: row.training.steps },
+      goal: {
+        ...row.goal,
+        blocks: walkOrder(row.training.steps).map((step) => ({
+          id: step.id,
+          title: step.title,
+          durationMinutes: step.durationMinutes,
+        })),
+      },
     }));
   }
 
@@ -99,7 +115,7 @@ export class ScheduledTrainingRepository {
             },
           },
         },
-        goal: { select: { id: true, title: true, currentStepId: true } },
+        goal: { select: { id: true, title: true } },
         training: {
           select: {
             id: true,
@@ -107,12 +123,12 @@ export class ScheduledTrainingRepository {
             steps: {
               select: {
                 id: true,
+                parentId: true,
                 position: true,
                 title: true,
                 instruction: true,
                 criterion: true,
                 durationMinutes: true,
-                outcome: true,
               },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },
@@ -121,22 +137,12 @@ export class ScheduledTrainingRepository {
       },
     });
     if (!row) return null;
-    // Walkthrough compares the pointer to this training's steps; expose the
-    // effective first step of the whole goal when the stored pointer is null.
-    const goalSteps = await this.prisma.planBlock.findMany({
-      where: { goalId: row.goal.id, training: { isArchived: false } },
-      select: { id: true },
-      orderBy: [{ training: { position: 'asc' } }, ...planOrder],
-    });
     return {
       ...row,
       goal: {
         ...row.goal,
-        currentStepId: effectiveCurrentStepId(
-          goalSteps.map((step) => step.id),
-          row.goal.currentStepId,
-        ),
-        blocks: row.training.steps,
+        // Practice order is parts-then-whole (#67).
+        blocks: walkOrder(row.training.steps),
       },
     };
   }
@@ -319,7 +325,12 @@ export class ScheduledTrainingRepository {
             id: true,
             title: true,
             steps: {
-              select: { id: true, title: true },
+              select: {
+                id: true,
+                parentId: true,
+                position: true,
+                title: true,
+              },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },
           },
@@ -329,7 +340,13 @@ export class ScheduledTrainingRepository {
     });
     return rows.map((row) => ({
       ...row,
-      goal: { ...row.goal, blocks: row.training.steps },
+      goal: {
+        ...row.goal,
+        blocks: walkOrder(row.training.steps).map((step) => ({
+          id: step.id,
+          title: step.title,
+        })),
+      },
     }));
   }
 
@@ -340,6 +357,8 @@ export class ScheduledTrainingRepository {
       successRate?: number | null;
       focus?: FocusLevel | null;
       repeatedMistakes?: MistakeLevel | null;
+      sleepQuality?: SleepQuality | null;
+      environment?: TrainingEnvironment | null;
       mistakeDetails?: string[];
       note?: string | null;
       videoUrl?: string | null;
@@ -373,7 +392,7 @@ export class ScheduledTrainingRepository {
         },
       });
 
-      return tx.workoutLog.create({
+      const record = await tx.workoutLog.create({
         data: {
           dog: { connect: { id: training.dogId } },
           goal: { connect: { id: training.goalId } },
@@ -387,6 +406,8 @@ export class ScheduledTrainingRepository {
           successRate: data.successRate ?? null,
           focus: data.focus ?? null,
           repeatedMistakes: data.repeatedMistakes ?? null,
+          sleepQuality: data.sleepQuality ?? null,
+          environment: data.environment ?? null,
           ...(data.mistakeDetails !== undefined && {
             mistakeDetails: [
               ...new Set(data.mistakeDetails.map((detail) => detail.trim())),
@@ -401,6 +422,8 @@ export class ScheduledTrainingRepository {
           videoUrl: data.videoUrl?.trim() || null,
         },
       });
+      if (data.note?.trim()) await recordMessageReply(tx, record.id, authorId);
+      return record;
     });
   }
 }

@@ -6,8 +6,10 @@ import { getISOWeek, parseISO } from "date-fns"
 import { ConfirmDestructiveDialog } from "@/components/ConfirmDestructiveDialog"
 import { DesignIcon } from "@/components/DesignIcon"
 import { dogTextClass } from "@/components/DogPlayerCard"
+import { EndCollaborationButton } from "@/components/EndCollaborationButton"
 import { PesAvatar } from "@/components/PesAvatar"
 import { QueryState } from "@/components/QueryState"
+import { TrainerNotesSection } from "@/components/TrainerNotesSection"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -124,15 +126,7 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
       .map((goal) => ({ ...goal, discipline: group.discipline.name })),
   )
   const skills = [
-    ...new Set(
-      goals.flatMap((goal) =>
-        goal.sessions
-          .filter((session) => !session.isArchived)
-          .flatMap((session) =>
-            session.steps.filter((step) => step.outcome === "MASTERED").map((step) => step.title),
-          ),
-      ),
-    ),
+    ...new Set(goals.filter((goal) => goal.status === "COMPLETED").map((goal) => goal.title)),
   ]
   const facts = profileFacts(dog)
   return (
@@ -412,9 +406,7 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
               ))}
             </ul>
             {!skills.length && (
-              <p className="text-sm text-muted-foreground">
-                Zatím nejsou označené žádné zvládnuté kroky.
-              </p>
+              <p className="text-sm text-muted-foreground">Zatím nejsou splněné žádné cíle.</p>
             )}
             {skills.length > 6 && (
               <Button
@@ -469,6 +461,34 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
             </span>
             <DesignIcon name="profile-ChevR" />
           </Link>
+        )}
+        {!isOwner && (
+          <TrainerNotesSection
+            clientId={dog.ownerId}
+            lockedDog={{ id: dog.id, name: dog.name, color: dog.color }}
+          />
+        )}
+        {isOwner && Boolean(dog.trainers?.length) && (
+          <section
+            className="space-y-3"
+            aria-label="Sdílení s trenéry"
+          >
+            <h2 className="text-section font-extrabold">Trenéři</h2>
+            {dog.trainers?.map((trainer) => (
+              <div
+                key={trainer.id}
+                className="flex flex-wrap items-center justify-between gap-3"
+              >
+                <span className="font-semibold">{trainer.name}</span>
+                <EndCollaborationButton
+                  dogId={dog.id}
+                  dogName={dog.name}
+                  trainerId={trainer.id}
+                  trainerName={trainer.name}
+                />
+              </div>
+            ))}
+          </section>
         )}
         {isOwner && !dog.isArchived && (
           <ConfirmDestructiveDialog

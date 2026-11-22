@@ -1,7 +1,8 @@
 import {
   FocusLevel,
   MistakeLevel,
-  StepOutcome,
+  SleepQuality,
+  TrainingEnvironment,
   TrainingStatus,
 } from '@/generated/prisma/client';
 import {
@@ -218,9 +219,6 @@ export class TrainingDetailExerciseDto {
 
   @ApiPropertyOptional({ nullable: true })
   criterion!: string | null;
-
-  @ApiProperty({ enum: StepOutcome, nullable: true })
-  outcome!: StepOutcome | null;
 }
 
 export class TrainingDetailResponseDto {
@@ -242,14 +240,6 @@ export class TrainingDetailResponseDto {
 
   @ApiProperty({ type: WeekTrainingGoalDto })
   goal!: WeekTrainingGoalDto;
-
-  @ApiProperty({
-    type: String,
-    nullable: true,
-    description:
-      'Effective current step of the goal (null only when the plan has no steps)',
-  })
-  currentStepId!: string | null;
 
   @ApiProperty({ type: [TrainingDetailExerciseDto] })
   exercises!: TrainingDetailExerciseDto[];
@@ -278,7 +268,6 @@ export class TrainingDetailResponseDto {
         id: training.goal.id,
         title: training.goal.title,
       },
-      currentStepId: training.goal.currentStepId,
       exercises: training.goal.blocks.map((block) => ({
         durationMinutes: block.durationMinutes,
         id: block.id,
@@ -286,7 +275,6 @@ export class TrainingDetailResponseDto {
         title: block.title,
         instruction: block.instruction,
         criterion: block.criterion,
-        outcome: block.outcome,
       })),
     };
   }
@@ -332,6 +320,22 @@ export class CompleteTrainingDto {
   repeatedMistakes?: MistakeLevel;
 
   @ApiPropertyOptional({
+    enum: SleepQuality,
+    example: SleepQuality.GOOD,
+  })
+  @IsOptional()
+  @IsEnum(SleepQuality)
+  sleepQuality?: SleepQuality;
+
+  @ApiPropertyOptional({
+    enum: TrainingEnvironment,
+    example: TrainingEnvironment.OUTDOORS,
+  })
+  @IsOptional()
+  @IsEnum(TrainingEnvironment)
+  environment?: TrainingEnvironment;
+
+  @ApiPropertyOptional({
     description: 'Workout note',
     maxLength: 2000,
   })
@@ -346,7 +350,7 @@ export class CompleteTrainingDto {
     maxLength: 500,
   })
   @IsOptional()
-  @IsUrl({ protocols: ['https'], require_protocol: true })
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
   @MaxLength(500)
   videoUrl?: string;
 }

@@ -1,5 +1,7 @@
 import {
   fromCalendarDate,
+  lastDayOfWeek,
+  toCalendarDate,
   todayInAppZone,
 } from '@/modules/dog/domain/calendar-date';
 import { calculateTrainingMetrics } from '@/modules/dog/domain/training-metrics';
@@ -10,11 +12,34 @@ import { Injectable } from '@nestjs/common';
 const INACTIVE_DAYS = 5;
 const LOW_SUCCESS_RATE = 65;
 const REPLY_WINDOW_MS = 14 * 86400000;
+const MATRIX_DAYS = 14;
 
 function pointChange(change: number | null): string {
   const rounded = change === null ? 0 : Math.round(change);
   if (rounded === 0) return '';
   return ` (${rounded > 0 ? '+' : '−'}${Math.abs(rounded)} b.)`;
+}
+
+function shiftCalendarDay(day: string, offset: number): string {
+  return toCalendarDate(
+    new Date(fromCalendarDate(day).getTime() + offset * 86400000),
+  );
+}
+
+function averageRate(values: number[]): number | null {
+  if (!values.length) return null;
+  return (
+    Math.round((values.reduce((sum, n) => sum + n, 0) / values.length) * 10) /
+    10
+  );
+}
+
+/** Two Mon–Sun weeks ending with the current week (Figma desktop heatmap). */
+function matrixDaysEndingThisWeek(today: string): string[] {
+  const weekEnd = lastDayOfWeek(today);
+  return Array.from({ length: MATRIX_DAYS }, (_, index) =>
+    shiftCalendarDay(weekEnd, index - (MATRIX_DAYS - 1)),
+  );
 }
 
 @Injectable()
@@ -127,6 +152,67 @@ export class TrainerOverviewService {
     const active = connections.filter(
       (connection) => connection.client.dogs.length > 0,
     );
+    const days = matrixDaysEndingThisWeek(today);
+    const activityMatrix = {
+      days,
+      rows: connections
+        .filter((connection) => connection.client.dogs.length > 0)
+        .map((connection) => {
+          const client = connection.client;
+          const cells = days.map((day) => {
+            const dayLogs = client.dogs.flatMap((dog) =>
+              dog.workoutLogs
+                .filter(
+                  (log) =>
+                    log.status === 'COMPLETED' &&
+                    log.completedAt <= now &&
+                    todayInAppZone(log.completedAt) === day,
+                )
+                .map((log) => ({
+                  id: log.id,
+                  dogId: dog.id,
+                  completedAt: log.completedAt,
+                  successRate: log.successRate,
+                })),
+            );
+            if (!dayLogs.length) {
+              return {
+                date: day,
+                successRate: null as number | null,
+                activityId: null as string | null,
+                dogId: null as string | null,
+              };
+            }
+            const latest = [...dayLogs].sort(
+              (a, b) => b.completedAt.getTime() - a.completedAt.getTime(),
+            )[0];
+            const rates = dayLogs
+              .map((log) => log.successRate)
+              .filter((rate): rate is number => rate !== null);
+            return {
+              date: day,
+              successRate: averageRate(rates),
+              activityId: latest.id,
+              dogId: latest.dogId,
+            };
+          });
+          return {
+            clientId: client.id,
+            clientName: client.name,
+            dogs: client.dogs.map((dog) => ({
+              id: dog.id,
+              name: dog.name,
+              color: dog.color,
+            })),
+            cells,
+            averageSuccessRate: averageRate(
+              cells
+                .map((cell) => cell.successRate)
+                .filter((rate): rate is number => rate !== null),
+            ),
+          };
+        }),
+    };
     return {
       metrics: {
         activeClients: active.length,
@@ -140,9 +226,11 @@ export class TrainerOverviewService {
           total.weeks[7].completedSessions - total.weeks[6].completedSessions,
         successRate: total.successRate,
         weeklyRateChange: total.weeklyChange,
+        unreadNotes: attention.filter((item) => item.kind === 'reply').length,
       },
       clients,
       attention,
+      activityMatrix,
     };
   }
 }

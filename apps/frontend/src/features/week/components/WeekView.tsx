@@ -10,6 +10,7 @@ import { StripCard } from "@/components/StripCard"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { RecordUnreadBadge, UnreadReplyList } from "@/components/UnreadReplies"
 import {
   addCalendarDays,
   daysOfWeek,
@@ -21,6 +22,7 @@ import {
   type CalendarDate,
 } from "@/lib/calendarDate"
 import { dogColorClass } from "@/lib/dogColors"
+import { replyRecordId, unreadRepliesOptions } from "@/lib/trainingReplies"
 import { cn } from "@/lib/utils"
 
 import {
@@ -32,7 +34,15 @@ import { MoveTrainingDialog } from "@/features/week/components/MoveTrainingDialo
 import { WeekPickerDialog } from "@/features/week/components/WeekPickerDialog"
 import { useUndoSkip } from "@/features/week/hooks/useSkipTraining"
 
-function WeekTrainingCard({ training, today }: { training: WeekTraining; today: CalendarDate }) {
+function WeekTrainingCard({
+  training,
+  today,
+  hasUnread,
+}: {
+  training: WeekTraining
+  today: CalendarDate
+  hasUnread: boolean
+}) {
   const [isMoveOpen, setMoveOpen] = useState(false)
   const undo = useUndoSkip(training.id)
   const isPlanned = training.status === "PLANNED"
@@ -61,6 +71,7 @@ function WeekTrainingCard({ training, today }: { training: WeekTraining; today: 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-bold break-words">{title}</h3>
+            <RecordUnreadBadge hasUnread={hasUnread} />
             {!isPlanned && (
               <span
                 className={cn(
@@ -160,8 +171,16 @@ export function WeekView({
   const [isPickerOpen, setPickerOpen] = useState(false)
   const query = useQuery(weekTrainingsQueryOptions(weekStart))
   const metrics = useQuery(weekMetricsQueryOptions(weekStart))
+  const unreadQuery = useQuery(unreadRepliesOptions())
+  const unread = unreadQuery.data ?? []
   const trainings = query.data ?? []
   const completed = trainings.filter((training) => training.status === "COMPLETED").length
+  const trainingHasUnread = (training: WeekTraining) =>
+    unread.some(
+      (reply) =>
+        reply.scheduledTraining?.id === training.id ||
+        (training.activityId != null && replyRecordId(reply) === training.activityId),
+    )
   return (
     <div className="flex flex-col gap-6">
       <header className="flex items-center gap-2">
@@ -199,6 +218,7 @@ export function WeekView({
           <DesignIcon name="week-ChevR" />
         </Button>
       </header>
+      <UnreadReplyList />
       <ToggleGroup
         type="single"
         spacing={1.5}
@@ -319,7 +339,7 @@ export function WeekView({
                   id={`day-${day}`}
                   tabIndex={-1}
                   className={cn(
-                    "scroll-mt-4 text-xs font-extrabold tracking-wide uppercase outline-none",
+                    "scroll-mt-4 text-xs font-extrabold tracking-wide uppercase outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                     day === today ? "text-primary" : "text-muted-foreground",
                   )}
                 >
@@ -337,6 +357,7 @@ export function WeekView({
                         key={training.id}
                         training={training}
                         today={today}
+                        hasUnread={trainingHasUnread(training)}
                       />
                     ))}
                   </ul>

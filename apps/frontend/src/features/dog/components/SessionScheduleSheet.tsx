@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { cs } from "date-fns/locale"
+import { cs } from "react-day-picker/locale"
 
 import { EditorIcon } from "@/components/EditorIcon"
 import { Button } from "@/components/ui/button"
@@ -20,15 +20,7 @@ export const localDay = (date: Date) =>
 const trainingCount = (count: number) =>
   `${count} ${count === 1 ? "trénink" : count >= 2 && count <= 4 ? "tréninky" : "tréninků"}`
 
-export function SessionScheduleSheet({
-  sessionId,
-  goalId,
-  dogId,
-  description,
-  isOpen,
-  onOpenChange,
-  onBack,
-}: {
+type SessionScheduleSheetProps = {
   sessionId: string
   goalId: string
   dogId: string
@@ -36,6 +28,19 @@ export function SessionScheduleSheet({
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
   onBack?: () => void
+  onScheduled?: () => void
+}
+
+function SessionScheduleContent({
+  sessionId,
+  goalId,
+  dogId,
+  onOpenChange,
+  onBack,
+  onBusyChange,
+  onScheduled,
+}: Omit<SessionScheduleSheetProps, "isOpen" | "description"> & {
+  onBusyChange: (isBusyNext: boolean) => void
 }) {
   const client = useQueryClient()
   const planned = useQuery(goalTrainingsQueryOptions(goalId))
@@ -53,6 +58,7 @@ export function SessionScheduleSheet({
       return
     }
     isBusy.current = true
+    onBusyChange(true)
     setPending(true)
     setError(null)
     const saved = new Set<string>()
@@ -64,6 +70,7 @@ export function SessionScheduleSheet({
       }
       setDays([])
       onOpenChange(false)
+      onScheduled?.()
     } catch {
       setDays((current) => current.filter((day) => !saved.has(localDay(day))))
       setError(
@@ -76,18 +83,12 @@ export function SessionScheduleSheet({
         client.invalidateQueries({ queryKey: weekKeys.all }),
       ])
       isBusy.current = false
+      onBusyChange(false)
       setPending(false)
     }
   }
   return (
-    <EditorSheet
-      isOpen={isOpen}
-      onOpenChange={(isNextOpen) => {
-        if (!isBusy.current) onOpenChange(isNextOpen)
-      }}
-      title="Naplánovat trénink"
-      description={description}
-    >
+    <>
       {onBack && (
         <Button
           variant="outline"
@@ -112,30 +113,32 @@ export function SessionScheduleSheet({
         </div>
       ) : (
         <>
-          <Calendar
-            mode="multiple"
-            locale={cs}
-            weekStartsOn={1}
-            selected={days}
-            onSelect={(value) => {
-              if (!isPending) setDays(value ?? [])
-            }}
-            disabled={(date) =>
-              isPending ||
-              localDay(date) < todayCalendarDate() ||
-              unavailable.includes(localDay(date))
-            }
-            modifiers={{ planned: (date) => unavailable.includes(localDay(date)) }}
-            modifiersClassNames={{ planned: "border-b-2 border-success-foreground" }}
-            className="w-full p-0 [--cell-size:var(--control-min)]"
-            classNames={{
-              root: "w-full",
-              month_caption: "flex h-touch items-center justify-center",
-              caption_label: "text-section font-extrabold",
-              day: "min-w-0 flex-1",
-              week: "mt-1 flex w-full",
-            }}
-          />
+          <div data-vaul-no-drag>
+            <Calendar
+              mode="multiple"
+              locale={cs}
+              weekStartsOn={1}
+              selected={days}
+              onSelect={(value) => {
+                if (!isPending) setDays(value ?? [])
+              }}
+              disabled={(date) =>
+                isPending ||
+                localDay(date) < todayCalendarDate() ||
+                unavailable.includes(localDay(date))
+              }
+              modifiers={{ planned: (date) => unavailable.includes(localDay(date)) }}
+              modifiersClassNames={{ planned: "border-b-2 border-success-foreground" }}
+              className="w-full p-0 [--cell-size:var(--control-min)]"
+              classNames={{
+                root: "w-full",
+                month_caption: "flex h-touch items-center justify-center",
+                caption_label: "text-section font-extrabold",
+                day: "min-w-0 flex-1",
+                week: "mt-1 flex w-full",
+              }}
+            />
+          </div>
           <p className="mt-3 text-sm text-muted-foreground">
             Vyber jeden nebo více dnů. Označené dny už mají trénink. Naplánované termíny najdeš v
             plánu psa.
@@ -173,6 +176,43 @@ export function SessionScheduleSheet({
               : `Naplánovat${days.length ? ` ${trainingCount(days.length)}` : ""}`}
           </Button>
         </>
+      )}
+    </>
+  )
+}
+
+export function SessionScheduleSheet({
+  sessionId,
+  goalId,
+  dogId,
+  description,
+  isOpen,
+  onOpenChange,
+  onBack,
+  onScheduled,
+}: SessionScheduleSheetProps) {
+  const isBusy = useRef(false)
+  return (
+    <EditorSheet
+      isOpen={isOpen}
+      onOpenChange={(isNextOpen) => {
+        if (!isBusy.current) onOpenChange(isNextOpen)
+      }}
+      title="Naplánovat trénink"
+      description={description}
+    >
+      {isOpen && (
+        <SessionScheduleContent
+          sessionId={sessionId}
+          goalId={goalId}
+          dogId={dogId}
+          onOpenChange={onOpenChange}
+          onBack={onBack}
+          onScheduled={onScheduled}
+          onBusyChange={(isBusyNext) => {
+            isBusy.current = isBusyNext
+          }}
+        />
       )}
     </EditorSheet>
   )

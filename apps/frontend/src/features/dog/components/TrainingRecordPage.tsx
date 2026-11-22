@@ -1,18 +1,26 @@
 import { useEffect, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import { toast } from "sonner"
 
 import { DesignIcon } from "@/components/DesignIcon"
+import { EditorIcon } from "@/components/EditorIcon"
 import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { ReadReplyReceipt } from "@/components/UnreadReplies"
 import { api } from "@/lib/api-client"
-import { conversationQueryOptions, type ConversationDetail } from "@/lib/conversations"
+import {
+  ANSWER_LABELS,
+  conversationQueryOptions,
+  SLEEP_QUALITY_LABELS,
+  TRAINING_ENVIRONMENT_LABELS,
+  type ConversationDetail,
+} from "@/lib/conversations"
 import { dogColorClass } from "@/lib/dogColors"
 import { dogKeys } from "@/lib/dogKeys"
 import { cn } from "@/lib/utils"
 
-const ANSWER_LABELS = { YES: "Ano", PARTIALLY: "Částečně", NO: "Ne" } as const
 const QUICK_REPLIES = ["👍 Díky!", "Zkusíme zítra", "Mám otázku"] as const
 
 function SuccessRing({ rate }: { rate: number | null }) {
@@ -58,8 +66,17 @@ function SuccessRing({ rate }: { rate: number | null }) {
   )
 }
 
-function RecordSummary({ detail }: { detail: ConversationDetail }) {
+function RecordSummary({
+  detail,
+  canEditPlan,
+}: {
+  detail: ConversationDetail
+  canEditPlan: boolean
+}) {
   const mistakes = detail.mistakeDetails?.length ? detail.mistakeDetails.join(", ") : null
+  const hasContext = Boolean(
+    detail.focus ?? detail.sleepQuality ?? detail.environment ?? detail.repeatedMistakes,
+  )
   return (
     <section
       aria-labelledby="record-title"
@@ -90,24 +107,40 @@ function RecordSummary({ detail }: { detail: ConversationDetail }) {
           </div>
         </div>
       </div>
-      <dl className="grid grid-cols-2 gap-3">
-        {detail.focus && (
-          <div className="min-w-0">
-            <dt className="text-xs font-medium text-muted-foreground">Soustředění</dt>
-            <dd className="text-sm font-bold">{ANSWER_LABELS[detail.focus]}</dd>
-          </div>
-        )}
-        {detail.repeatedMistakes && (
-          <div className="min-w-0">
-            <dt className="text-xs font-medium text-muted-foreground">Opakoval chyby</dt>
-            <dd className="text-sm font-bold">
-              {ANSWER_LABELS[detail.repeatedMistakes]}
-              {mistakes ? ` · ${mistakes}` : ""}
-            </dd>
-          </div>
-        )}
-      </dl>
-      {detail.videoUrl?.startsWith("https://") && (
+      {hasContext && (
+        <dl className="grid grid-cols-2 gap-3">
+          {detail.focus && (
+            <div className="min-w-0">
+              <dt className="text-xs font-medium text-muted-foreground">Soustředění</dt>
+              <dd className="text-sm font-bold">{ANSWER_LABELS[detail.focus]}</dd>
+            </div>
+          )}
+          {detail.sleepQuality && (
+            <div className="min-w-0">
+              <dt className="text-xs font-medium text-muted-foreground">Spánek</dt>
+              <dd className="text-sm font-bold">{SLEEP_QUALITY_LABELS[detail.sleepQuality]}</dd>
+            </div>
+          )}
+          {detail.environment && (
+            <div className="min-w-0">
+              <dt className="text-xs font-medium text-muted-foreground">Prostředí</dt>
+              <dd className="text-sm font-bold">
+                {TRAINING_ENVIRONMENT_LABELS[detail.environment]}
+              </dd>
+            </div>
+          )}
+          {detail.repeatedMistakes && (
+            <div className="min-w-0">
+              <dt className="text-xs font-medium text-muted-foreground">Opakoval chyby</dt>
+              <dd className="text-sm font-bold">
+                {ANSWER_LABELS[detail.repeatedMistakes]}
+                {mistakes ? ` · ${mistakes}` : ""}
+              </dd>
+            </div>
+          )}
+        </dl>
+      )}
+      {detail.videoUrl && /^https?:\/\//i.test(detail.videoUrl) && (
         <a
           href={detail.videoUrl}
           target="_blank"
@@ -117,6 +150,24 @@ function RecordSummary({ detail }: { detail: ConversationDetail }) {
           <DesignIcon name="record-Link" />
           {detail.videoUrl.replace(/^https?:\/\//, "")}
         </a>
+      )}
+      {canEditPlan && detail.goalId && (
+        <div className="pt-1">
+          <Button
+            asChild
+            variant="outline"
+            className="min-h-touch w-full font-bold sm:w-auto"
+          >
+            <Link
+              to="/dogs/$dogId/goals/$goalId"
+              params={{ dogId: detail.dog.id, goalId: detail.goalId }}
+              search={{ zaznam: detail.id }}
+            >
+              <EditorIcon name="Edit" />
+              Upravit plán
+            </Link>
+          </Button>
+        </div>
       )}
     </section>
   )
@@ -140,6 +191,7 @@ function ThreadComposer({
       await Promise.all([
         client.invalidateQueries({ queryKey: ["training-conversation", activityId] }),
         client.invalidateQueries({ queryKey: ["training-updates"] }),
+        client.invalidateQueries({ queryKey: ["unread-training-replies"] }),
         client.invalidateQueries({ queryKey: dogKeys.all }),
       ])
     },
@@ -260,6 +312,12 @@ export function TrainingRecordPage({
   const recordDogId = detail.data?.dog.id
   const hasDogMismatch = Boolean(recordDogId && recordDogId !== dogId)
   const backDogId = recordDogId ?? dogId
+  const canEditPlan = Boolean(
+    detail.data?.goalId &&
+    currentUserId &&
+    detail.data.dog.ownerId &&
+    detail.data.dog.ownerId !== currentUserId,
+  )
 
   const handleBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -296,6 +354,7 @@ export function TrainingRecordPage({
         </div>
       </header>
       <QueryState
+        className="flex flex-col gap-6"
         isLoading={detail.isLoading}
         error={detail.error ?? (hasDogMismatch ? new Error("Záznam nepatří k tomuto psovi") : null)}
         onRetry={() => void detail.refetch()}
@@ -303,7 +362,11 @@ export function TrainingRecordPage({
       >
         {detail.data && !hasDogMismatch && (
           <>
-            <RecordSummary detail={detail.data} />
+            <ReadReplyReceipt ids={detail.data.unreadReplyIds} />
+            <RecordSummary
+              detail={detail.data}
+              canEditPlan={canEditPlan}
+            />
             <ThreadComposer
               activityId={activityId}
               currentUserId={currentUserId}

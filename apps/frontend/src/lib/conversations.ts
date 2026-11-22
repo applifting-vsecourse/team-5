@@ -3,7 +3,20 @@ import { z } from "zod"
 
 import { api } from "@/lib/api-client"
 
-const dog = z.object({ id: z.string(), name: z.string(), color: z.number() })
+export const ANSWER_LABELS = { YES: "Ano", PARTIALLY: "Částečně", NO: "Ne" } as const
+export const SLEEP_QUALITY_LABELS = { GOOD: "Dobře", POOR: "Špatně" } as const
+export const TRAINING_ENVIRONMENT_LABELS = {
+  HOME: "Doma",
+  OUTDOORS: "Venku",
+  TRAINING_GROUND: "Cvičák",
+} as const
+
+const dog = z.object({
+  id: z.string(),
+  name: z.string(),
+  color: z.number(),
+  ownerId: z.string().optional(),
+})
 const message = z.object({
   id: z.string(),
   workoutLogId: z.string(),
@@ -14,13 +27,13 @@ const message = z.object({
 const block = z.object({
   id: z.string(),
   title: z.string(),
-  outcome: z.enum(["MASTERED", "SKIPPED"]).nullable(),
   position: z.number(),
 })
 const conversationDetail = z.object({
   id: z.string(),
   title: z.string(),
   dog,
+  goalId: z.string().nullable().optional(),
   completedAt: z.coerce.date(),
   successRate: z.number().nullable(),
   note: z.string().nullable(),
@@ -28,6 +41,8 @@ const conversationDetail = z.object({
   mistakeDetails: z.array(z.string()).optional(),
   focus: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
   repeatedMistakes: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
+  sleepQuality: z.enum(["GOOD", "POOR"]).nullable().optional(),
+  environment: z.enum(["HOME", "OUTDOORS", "TRAINING_GROUND"]).nullable().optional(),
   status: z.enum(["COMPLETED", "SKIPPED"]).optional(),
   goal: z
     .object({
@@ -36,6 +51,7 @@ const conversationDetail = z.object({
     })
     .nullable()
     .optional(),
+  unreadReplyIds: z.array(z.string()).default([]),
   messages: z.array(message),
 })
 export type ConversationDetail = z.infer<typeof conversationDetail>

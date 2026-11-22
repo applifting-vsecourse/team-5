@@ -1,56 +1,48 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
 import { Prisma } from '@/generated/prisma/client';
 import { EditableGoal } from '@/modules/dog/domain/hierarchy';
-import { ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
+// NotFoundException covers missing training in assertTrainingContentEditable (#68).
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import {
   assertTrainingContentEditable,
   HierarchyRepository,
+  resolveSubStepParent,
 } from './hierarchy.repository';
 
-describe('completed training content', () => {
-  it.each(['create', 'reorder'] as const)(
-    'rejects %s of steps before writing a completed definition',
-    async (operation) => {
-      const { repository, tx } = setup([], null);
-      tx.goalTraining.findFirst.mockResolvedValue({
-        id: 'session-2',
-        goalId: 'g1',
-        isArchived: false,
-      } as never);
-      tx.scheduledTraining.count.mockResolvedValue(1);
-      const result =
-        operation === 'create'
-          ? repository.createStep('g1', 'session-2', { title: 'New step' })
-          : repository.reorderSteps('g1', 'session-2', []);
-      await expect(result).rejects.toThrow(ConflictException);
-      expect(tx.planBlock.create).not.toHaveBeenCalled();
-      expect(tx.planBlock.update).not.toHaveBeenCalled();
-    },
-  );
-  it('rejects edits when any dated instance has been completed', async () => {
+describe('training content editability (#68)', () => {
+  it('allows editing after a dated completion so trainers can adjust the next plan', async () => {
     const tx = mockDeep<Prisma.TransactionClient>();
-    tx.scheduledTraining.count.mockResolvedValue(1);
-    await expect(
-      assertTrainingContentEditable(tx, 'session-2'),
-    ).rejects.toThrow(ConflictException);
-    expect(tx.scheduledTraining.count).toHaveBeenCalledWith({
-      where: { trainingId: 'session-2', status: 'COMPLETED' },
-    });
-  });
-  it('allows editing a training without a completion', async () => {
-    const tx = mockDeep<Prisma.TransactionClient>();
-    tx.scheduledTraining.count.mockResolvedValue(0);
+    tx.goalTraining.findUnique.mockResolvedValue({
+      isArchived: false,
+    } as never);
     await expect(
       assertTrainingContentEditable(tx, 'session-2'),
     ).resolves.toBeUndefined();
   });
+  it('rejects edits when the training definition is archived', async () => {
+    const tx = mockDeep<Prisma.TransactionClient>();
+    tx.goalTraining.findUnique.mockResolvedValue({
+      isArchived: true,
+    } as never);
+    await expect(
+      assertTrainingContentEditable(tx, 'session-2'),
+    ).rejects.toThrow(ConflictException);
+  });
+  it('rejects edits when the training is missing', async () => {
+    const tx = mockDeep<Prisma.TransactionClient>();
+    tx.goalTraining.findUnique.mockResolvedValue(null);
+    await expect(assertTrainingContentEditable(tx, 'missing')).rejects.toThrow(
+      NotFoundException,
+    );
+  });
 });
 
-function setup(
-  stepIds: string[],
-  currentStepId: string | null,
-): {
+function setup(stepIds: string[]): {
   repository: HierarchyRepository;
   tx: DeepMockProxy<Prisma.TransactionClient>;
 } {
@@ -61,61 +53,125 @@ function setup(
   goal.status = 'ACTIVE';
   goal.dog.isArchived = false;
   goal.disciplineEntity.isArchived = false;
-  goal.currentStepId = currentStepId;
   tx.trainingGoal.findUnique.mockResolvedValue(goal);
-  tx.planBlock.findMany.mockResolvedValue(
-    stepIds.map((id) => ({ id })) as never,
-  );
+  tx.goalTraining.findMany.mockResolvedValue([
+    {
+      position: 0,
+      steps: stepIds.map((id, position) => ({
+        id,
+        parentId: null,
+        position,
+      })),
+    },
+  ] as never);
   return { repository: new HierarchyRepository(prisma), tx };
 }
 
-describe('moveCurrentStep', () => {
-  it('walks only the active trainings in plan order', async () => {
-    const { repository, tx } = setup(['a'], null);
-    await repository.moveCurrentStep('g1', 'advance');
-    expect(tx.planBlock.findMany).toHaveBeenCalledWith(
+describe('createStep with sub-steps (#67)', () => {
+  it('creates a child under a root parent', async () => {
+    const { repository, tx } = setup([]);
+    tx.goalTraining.findFirst.mockResolvedValue({
+      id: 'session-2',
+      goalId: 'g1',
+      isArchived: false,
+    } as never);
+    tx.goalTraining.findUnique.mockResolvedValue({
+      isArchived: false,
+    } as never);
+    tx.planBlock.findFirst.mockResolvedValue({
+      id: 'root',
+      parentId: null,
+    } as never);
+    tx.planBlock.findMany.mockResolvedValue([]);
+    tx.planBlock.create.mockResolvedValue({
+      id: 'child',
+      parentId: 'root',
+      position: 0,
+      title: 'Dílčí',
+    } as never);
+
+    await repository.createStep('g1', 'session-2', {
+      title: 'Dílčí',
+      parentId: 'root',
+    });
+
+    expect(tx.planBlock.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { goalId: 'g1', training: { isArchived: false } },
-        orderBy: [
-          { training: { position: 'asc' } },
-          { position: 'asc' },
-          { id: 'asc' },
-        ],
+        data: expect.objectContaining({ parentId: 'root', title: 'Dílčí' }),
       }),
     );
   });
 
-  it('marks the first step mastered and moves the pointer when it is unset', async () => {
-    const { repository, tx } = setup(['a', 'b'], null);
-    await repository.moveCurrentStep('g1', 'advance');
+  it('reorders only the requested sibling group', async () => {
+    const { repository, tx } = setup([]);
+    tx.goalTraining.findFirst.mockResolvedValue({
+      id: 'session-2',
+      goalId: 'g1',
+      isArchived: false,
+    } as never);
+    tx.goalTraining.findUnique.mockResolvedValue({
+      isArchived: false,
+    } as never);
+    tx.planBlock.findMany
+      .mockResolvedValueOnce([
+        { id: 'root', parentId: null, position: 0 },
+        { id: 'c1', parentId: 'root', position: 0 },
+        { id: 'c2', parentId: 'root', position: 1 },
+      ] as never)
+      .mockResolvedValueOnce([
+        { id: 'root', parentId: null, position: 0 },
+        { id: 'c2', parentId: 'root', position: 0 },
+        { id: 'c1', parentId: 'root', position: 1 },
+      ] as never);
+
+    await repository.reorderSteps('g1', 'session-2', ['c2', 'c1']);
+
     expect(tx.planBlock.update).toHaveBeenCalledWith({
-      where: { id: 'a' },
-      data: { outcome: 'MASTERED' },
+      where: { id: 'c2' },
+      data: { position: 0 },
     });
-    expect(tx.trainingGoal.update).toHaveBeenCalledWith({
-      where: { id: 'g1' },
-      data: { currentStepId: 'b' },
+    expect(tx.planBlock.update).toHaveBeenCalledWith({
+      where: { id: 'c1' },
+      data: { position: 1 },
     });
   });
+});
 
-  it('clears the outcome of the previous step when going back', async () => {
-    const { repository, tx } = setup(['a', 'b'], 'b');
-    await repository.moveCurrentStep('g1', 'back');
-    expect(tx.planBlock.update).toHaveBeenCalledWith({
-      where: { id: 'a' },
-      data: { outcome: null },
-    });
-    expect(tx.trainingGoal.update).toHaveBeenCalledWith({
-      where: { id: 'g1' },
-      data: { currentStepId: 'a' },
-    });
+describe('resolveSubStepParent (#67)', () => {
+  it('returns null when no parent is requested', async () => {
+    const tx = mockDeep<Prisma.TransactionClient>();
+    await expect(resolveSubStepParent(tx, 't1', undefined)).resolves.toBeNull();
+    expect(tx.planBlock.findFirst).not.toHaveBeenCalled();
   });
 
-  it('rejects a goal without steps', async () => {
-    const { repository, tx } = setup([], null);
-    await expect(repository.moveCurrentStep('g1', 'skip')).rejects.toThrow(
-      ConflictException,
+  it('rejects a missing parent', async () => {
+    const tx = mockDeep<Prisma.TransactionClient>();
+    tx.planBlock.findFirst.mockResolvedValue(null);
+    await expect(resolveSubStepParent(tx, 't1', 'gone')).rejects.toThrow(
+      NotFoundException,
     );
-    expect(tx.trainingGoal.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects nesting under a sub-step', async () => {
+    const tx = mockDeep<Prisma.TransactionClient>();
+    tx.planBlock.findFirst.mockResolvedValue({
+      id: 'child',
+      parentId: 'root',
+    } as never);
+    await expect(resolveSubStepParent(tx, 't1', 'child')).rejects.toThrow(
+      BadRequestException,
+    );
+  });
+
+  it('accepts a root parent in the same training', async () => {
+    const tx = mockDeep<Prisma.TransactionClient>();
+    tx.planBlock.findFirst.mockResolvedValue({
+      id: 'root',
+      parentId: null,
+    } as never);
+    await expect(resolveSubStepParent(tx, 't1', 'root')).resolves.toBe('root');
+    expect(tx.planBlock.findFirst).toHaveBeenCalledWith({
+      where: { id: 'root', trainingId: 't1' },
+    });
   });
 });

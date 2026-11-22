@@ -28,6 +28,39 @@ const mapPrismaDogToDomain = (
 export class DogRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async endSharing(
+    dogId: string,
+    ownerId: string,
+    trainerId: string,
+  ): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) => {
+      const removed = await tx.dogShare.deleteMany({
+        where: { dogId, trainerId, dog: { ownerId } },
+      });
+      if (!removed.count) return false;
+      await tx.trainerNote.deleteMany({
+        where: { trainerId, dogId },
+      });
+      // Keep the client connection while any other dog is still shared,
+      // including archived dogs that the owner may restore later.
+      const removedConn = await tx.clientConnection.deleteMany({
+        where: {
+          trainerId,
+          clientId: ownerId,
+          client: {
+            dogs: { none: { shares: { some: { trainerId } } } },
+          },
+        },
+      });
+      if (removedConn.count > 0) {
+        await tx.trainerNote.deleteMany({
+          where: { trainerId, clientId: ownerId },
+        });
+      }
+      return true;
+    });
+  }
+
   async getDogsByOwnerId(
     ownerId: string,
     options: { archived?: boolean } = {},

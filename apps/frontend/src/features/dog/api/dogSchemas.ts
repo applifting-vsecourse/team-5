@@ -79,9 +79,6 @@ export type Dog = z.infer<typeof dogSchema>
 export type CreateDogInput = z.infer<typeof createDogInputSchema>
 export type UpdateDogInput = z.infer<typeof updateDogInputSchema>
 
-export const stepOutcomeSchema = z.enum(["MASTERED", "SKIPPED"])
-export type StepOutcome = z.infer<typeof stepOutcomeSchema>
-
 export const dogGoalSchema = z.object({
   id: z.string(),
   dogId: z.string(),
@@ -93,8 +90,6 @@ export const dogGoalSchema = z.object({
   deadline: z.string().nullable().optional(),
   status: z.enum(["ACTIVE", "COMPLETED", "PAUSED", "ARCHIVED"]),
   order: z.number(),
-  // null = first step of the plan (#66)
-  currentStepId: z.string().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
@@ -120,12 +115,12 @@ export type GoalFormValues = z.infer<typeof goalFormSchema>
 export const planBlockSchema = z.object({
   id: z.string(),
   goalId: z.string(),
+  parentId: z.string().nullable().optional(),
   position: z.number(),
   durationMinutes: z.number().int().min(0).max(480).optional(),
   title: z.string(),
   instruction: z.string().nullable(),
   criterion: z.string().nullable(),
-  outcome: stepOutcomeSchema.nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
@@ -188,6 +183,8 @@ export const dogActivitySchema = z.object({
   rating: z.number().min(1).max(5).nullable().optional(),
   focus: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
   repeatedMistakes: z.enum(["YES", "PARTIALLY", "NO"]).nullable().optional(),
+  sleepQuality: z.enum(["GOOD", "POOR"]).nullable().optional(),
+  environment: z.enum(["HOME", "OUTDOORS", "TRAINING_GROUND"]).nullable().optional(),
   note: z.string().nullable().optional(),
   videoUrl: z.string().nullable().optional(),
   skipReason: z.string().nullable().optional(),

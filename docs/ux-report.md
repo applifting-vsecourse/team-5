@@ -1,14 +1,16 @@
 # Zpráva o změnách UX a UI
 
-**Datum**: 08. 11. 2026  
-**Rozsah**: Všechny změny uživatelské zkušenosti (UX), uživatelského rozhraní (UI) a interakčního designu začleněné do větve `dev` od 26. 10. 2026 (commity `ada5199` → `5815bab`).  
+**Datum**: 09. 11. 2026 (aktualizováno, první verze 08. 11. 2026)  
+**Rozsah**: Všechny změny uživatelské zkušenosti (UX), uživatelského rozhraní (UI) a interakčního designu začleněné od 26. 10. 2026 a nasazené na staging (větev `main`, commity `ada5199` → `8cb7d82`, PR #227).  
 **Kontext**: Kompletní redesignová vlna aplikace implementující schválené specifikace z Figmy ([DESIGN.md](../DESIGN.md)), katalog sdílených UI komponent ([ui-components.md](ui-components.md)) a základy design systému ([design-system-audit-171.md](design-system-audit-171.md)).
 
 ---
 
 ## Manažerské shrnutí
 
-Mezi 26. říjnem a 8. listopadem 2026 proběhla v aplikaci TrainLoop rozsáhlá generální obnova UX/UI napříč všemi klíčovými obrazovkami a toky. Celkem bylo začleněno **18 pull requestů** s přímým dopadem na UX, včetně velké integrační PR **#212** (která sjednotila balík PR 200–209 a následné úpravy z review).
+Mezi 26. říjnem a 9. listopadem 2026 proběhla v aplikaci TrainLoop rozsáhlá generální obnova UX/UI napříč všemi klíčovými obrazovkami a toky. Celkem bylo začleněno **21 pull requestů** s přímým dopadem na UX, včetně velké integrační PR **#212** (která sjednotila balík PR 200–209 a následné úpravy z review) a dolaďovacích PR #214, #223 a #226.
+
+Cíl sprintu od PO: _„Aplikace má být na mobilu jasná a příjemná. Na každé obrazovce poznám, co je hlavní akce, a nic nepotřebuje vysvětlující text.“_ Klíčové obrazovky (Týden, Trénink, Detail psa, Cíl) vznikly nejdřív ve Figmě ([Trainloop](https://www.figma.com/design/LBlhF1wiyl639ENDDG2RWE/Trainloop)) a teprve potom v kódu.
 
 Redesign řeší konzistenci, přístupnost, ergonomii ovládání na dotykových zařízeních a specializované toky pro jednotlivé role:
 
@@ -19,7 +21,26 @@ Redesign řeší konzistenci, přístupnost, ergonomii ovládání na dotykovýc
 - **Správa psů, deník a archivace**: Stabilní identifikační barvy psů (1–6) promítnuté do avatarů, hlaviček i proužků v kalendáři; soukromé poznámky psovoda (`DogNote`) z lekcí a seminářů; proces archivace a obnovy psů z archivu.
 - **Cíle a průchod tréninkem**: Editor cílů krok za krokem, explicitní posun v krocích cíle (Posunout, Přeskočit, Zpět), průvodce tréninkem (walkthrough) s integrovaným časovačem a záznamem chyb a automatické promazání budoucích plánovaných tréninků při archivaci cíle.
 - **Záznamy tréninků a zpětná vazba**: Přechod z vyskakovacích oken na samostatné plnohodnotné stránky záznamu (`TrainingRecordPage`), vizuální odlišení zpráv trenéra a psovoda a okamžitá možnost odpovědi z karet historie s automatickým doscrolováním k editoru zprávy.
+- **Zprávy mezi trenérem a psovodem**: Funkční konverzace navázaná na každý záznam tréninku, zvonek s oznámeními a karta „Zpráva od trenéra“ na obrazovce Dnes, tlačítko „Odpovědět“ v historii i v přehledu trenéra. Zprávy a historie jsou sloučené do jednoho místa (`/messages` přesměruje na `/history`).
 - **Pracovní prostor trenéra a klienti**: Dedikovaný mobilní přehled trenéra (`TrainerOverview`), přehled klientů s barevnými teplotními mapami (heatmaps) úspěšnosti, strukturovaný proces plánování a izolace osobních psů trenéra do doby zavedení plnohodnotného přepínání rolí.
+
+---
+
+## Výsledky auditu: pain points původní verze
+
+Audit jsme dělali průchodem aplikace v mobilním zobrazení (390 px) v obou rolích, psovod na cvičáku a trenér mezi lekcemi, a porovnáním s Figma návrhem. Hlavní problémy stavu k 26. 10. 2026 a jejich náprava:
+
+| #   | Pain point (původní stav)                                                                                | Proč to vadilo                                                          | Náprava                                                                                                                                                                     |
+| --- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Nebylo poznat hlavní akci.** Obrazovky skládaly karty do karet, všechny akce vypadaly stejně důležitě. | Uživatel musel číst a hledat, co má udělat.                             | Na každé obrazovce jedna hlavní akce. Na Dnes tmavá `HeroCard` s tlačítkem **„Začít trénink“**. Pravidla v [`DESIGN.md`](../DESIGN.md).                                     |
+| 2   | **Nebylo vidět, kde pes v plánu je.**                                                                    | Psovod nevěděl, co má dnes cvičit, a trenér neviděl postup.             | Cíl ukazuje **aktuální krok**. Posun řídí člověk: **zvládnuto / zpět / přeskočit**, nic se neposouvá samo ani podle procent. Trénink z kalendáře začíná u aktuálního kroku. |
+| 3   | **Záznamy a komentáře ve stísněných dialogových oknech.**                                                | Na mobilu se v nich špatně psalo a záznam nešlo poslat odkazem.         | Záznam tréninku má vlastní stránku a URL. Tlačítko „Odpovědět“ otevře záznam rovnou u pole pro zprávu.                                                                      |
+| 4   | **Odpověď trenéra se dala snadno přehlédnout.**                                                          | Zpětná vazba mezi lekcemi, za kterou trenér platí, nedorazila.          | Zvonek s oznámeními a karta „Zpráva od trenéra“ na Dnes. Konverzaci lze začít i z komentáře k tréninku.                                                                     |
+| 5   | **Trénink venku se psem byl neovladatelný.** Malá tlačítka, hodně textu, stopky v jiné aplikaci.         | Psovod má jednu ruku na vodítku.                                        | Průchod tréninkem na celou obrazovku s časovačem, dotykové plochy 44–56 px, kritérium zvládnutí jako položka k odškrtnutí.                                                  |
+| 6   | **Všechno bylo navždy aktivní.** Staré cíle, psi a disciplíny zabíraly místo.                            | Přehled se zaplňoval věcmi, které už neplatí.                           | Dokončení a archiv cíle (budoucí tréninky zmizí, historie zůstane), archiv psa s návratem, ukončení disciplíny.                                                             |
+| 7   | **Navigace na mobilu se hledala.**                                                                       | Uživatel nevěděl, kde je a jak se vrátit.                               | Spodní lišta podle role (psovod: Dnes · Týden · Psi · Účet, trenér: Přehled · Klienti · Cíle · Účet). Destruktivní dialogy jako spodní panely.                              |
+| 8   | **Nejednotný vzhled.** Náhodná zaoblení, barvy, stíny a slovník („aktivita“, „položka“).                 | Aplikace nepůsobila jako jeden produkt.                                 | Tokeny shodné s Figmou, stabilní barva psa (1–6), identita „deník psa“ ([`design-identity-plan.md`](design-identity-plan.md)), slovník deník / zápis / zadání.              |
+| 9   | **Trenér plánoval naslepo.**                                                                             | Trénink šlo zařadit, aniž by bylo jasné, ke kterému psovi a cíli patří. | Plánování vede krok za krokem: klient → pes → cíl → trénink. U cíle je vidět, kolik tréninků je odcvičeno a kolik naplánováno.                                              |
 
 ---
 
@@ -87,6 +108,8 @@ Redesign řeší konzistenci, přístupnost, ergonomii ovládání na dotykovýc
   - Archivovaní psi se nezobrazují v aktivních seznamech, rychlých přepínačích ani v týdenním plánu.
   - Přidána dedikovaná sekce **Archiv psů** na stránce `/dogs` s možností kdykoliv psa vrátit mezi aktivní.
   - Do detailu psa (`DogDetailView`) byl přidán přímý odkaz na historii tréninků.
+- **Ukončení a obnova disciplíny (PR #214)**:
+  - Disciplínu, kterou pes už nedělá, lze ukončit ve formuláři psa i v sekci cílů; historie zůstává a disciplínu lze obnovit.
 
 ---
 
@@ -114,6 +137,7 @@ Redesign řeší konzistenci, přístupnost, ergonomii ovládání na dotykovýc
   - Editor cílů s postupným průvodcem pro strukturování dlouhodobých milníků do sekvencí cviků.
   - **Dokončení a archivace cíle**: Splněný nebo již neaktuální cíl lze označit jako hotový či archivovaný.
   - **Automatický úklid kalendáře**: Archivace cíle automaticky odstraní všechny budoucí naplánované (`PLANNED`) tréninky tohoto cíle z týdenního kalendáře.
+  - **Postup cíle podle tréninků (PR #223)**: U cíle je vidět počet odcvičených a naplánovaných tréninků; přeskočené tréninky se do postupu nepočítají.
 - **Průchod tréninkem – walkthrough (PR #188, #192)**:
   - Nová obrazovka pro aktivní provádění tréninku se psem.
   - Integrovaný tréninkový časovač s ovládáním spuštění, pauzy a resetu.
@@ -134,7 +158,11 @@ Redesign řeší konzistenci, přístupnost, ergonomii ovládání na dotykovýc
   - Tlačítko **„Odpovědět“** přímo na kartách v seznamu historie.
   - Kliknutí na odpověď uživatele přesměruje do záznamu a automaticky doscrolluje k poli pro zadání zprávy.
   - Přechod z vyskakovacích oken historie na přímé routování s parametrem `activityId`.
-  - Příprava navigačních tras pro `/inbox` a `/messages` (PR #208 v rámci #212).
+- **Zprávy a oznámení (PR #208 v rámci #212, PR #226)**:
+  - Backend: `GET /api/updates` (posledních 30 zpráv z tréninků), `GET /api/activities/:id` (záznam s konverzací) a `POST /api/activities/:id/messages` (odpověď, max. 2000 znaků). Přístup je ověřen přes oprávnění k psovi.
+  - Obrazovka **Dnes**: zvonek „Oznámení“ se seznamem posledních zpráv (klepnutí otevře konkrétní záznam) a karta **„Zpráva od trenéra“** s poslední zprávou.
+  - Zprávy a historie jsou jedno místo: `/messages` přesměruje na `/history`, aby uživatel nehledal mezi dvěma obrazovkami.
+  - **Zjednodušený záznam (PR #226)**: Poznámka psovoda z dokončení tréninku se zobrazuje jako první zpráva konverzace, takže na ni trenér odpovídá přímo a chat lze začít z komentáře.
 
 ---
 
@@ -148,6 +176,7 @@ Redesign řeší konzistenci, přístupnost, ergonomii ovládání na dotykovýc
   - Teplotní mapy (heatmaps) tréninkové aktivity klientů se sémantickým barevným odlišením (<50 %, 50–65 %, 65–80 %, ≥80 %).
 - **Strukturované plánování tréninků trenérem (PR #204 v rámci #212)**:
   - Upravený tok vyžadující povinný výběr klienta, psa a konkrétního cíle před zařazením lekce do kalendáře.
+  - Zpřesnění plánování, karet klientů a přehledu trenéra (PR #223).
 - **Oddělení rolí trenéra a psovoda (PR #211 v rámci #212)**:
   - Vlastní psi trenéra byli dočasně skryti z trenérského přehledu, dokud nebude dopracován kompletní UX návrh pro přepínání kontextu rolí ([docs/trainer-own-dogs-followup.md](trainer-own-dogs-followup.md)).
 
@@ -183,3 +212,18 @@ Redesign řeší konzistenci, přístupnost, ergonomii ovládání na dotykovýc
 | **07. 11. 2026** | **PR #192** (`feature/figma-pruchod`)             | `8c002e1` | `feat(ui)`: Průchod cvičením s časovačem a karty záznamu.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | **07. 11. 2026** | **PR #193** (`feature/figma-historie-prehled`)    | `95484f7` | `feat(ui)`: Historie se záznamem a metriky přehledu trenéra.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **08. 11. 2026** | **PR #212** (`fix/ready-prs-without-166`)         | `5815bab` | **Integrace PR 200–209 a UX opravy historie, záznamu a plánování**: <br>• **PR #200**: Archiv a návrat psa, odkaz na historii v detailu psa.<br>• **PR #201**: Dokončení a archiv cíle s odstraněním budoucích tréninků.<br>• **PR #203 (#175)**: Redesign veřejných stránek, registrace s výběrem role, přihlášení a správa účtu.<br>• **PR #204/#205**: Celostránkový záznam tréninku s bloky cílů, odlišení zpráv v chatu, seznam klientů.<br>• **PR #206**: Zobrazení a editace aktuálního kroku v cíli.<br>• **PR #207/#208**: Navigace v záznamu přes `activityId`, routy pro zprávy a inbox.<br>• **PR #209**: Vylepšení přepínače týdnů, tlačítko Odpovědět na kartách historie. |
+| **08. 11. 2026** | **PR #214** (`feature/dog-discipline-archive`)    | `1b1f5d2` | `feat(dog)`: Ukončení a obnova disciplíny ve formuláři psa a v cílech, ošetření chyb API.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **09. 11. 2026** | **PR #223** (`fix: clarify trainer planning…`)    | `4055573` | Zpřesnění plánování trenérem, postup cíle podle odcvičených a naplánovaných tréninků, karty klientů.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **09. 11. 2026** | **PR #225** (`fix/preserve-seed-on-deploy`)       | `05f7667` | Demo data přežijí nasazení, tréninky rozložené v čase (realistický stav pro kontrolu obrazovek).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| **09. 11. 2026** | **PR #226** (`fix/training-record-chat`)          | `160cdce` | Zjednodušený záznam tréninku, poznámka psovoda jako první zpráva konverzace, chat z komentáře.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+
+---
+
+## Co zbývá
+
+| Oblast                      | Stav                                                                                                                                                                               | Další krok                                                                                          |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Obrazovka Týden proti Figmě | Funkčně odpovídá, vizuálně ne 1:1 (titulek a popis nad přepínačem, tlačítko „Dnes“, týdenní progress bar). Viz [`figma-redesign-kontrola.md`](vystupy/figma-redesign-kontrola.md). | Rozhodnout s PO, zda platí Figma, nebo kód, a sjednotit.                                            |
+| Vlastní psi trenéra         | Dočasně skrytí z trenérského přehledu (#211).                                                                                                                                      | Navrhnout přepínání kontextu rolí ([`trainer-own-dogs-followup.md`](trainer-own-dogs-followup.md)). |
+| Tmavý režim                 | Odložen rozhodnutím PO.                                                                                                                                                            | Vrátit se k němu po stabilizaci světlého režimu.                                                    |
+| Úklid kódu                  | Komponenta `InboxView.tsx` zůstala po sloučení zpráv s historií nepoužitá.                                                                                                         | Odstranit.                                                                                          |

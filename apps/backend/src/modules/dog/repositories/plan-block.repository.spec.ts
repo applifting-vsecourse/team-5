@@ -60,9 +60,37 @@ describe('legacy plan reads', () => {
     goal.dog.isArchived = false;
     goal.disciplineEntity.isArchived = false;
     tx.trainingGoal.findUnique.mockResolvedValue(goal);
-    await repository.reorderBlocks('goal', []);
+    tx.goalTraining.findUnique.mockResolvedValue({
+      isArchived: false,
+    } as never);
+    tx.planBlock.findMany.mockResolvedValue([
+      { id: 'a', parentId: null, position: 0 },
+    ] as never);
+    await repository.reorderBlocks('goal', ['a']);
     expect(tx.planBlock.findMany).toHaveBeenLastCalledWith(
       expect.objectContaining({ where: { trainingId: 'one' } }),
     );
+  });
+
+  it('deletes a root and lets the DB cascade its children (#67)', async () => {
+    const { repository, tx } = setup([training('one')]);
+    const goal = mockDeep<EditableGoal>();
+    goal.status = 'ACTIVE';
+    goal.dog.isArchived = false;
+    goal.disciplineEntity.isArchived = false;
+    tx.trainingGoal.findUnique.mockResolvedValue(goal);
+    tx.goalTraining.findFirst.mockResolvedValue(training('one'));
+    tx.goalTraining.findUnique.mockResolvedValue({
+      isArchived: false,
+    } as never);
+    tx.planBlock.findUniqueOrThrow.mockResolvedValue({
+      id: 'root',
+      goalId: 'goal',
+      trainingId: 'one',
+      parentId: null,
+    } as never);
+    tx.planBlock.findMany.mockResolvedValue([]);
+    await repository.deleteBlock('root', 'goal');
+    expect(tx.planBlock.delete).toHaveBeenCalledWith({ where: { id: 'root' } });
   });
 });

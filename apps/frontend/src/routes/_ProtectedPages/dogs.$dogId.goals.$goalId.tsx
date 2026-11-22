@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router"
 
 import { Seo } from "@/components/Seo"
 
+import { useSession } from "@/features/auth/hooks/useSession"
 import { EditGoalPage } from "@/features/dog/components/GoalEditorPage"
 
 type GoalSearch = {
@@ -10,6 +11,8 @@ type GoalSearch = {
   naplanovat?: true
   novyTrenink?: true
   session?: string
+  // Set when opened from a training record (#68) to return there after editing.
+  zaznam?: string
 }
 
 export const Route = createFileRoute("/_ProtectedPages/dogs/$dogId/goals/$goalId")({
@@ -17,6 +20,7 @@ export const Route = createFileRoute("/_ProtectedPages/dogs/$dogId/goals/$goalId
     ...(search.novyTrenink === true ? { novyTrenink: true as const } : {}),
     ...(search.naplanovat === true ? { naplanovat: true as const } : {}),
     ...(typeof search.session === "string" && search.session ? { session: search.session } : {}),
+    ...(typeof search.zaznam === "string" && search.zaznam ? { zaznam: search.zaznam } : {}),
   }),
   component: EditGoalRoute,
 })
@@ -25,10 +29,14 @@ function EditGoalRoute() {
   const { dogId, goalId } = Route.useParams()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
+  const { user } = useSession()
 
   // Drop the flag once handled, so a reload does not open the picker again.
   const clearScheduleRequest = useCallback(() => {
-    void navigate({ search: (previous) => ({ session: previous.session }), replace: true })
+    void navigate({
+      search: (previous) => ({ session: previous.session, zaznam: previous.zaznam }),
+      replace: true,
+    })
   }, [navigate])
 
   return (
@@ -37,6 +45,8 @@ function EditGoalRoute() {
       <EditGoalPage
         dogId={dogId}
         goalId={goalId}
+        returnToActivityId={search.zaznam}
+        currentUserId={user?.id}
         isNewTrainingRequested={search.novyTrenink === true}
         onNewTrainingRequestHandled={() =>
           void navigate({

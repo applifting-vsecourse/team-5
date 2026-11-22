@@ -23,7 +23,6 @@ const aDog = (overrides: Partial<Dog> = {}): Dog => ({
 
 const aGoal = (overrides: Partial<Goal> = {}): Goal => ({
   disciplineId: 'discipline-1',
-  currentStepId: null,
   criterion: null,
   deadline: null,
   id: 'g1',

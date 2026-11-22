@@ -91,7 +91,7 @@ export function InviteClientDialog({ isOpen, onOpenChange }: InviteClientDialogP
                     <strong className="text-foreground">{createdInvitation.email}</strong>.
                   </>
                 ) : (
-                  "Předejte tento 6místný kód svému klientovi na lekci nebo osobně."
+                  "Předejte tento 8místný kód svému klientovi na lekci nebo osobně."
                 )}
               </DialogDescription>
             </DialogHeader>

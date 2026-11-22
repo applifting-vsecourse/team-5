@@ -45,7 +45,7 @@ export const ResetPassword = ({
     >
       <Button
         href={url}
-        className="bg-[#c2410c] text-white font-semibold rounded-md px-6 py-3.5 text-center inline-block"
+        className="bg-[#8b5a2b] text-white font-semibold rounded-md px-6 py-3.5 text-center inline-block"
         style={{
           backgroundColor: EMAIL_THEME.colors.primary,
           color: EMAIL_THEME.colors.primaryForeground,
@@ -73,7 +73,7 @@ export const ResetPassword = ({
       Pokud tlačítko nefunguje, zkopírujte a vložte následující odkaz do svého prohlížeče:
     </Text>
     <Text
-      className="text-[#c2410c] text-sm break-all m-0"
+      className="text-[#8b5a2b] text-sm break-all m-0"
       style={{
         color: EMAIL_THEME.colors.primary,
         fontSize: '14px',
@@ -83,7 +83,7 @@ export const ResetPassword = ({
     >
       <Link
         href={url}
-        className="text-[#c2410c] underline"
+        className="text-[#8b5a2b] underline"
         style={{ color: EMAIL_THEME.colors.primary, textDecoration: 'underline' }}
       >
         {url}

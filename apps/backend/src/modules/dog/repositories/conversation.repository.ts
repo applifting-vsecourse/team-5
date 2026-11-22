@@ -1,5 +1,9 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
 import { Injectable } from '@nestjs/common';
+import {
+  recordMessageReply,
+  replyDogAccess,
+} from './training-reply.repository';
 
 const messageInclude = {
   author: { select: { id: true, name: true } },
@@ -37,21 +41,34 @@ export class ConversationRepository {
     });
   }
 
-  record(id: string) {
+  record(id: string, userId?: string) {
     return this.prisma.workoutLog.findUnique({
       where: { id },
       include: {
+        unreadReplies: {
+          where: { recipientId: userId ?? '' },
+          select: { id: true },
+        },
+        scheduledTraining: {
+          select: {
+            unreadReplies: {
+              where: { recipientId: userId ?? '' },
+              select: { id: true },
+            },
+          },
+        },
         author: { select: { id: true, name: true } },
-        dog: { select: { id: true, name: true, color: true } },
+        dog: { select: { id: true, name: true, color: true, ownerId: true } },
         training: {
           select: {
             title: true,
             steps: {
-              orderBy: { position: 'asc' },
+              // parentId + position feed walkOrder in ConversationService.detail (#67).
+              orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
               select: {
                 id: true,
+                parentId: true,
                 title: true,
-                outcome: true,
                 position: true,
               },
             },
@@ -66,9 +83,16 @@ export class ConversationRepository {
   }
 
   reply(workoutLogId: string, authorId: string, text: string) {
-    return this.prisma.trainingMessage.create({
-      data: { workoutLogId, authorId, text },
-      include: messageInclude,
+    return this.prisma.$transaction(async (tx) => {
+      await tx.workoutLog.findFirstOrThrow({
+        where: { id: workoutLogId, dog: replyDogAccess(authorId) },
+      });
+      const message = await tx.trainingMessage.create({
+        data: { workoutLogId, authorId, text },
+        include: messageInclude,
+      });
+      await recordMessageReply(tx, workoutLogId, authorId);
+      return message;
     });
   }
 }

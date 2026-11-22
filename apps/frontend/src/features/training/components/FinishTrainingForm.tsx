@@ -13,6 +13,8 @@ import type {
   CompleteTrainingInput,
   FocusLevel,
   MistakeLevel,
+  SleepQuality,
+  TrainingEnvironment,
 } from "@/features/training/api/trainingSchemas"
 import { useCompleteTraining } from "@/features/training/hooks/useCompleteTraining"
 
@@ -45,12 +47,15 @@ export function FinishTrainingForm({
   const submissionLock = useRef(false)
   const [successRate, setRate] = useState<number | null>(null)
   const [focus, setFocus] = useState<FocusLevel | null>(null)
+  const [sleepQuality, setSleepQuality] = useState<SleepQuality | null>(null)
+  const [environment, setEnvironment] = useState<TrainingEnvironment | null>(null)
   const [repeatedMistakes, setMistakes] = useState<MistakeLevel | null>(null)
   const [mistakeDetails, setDetails] = useState<string[]>([])
   const [customMistakes, setCustomMistakes] = useState<string[]>([])
   const [shouldAddCustom, setAddCustom] = useState(false)
   const [customMistake, setCustomMistake] = useState("")
   const [videoUrl, setVideo] = useState("")
+  const [videoUrlError, setVideoUrlError] = useState("")
   const [note, setNote] = useState("")
   const addCustom = () => {
     const value = customMistake.trim()
@@ -67,12 +72,29 @@ export function FinishTrainingForm({
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (submissionLock.current || isPending) return
+    const trimmedVideoUrl = videoUrl.trim()
+    if (trimmedVideoUrl) {
+      let isValidVideoUrl: boolean
+      try {
+        const parsed = new URL(trimmedVideoUrl)
+        isValidVideoUrl = parsed.protocol === "http:" || parsed.protocol === "https:"
+      } catch {
+        isValidVideoUrl = false
+      }
+      if (!isValidVideoUrl) {
+        setVideoUrlError("Zadej platný odkaz začínající http:// nebo https://.")
+        return
+      }
+    }
+    setVideoUrlError("")
     const payload: CompleteTrainingInput = {}
     if (successRate !== null) payload.successRate = successRate
     if (focus) payload.focus = focus
+    if (sleepQuality) payload.sleepQuality = sleepQuality
+    if (environment) payload.environment = environment
     if (repeatedMistakes) payload.repeatedMistakes = repeatedMistakes
     if (repeatedMistakes === "YES" && mistakeDetails.length) payload.mistakeDetails = mistakeDetails
-    if (videoUrl.trim()) payload.videoUrl = videoUrl.trim()
+    if (trimmedVideoUrl) payload.videoUrl = trimmedVideoUrl
     if (note.trim()) payload.note = note.trim()
     submissionLock.current = true
     try {
@@ -101,7 +123,10 @@ export function FinishTrainingForm({
             : ""}
         </p>
       </header>
-      <form onSubmit={(event) => void submit(event)}>
+      <form
+        noValidate
+        onSubmit={(event) => void submit(event)}
+      >
         <fieldset
           disabled={isPending}
           className="space-y-6"
@@ -173,104 +198,173 @@ export function FinishTrainingForm({
               ))}
             </ToggleGroup>
           </section>
-          <section className="space-y-3 rounded-card border border-border bg-card p-4">
-            <Label className="font-bold">Opakoval chyby?</Label>
-            <ToggleGroup
-              type="single"
-              spacing={1}
-              value={repeatedMistakes ?? ""}
-              onValueChange={(value) => setMistakes(value ? (value as MistakeLevel) : null)}
-              aria-label="Opakované chyby"
-              className="flex w-full rounded-control bg-secondary p-1"
-            >
-              {(
-                [
-                  ["YES", "Ano"],
-                  ["NO", "Ne"],
-                ] as const
-              ).map(([value, label]) => (
-                <ToggleGroupItem
-                  key={value}
-                  value={value}
-                  className={selectedClass}
-                >
-                  {label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-            {repeatedMistakes === "YES" && (
-              <>
-                <div
-                  className="flex flex-wrap gap-2"
-                  role="group"
-                  aria-label="Podrobnosti opakovaných chyb"
-                >
-                  {[...mistakeSuggestions, ...customMistakes].map((detail) => {
-                    const isSelected = mistakeDetails.includes(detail)
-                    return (
-                      <Button
-                        key={detail}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        aria-pressed={isSelected}
-                        disabled={!isSelected && mistakeDetails.length >= 10}
-                        onClick={() =>
-                          setDetails((items) =>
-                            items.includes(detail)
-                              ? items.filter((item) => item !== detail)
-                              : [...items, detail],
-                          )
-                        }
-                        className={cn(
-                          "rounded-full text-xs",
-                          isSelected && "border-primary bg-accent text-primary",
-                        )}
-                      >
-                        {isSelected && <DesignIcon name="finish-Check1" />}
-                        {detail}
-                      </Button>
-                    )
-                  })}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full text-xs"
-                    onClick={() => setAddCustom(!shouldAddCustom)}
-                    disabled={mistakeDetails.length >= 10}
+          <section
+            aria-labelledby="circumstances-heading"
+            className="space-y-4 rounded-card border border-border bg-card p-4"
+          >
+            <div className="flex items-baseline justify-between gap-2">
+              <h2
+                id="circumstances-heading"
+                className="text-section font-extrabold"
+              >
+                Okolnosti
+              </h2>
+              <span className="text-xs font-medium text-muted-foreground">Volitelné</span>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold">Jak pes spal</Label>
+              <ToggleGroup
+                type="single"
+                spacing={1}
+                value={sleepQuality ?? ""}
+                onValueChange={(value) => setSleepQuality(value ? (value as SleepQuality) : null)}
+                aria-label="Jak pes spal"
+                className="flex w-full rounded-control bg-secondary p-1"
+              >
+                {(
+                  [
+                    ["GOOD", "Dobře"],
+                    ["POOR", "Špatně"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <ToggleGroupItem
+                    key={value}
+                    value={value}
+                    className={selectedClass}
                   >
-                    + vlastní
-                  </Button>
-                </div>
-                {shouldAddCustom && (
-                  <div className="flex items-end gap-2">
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <Label htmlFor="custom-mistake">Vlastní chyba</Label>
-                      <Input
-                        id="custom-mistake"
-                        value={customMistake}
-                        onChange={(event) => setCustomMistake(event.target.value)}
-                        maxLength={60}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault()
-                            addCustom()
+                    {label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
+            <div className="space-y-2">
+              <Label className="font-bold">Prostředí</Label>
+              <ToggleGroup
+                type="single"
+                spacing={1}
+                value={environment ?? ""}
+                onValueChange={(value) =>
+                  setEnvironment(value ? (value as TrainingEnvironment) : null)
+                }
+                aria-label="Prostředí"
+                className="flex w-full rounded-control bg-secondary p-1"
+              >
+                {(
+                  [
+                    ["HOME", "Doma"],
+                    ["OUTDOORS", "Venku"],
+                    ["TRAINING_GROUND", "Cvičák"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <ToggleGroupItem
+                    key={value}
+                    value={value}
+                    className={selectedClass}
+                  >
+                    {label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
+            <div className="space-y-3">
+              <Label className="font-bold">Opakoval chyby?</Label>
+              <ToggleGroup
+                type="single"
+                spacing={1}
+                value={repeatedMistakes ?? ""}
+                onValueChange={(value) => setMistakes(value ? (value as MistakeLevel) : null)}
+                aria-label="Opakované chyby"
+                className="flex w-full rounded-control bg-secondary p-1"
+              >
+                {(
+                  [
+                    ["YES", "Ano"],
+                    ["NO", "Ne"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <ToggleGroupItem
+                    key={value}
+                    value={value}
+                    className={selectedClass}
+                  >
+                    {label}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              {repeatedMistakes === "YES" && (
+                <>
+                  <div
+                    className="flex flex-wrap gap-2"
+                    role="group"
+                    aria-label="Podrobnosti opakovaných chyb"
+                  >
+                    {[...mistakeSuggestions, ...customMistakes].map((detail) => {
+                      const isSelected = mistakeDetails.includes(detail)
+                      return (
+                        <Button
+                          key={detail}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          aria-pressed={isSelected}
+                          disabled={!isSelected && mistakeDetails.length >= 10}
+                          onClick={() =>
+                            setDetails((items) =>
+                              items.includes(detail)
+                                ? items.filter((item) => item !== detail)
+                                : [...items, detail],
+                            )
                           }
-                        }}
-                      />
-                    </div>
+                          className={cn(
+                            "rounded-full text-xs",
+                            isSelected && "border-primary bg-accent text-primary",
+                          )}
+                        >
+                          {isSelected && <DesignIcon name="finish-Check1" />}
+                          {detail}
+                        </Button>
+                      )
+                    })}
                     <Button
                       type="button"
-                      onClick={addCustom}
-                      disabled={!customMistake.trim()}
+                      variant="outline"
+                      size="sm"
+                      className="rounded-full text-xs"
+                      onClick={() => setAddCustom(!shouldAddCustom)}
+                      disabled={mistakeDetails.length >= 10}
                     >
-                      Přidat
+                      + vlastní
                     </Button>
                   </div>
-                )}
-              </>
-            )}
+                  {shouldAddCustom && (
+                    <div className="flex items-end gap-2">
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <Label htmlFor="custom-mistake">Vlastní chyba</Label>
+                        <Input
+                          id="custom-mistake"
+                          value={customMistake}
+                          onChange={(event) => setCustomMistake(event.target.value)}
+                          maxLength={60}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault()
+                              addCustom()
+                            }
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={addCustom}
+                        disabled={!customMistake.trim()}
+                      >
+                        Přidat
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </section>
           <div className="space-y-2">
             <Label
@@ -288,14 +382,36 @@ export function FinishTrainingForm({
                 type="url"
                 inputMode="url"
                 value={videoUrl}
-                onChange={(event) => setVideo(event.target.value)}
+                onChange={(event) => {
+                  setVideo(event.target.value)
+                  if (videoUrlError) setVideoUrlError("")
+                }}
                 placeholder="https://youtube.com/watch?v=…"
                 maxLength={500}
+                aria-invalid={Boolean(videoUrlError)}
+                aria-describedby={
+                  videoUrlError
+                    ? "training-video-url-error training-video-url-hint"
+                    : "training-video-url-hint"
+                }
                 className="pl-10"
               />
             </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Video se nenahrává, stačí odkaz (YouTube neveřejné, Google Disk).
+            {videoUrlError && (
+              <p
+                id="training-video-url-error"
+                role="alert"
+                className="text-xs font-medium text-destructive"
+              >
+                {videoUrlError}
+              </p>
+            )}
+            <p
+              id="training-video-url-hint"
+              className="text-xs leading-relaxed text-muted-foreground"
+            >
+              Video se nenahrává — nahraj ho na YouTube jako neveřejné nebo na Google Disk (kdokoli
+              s odkazem) a vlož sem odkaz.
             </p>
           </div>
           <div className="space-y-2">

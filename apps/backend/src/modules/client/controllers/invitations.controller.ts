@@ -43,7 +43,7 @@ export class InvitationsController {
   @ApiOperation({ summary: 'Verify an invitation code' })
   @ApiParam({
     name: 'code',
-    description: '6-character invitation code',
+    description: 'Invitation code (8 characters for new invites)',
     type: String,
   })
   @ApiResponse({ status: 200, type: VerifyInvitationResponseDto })

@@ -1,6 +1,8 @@
 import {
   FocusLevel,
   MistakeLevel,
+  SleepQuality,
+  TrainingEnvironment,
   WorkoutStatus,
 } from '@/generated/prisma/client';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -84,6 +86,22 @@ export class CreateActivityDto {
   repeatedMistakes?: MistakeLevel;
 
   @ApiPropertyOptional({
+    enum: SleepQuality,
+    example: SleepQuality.GOOD,
+  })
+  @IsOptional()
+  @IsEnum(SleepQuality)
+  sleepQuality?: SleepQuality;
+
+  @ApiPropertyOptional({
+    enum: TrainingEnvironment,
+    example: TrainingEnvironment.OUTDOORS,
+  })
+  @IsOptional()
+  @IsEnum(TrainingEnvironment)
+  environment?: TrainingEnvironment;
+
+  @ApiPropertyOptional({
     description: 'Reflection / notes from the workout',
     example: 'Soustředil se skvěle.',
   })
@@ -96,7 +114,7 @@ export class CreateActivityDto {
     example: 'https://youtube.com/watch?v=123',
   })
   @IsOptional()
-  @IsUrl({ protocols: ['https'], require_protocol: true })
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
   videoUrl?: string;
 
   @ApiPropertyOptional({
@@ -196,6 +214,12 @@ export class ActivityResponseDto {
 
   @ApiPropertyOptional({ enum: MistakeLevel, nullable: true })
   repeatedMistakes!: MistakeLevel | null;
+
+  @ApiPropertyOptional({ enum: SleepQuality, nullable: true })
+  sleepQuality!: SleepQuality | null;
+
+  @ApiPropertyOptional({ enum: TrainingEnvironment, nullable: true })
+  environment!: TrainingEnvironment | null;
 
   @ApiPropertyOptional({ nullable: true })
   note!: string | null;

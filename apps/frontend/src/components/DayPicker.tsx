@@ -121,12 +121,13 @@ export function DayPicker({
                 key={day}
                 value={day}
                 disabled={isPending || day < today || unavailableDays.includes(day)}
-                aria-label={formatDayLong(day)}
-                aria-description={
-                  occupiedDays.includes(day) ? "Už je tu naplánovaný trénink." : undefined
+                aria-label={
+                  occupiedDays.includes(day)
+                    ? `${formatDayLong(day)}, už je tu naplánovaný trénink`
+                    : formatDayLong(day)
                 }
                 className={cn(
-                  "flex h-auto min-w-11 flex-col px-0 py-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
+                  "flex h-auto min-w-0 touch-manipulation flex-col px-0 py-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
                   isCompact
                     ? "min-h-16 gap-1 rounded-control border border-border bg-card text-sm data-[spacing=0]:rounded-control data-[spacing=0]:first:rounded-control data-[spacing=0]:last:rounded-control"
                     : "min-h-14 gap-0 rounded-md border border-transparent data-[today=true]:border-border",

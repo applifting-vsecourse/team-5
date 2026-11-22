@@ -1,4 +1,3 @@
-import { StepOutcome } from '@/generated/prisma/client';
 import { PlanBlock } from '@/modules/dog/domain/plan-block';
 import { Trim } from '@/shared/validation/trim';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -62,7 +61,7 @@ export class CreatePlanBlockDto {
 
   @ApiPropertyOptional({
     description:
-      'Index in the plan to insert the block at (0 = first); missing means at the end',
+      'Index among siblings to insert at (0 = first); missing means at the end',
     minimum: 0,
     maximum: MAX_BLOCKS_IN_PLAN,
   })
@@ -71,6 +70,15 @@ export class CreatePlanBlockDto {
   @Min(0)
   @Max(MAX_BLOCKS_IN_PLAN)
   insertAt?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Parent step to nest under as a sub-step (#67); must be a root step',
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  parentId?: string;
 }
 
 export class UpdatePlanBlockDto {
@@ -132,6 +140,9 @@ export class PlanBlockResponseDto {
   @ApiProperty()
   goalId!: string;
 
+  @ApiPropertyOptional({ nullable: true })
+  parentId!: string | null;
+
   @ApiProperty()
   position!: number;
 
@@ -143,9 +154,6 @@ export class PlanBlockResponseDto {
 
   @ApiPropertyOptional({ nullable: true })
   criterion!: string | null;
-
-  @ApiProperty({ enum: StepOutcome, nullable: true })
-  outcome!: StepOutcome | null;
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt!: Date;
@@ -159,11 +167,11 @@ export class PlanBlockResponseDto {
       durationMinutes: block.durationMinutes,
       id: block.id,
       goalId: block.goalId,
+      parentId: block.parentId,
       position: block.position,
       title: block.title,
       instruction: block.instruction,
       criterion: block.criterion,
-      outcome: block.outcome,
       createdAt: block.createdAt,
       updatedAt: block.updatedAt,
     };

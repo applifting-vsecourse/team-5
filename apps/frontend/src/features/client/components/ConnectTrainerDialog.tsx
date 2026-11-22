@@ -142,7 +142,7 @@ export function ConnectTrainerDialog({
                 onSubmit={(event) => {
                   event.preventDefault()
                   const normalized = input.replace(/[-\s]/g, "").toUpperCase()
-                  if (!/^[A-Z0-9]{6}$/.test(normalized)) {
+                  if (!/^[A-Z0-9]{6,8}$/.test(normalized)) {
                     setMessage("Zadej šestimístný kód pozvánky.")
                     return
                   }

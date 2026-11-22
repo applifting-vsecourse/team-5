@@ -2,6 +2,7 @@ import { useQueries, useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { Calendar } from "lucide-react"
 
+import { ClickerToolDialog } from "@/components/ClickerToolDialog"
 import { DesignIcon } from "@/components/DesignIcon"
 import { dayLabel, DogPlayerCard } from "@/components/DogPlayerCard"
 import { EmptyState } from "@/components/EmptyState"
@@ -111,6 +112,7 @@ function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
         <Link
           to="/trainings/$trainingId"
           params={{ trainingId: training.id }}
+          aria-label={`Začít trénink: ${training.dog.name}, ${training.training?.title ?? training.goal.title}`}
         >
           <DesignIcon name="today-Play" />
           Začít trénink
@@ -166,6 +168,7 @@ export function TodayView({ userName }: TodayViewProps) {
           </h1>
         </div>
         {updates.bell}
+        <ClickerToolDialog />
         <LogFreeTrainingDialog dogs={dogs} />
         <span
           aria-label={userName ?? "Psovod"}
@@ -306,6 +309,7 @@ export function TodayView({ userName }: TodayViewProps) {
           </QueryState>
 
           <TodayWeekPreview
+            key={weekStart}
             weekStart={weekStart}
             today={today}
           />

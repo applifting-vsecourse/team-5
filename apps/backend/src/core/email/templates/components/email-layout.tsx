@@ -21,7 +21,7 @@ export const EMAIL_THEME = {
     background: '#faf8f5',
     foreground: '#1c2628',
     card: '#ffffff',
-    primary: '#c2410c',
+    primary: '#8b5a2b',
     primaryForeground: '#ffffff',
     muted: '#f2eee5',
     mutedForeground: '#616e74',

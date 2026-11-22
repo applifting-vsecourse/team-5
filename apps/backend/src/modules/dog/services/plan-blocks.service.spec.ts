@@ -3,7 +3,7 @@ import { PlanBlock } from '@/modules/dog/domain/plan-block';
 import { PlanBlockRepository } from '@/modules/dog/repositories/plan-block.repository';
 import { GoalsService } from '@/modules/dog/services/goals.service';
 import { Identity } from '@/shared/auth/domain/identity';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { PlanBlocksService } from './plan-blocks.service';
 
@@ -16,10 +16,10 @@ const aBlock = (overrides: Partial<PlanBlock> = {}): PlanBlock => ({
   title: 'Sedni u nohy',
   instruction: 'Pes sedí u levé nohy.',
   criterion: 'Sedí 5 s, i když kolem letí míček.',
-  outcome: null,
   createdAt: new Date('2026-01-01T12:00:00Z'),
   updatedAt: new Date('2026-01-01T12:00:00Z'),
   ...overrides,
+  parentId: overrides.parentId ?? null,
 });
 
 const owner = { id: 'u1' } as Identity;
@@ -76,13 +76,16 @@ describe('PlanBlocksService', () => {
         }),
       ).resolves.toEqual(created);
 
-      expect(planBlockRepository.createBlock).toHaveBeenCalledWith({
-        goalId: 'g1',
-        title: 'Sedni u nohy',
-        instruction: 'Pes sedí u levé nohy.',
-        criterion: 'Sedí 5 s, i když kolem letí míček.',
-        insertAt: undefined,
-      });
+      expect(planBlockRepository.createBlock).toHaveBeenCalledWith(
+        {
+          goalId: 'g1',
+          title: 'Sedni u nohy',
+          instruction: 'Pes sedí u levé nohy.',
+          criterion: 'Sedí 5 s, i když kolem letí míček.',
+          insertAt: undefined,
+        },
+        owner.id,
+      );
     });
 
     it('stores a missing instruction and criterion as null', async () => {
@@ -96,6 +99,7 @@ describe('PlanBlocksService', () => {
 
       expect(planBlockRepository.createBlock).toHaveBeenCalledWith(
         expect.objectContaining({ instruction: null, criterion: null }),
+        owner.id,
       );
     });
 
@@ -112,6 +116,7 @@ describe('PlanBlocksService', () => {
 
       expect(planBlockRepository.createBlock).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Mezikrok', insertAt: 1 }),
+        owner.id,
       );
     });
 
@@ -145,11 +150,15 @@ describe('PlanBlocksService', () => {
         instruction: '',
       });
 
-      expect(planBlockRepository.updateBlock).toHaveBeenCalledWith('b1', {
-        title: 'Sedni',
-        instruction: null,
-        criterion: undefined,
-      });
+      expect(planBlockRepository.updateBlock).toHaveBeenCalledWith(
+        'b1',
+        {
+          title: 'Sedni',
+          instruction: null,
+          criterion: undefined,
+        },
+        owner.id,
+      );
     });
 
     it("does not update a block of another user's plan", async () => {
@@ -188,7 +197,11 @@ describe('PlanBlocksService', () => {
 
       await service.deleteBlock(owner, 'b1');
 
-      expect(planBlockRepository.deleteBlock).toHaveBeenCalledWith('b1', 'g1');
+      expect(planBlockRepository.deleteBlock).toHaveBeenCalledWith(
+        'b1',
+        'g1',
+        owner.id,
+      );
     });
 
     it("does not delete a block of another user's plan", async () => {
@@ -203,45 +216,45 @@ describe('PlanBlocksService', () => {
   });
 
   describe('reorderBlocks', () => {
-    const plan = [
-      aBlock({ id: 'b1', position: 0 }),
-      aBlock({ id: 'b2', position: 1 }),
-      aBlock({ id: 'b3', position: 2 }),
-    ];
-
-    it('saves a new order that lists every block once', async () => {
+    it('forwards a sibling group to the repository (#67)', async () => {
       const { service, planBlockRepository } = setup();
-      planBlockRepository.getBlocksByGoalId.mockResolvedValue(plan);
-      planBlockRepository.reorderBlocks.mockResolvedValue(plan);
+      const roots = [
+        aBlock({ id: 'b2', position: 0 }),
+        aBlock({ id: 'b1', position: 1 }),
+      ];
+      planBlockRepository.reorderBlocks.mockResolvedValue(roots);
 
-      await service.reorderBlocks(owner, 'g1', ['b2', 'b1', 'b3']);
+      await service.reorderBlocks(owner, 'g1', ['b2', 'b1']);
 
-      expect(planBlockRepository.reorderBlocks).toHaveBeenCalledWith('g1', [
-        'b2',
-        'b1',
-        'b3',
-      ]);
+      expect(planBlockRepository.reorderBlocks).toHaveBeenCalledWith(
+        'g1',
+        ['b2', 'b1'],
+        owner.id,
+      );
+      expect(planBlockRepository.getBlocksByGoalId).not.toHaveBeenCalled();
     });
 
-    it.each([
-      ['a block is missing', ['b2', 'b1']],
-      ['a block is listed twice', ['b1', 'b1', 'b3']],
-      ['a block is from another plan', ['b1', 'b2', 'x9']],
-    ])('rejects the order when %s', async (_case, blockIds) => {
+    it('forwards a child sibling group without requiring the full plan', async () => {
       const { service, planBlockRepository } = setup();
-      planBlockRepository.getBlocksByGoalId.mockResolvedValue(plan);
+      planBlockRepository.reorderBlocks.mockResolvedValue([
+        aBlock({ id: 'c1', parentId: 'b1', position: 0 }),
+        aBlock({ id: 'c2', parentId: 'b1', position: 1 }),
+      ]);
 
-      await expect(
-        service.reorderBlocks(owner, 'g1', blockIds),
-      ).rejects.toThrow(BadRequestException);
-      expect(planBlockRepository.reorderBlocks).not.toHaveBeenCalled();
+      await service.reorderBlocks(owner, 'g1', ['c2', 'c1']);
+
+      expect(planBlockRepository.reorderBlocks).toHaveBeenCalledWith(
+        'g1',
+        ['c2', 'c1'],
+        owner.id,
+      );
     });
 
     it("does not reorder another user's plan", async () => {
       const { service, planBlockRepository } = setup();
 
       await expect(
-        service.reorderBlocks(stranger, 'g1', ['b1', 'b2', 'b3']),
+        service.reorderBlocks(stranger, 'g1', ['b1', 'b2']),
       ).rejects.toThrow(NotFoundException);
       expect(planBlockRepository.reorderBlocks).not.toHaveBeenCalled();
     });

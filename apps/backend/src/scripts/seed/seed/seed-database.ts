@@ -5,8 +5,55 @@ import {
 } from '@/modules/dog/domain/calendar-date';
 import { BetterAuth } from '@/shared/auth/providers/better-auth.provider';
 import { Config } from '@/shared/config/config.service';
+import { hashPassword } from 'better-auth/crypto';
 import { createUser } from './create-user';
 import { SeedTrainingCalendar } from './seed-training-calendar';
+
+/** Known README credentials — reset on every seed so local DBs stay usable. */
+const SEED_PASSWORDS: { email: string; password: string }[] = [
+  { email: 'trener@trainloop.cz', password: 'password1' },
+  { email: 'caffeinatedduck@example.com', password: 'password1' },
+  { email: 'jan.novak@seznam.cz', password: 'password1' },
+  { email: 'petra.svobodova@email.cz', password: 'password1' },
+  { email: 'tomas.dvorak@gmail.com', password: 'password1' },
+  { email: 'eva.novotna@email.cz', password: 'password2' },
+];
+
+async function ensureSeedPasswords(prisma: PrismaService): Promise<void> {
+  // Never reset known weak passwords on staging/production deploys.
+  if (process.env.NODE_ENV === 'production') return;
+  for (const entry of SEED_PASSWORDS) {
+    const user = await prisma.user.findFirst({ where: { email: entry.email } });
+    if (!user) {
+      console.warn(`ensureSeedPasswords: no user for ${entry.email}`);
+      continue;
+    }
+    const password = await hashPassword(entry.password);
+    const account = await prisma.account.findFirst({
+      where: { userId: user.id, providerId: 'credential' },
+    });
+    if (account) {
+      await prisma.account.update({
+        where: { id: account.id },
+        data: { password },
+      });
+    } else {
+      const now = new Date();
+      await prisma.account.create({
+        data: {
+          id: `seed-account-${user.id}`,
+          accountId: user.id,
+          providerId: 'credential',
+          userId: user.id,
+          password,
+          issuer: 'local:credential',
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+    }
+  }
+}
 
 export const seedDatabase = async (
   prisma: PrismaService,
@@ -47,6 +94,41 @@ export const seedDatabase = async (
       });
     }
 
+    // Legacy quacker seed used caffeinatedduck@… — rename to the README login when free.
+    if (existingTrainer.email === 'caffeinatedduck@example.com') {
+      const taken = await prisma.user.findFirst({
+        where: { email: 'trener@trainloop.cz' },
+      });
+      if (!taken) {
+        console.log(
+          'Renaming caffeinatedduck@example.com → trener@trainloop.cz',
+        );
+        existingTrainer = await prisma.user.update({
+          where: { id: existingTrainer.id },
+          data: {
+            email: 'trener@trainloop.cz',
+            name: 'Marek Trenér',
+            username: 'trener',
+            role: 'trainer',
+          },
+        });
+      }
+    } else {
+      const documentedTrainer = await prisma.user.findFirst({
+        where: { email: 'trener@trainloop.cz' },
+      });
+      if (!documentedTrainer) {
+        console.log('Creating documented trainer trener@trainloop.cz');
+        await createUser(prisma, auth, {
+          email: 'trener@trainloop.cz',
+          password: 'password1',
+          name: 'Marek Trenér',
+          username: 'trener',
+          role: 'trainer',
+        });
+      }
+    }
+
     const existingUser = await prisma.user.findFirst({
       where: {
         email: {
@@ -66,6 +148,7 @@ export const seedDatabase = async (
     }
 
     await seedClientData(prisma, auth, existingTrainer.id, now);
+    await ensureSeedPasswords(prisma);
     return;
   }
 
@@ -101,6 +184,7 @@ export const seedDatabase = async (
   });
 
   await seedClientData(prisma, auth, trainer.id, now);
+  await ensureSeedPasswords(prisma);
 };
 
 export const seedDogData = async (
@@ -815,6 +899,9 @@ export async function seedTrainingPlans(
   const today = fromCalendarDate(todayInAppZone(now));
   const day = (offset: number): Date =>
     new Date(today.getTime() + offset * DAY_MS);
+  await releaseCrowdedSeedTerms(prisma, [
+    ...new Set(dogs.map((dog) => dog.ownerId)),
+  ]);
   const existingDays = await prisma.scheduledTraining.findMany({
     where: {
       dog: { ownerId: { in: [...new Set(dogs.map((dog) => dog.ownerId))] } },
@@ -941,4 +1028,92 @@ export async function seedTrainingPlans(
       }
     }
   }
+}
+
+// Generated plan fixtures look like `seed-<dog>-goal-<g>-training-<t>-date-<n>`.
+const SEED_TERM_ID = /^seed-.+-date-\d+$/;
+const UNTOUCHED_MS = 60_000;
+
+/**
+ * Databases seeded before SeedTrainingCalendar existed carry several fixture
+ * trainings per owner per day. When a day is crowded (more than two trainings
+ * or one dog twice), release the generated terms nobody has touched so the
+ * calendar lays them out again. Moved, edited or discussed terms stay put, and
+ * once the layout is fixed this no longer fires, so later deploys are no-ops.
+ */
+async function releaseCrowdedSeedTerms(
+  prisma: PrismaService,
+  ownerIds: string[],
+): Promise<void> {
+  const terms = await prisma.scheduledTraining.findMany({
+    where: { dog: { ownerId: { in: ownerIds } } },
+    select: {
+      id: true,
+      date: true,
+      dogId: true,
+      createdAt: true,
+      updatedAt: true,
+      dog: { select: { ownerId: true } },
+      _count: { select: { unreadReplies: true } },
+      workoutLog: {
+        select: {
+          id: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: {
+            select: {
+              messages: true,
+              unreadReplies: true,
+              emailNotifications: true,
+            },
+          },
+        },
+      },
+    },
+  });
+  const untouched = (term: (typeof terms)[number]): boolean => {
+    const log = term.workoutLog;
+    return (
+      SEED_TERM_ID.test(term.id) &&
+      term.updatedAt.getTime() - term.createdAt.getTime() < UNTOUCHED_MS &&
+      term._count.unreadReplies === 0 &&
+      (!log ||
+        (log.id === `${term.id}-log` &&
+          log.updatedAt.getTime() - log.createdAt.getTime() < UNTOUCHED_MS &&
+          log._count.messages === 0 &&
+          log._count.unreadReplies === 0 &&
+          log._count.emailNotifications === 0))
+    );
+  };
+
+  const days = new Map<string, typeof terms>();
+  for (const term of terms) {
+    const key = `${term.dog.ownerId}:${term.date.toISOString().slice(0, 10)}`;
+    days.set(key, [...(days.get(key) ?? []), term]);
+  }
+  const crowdedOwners = new Set<string>();
+  for (const dayTerms of days.values()) {
+    const crowded =
+      dayTerms.length > 2 ||
+      new Set(dayTerms.map((term) => term.dogId)).size < dayTerms.length;
+    if (crowded && dayTerms.some(untouched))
+      crowdedOwners.add(dayTerms[0].dog.ownerId);
+  }
+  if (crowdedOwners.size === 0) return;
+
+  const released = terms.filter(
+    (term) => crowdedOwners.has(term.dog.ownerId) && untouched(term),
+  );
+  const logIds = released.flatMap((term) =>
+    term.workoutLog ? [term.workoutLog.id] : [],
+  );
+  await prisma.$transaction([
+    prisma.workoutLog.deleteMany({ where: { id: { in: logIds } } }),
+    prisma.scheduledTraining.deleteMany({
+      where: { id: { in: released.map((term) => term.id) } },
+    }),
+  ]);
+  console.log(
+    `Re-spreading ${released.length} untouched seed training(s) on crowded days.`,
+  );
 }

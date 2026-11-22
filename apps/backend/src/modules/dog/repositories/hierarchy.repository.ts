@@ -6,35 +6,35 @@ import {
   Prisma,
 } from '@/generated/prisma/client';
 import {
-  CurrentStepAction,
-  moveCurrentStep,
-} from '@/modules/dog/domain/current-step';
-import {
   DisciplineMembership,
   DogPlan,
   EditableGoal,
   TrainingDetail,
 } from '@/modules/dog/domain/hierarchy';
+import { displayOrder } from '@/modules/dog/domain/step-order';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { recordPlanReply } from './training-reply.repository';
 
 export const planOrder = [{ position: 'asc' }, { id: 'asc' }] as const;
 
-// A dated completion preserves this definition's steps for historical reads.
-// Reusing the definition on another date remains allowed; editing needs a new training.
+// Plan edits stay open after a dated completion so trainers can adjust the next
+// steps from a record (#68). Workout logs keep history; the live plan moves forward.
 export async function assertTrainingContentEditable(
   tx: Prisma.TransactionClient,
   trainingId: string,
 ): Promise<void> {
-  const completed = await tx.scheduledTraining.count({
-    where: { trainingId, status: 'COMPLETED' },
+  const training = await tx.goalTraining.findUnique({
+    where: { id: trainingId },
+    select: { isArchived: true },
   });
-  if (completed > 0) {
-    throw new ConflictException('Completed training content is read-only');
+  if (!training) throw new NotFoundException('Training not found');
+  if (training.isArchived) {
+    throw new ConflictException('Training is archived');
   }
 }
 
@@ -88,6 +88,23 @@ export async function resolveTraining(
   );
 }
 
+// Depth-1 only: parent must be a root step of this training (#67).
+export async function resolveSubStepParent(
+  tx: Prisma.TransactionClient,
+  trainingId: string,
+  parentId: string | undefined,
+): Promise<string | null> {
+  if (!parentId) return null;
+  const parent = await tx.planBlock.findFirst({
+    where: { id: parentId, trainingId },
+  });
+  if (!parent) throw new NotFoundException('Parent step not found');
+  if (parent.parentId != null) {
+    throw new BadRequestException('A sub-step cannot be split further');
+  }
+  return parent.id;
+}
+
 function validateOrder(current: { id: string }[], ids: string[]): void {
   const allowed = new Set(current.map((item) => item.id));
   if (
@@ -109,8 +126,8 @@ export class HierarchyRepository {
     return this.prisma.discipline.findMany({ orderBy: { name: 'asc' } });
   }
 
-  getPlan(dogId: string): Promise<DogPlan> {
-    return this.prisma.dogDiscipline.findMany({
+  async getPlan(dogId: string): Promise<DogPlan> {
+    const plan = await this.prisma.dogDiscipline.findMany({
       where: { dogId },
       include: {
         discipline: true,
@@ -137,6 +154,16 @@ export class HierarchyRepository {
       },
       orderBy: { id: 'asc' },
     });
+    return plan.map((link) => ({
+      ...link,
+      goals: link.goals.map((goal) => ({
+        ...goal,
+        sessions: goal.sessions.map((session) => ({
+          ...session,
+          steps: displayOrder(session.steps),
+        })),
+      })),
+    }));
   }
 
   async setDiscipline(
@@ -174,41 +201,10 @@ export class HierarchyRepository {
       where: { id },
       include: {
         steps: { orderBy: [...planOrder] },
-        goal: { select: { currentStepId: true } },
       },
     });
     if (!row) return null;
-    const { goal, ...training } = row;
-    return { ...training, currentStepId: goal.currentStepId };
-  }
-
-  // Walks the goal's current step (#66) over the plan of its non-archived
-  // trainings. Serialized on the goal like every other structural write, so
-  // two quick taps cannot both act on the same step.
-  async moveCurrentStep(
-    goalId: string,
-    action: CurrentStepAction,
-  ): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      const goal = await lockEditableGoal(tx, goalId);
-      const steps = await tx.planBlock.findMany({
-        where: { goalId, training: { isArchived: false } },
-        select: { id: true },
-        orderBy: [{ training: { position: 'asc' } }, ...planOrder],
-      });
-      const move = moveCurrentStep(
-        steps.map((step) => step.id),
-        goal.currentStepId,
-        action,
-      );
-      if (!move) throw new ConflictException('The goal has no steps');
-      for (const [id, outcome] of move.outcomes)
-        await tx.planBlock.update({ where: { id }, data: { outcome } });
-      await tx.trainingGoal.update({
-        where: { id: goalId },
-        data: { currentStepId: move.currentStepId },
-      });
-    });
+    return { ...row, steps: displayOrder(row.steps) };
   }
 
   createTraining(
@@ -241,6 +237,7 @@ export class HierarchyRepository {
     id: string,
     goalId: string,
     data: { title?: string; isArchived?: boolean },
+    actorId?: string,
   ): Promise<GoalTraining> {
     return this.prisma.$transaction(async (tx) => {
       await lockEditableGoal(tx, goalId);
@@ -255,6 +252,7 @@ export class HierarchyRepository {
       ) {
         throw new ConflictException('Restore the training before editing it');
       }
+      await recordPlanReply(tx, id, actorId);
       return tx.goalTraining.update({ where: { id }, data });
     });
   }
@@ -282,13 +280,20 @@ export class HierarchyRepository {
       criterion?: string;
       durationMinutes?: number;
       insertAt?: number;
+      parentId?: string;
     },
+    actorId?: string,
   ): Promise<PlanBlock> {
     return this.prisma.$transaction(async (tx) => {
       await resolveTraining(tx, goalId, trainingId);
       await assertTrainingContentEditable(tx, trainingId);
+      const parentId = await resolveSubStepParent(
+        tx,
+        trainingId,
+        data.parentId,
+      );
       const siblings = await tx.planBlock.findMany({
-        where: { trainingId },
+        where: { trainingId, parentId },
         orderBy: [...planOrder],
       });
       const position = Math.min(
@@ -299,6 +304,7 @@ export class HierarchyRepository {
         data: {
           goalId,
           trainingId,
+          parentId,
           position,
           title: data.title.trim(),
           instruction: data.instruction?.trim() || null,
@@ -312,26 +318,42 @@ export class HierarchyRepository {
           where: { id: sibling.id },
           data: { position: index },
         });
+      await recordPlanReply(tx, trainingId, actorId);
       return created;
     });
   }
 
+  // Reorders one sibling group (roots or children of one parent).
   reorderSteps(
     goalId: string,
     trainingId: string,
     ids: string[],
+    actorId?: string,
   ): Promise<PlanBlock[]> {
     return this.prisma.$transaction(async (tx) => {
       await resolveTraining(tx, goalId, trainingId);
       await assertTrainingContentEditable(tx, trainingId);
       const current = await tx.planBlock.findMany({ where: { trainingId } });
-      validateOrder(current, ids);
+      const byId = new Map(current.map((step) => [step.id, step]));
+      const first = byId.get(ids[0] ?? '');
+      if (!first) {
+        throw new BadRequestException(
+          'List every item of this parent exactly once',
+        );
+      }
+      const siblings = current.filter(
+        (step) => step.parentId === first.parentId,
+      );
+      validateOrder(siblings, ids);
       for (const [position, id] of ids.entries())
         await tx.planBlock.update({ where: { id }, data: { position } });
-      return tx.planBlock.findMany({
-        where: { trainingId },
-        orderBy: [...planOrder],
-      });
+      await recordPlanReply(tx, trainingId, actorId);
+      return displayOrder(
+        await tx.planBlock.findMany({
+          where: { trainingId },
+          orderBy: [...planOrder],
+        }),
+      );
     });
   }
 }

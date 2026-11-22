@@ -2,11 +2,14 @@ import { PrismaService } from '@/core/prisma/prisma.service';
 import {
   FocusLevel,
   MistakeLevel,
+  SleepQuality,
+  TrainingEnvironment,
   WorkoutLog,
   WorkoutStatus,
 } from '@/generated/prisma/client';
 import { ActivityPage } from '@/modules/dog/domain/activity';
 import { Injectable } from '@nestjs/common';
+import { recordMessageReply } from './training-reply.repository';
 
 @Injectable()
 export class ActivityRepository {
@@ -47,31 +50,40 @@ export class ActivityRepository {
     rating?: number | null;
     focus?: FocusLevel | null;
     repeatedMistakes?: MistakeLevel | null;
+    sleepQuality?: SleepQuality | null;
+    environment?: TrainingEnvironment | null;
     note?: string | null;
     videoUrl?: string | null;
     skipReason?: string | null;
   }): Promise<WorkoutLog> {
-    return this.prisma.workoutLog.create({
-      data: {
-        dog: { connect: { id: data.dogId } },
-        author: { connect: { id: data.authorId } },
-        title: data.title,
-        discipline: data.discipline ?? null,
-        status: data.status ?? WorkoutStatus.COMPLETED,
-        completedAt: data.completedAt ?? new Date(),
-        successRate: data.successRate ?? null,
-        rating: data.rating ?? null,
-        focus: data.focus ?? null,
-        repeatedMistakes: data.repeatedMistakes ?? null,
-        note: data.note ?? null,
-        ...(data.note?.trim() && {
-          messages: {
-            create: { authorId: data.authorId, text: data.note.trim() },
-          },
-        }),
-        videoUrl: data.videoUrl ?? null,
-        skipReason: data.skipReason ?? null,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const record = await tx.workoutLog.create({
+        data: {
+          dog: { connect: { id: data.dogId } },
+          author: { connect: { id: data.authorId } },
+          title: data.title,
+          discipline: data.discipline ?? null,
+          status: data.status ?? WorkoutStatus.COMPLETED,
+          completedAt: data.completedAt ?? new Date(),
+          successRate: data.successRate ?? null,
+          rating: data.rating ?? null,
+          focus: data.focus ?? null,
+          repeatedMistakes: data.repeatedMistakes ?? null,
+          sleepQuality: data.sleepQuality ?? null,
+          environment: data.environment ?? null,
+          note: data.note ?? null,
+          ...(data.note?.trim() && {
+            messages: {
+              create: { authorId: data.authorId, text: data.note.trim() },
+            },
+          }),
+          videoUrl: data.videoUrl ?? null,
+          skipReason: data.skipReason ?? null,
+        },
+      });
+      if (data.note?.trim())
+        await recordMessageReply(tx, record.id, data.authorId);
+      return record;
     });
   }
 }
