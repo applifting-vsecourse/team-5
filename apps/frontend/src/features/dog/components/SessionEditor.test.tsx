@@ -141,10 +141,10 @@ describe("training editor", () => {
       .mockResolvedValue({} as never)
     const user = userEvent.setup()
     mount()
-    await user.click(screen.getByRole("button", { name: "Z knihovny" }))
-    await user.click(screen.getByRole("button", { name: /Přivolání na píšťalku/ }))
-    await user.click(screen.getByRole("button", { name: /Přivolání od jiného psa/ }))
-    await user.click(screen.getByRole("button", { name: "+ Přidat do tréninku" }))
+    // Desktop library is always mounted (jsdom ignores Tailwind `hidden`); pick the first match.
+    await user.click(screen.getAllByRole("button", { name: /Přivolání na píšťalku/ })[0]!)
+    await user.click(screen.getAllByRole("button", { name: /Přivolání od jiného psa/ })[0]!)
+    await user.click(screen.getAllByRole("button", { name: "+ Přidat do tréninku" })[0]!)
     await screen.findByRole("alert")
     expect(api.post).toHaveBeenCalledTimes(2)
     expect(api.post).toHaveBeenNthCalledWith(1, "goal-trainings/session-2/steps", {
@@ -155,7 +155,7 @@ describe("training editor", () => {
         durationMinutes: 8,
       },
     })
-    await user.click(screen.getByRole("button", { name: "+ Přidat do tréninku" }))
+    await user.click(screen.getAllByRole("button", { name: "+ Přidat do tréninku" })[0]!)
     await waitFor(() => expect(api.post).toHaveBeenCalledTimes(3))
     expect(api.post).toHaveBeenLastCalledWith("goal-trainings/session-2/steps", {
       json: {
@@ -181,12 +181,30 @@ describe("training editor", () => {
       }),
     )
   })
+  it("shows the desktop library panel and owner preview for the current steps", () => {
+    const withSteps: TrainingSession = {
+      ...session,
+      steps: [aStep("s1", "Kontakt"), aStep("s2", "Volně")],
+    }
+    mount(false, { session: withSteps })
+    expect(screen.getByRole("heading", { name: "Knihovna kroků" })).toBeInTheDocument()
+    expect(screen.getByRole("complementary", { name: "Náhled pro psovoda" })).toBeInTheDocument()
+    expect(screen.getByText(/2 kroky/)).toBeInTheDocument()
+    expect(screen.queryByText("Uloženo automaticky")).not.toBeInTheDocument()
+  })
   it("offers preview but no editing or scheduling for read-only history", () => {
     mount(true)
     expect(screen.queryByRole("button", { name: "Nový krok" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Z knihovny" })).not.toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Naplánovat" })).toBeDisabled()
-    expect(screen.getByRole("button", { name: "Náhled" })).toBeEnabled()
+    // Desktop + mobile action bars both mount; jsdom does not apply Tailwind `hidden`.
+    expect(
+      screen
+        .getAllByRole("button", { name: "Naplánovat" })
+        .every((b) => b.hasAttribute("disabled")),
+    ).toBe(true)
+    expect(
+      screen.getAllByRole("button", { name: "Náhled" }).some((b) => !b.hasAttribute("disabled")),
+    ).toBe(true)
   })
   it("renders steps without current-step controls or duplicated goal principle", () => {
     const withSteps: TrainingSession = {
@@ -194,9 +212,10 @@ describe("training editor", () => {
       steps: [aStep("s1", "Kontakt"), aStep("s2", "Volně")],
     }
     mount(false, { session: withSteps })
-    expect(screen.getByText("Kontakt")).toBeInTheDocument()
-    expect(screen.getByText("Volně")).toBeInTheDocument()
-    expect(screen.queryByText("Princip tréninku")).not.toBeInTheDocument()
+    // Step titles also appear in the desktop owner preview.
+    expect(screen.getAllByText("Kontakt").length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText("Volně").length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText("Princip tréninku")).toHaveLength(1)
     expect(screen.queryByText("Aktuální")).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Zvládnuto, další krok" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Přeskočit" })).not.toBeInTheDocument()
@@ -209,7 +228,10 @@ describe("training editor", () => {
       steps: [aStep("s1", "Sedni – zůstaň"), aStep("s1a", "Sedni 5 s", "s1")],
     }
     mount(false, { session: withSteps })
-    expect(screen.getByText("Sedni 5 s").closest("li")).toHaveClass("ml-6")
+    // Step titles also appear in the desktop owner preview.
+    expect(
+      screen.getAllByText("Sedni 5 s").some((node) => node.closest("li")?.classList.contains("ml-6")),
+    ).toBe(true)
     await user.click(screen.getByRole("button", { name: "Upravit krok Sedni – zůstaň" }))
     expect(screen.getByRole("button", { name: "Rozdělit na dílčí kroky" })).toBeEnabled()
     await user.click(screen.getByRole("button", { name: "Rozdělit na dílčí kroky" }))
@@ -268,7 +290,11 @@ describe("training editor", () => {
   })
   it("notifies plan save and offers return to the training record", async () => {
     const user = userEvent.setup()
-    const client = new QueryClient()
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    })
+    // Keep this test focused on the save callback rather than network refresh.
+    vi.spyOn(client, "invalidateQueries").mockResolvedValue()
     const onPlanSaved = vi.fn()
     const onReturnToRecord = vi.fn()
     const view = (hasSaved: boolean) => (

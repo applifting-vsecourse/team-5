@@ -308,6 +308,7 @@ export function TodayView({ userName }: TodayViewProps) {
           </QueryState>
 
           <TodayWeekPreview
+            key={weekStart}
             weekStart={weekStart}
             today={today}
           />

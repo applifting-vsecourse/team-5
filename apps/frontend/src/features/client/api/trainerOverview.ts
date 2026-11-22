@@ -7,6 +7,13 @@ import { clientKeys } from "./clientKeys"
 
 const dog = z.object({ id: z.string(), name: z.string(), color: z.number() })
 const person = z.object({ id: z.string(), name: z.string() })
+const matrixCell = z.object({
+  date: z.string(),
+  successRate: z.number().nullable(),
+  activityId: z.string().nullable(),
+  dogId: z.string().nullable(),
+})
+
 const overviewSchema = z.object({
   metrics: z.object({
     activeClients: z.number(),
@@ -15,6 +22,7 @@ const overviewSchema = z.object({
     weeklySessionChange: z.number(),
     successRate: z.number().nullable(),
     weeklyRateChange: z.number().nullable(),
+    unreadNotes: z.number().int().nonnegative(),
   }),
   clients: z.array(
     person.extend({
@@ -37,6 +45,18 @@ const overviewSchema = z.object({
       goalId: z.string().nullable(),
     }),
   ),
+  activityMatrix: z.object({
+    days: z.array(z.string()),
+    rows: z.array(
+      z.object({
+        clientId: z.string(),
+        clientName: z.string(),
+        dogs: z.array(dog),
+        cells: z.array(matrixCell),
+        averageSuccessRate: z.number().nullable(),
+      }),
+    ),
+  }),
 })
 export type TrainerDashboard = z.infer<typeof overviewSchema>
 export function trainerOverviewQueryOptions() {

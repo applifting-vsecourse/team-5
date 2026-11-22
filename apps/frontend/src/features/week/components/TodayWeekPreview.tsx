@@ -29,7 +29,7 @@ export function TodayWeekPreview({
   const query = useQuery(weekTrainingsQueryOptions(shownWeek))
   return (
     <section
-      className="hidden min-w-0 space-y-4 rounded-card border border-border bg-card p-5 xl:col-start-1 xl:row-span-2 xl:row-start-2 xl:block"
+      className="hidden min-w-0 space-y-4 rounded-card border border-border bg-card p-5 xl:col-start-1 xl:row-span-3 xl:row-start-2 xl:block"
       aria-labelledby="today-week-heading"
     >
       <div className="flex items-center gap-2">
@@ -38,7 +38,7 @@ export function TodayWeekPreview({
             id="today-week-heading"
             className="text-section font-extrabold"
           >
-            Tvůj týden
+            Tento týden
           </h2>
           <p className="text-xs text-muted-foreground">{formatWeekRange(shownWeek)}</p>
         </div>
@@ -58,6 +58,13 @@ export function TodayWeekPreview({
         >
           <ChevronRight />
         </Button>
+        <Link
+          to="/week"
+          search={{ tyden: shownWeek }}
+          className="hidden min-h-touch items-center text-sm font-bold text-primary xl:inline-flex"
+        >
+          Celý týden
+        </Link>
       </div>
       <QueryState
         isLoading={query.isLoading}
@@ -66,68 +73,80 @@ export function TodayWeekPreview({
         empty={null}
       >
         <div className="grid grid-cols-7 gap-2">
-          {daysOfWeek(shownWeek).map((day) => (
-            <div
-              key={day}
-              className={cn("min-w-0 space-y-3 rounded-field p-2", day === today && "bg-accent")}
-            >
-              <div className={cn("text-center", day === today && "font-bold text-primary")}>
-                <p className="text-xs">{formatWeekdayShort(day)}</p>
-                <p className="text-lg font-extrabold">{formatDayOfMonth(day)}</p>
-              </div>
-              {query.data
-                ?.filter((training) => training.date === day)
-                .map((training) => {
-                  const isFinished =
-                    training.status === "COMPLETED" || training.status === "SKIPPED"
-                  const targetTo =
-                    isFinished && training.activityId
-                      ? "/dogs/$dogId/activities/$activityId"
-                      : "/trainings/$trainingId"
-                  const targetParams =
-                    isFinished && training.activityId
-                      ? { dogId: training.dog.id, activityId: training.activityId }
-                      : { trainingId: training.id }
+          {daysOfWeek(shownWeek).map((day) => {
+            const dayTrainings = query.data?.filter((training) => training.date === day) ?? []
+            return (
+              <div
+                key={day}
+                className={cn(
+                  "flex max-h-56 min-h-28 min-w-0 flex-col gap-2 overflow-y-auto rounded-field border border-transparent p-2",
+                  day === today && "border-primary bg-accent",
+                )}
+              >
+                <div className={cn("text-center", day === today && "font-bold text-primary")}>
+                  <p className="text-xs">{formatWeekdayShort(day)}</p>
+                  <p className="text-lg font-extrabold">{formatDayOfMonth(day)}</p>
+                </div>
+                {dayTrainings.length === 0 ? (
+                  <p className="mt-auto text-center text-xs font-semibold text-muted-foreground">
+                    Volno
+                  </p>
+                ) : (
+                  dayTrainings.map((training) => {
+                    const isFinished =
+                      training.status === "COMPLETED" || training.status === "SKIPPED"
+                    const targetTo =
+                      isFinished && training.activityId
+                        ? "/dogs/$dogId/activities/$activityId"
+                        : "/trainings/$trainingId"
+                    const targetParams =
+                      isFinished && training.activityId
+                        ? { dogId: training.dog.id, activityId: training.activityId }
+                        : { trainingId: training.id }
 
-                  return (
-                    <Link
-                      key={training.id}
-                      to={targetTo}
-                      params={targetParams}
-                      className={cn(
-                        "block space-y-1 rounded-control p-2 text-xs",
-                        training.status === "COMPLETED"
-                          ? "bg-success text-success-foreground"
-                          : training.status === "SKIPPED"
-                            ? "bg-warning text-warning-foreground"
-                            : "bg-secondary text-secondary-foreground",
-                      )}
-                    >
-                      <span className="flex items-center gap-1 font-bold">
-                        <span
-                          aria-hidden
-                          className={cn(
-                            "size-1.5 shrink-0 rounded-full",
-                            dogColorClass(training.dog.color),
-                          )}
-                        />
-                        {training.dog.name}
-                      </span>
-                      <span className="block break-words">
-                        {training.training?.title ?? training.goal.title}
-                      </span>
-                      <span className="block text-xs">
-                        {training.status === "COMPLETED"
-                          ? "✓ Hotovo"
-                          : training.status === "SKIPPED"
-                            ? "Přeskočeno"
-                            : `${training.exercises.length} cviků`}
-                      </span>
-                    </Link>
-                  )
-                })}
-            </div>
-          ))}
+                    return (
+                      <Link
+                        key={training.id}
+                        to={targetTo}
+                        params={targetParams}
+                        className={cn(
+                          "block space-y-1 rounded-control p-2 text-xs",
+                          training.status === "COMPLETED"
+                            ? "bg-success text-success-foreground"
+                            : training.status === "SKIPPED"
+                              ? "bg-warning text-warning-foreground"
+                              : day === today
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-secondary text-secondary-foreground",
+                        )}
+                      >
+                        <span className="flex items-center gap-1 font-bold">
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "size-1.5 shrink-0 rounded-full",
+                              dogColorClass(training.dog.color),
+                            )}
+                          />
+                          {training.dog.name}
+                        </span>
+                        <span className="block break-words">
+                          {training.training?.title ?? training.goal.title}
+                        </span>
+                        <span className="block text-xs">
+                          {training.status === "COMPLETED"
+                            ? "Hotovo"
+                            : training.status === "SKIPPED"
+                              ? "Přeskočeno"
+                              : "Čeká"}
+                        </span>
+                      </Link>
+                    )
+                  })
+                )}
+              </div>
+            )
+          })}
         </div>
       </QueryState>
       <Link

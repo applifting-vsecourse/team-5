@@ -57,6 +57,7 @@ import { walkOrder } from "@/features/dog/lib/stepOrder"
 
 import { EditorSheet } from "./EditorSheet"
 import { ReturnToRecordBanner } from "./ReturnToRecordBanner"
+import { SessionOwnerPreview } from "./SessionOwnerPreview"
 import { SessionScheduleSheet } from "./SessionScheduleSheet"
 import { StepLibraryScreen } from "./StepLibraryScreen"
 import { TrainingPreview } from "./TrainingPreview"
@@ -445,7 +446,8 @@ export function SessionEditor({
     const inserted = new Set<string>()
     try {
       for (const id of selected) {
-        const template = stepTemplates.find((t) => t.id === id)!
+        const template = stepTemplates.find((t) => t.id === id)
+        if (!template) continue
         await api.post(`goal-trainings/${session.id}/steps`, {
           json: {
             title: template.title,
@@ -469,326 +471,412 @@ export function SessionEditor({
       libraryLock.current = false
     }
   }
-  if (isLibraryOpen) {
-    return (
-      <StepLibraryScreen
-        selected={selected}
-        onSelectedChange={setSelected}
-        isPending={isLibraryBusy}
-        error={libraryError}
-        onInsert={() => void insertTemplates()}
-        onBack={() => setLibrary(false)}
-        onCreate={() => {
-          setLibrary(false)
-          openNew()
-        }}
-      />
-    )
-  }
+  const totalMinutes = blocks.reduce((n, b) => n + (b.durationMinutes ?? 0), 0)
+  const sessionIndex = Math.max(1, sessions.findIndex((s) => s.id === session.id) + 1)
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 px-gutter py-6">
-      <header className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          size="icon"
-          className="shrink-0 rounded-field"
-          aria-label="Zpět na cíl"
-          onClick={onBack}
-        >
-          <EditorIcon name="ChevL" />
-        </Button>
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-extrabold tracking-tight break-words">{session.title}</h1>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Trénink {sessions.findIndex((s) => s.id === session.id) + 1} z {sessions.length} ·{" "}
-            {dog.name} · {goal.discipline}
-          </p>
+    <>
+      {isLibraryOpen ? (
+        <div className="lg:hidden">
+          <StepLibraryScreen
+            selected={selected}
+            onSelectedChange={setSelected}
+            isPending={isLibraryBusy}
+            error={libraryError}
+            onInsert={() => void insertTemplates()}
+            onBack={() => setLibrary(false)}
+            onCreate={() => {
+              setLibrary(false)
+              openNew()
+            }}
+          />
         </div>
-      </header>
-      {onReturnToRecord && (
-        <ReturnToRecordBanner
-          hasSavedChanges={hasSavedPlanChanges}
-          onReturn={onReturnToRecord}
-        />
-      )}
-      {isReadOnly && <StatusChip tone="muted">Pouze ke čtení</StatusChip>}
-      <section className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-section font-extrabold">
-            Kroky · {blocks.length} · {blocks.reduce((n, b) => n + (b.durationMinutes ?? 0), 0)} min
-          </h2>
-          {!isReadOnly && <p className="text-xs text-muted-foreground">Podrž a přetáhni</p>}
-        </div>
-        {blocks.length ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={drag}
+      ) : null}
+      <div
+        className={cn(
+          "mx-auto w-full max-w-2xl space-y-6 px-gutter py-6 lg:max-w-7xl lg:px-gutter-desktop",
+          isLibraryOpen && "hidden lg:block",
+        )}
+      >
+        <header className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            className="shrink-0 rounded-field"
+            aria-label="Zpět na cíl"
+            onClick={onBack}
           >
-            <SortableContext
-              items={roots.map((s) => s.id)}
-              strategy={verticalListSortingStrategy}
+            <EditorIcon name="ChevL" />
+          </Button>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-extrabold tracking-tight break-words lg:text-title">
+              Tvorba tréninku
+            </h1>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {[dog.name, goal.discipline, goal.title, `Trénink ${sessionIndex}`]
+                .filter(Boolean)
+                .join(" › ")}
+            </p>
+          </div>
+          <div className="hidden items-center gap-2 lg:flex">
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => setPreview(true)}
             >
-              <ol className="space-y-3">
-                {blocks.map((b) => (
-                  <StepRow
-                    key={b.id}
-                    step={b}
-                    index={Math.max(0, rootIndex(b))}
-                    isReadOnly={isReadOnly}
-                    isBusy={isBusy}
-                    onEdit={() => setStep(b)}
-                  />
-                ))}
-              </ol>
-            </SortableContext>
-          </DndContext>
-        ) : (
-          <EmptyState
-            icon={Target}
-            title="Trénink zatím nemá kroky"
-            description="Přidej vlastní krok nebo použij vzor z knihovny."
+              <EditorIcon name="Eye1" />
+              Náhled
+            </Button>
+            <Button
+              size="lg"
+              disabled={!canSchedule || !blocks.length || isBusy}
+              onClick={() => setSchedule(true)}
+            >
+              <EditorIcon name="Cal" />
+              Naplánovat
+            </Button>
+          </div>
+        </header>
+        {onReturnToRecord && (
+          <ReturnToRecordBanner
+            hasSavedChanges={hasSavedPlanChanges}
+            onReturn={onReturnToRecord}
           />
         )}
-        {!isReadOnly && (
-          <div className="space-y-3 rounded-card border border-dashed border-border p-4">
-            <h3 className="flex items-center gap-3 font-bold">
+
+        <div
+          className={cn(
+            "grid gap-5 lg:items-start",
+            isReadOnly
+              ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,18.75rem)]"
+              : "lg:grid-cols-[minmax(0,18.75rem)_minmax(0,1fr)_minmax(0,18.75rem)]",
+          )}
+        >
+          {!isReadOnly && (
+            <aside className="hidden min-h-[32rem] lg:block">
+              <StepLibraryScreen
+                variant="panel"
+                selected={selected}
+                onSelectedChange={setSelected}
+                isPending={isLibraryBusy}
+                error={libraryError}
+                onInsert={() => void insertTemplates()}
+                onBack={() => undefined}
+                onCreate={() => openNew()}
+              />
+            </aside>
+          )}
+
+          <div className="min-w-0 space-y-6">
+            <div className="space-y-1">
+              <p className="text-label font-bold text-muted-foreground">Název tréninku</p>
+              <h2 className="text-section font-extrabold tracking-tight break-words">
+                {session.title}
+              </h2>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <StatusChip tone="success">{dog.name}</StatusChip>
+                {goal.discipline && <StatusChip tone="muted">{goal.discipline}</StatusChip>}
+              </div>
+            </div>
+            <section className="space-y-2 rounded-card bg-accent p-4">
+              <h2 className="text-label font-bold text-muted-foreground">Princip tréninku</h2>
+              <p className="leading-relaxed whitespace-pre-wrap">
+                {goal.principle?.trim() ? goal.principle : "Princip zatím není doplněný."}
+              </p>
+            </section>
+            {isReadOnly && <StatusChip tone="muted">Pouze ke čtení</StatusChip>}
+            <section className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-section font-extrabold">
+                  Kroky tréninku · {blocks.length} · {totalMinutes} min
+                </h2>
+                {!isReadOnly && <p className="text-xs text-muted-foreground">Podrž a přetáhni</p>}
+              </div>
+              {blocks.length ? (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={drag}
+                >
+                  <SortableContext
+                    items={roots.map((s) => s.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <ol className="space-y-3">
+                      {blocks.map((b) => (
+                        <StepRow
+                          key={b.id}
+                          step={b}
+                          index={Math.max(0, rootIndex(b))}
+                          isReadOnly={isReadOnly}
+                          isBusy={isBusy}
+                          onEdit={() => setStep(b)}
+                        />
+                      ))}
+                    </ol>
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <EmptyState
+                  icon={Target}
+                  title="Trénink zatím nemá kroky"
+                  description="Přidej vlastní krok nebo použij vzor z knihovny."
+                />
+              )}
+              {!isReadOnly && (
+                <div className="space-y-3 rounded-card border border-dashed border-border p-4">
+                  <h3 className="flex items-center gap-3 font-bold">
+                    <Button
+                      type="button"
+                      size="icon"
+                      className="rounded-field"
+                      aria-label="Přidat vlastní krok"
+                      disabled={isBusy}
+                      onClick={() => openNew()}
+                    >
+                      <EditorIcon name="Plus" />
+                    </Button>
+                    Přidat krok
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      className="gap-1.5 rounded-full bg-card px-2.5 text-xs lg:hidden"
+                      disabled={isBusy}
+                      onClick={() => setLibrary(true)}
+                    >
+                      <EditorIcon name="Book" />Z knihovny
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="gap-1.5 rounded-full bg-card px-2.5 text-xs"
+                      disabled={isBusy}
+                      onClick={() => openNew()}
+                    >
+                      <EditorIcon name="Edit" />
+                      Nový krok
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="gap-1.5 rounded-full bg-card px-2.5 text-xs"
+                      disabled={isBusy}
+                      onClick={() => pause.mutate()}
+                    >
+                      <EditorIcon name="Pause" />
+                      Pauza
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </section>
+            <div className="grid grid-cols-2 gap-3 lg:hidden">
               <Button
-                type="button"
-                size="icon"
-                className="rounded-field"
-                aria-label="Přidat vlastní krok"
-                disabled={isBusy}
-                onClick={() => openNew()}
-              >
-                <EditorIcon name="Plus" />
-              </Button>
-              Přidat krok
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              <Button
+                size="lg"
                 variant="outline"
-                className="gap-1.5 rounded-full bg-card px-2.5 text-xs"
-                disabled={isBusy}
-                onClick={() => setLibrary(true)}
+                onClick={() => setPreview(true)}
               >
-                <EditorIcon name="Book" />Z knihovny
+                <EditorIcon name="Eye1" />
+                Náhled
               </Button>
               <Button
-                variant="outline"
-                className="gap-1.5 rounded-full bg-card px-2.5 text-xs"
-                disabled={isBusy}
-                onClick={() => openNew()}
+                size="lg"
+                disabled={!canSchedule || !blocks.length || isBusy}
+                onClick={() => setSchedule(true)}
               >
-                <EditorIcon name="Edit" />
-                Nový krok
-              </Button>
-              <Button
-                variant="outline"
-                className="gap-1.5 rounded-full bg-card px-2.5 text-xs"
-                disabled={isBusy}
-                onClick={() => pause.mutate()}
-              >
-                <EditorIcon name="Pause" />
-                Pauza
+                <EditorIcon name="Cal" />
+                Naplánovat
               </Button>
             </div>
-          </div>
-        )}
-      </section>
-      <div className="grid grid-cols-2 gap-3">
-        <Button
-          size="lg"
-          variant="outline"
-          onClick={() => {
-            setPreview(true)
-          }}
-        >
-          <EditorIcon name="Eye1" />
-          Náhled
-        </Button>
-        <Button
-          size="lg"
-          disabled={!canSchedule || !blocks.length || isBusy}
-          onClick={() => setSchedule(true)}
-        >
-          <EditorIcon name="Cal" />
-          Naplánovat
-        </Button>
-      </div>
-      {!isReadOnly && (
-        <Button
-          variant="ghost"
-          className="w-full"
-          onClick={() => setRenaming(true)}
-        >
-          Upravit název tréninku
-        </Button>
-      )}
-      <EditorSheet
-        isOpen={step !== null}
-        onOpenChange={(isOpen) => {
-          if (!isOpen && !save.isPending) {
-            setStep(null)
-            setParentForNew(null)
-          }
-        }}
-        title={
-          step === "new"
-            ? parentForNew
-              ? "Dílčí krok"
-              : "Nový krok"
-            : isReadOnly
-              ? "Krok tréninku"
-              : "Upravit krok"
-        }
-        description={
-          step === "new" && parentForNew
-            ? `Pod „${blocks.find((b) => b.id === parentForNew)?.title ?? "krokem"}“`
-            : session.title
-        }
-      >
-        {step !== null && (
-          <StepForm
-            key={step === "new" ? `new-${parentForNew ?? "root"}` : step.id}
-            initial={step === "new" ? undefined : step}
-            isPending={save.isPending}
-            onSave={(values) => save.mutate(values)}
-            isReadOnly={isReadOnly}
-          />
-        )}
-        {step && step !== "new" && !isReadOnly && (
-          <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
-            <Button
-              variant="outline"
-              disabled={
-                isBusy ||
-                (() => {
-                  const siblings = siblingsOf(step)
-                  return siblings.findIndex((b) => b.id === step.id) <= 0
-                })()
-              }
-              onClick={() => moveSibling(step, -1)}
-            >
-              <ChevronUp />
-              Posunout nahoru
-            </Button>
-            <Button
-              variant="outline"
-              disabled={
-                isBusy ||
-                (() => {
-                  const siblings = siblingsOf(step)
-                  return siblings.findIndex((b) => b.id === step.id) >= siblings.length - 1
-                })()
-              }
-              onClick={() => moveSibling(step, 1)}
-            >
-              <ChevronDown />
-              Posunout dolů
-            </Button>
-            {!step.parentId && (
+            {!isReadOnly && (
               <Button
-                variant="outline"
-                disabled={isBusy}
+                variant="ghost"
+                className="w-full"
                 onClick={() => {
-                  const parentId = step.id
-                  setStep(null)
-                  openNew(parentId)
+                  setTitle(session.title)
+                  setRenaming(true)
                 }}
               >
-                Rozdělit na dílčí kroky
+                Upravit název tréninku
               </Button>
             )}
-            <Button
-              variant="ghost"
-              className="text-destructive"
-              disabled={isBusy}
-              onClick={() => {
-                setDeleting(step)
-                setStep(null)
-              }}
-            >
-              Odebrat krok…
-            </Button>
           </div>
-        )}
-      </EditorSheet>
-      <ConfirmDestructiveDialog
-        title="Odebrat krok?"
-        description={
-          deleting && blocks.some((block) => block.parentId === deleting.id)
-            ? `Krok „${deleting.title}“ i jeho dílčí kroky zmizí z tohoto tréninku. Tuto akci nelze vrátit.`
-            : `Krok „${deleting?.title ?? ""}“ zmizí z tohoto tréninku. Tuto akci nelze vrátit.`
-        }
-        confirmLabel="Odebrat krok"
-        trigger={<span />}
-        isOpen={deleting !== null}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) setDeleting(null)
-        }}
-        onConfirm={() => {
-          if (deleting && !remove.isPending) remove.mutate(deleting.id)
-        }}
-      />
-      {isPreviewOpen && (
-        <TrainingPreview
-          dog={dog}
-          title={session.title}
-          steps={walkOrder(
-            blocks.map((block) => ({
-              ...block,
-              parentId: block.parentId ?? null,
-            })),
-          )}
-          isOpen
-          onOpenChange={setPreview}
-        />
-      )}
-      <EditorSheet
-        isOpen={isRenaming}
-        onOpenChange={setRenaming}
-        title="Název tréninku"
-        description={goal.title}
-      >
-        <form
-          className="space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault()
-            rename.mutate()
+
+          <div className="hidden lg:block">
+            <SessionOwnerPreview
+              dog={dog}
+              session={session}
+              sessionIndex={sessionIndex}
+              sessionsTotal={sessions.length}
+              steps={blocks}
+              totalMinutes={totalMinutes}
+            />
+          </div>
+        </div>
+
+        <EditorSheet
+          isOpen={step !== null}
+          onOpenChange={(isOpen) => {
+            if (!isOpen && !save.isPending) {
+              setStep(null)
+              setParentForNew(null)
+            }
           }}
+          title={
+            step === "new"
+              ? parentForNew
+                ? "Dílčí krok"
+                : "Nový krok"
+              : isReadOnly
+                ? "Krok tréninku"
+                : "Upravit krok"
+          }
+          description={
+            step === "new" && parentForNew
+              ? `Pod „${blocks.find((b) => b.id === parentForNew)?.title ?? "krokem"}“`
+              : session.title
+          }
         >
-          <Label htmlFor="rename-training">Název</Label>
-          <Input
-            id="rename-training"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            maxLength={100}
-            className="min-h-field rounded-field"
+          {step !== null && (
+            <StepForm
+              key={step === "new" ? `new-${parentForNew ?? "root"}` : step.id}
+              initial={step === "new" ? undefined : step}
+              isPending={save.isPending}
+              onSave={(values) => save.mutate(values)}
+              isReadOnly={isReadOnly}
+            />
+          )}
+          {step && step !== "new" && !isReadOnly && (
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+              <Button
+                variant="outline"
+                disabled={
+                  isBusy ||
+                  (() => {
+                    const siblings = siblingsOf(step)
+                    return siblings.findIndex((b) => b.id === step.id) <= 0
+                  })()
+                }
+                onClick={() => moveSibling(step, -1)}
+              >
+                <ChevronUp />
+                Posunout nahoru
+              </Button>
+              <Button
+                variant="outline"
+                disabled={
+                  isBusy ||
+                  (() => {
+                    const siblings = siblingsOf(step)
+                    return siblings.findIndex((b) => b.id === step.id) >= siblings.length - 1
+                  })()
+                }
+                onClick={() => moveSibling(step, 1)}
+              >
+                <ChevronDown />
+                Posunout dolů
+              </Button>
+              {!step.parentId && (
+                <Button
+                  variant="outline"
+                  disabled={isBusy}
+                  onClick={() => {
+                    const parentId = step.id
+                    setStep(null)
+                    openNew(parentId)
+                  }}
+                >
+                  Rozdělit na dílčí kroky
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                className="text-destructive"
+                disabled={isBusy}
+                onClick={() => {
+                  setDeleting(step)
+                  setStep(null)
+                }}
+              >
+                Odebrat krok…
+              </Button>
+            </div>
+          )}
+        </EditorSheet>
+        <ConfirmDestructiveDialog
+          title="Odebrat krok?"
+          description={
+            deleting && blocks.some((block) => block.parentId === deleting.id)
+              ? `Krok „${deleting.title}“ i jeho dílčí kroky zmizí z tohoto tréninku. Tuto akci nelze vrátit.`
+              : `Krok „${deleting?.title ?? ""}“ zmizí z tohoto tréninku. Tuto akci nelze vrátit.`
+          }
+          confirmLabel="Odebrat krok"
+          trigger={<span />}
+          isOpen={deleting !== null}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setDeleting(null)
+          }}
+          onConfirm={() => {
+            if (deleting && !remove.isPending) remove.mutate(deleting.id)
+          }}
+        />
+        {isPreviewOpen && (
+          <TrainingPreview
+            dog={dog}
+            title={session.title}
+            steps={walkOrder(
+              blocks.map((block) => ({
+                ...block,
+                parentId: block.parentId ?? null,
+              })),
+            )}
+            isOpen
+            onOpenChange={setPreview}
           />
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full"
-            disabled={rename.isPending}
+        )}
+        <EditorSheet
+          isOpen={isRenaming}
+          onOpenChange={setRenaming}
+          title="Název tréninku"
+          description={goal.title}
+        >
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault()
+              rename.mutate()
+            }}
           >
-            {rename.isPending ? "Ukládám…" : "Uložit změny"}
-          </Button>
-        </form>
-      </EditorSheet>
-      <SessionScheduleSheet
-        sessionId={session.id}
-        goalId={goal.id}
-        dogId={dog.id}
-        description={`${dog.name} · ${goal.title} · trénink ${session.position + 1}`}
-        isOpen={canSchedule && (isScheduleOpen || Boolean(isScheduleRequested))}
-        onOpenChange={(isOpen) => {
-          setSchedule(isOpen)
-          if (!isOpen) onScheduleRequestHandled?.()
-        }}
-        onScheduled={() => onPlanSaved?.()}
-      />
-    </div>
+            <Label htmlFor="rename-training">Název</Label>
+            <Input
+              id="rename-training"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              maxLength={100}
+              className="min-h-field rounded-field"
+            />
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              disabled={rename.isPending}
+            >
+              {rename.isPending ? "Ukládám…" : "Uložit změny"}
+            </Button>
+          </form>
+        </EditorSheet>
+        <SessionScheduleSheet
+          sessionId={session.id}
+          goalId={goal.id}
+          dogId={dog.id}
+          description={`${dog.name} · ${goal.title} · trénink ${session.position + 1}`}
+          isOpen={canSchedule && (isScheduleOpen || Boolean(isScheduleRequested))}
+          onOpenChange={(isOpen) => {
+            setSchedule(isOpen)
+            if (!isOpen) onScheduleRequestHandled?.()
+          }}
+          onScheduled={() => onPlanSaved?.()}
+        />
+      </div>
+    </>
   )
 }
