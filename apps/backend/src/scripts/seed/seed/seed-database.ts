@@ -815,6 +815,9 @@ export async function seedTrainingPlans(
   const today = fromCalendarDate(todayInAppZone(now));
   const day = (offset: number): Date =>
     new Date(today.getTime() + offset * DAY_MS);
+  await releaseCrowdedSeedTerms(prisma, [
+    ...new Set(dogs.map((dog) => dog.ownerId)),
+  ]);
   const existingDays = await prisma.scheduledTraining.findMany({
     where: {
       dog: { ownerId: { in: [...new Set(dogs.map((dog) => dog.ownerId))] } },
@@ -941,4 +944,92 @@ export async function seedTrainingPlans(
       }
     }
   }
+}
+
+// Generated plan fixtures look like `seed-<dog>-goal-<g>-training-<t>-date-<n>`.
+const SEED_TERM_ID = /^seed-.+-date-\d+$/;
+const UNTOUCHED_MS = 60_000;
+
+/**
+ * Databases seeded before SeedTrainingCalendar existed carry several fixture
+ * trainings per owner per day. When a day is crowded (more than two trainings
+ * or one dog twice), release the generated terms nobody has touched so the
+ * calendar lays them out again. Moved, edited or discussed terms stay put, and
+ * once the layout is fixed this no longer fires, so later deploys are no-ops.
+ */
+async function releaseCrowdedSeedTerms(
+  prisma: PrismaService,
+  ownerIds: string[],
+): Promise<void> {
+  const terms = await prisma.scheduledTraining.findMany({
+    where: { dog: { ownerId: { in: ownerIds } } },
+    select: {
+      id: true,
+      date: true,
+      dogId: true,
+      createdAt: true,
+      updatedAt: true,
+      dog: { select: { ownerId: true } },
+      _count: { select: { unreadReplies: true } },
+      workoutLog: {
+        select: {
+          id: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: {
+            select: {
+              messages: true,
+              unreadReplies: true,
+              emailNotifications: true,
+            },
+          },
+        },
+      },
+    },
+  });
+  const untouched = (term: (typeof terms)[number]): boolean => {
+    const log = term.workoutLog;
+    return (
+      SEED_TERM_ID.test(term.id) &&
+      term.updatedAt.getTime() - term.createdAt.getTime() < UNTOUCHED_MS &&
+      term._count.unreadReplies === 0 &&
+      (!log ||
+        (log.id === `${term.id}-log` &&
+          log.updatedAt.getTime() - log.createdAt.getTime() < UNTOUCHED_MS &&
+          log._count.messages === 0 &&
+          log._count.unreadReplies === 0 &&
+          log._count.emailNotifications === 0))
+    );
+  };
+
+  const days = new Map<string, typeof terms>();
+  for (const term of terms) {
+    const key = `${term.dog.ownerId}:${term.date.toISOString().slice(0, 10)}`;
+    days.set(key, [...(days.get(key) ?? []), term]);
+  }
+  const crowdedOwners = new Set<string>();
+  for (const dayTerms of days.values()) {
+    const crowded =
+      dayTerms.length > 2 ||
+      new Set(dayTerms.map((term) => term.dogId)).size < dayTerms.length;
+    if (crowded && dayTerms.some(untouched))
+      crowdedOwners.add(dayTerms[0].dog.ownerId);
+  }
+  if (crowdedOwners.size === 0) return;
+
+  const released = terms.filter(
+    (term) => crowdedOwners.has(term.dog.ownerId) && untouched(term),
+  );
+  const logIds = released.flatMap((term) =>
+    term.workoutLog ? [term.workoutLog.id] : [],
+  );
+  await prisma.$transaction([
+    prisma.workoutLog.deleteMany({ where: { id: { in: logIds } } }),
+    prisma.scheduledTraining.deleteMany({
+      where: { id: { in: released.map((term) => term.id) } },
+    }),
+  ]);
+  console.log(
+    `Re-spreading ${released.length} untouched seed training(s) on crowded days.`,
+  );
 }
