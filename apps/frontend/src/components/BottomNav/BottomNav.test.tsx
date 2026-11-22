@@ -68,3 +68,5 @@ describe("BottomNav", () => {
     expect(screen.getByRole("link", { name: "Dnes" })).toBeInTheDocument()
   })
 })
+
+vi.mock("@/components/UnreadReplies", () => ({ UnreadNavDot: () => null }))

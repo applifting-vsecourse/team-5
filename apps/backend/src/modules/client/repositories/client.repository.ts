@@ -18,6 +18,9 @@ export class ClientRepository {
       await tx.dogShare.deleteMany({
         where: { trainerId, dog: { ownerId: clientId } },
       });
+      await tx.trainerNote.deleteMany({
+        where: { trainerId, clientId },
+      });
       return true;
     });
   }

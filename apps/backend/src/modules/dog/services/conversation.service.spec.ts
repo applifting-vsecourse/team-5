@@ -1,5 +1,6 @@
 import { ConversationRepository } from '@/modules/dog/repositories/conversation.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
+import { TrainingNotificationService } from '@/modules/dog/services/training-notification.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import { NotFoundException } from '@nestjs/common';
 import { mock } from 'jest-mock-extended';
@@ -73,6 +74,7 @@ describe('training conversations', () => {
   it('uses the authenticated author and trims a permitted reply', async () => {
     const repo = mock<ConversationRepository>();
     const access = mock<DogAccessService>();
+    const notifications = mock<TrainingNotificationService>();
     repo.record.mockResolvedValue({
       id: 'record',
       dogId: 'shared-dog',
@@ -85,7 +87,7 @@ describe('training conversations', () => {
       createdAt: new Date(),
       author: { id: 'trainer', name: 'Trainer' },
     });
-    const service = new ConversationService(repo, access);
+    const service = new ConversationService(repo, access, notifications);
     const user = new Identity(
       'trainer',
       'trainer@example.test',
@@ -95,6 +97,11 @@ describe('training conversations', () => {
     await service.reply(user, 'record', '  Reply  ');
     expect(access.getAccessibleDog).toHaveBeenCalledWith(user, 'shared-dog');
     expect(repo.reply).toHaveBeenCalledWith('record', 'trainer', 'Reply');
+    expect(notifications.notifyMessage).toHaveBeenCalledWith(
+      'record',
+      'trainer',
+      'Reply',
+    );
   });
 
   it('returns plan blocks when the record is tied to a training', async () => {
@@ -103,7 +110,8 @@ describe('training conversations', () => {
     repo.record.mockResolvedValue({
       id: 'record',
       dogId: 'shared-dog',
-      dog: { id: 'shared-dog', name: 'Rex', color: 1 },
+      goalId: 'goal-1',
+      dog: { id: 'shared-dog', name: 'Rex', color: 1, ownerId: 'owner-1' },
       title: 'Park',
       completedAt: new Date('2026-11-01'),
       successRate: 80,
@@ -118,8 +126,8 @@ describe('training conversations', () => {
       training: {
         title: 'Přivolání',
         steps: [
-          { id: 's1', title: 'Píšťalka', outcome: 'MASTERED', position: 0 },
-          { id: 's2', title: 'Sedni', outcome: null, position: 1 },
+          { id: 's1', title: 'Píšťalka', position: 0 },
+          { id: 's2', title: 'Sedni', position: 1 },
         ],
       },
       messages: [],
@@ -132,15 +140,50 @@ describe('training conversations', () => {
       'trainer',
     );
     await expect(service.detail(user, 'record')).resolves.toMatchObject({
+      goalId: 'goal-1',
+      dog: { id: 'shared-dog', name: 'Rex', color: 1, ownerId: 'owner-1' },
       sleepQuality: 'POOR',
       environment: 'TRAINING_GROUND',
       goal: {
         title: 'Přivolání',
         blocks: [
-          { id: 's1', title: 'Píšťalka', outcome: 'MASTERED', position: 0 },
-          { id: 's2', title: 'Sedni', outcome: null, position: 1 },
+          { id: 's1', title: 'Píšťalka', position: 0 },
+          { id: 's2', title: 'Sedni', position: 1 },
         ],
       },
+    });
+  });
+
+  it('returns null goalId for an unplanned training record', async () => {
+    const repo = mock<ConversationRepository>();
+    const access = mock<DogAccessService>();
+    repo.record.mockResolvedValue({
+      id: 'record',
+      dogId: 'shared-dog',
+      goalId: null,
+      dog: { id: 'shared-dog', name: 'Rex', color: 1, ownerId: 'owner-1' },
+      title: 'Volný trénink',
+      completedAt: new Date('2026-11-01'),
+      successRate: null,
+      note: null,
+      videoUrl: null,
+      mistakeDetails: [],
+      focus: null,
+      repeatedMistakes: null,
+      status: 'COMPLETED',
+      training: null,
+      messages: [],
+    } as never);
+    const service = new ConversationService(repo, access);
+    const user = new Identity(
+      'trainer',
+      'trainer@example.test',
+      'Trainer',
+      'trainer',
+    );
+    await expect(service.detail(user, 'record')).resolves.toMatchObject({
+      goalId: null,
+      goal: null,
     });
   });
 });

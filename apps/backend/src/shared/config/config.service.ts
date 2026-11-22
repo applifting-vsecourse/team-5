@@ -96,4 +96,12 @@ export class Config {
   @Env('SMTP_PASSWORD')
   @IsOptional()
   readonly smtpPassword?: string;
+
+  @Env('GOOGLE_CLIENT_ID')
+  @IsOptional()
+  readonly googleClientId?: string;
+
+  @Env('GOOGLE_CLIENT_SECRET')
+  @IsOptional()
+  readonly googleClientSecret?: string;
 }

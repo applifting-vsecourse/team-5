@@ -8,6 +8,7 @@ import {
   WeekQueryDto,
   WeekTrainingResponseDto,
 } from '@/modules/dog/controllers/dto/training.dto';
+import { TrainingReplyRepository } from '@/modules/dog/repositories/training-reply.repository';
 import { TrainingsService } from '@/modules/dog/services/trainings.service';
 import { User } from '@/shared/auth/decorators/user.decorator';
 import { Identity } from '@/shared/auth/domain/identity';
@@ -46,7 +47,10 @@ import {
   }),
 )
 export class TrainingsController {
-  constructor(private readonly trainingsService: TrainingsService) {}
+  constructor(
+    private readonly trainingsService: TrainingsService,
+    private readonly replies: TrainingReplyRepository,
+  ) {}
 
   @Get('trainings')
   @ApiOperation({
@@ -79,9 +83,15 @@ export class TrainingsController {
   async getTraining(
     @User() user: Identity,
     @Param('trainingId') trainingId: string,
-  ): Promise<TrainingDetailResponseDto> {
+  ): Promise<TrainingDetailResponseDto & { unreadReplyIds: string[] }> {
+    const unread = await this.replies.unread(user.id);
     const training = await this.trainingsService.getTraining(user, trainingId);
-    return TrainingDetailResponseDto.fromDomain(training, user.id);
+    return {
+      ...TrainingDetailResponseDto.fromDomain(training, user.id),
+      unreadReplyIds: unread
+        .filter((reply) => reply.scheduledTrainingId === trainingId)
+        .map((reply) => reply.id),
+    };
   }
 
   @Patch('trainings/:trainingId')

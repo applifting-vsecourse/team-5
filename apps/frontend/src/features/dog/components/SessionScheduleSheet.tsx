@@ -28,6 +28,7 @@ type SessionScheduleSheetProps = {
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
   onBack?: () => void
+  onScheduled?: () => void
 }
 
 function SessionScheduleContent({
@@ -37,6 +38,7 @@ function SessionScheduleContent({
   onOpenChange,
   onBack,
   onBusyChange,
+  onScheduled,
 }: Omit<SessionScheduleSheetProps, "isOpen" | "description"> & {
   onBusyChange: (isBusyNext: boolean) => void
 }) {
@@ -68,6 +70,7 @@ function SessionScheduleContent({
       }
       setDays([])
       onOpenChange(false)
+      onScheduled?.()
     } catch {
       setDays((current) => current.filter((day) => !saved.has(localDay(day))))
       setError(
@@ -186,6 +189,7 @@ export function SessionScheduleSheet({
   isOpen,
   onOpenChange,
   onBack,
+  onScheduled,
 }: SessionScheduleSheetProps) {
   const isBusy = useRef(false)
   return (
@@ -204,6 +208,7 @@ export function SessionScheduleSheet({
           dogId={dogId}
           onOpenChange={onOpenChange}
           onBack={onBack}
+          onScheduled={onScheduled}
           onBusyChange={(isBusyNext) => {
             isBusy.current = isBusyNext
           }}

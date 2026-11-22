@@ -5,6 +5,7 @@ import { differenceInCalendarDays } from "date-fns"
 import { UserPlus, Users } from "lucide-react"
 
 import { ROUTES } from "@/app/routes"
+import { ClickerToolDialog } from "@/components/ClickerToolDialog"
 import { DesignIcon } from "@/components/DesignIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
@@ -379,6 +380,7 @@ export function TrainerOverview({ userName }: { userName?: string }) {
             {userName ? `${greeting(now)}, ${firstName(userName)}` : "Přehled"}
           </h1>
         </div>
+        <ClickerToolDialog />
       </header>
 
       <QueryState

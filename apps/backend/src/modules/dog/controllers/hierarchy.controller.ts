@@ -1,4 +1,3 @@
-import { GoalResponseDto } from '@/modules/dog/controllers/dto/goal.dto';
 import {
   CreateGoalTrainingDto,
   ReorderHierarchyDto,
@@ -10,7 +9,6 @@ import {
   ScheduleTrainingDto,
   TrainingResponseDto,
 } from '@/modules/dog/controllers/dto/training.dto';
-import { CurrentStepAction } from '@/modules/dog/domain/current-step';
 import { HierarchyService } from '@/modules/dog/services/hierarchy.service';
 import { User } from '@/shared/auth/decorators/user.decorator';
 import { Identity } from '@/shared/auth/domain/identity';
@@ -19,8 +17,6 @@ import {
   Body,
   Controller,
   Get,
-  HttpCode,
-  HttpStatus,
   Param,
   Patch,
   Post,
@@ -29,12 +25,7 @@ import {
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
-import {
-  ApiCookieAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('training hierarchy')
 @ApiCookieAuth()
@@ -88,49 +79,6 @@ export class HierarchyController {
     @Body() body: ReorderHierarchyDto,
   ): ReturnType<HierarchyService['reorderTrainings']> {
     return this.service.reorderTrainings(user, goalId, body.ids);
-  }
-
-  @Post('goals/:goalId/current-step/advance')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Mark the current step mastered and move on' })
-  @ApiResponse({ status: 200, type: GoalResponseDto })
-  async advanceStep(
-    @User() user: Identity,
-    @Param('goalId') goalId: string,
-  ): Promise<GoalResponseDto> {
-    return this.moveStep(user, goalId, 'advance');
-  }
-
-  @Post('goals/:goalId/current-step/skip')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Mark the current step skipped and move on' })
-  @ApiResponse({ status: 200, type: GoalResponseDto })
-  async skipStep(
-    @User() user: Identity,
-    @Param('goalId') goalId: string,
-  ): Promise<GoalResponseDto> {
-    return this.moveStep(user, goalId, 'skip');
-  }
-
-  @Post('goals/:goalId/current-step/back')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Go back one step and reopen it' })
-  @ApiResponse({ status: 200, type: GoalResponseDto })
-  async stepBack(
-    @User() user: Identity,
-    @Param('goalId') goalId: string,
-  ): Promise<GoalResponseDto> {
-    return this.moveStep(user, goalId, 'back');
-  }
-
-  private async moveStep(
-    user: Identity,
-    goalId: string,
-    action: CurrentStepAction,
-  ): Promise<GoalResponseDto> {
-    return GoalResponseDto.fromDomain(
-      await this.service.moveCurrentStep(user, goalId, action),
-    );
   }
 
   @Get('goal-trainings/:id')

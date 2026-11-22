@@ -1,5 +1,8 @@
+import { MailModule } from '@/core/email/mail.module';
 import { PrismaModule } from '@/core/prisma/prisma.module';
 import { AuthModule } from '@/shared/auth/auth.module';
+import { Config } from '@/shared/config/config.service';
+import { ConfigModule } from '@applifting-io/nestjs-decorated-config';
 import { Module } from '@nestjs/common';
 import { ActivitiesController } from './controllers/activities.controller';
 import { ConversationController } from './controllers/conversation.controller';
@@ -14,6 +17,7 @@ import {
 } from './controllers/metrics.controller';
 import { PlanBlocksController } from './controllers/plan-blocks.controller';
 import { TrainerOverviewController } from './controllers/trainer-overview.controller';
+import { TrainingRepliesController } from './controllers/training-replies.controller';
 import { TrainingsController } from './controllers/trainings.controller';
 import { ActivityRepository } from './repositories/activity.repository';
 import { ConversationRepository } from './repositories/conversation.repository';
@@ -26,6 +30,8 @@ import { MetricsRepository } from './repositories/metrics.repository';
 import { PlanBlockRepository } from './repositories/plan-block.repository';
 import { ScheduledTrainingRepository } from './repositories/scheduled-training.repository';
 import { TrainerOverviewRepository } from './repositories/trainer-overview.repository';
+import { TrainingNotificationRepository } from './repositories/training-notification.repository';
+import { TrainingReplyRepository } from './repositories/training-reply.repository';
 import { ActivitiesService } from './services/activities.service';
 import { ConversationService } from './services/conversation.service';
 import { DogAccessService } from './services/dog-access.service';
@@ -38,11 +44,18 @@ import { HistoryService } from './services/history.service';
 import { MetricsService } from './services/metrics.service';
 import { PlanBlocksService } from './services/plan-blocks.service';
 import { TrainerOverviewService } from './services/trainer-overview.service';
+import { TrainingNotificationService } from './services/training-notification.service';
 import { TrainingsService } from './services/trainings.service';
 
 @Module({
-  imports: [AuthModule, PrismaModule],
+  imports: [
+    AuthModule,
+    PrismaModule,
+    MailModule,
+    ConfigModule.forRootAsync(Config, { validate: true }),
+  ],
   controllers: [
+    TrainingRepliesController,
     TrainerOverviewController,
     HistoryController,
     ConversationController,
@@ -57,6 +70,7 @@ import { TrainingsService } from './services/trainings.service';
     DogNotesController,
   ],
   providers: [
+    TrainingReplyRepository,
     TrainerOverviewRepository,
     TrainerOverviewService,
     HistoryRepository,
@@ -81,6 +95,8 @@ import { TrainingsService } from './services/trainings.service';
     ActivityRepository,
     DogNotesService,
     DogNoteRepository,
+    TrainingNotificationRepository,
+    TrainingNotificationService,
   ],
   exports: [
     DogsService,
@@ -92,6 +108,8 @@ import { TrainingsService } from './services/trainings.service';
     ActivityRepository,
     DogNotesService,
     DogNoteRepository,
+    TrainingNotificationRepository,
+    TrainingNotificationService,
   ],
 })
 export class DogModule {}

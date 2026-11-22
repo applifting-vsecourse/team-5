@@ -79,9 +79,6 @@ export type Dog = z.infer<typeof dogSchema>
 export type CreateDogInput = z.infer<typeof createDogInputSchema>
 export type UpdateDogInput = z.infer<typeof updateDogInputSchema>
 
-export const stepOutcomeSchema = z.enum(["MASTERED", "SKIPPED"])
-export type StepOutcome = z.infer<typeof stepOutcomeSchema>
-
 export const dogGoalSchema = z.object({
   id: z.string(),
   dogId: z.string(),
@@ -93,8 +90,6 @@ export const dogGoalSchema = z.object({
   deadline: z.string().nullable().optional(),
   status: z.enum(["ACTIVE", "COMPLETED", "PAUSED", "ARCHIVED"]),
   order: z.number(),
-  // null = first step of the plan (#66)
-  currentStepId: z.string().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })
@@ -125,7 +120,6 @@ export const planBlockSchema = z.object({
   title: z.string(),
   instruction: z.string().nullable(),
   criterion: z.string().nullable(),
-  outcome: stepOutcomeSchema.nullable().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
 })

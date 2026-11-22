@@ -21,14 +21,14 @@ export function useDeleteAccount() {
   const router = useRouter()
 
   return useMutation({
-    mutationFn: async (password: string) => {
-      const { error } = await authClient.deleteUser({ password })
+    mutationFn: async (password?: string) => {
+      const { error } = await authClient.deleteUser(password ? { password } : {})
       if (error) {
         if (error.code === "INVALID_PASSWORD" || error.code === "PASSWORD_REQUIRED") {
           throw new DeleteAccountError("Zadejte správné heslo ke svému účtu.", "password")
         }
         throw new DeleteAccountError(
-          error.status === 401
+          error.status === 401 || error.code === "SESSION_EXPIRED"
             ? "Přihlášení vypršelo. Přihlaste se znovu a smazání opakujte."
             : "Účet se nepodařilo smazat. Zkuste to prosím znovu.",
         )

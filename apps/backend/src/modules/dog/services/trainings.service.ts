@@ -14,12 +14,14 @@ import {
 import { ScheduledTrainingRepository } from '@/modules/dog/repositories/scheduled-training.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
 import { GoalsService } from '@/modules/dog/services/goals.service';
+import { TrainingNotificationService } from '@/modules/dog/services/training-notification.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
@@ -32,6 +34,7 @@ export class TrainingsService {
     private readonly scheduledTrainingRepository: ScheduledTrainingRepository,
     private readonly goalsService: GoalsService,
     private readonly dogAccessService: DogAccessService,
+    @Optional() private readonly notifications?: TrainingNotificationService,
   ) {}
 
   // Details of a single scheduled training for walkthrough (#76).
@@ -99,6 +102,7 @@ export class TrainingsService {
     if (!log) {
       throw new ConflictException('Only a planned training can be completed');
     }
+    await this.notifications?.notifyNewRecord(log.id, user.id, log.note);
     return log;
   }
 

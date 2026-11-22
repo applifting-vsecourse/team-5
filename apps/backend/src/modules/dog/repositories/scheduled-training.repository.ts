@@ -9,7 +9,6 @@ import {
   WorkoutLog,
   WorkoutStatus,
 } from '@/generated/prisma/client';
-import { effectiveCurrentStepId } from '@/modules/dog/domain/current-step';
 import {
   ScheduledTraining,
   ScheduledTrainingDetail,
@@ -17,6 +16,7 @@ import {
 } from '@/modules/dog/domain/scheduled-training';
 import { Injectable } from '@nestjs/common';
 import { planOrder, resolveTraining } from './hierarchy.repository';
+import { recordMessageReply } from './training-reply.repository';
 
 @Injectable()
 export class ScheduledTrainingRepository {
@@ -101,7 +101,7 @@ export class ScheduledTrainingRepository {
             },
           },
         },
-        goal: { select: { id: true, title: true, currentStepId: true } },
+        goal: { select: { id: true, title: true } },
         training: {
           select: {
             id: true,
@@ -114,7 +114,6 @@ export class ScheduledTrainingRepository {
                 instruction: true,
                 criterion: true,
                 durationMinutes: true,
-                outcome: true,
               },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },
@@ -123,21 +122,10 @@ export class ScheduledTrainingRepository {
       },
     });
     if (!row) return null;
-    // Walkthrough compares the pointer to this training's steps; expose the
-    // effective first step of the whole goal when the stored pointer is null.
-    const goalSteps = await this.prisma.planBlock.findMany({
-      where: { goalId: row.goal.id, training: { isArchived: false } },
-      select: { id: true },
-      orderBy: [{ training: { position: 'asc' } }, ...planOrder],
-    });
     return {
       ...row,
       goal: {
         ...row.goal,
-        currentStepId: effectiveCurrentStepId(
-          goalSteps.map((step) => step.id),
-          row.goal.currentStepId,
-        ),
         blocks: row.training.steps,
       },
     };
@@ -377,7 +365,7 @@ export class ScheduledTrainingRepository {
         },
       });
 
-      return tx.workoutLog.create({
+      const record = await tx.workoutLog.create({
         data: {
           dog: { connect: { id: training.dogId } },
           goal: { connect: { id: training.goalId } },
@@ -407,6 +395,8 @@ export class ScheduledTrainingRepository {
           videoUrl: data.videoUrl?.trim() || null,
         },
       });
+      if (data.note?.trim()) await recordMessageReply(tx, record.id, authorId);
+      return record;
     });
   }
 }

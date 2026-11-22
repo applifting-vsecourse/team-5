@@ -5,14 +5,16 @@ import {
 } from '@/modules/dog/domain/activity';
 import { ActivityRepository } from '@/modules/dog/repositories/activity.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
+import { TrainingNotificationService } from '@/modules/dog/services/training-notification.service';
 import { Identity } from '@/shared/auth/domain/identity';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 
 @Injectable()
 export class ActivitiesService {
   constructor(
     private readonly activityRepository: ActivityRepository,
     private readonly dogAccess: DogAccessService,
+    @Optional() private readonly notifications?: TrainingNotificationService,
   ) {}
 
   // A page of the dog's records (#79), for the owner and a trainer with a share.
@@ -38,7 +40,7 @@ export class ActivitiesService {
     // answers in its thread (#80).
     await this.dogAccess.getOwnedDog(user, dogId);
 
-    return this.activityRepository.createActivity({
+    const log = await this.activityRepository.createActivity({
       dogId,
       authorId: user.id,
       title: data.title.trim(),
@@ -55,5 +57,9 @@ export class ActivitiesService {
       videoUrl: data.videoUrl?.trim() || null,
       skipReason: data.skipReason?.trim() || null,
     });
+    if (log.status === WorkoutStatus.COMPLETED) {
+      await this.notifications?.notifyNewRecord(log.id, user.id, log.note);
+    }
+    return log;
   }
 }

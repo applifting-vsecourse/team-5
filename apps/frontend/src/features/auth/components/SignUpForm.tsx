@@ -23,6 +23,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { cn } from "@/lib/utils"
 
+import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButton"
 import type { SignUpInput } from "@/features/auth/hooks/useSignUp"
 import type { RegistrationError } from "@/features/auth/lib/registration-errors"
 
@@ -44,18 +45,22 @@ const schema = z.object({
 
 type SignUpFormProps = {
   isLoading: boolean
+  isGoogleLoading?: boolean
   error?: RegistrationError | null
   defaultEmail?: string
   isInvitation?: boolean
   onStepChange?: (step: number) => void
   onSubmit: (values: SignUpInput) => void | Promise<void>
+  onGoogleSignIn?: (isTrainer: boolean) => void | Promise<void>
 }
 
 export function SignUpForm({
   isLoading,
+  isGoogleLoading = false,
   error,
   defaultEmail,
   onSubmit,
+  onGoogleSignIn,
   isInvitation,
   onStepChange,
 }: SignUpFormProps) {
@@ -150,6 +155,11 @@ export function SignUpForm({
         </div>
         {step === 1 ? (
           <div className="space-y-6">
+            {error && !error.field ? (
+              <Alert variant="destructive">
+                <AlertDescription>{error.message}</AlertDescription>
+              </Alert>
+            ) : null}
             <RadioGroup
               value={String(isTrainer)}
               onValueChange={(value) => form.setValue("isTrainer", value === "true")}
@@ -201,6 +211,7 @@ export function SignUpForm({
               type="submit"
               size="lg"
               className="w-full"
+              disabled={isLoading || isGoogleLoading}
             >
               Pokračovat
             </Button>
@@ -346,7 +357,7 @@ export function SignUpForm({
               type="submit"
               size="lg"
               className="w-full"
-              disabled={isLoading}
+              disabled={isLoading || isGoogleLoading}
             >
               {isLoading ? (
                 <Loader2
@@ -358,6 +369,32 @@ export function SignUpForm({
             </Button>
           </>
         )}
+        {onGoogleSignIn ? (
+          <>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              nebo
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <GoogleSignInButton
+              isLoading={isGoogleLoading}
+              isDisabled={isLoading}
+              onClick={() => onGoogleSignIn(isTrainer)}
+            />
+            <p className="text-center text-xs text-muted-foreground">
+              Pokračováním přes Google souhlasíš se{" "}
+              <Link
+                to={ROUTES.privacy}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium underline underline-offset-4"
+              >
+                Zásadami zpracování osobních údajů
+              </Link>
+              .
+            </p>
+          </>
+        ) : null}
       </form>
     </Form>
   )
