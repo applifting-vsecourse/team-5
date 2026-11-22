@@ -61,7 +61,7 @@ export class CreatePlanBlockDto {
 
   @ApiPropertyOptional({
     description:
-      'Index in the plan to insert the block at (0 = first); missing means at the end',
+      'Index among siblings to insert at (0 = first); missing means at the end',
     minimum: 0,
     maximum: MAX_BLOCKS_IN_PLAN,
   })
@@ -70,6 +70,15 @@ export class CreatePlanBlockDto {
   @Min(0)
   @Max(MAX_BLOCKS_IN_PLAN)
   insertAt?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Parent step to nest under as a sub-step (#67); must be a root step',
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  parentId?: string;
 }
 
 export class UpdatePlanBlockDto {
@@ -131,6 +140,9 @@ export class PlanBlockResponseDto {
   @ApiProperty()
   goalId!: string;
 
+  @ApiPropertyOptional({ nullable: true })
+  parentId!: string | null;
+
   @ApiProperty()
   position!: number;
 
@@ -155,6 +167,7 @@ export class PlanBlockResponseDto {
       durationMinutes: block.durationMinutes,
       id: block.id,
       goalId: block.goalId,
+      parentId: block.parentId,
       position: block.position,
       title: block.title,
       instruction: block.instruction,

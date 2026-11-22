@@ -1,11 +1,16 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
 import { Prisma } from '@/generated/prisma/client';
 import { EditableGoal } from '@/modules/dog/domain/hierarchy';
-import { ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import {
   assertTrainingContentEditable,
   HierarchyRepository,
+  resolveSubStepParent,
 } from './hierarchy.repository';
 
 describe('completed training content', () => {
@@ -59,8 +64,120 @@ function setup(stepIds: string[]): {
   goal.dog.isArchived = false;
   goal.disciplineEntity.isArchived = false;
   tx.trainingGoal.findUnique.mockResolvedValue(goal);
-  tx.planBlock.findMany.mockResolvedValue(
-    stepIds.map((id) => ({ id })) as never,
-  );
+  tx.goalTraining.findMany.mockResolvedValue([
+    {
+      position: 0,
+      steps: stepIds.map((id, position) => ({
+        id,
+        parentId: null,
+        position,
+      })),
+    },
+  ] as never);
   return { repository: new HierarchyRepository(prisma), tx };
 }
+
+describe('createStep with sub-steps (#67)', () => {
+  it('creates a child under a root parent', async () => {
+    const { repository, tx } = setup([]);
+    tx.goalTraining.findFirst.mockResolvedValue({
+      id: 'session-2',
+      goalId: 'g1',
+      isArchived: false,
+    } as never);
+    tx.scheduledTraining.count.mockResolvedValue(0);
+    tx.planBlock.findFirst.mockResolvedValue({
+      id: 'root',
+      parentId: null,
+    } as never);
+    tx.planBlock.findMany.mockResolvedValue([]);
+    tx.planBlock.create.mockResolvedValue({
+      id: 'child',
+      parentId: 'root',
+      position: 0,
+      title: 'Dílčí',
+    } as never);
+
+    await repository.createStep('g1', 'session-2', {
+      title: 'Dílčí',
+      parentId: 'root',
+    });
+
+    expect(tx.planBlock.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ parentId: 'root', title: 'Dílčí' }),
+      }),
+    );
+  });
+
+  it('reorders only the requested sibling group', async () => {
+    const { repository, tx } = setup([]);
+    tx.goalTraining.findFirst.mockResolvedValue({
+      id: 'session-2',
+      goalId: 'g1',
+      isArchived: false,
+    } as never);
+    tx.scheduledTraining.count.mockResolvedValue(0);
+    tx.planBlock.findMany
+      .mockResolvedValueOnce([
+        { id: 'root', parentId: null, position: 0 },
+        { id: 'c1', parentId: 'root', position: 0 },
+        { id: 'c2', parentId: 'root', position: 1 },
+      ] as never)
+      .mockResolvedValueOnce([
+        { id: 'root', parentId: null, position: 0 },
+        { id: 'c2', parentId: 'root', position: 0 },
+        { id: 'c1', parentId: 'root', position: 1 },
+      ] as never);
+
+    await repository.reorderSteps('g1', 'session-2', ['c2', 'c1']);
+
+    expect(tx.planBlock.update).toHaveBeenCalledWith({
+      where: { id: 'c2' },
+      data: { position: 0 },
+    });
+    expect(tx.planBlock.update).toHaveBeenCalledWith({
+      where: { id: 'c1' },
+      data: { position: 1 },
+    });
+  });
+});
+
+describe('resolveSubStepParent (#67)', () => {
+  it('returns null when no parent is requested', async () => {
+    const tx = mockDeep<Prisma.TransactionClient>();
+    await expect(resolveSubStepParent(tx, 't1', undefined)).resolves.toBeNull();
+    expect(tx.planBlock.findFirst).not.toHaveBeenCalled();
+  });
+
+  it('rejects a missing parent', async () => {
+    const tx = mockDeep<Prisma.TransactionClient>();
+    tx.planBlock.findFirst.mockResolvedValue(null);
+    await expect(resolveSubStepParent(tx, 't1', 'gone')).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it('rejects nesting under a sub-step', async () => {
+    const tx = mockDeep<Prisma.TransactionClient>();
+    tx.planBlock.findFirst.mockResolvedValue({
+      id: 'child',
+      parentId: 'root',
+    } as never);
+    await expect(resolveSubStepParent(tx, 't1', 'child')).rejects.toThrow(
+      BadRequestException,
+    );
+  });
+
+  it('accepts a root parent in the same training', async () => {
+    const tx = mockDeep<Prisma.TransactionClient>();
+    tx.planBlock.findFirst.mockResolvedValue({
+      id: 'root',
+      parentId: null,
+    } as never);
+    await expect(resolveSubStepParent(tx, 't1', 'root')).resolves.toBe('root');
+    expect(tx.planBlock.findFirst).toHaveBeenCalledWith({
+      where: { id: 'root', trainingId: 't1' },
+    });
+  });
+});

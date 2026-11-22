@@ -1,3 +1,4 @@
+import { walkOrder } from '@/modules/dog/domain/step-order';
 import { presentTrainingMessage } from '@/modules/dog/domain/training-message';
 import { ConversationRepository } from '@/modules/dog/repositories/conversation.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
@@ -69,7 +70,7 @@ export class ConversationService {
       goal: row.training
         ? {
             title: row.training.title,
-            blocks: row.training.steps.map((step) => ({
+            blocks: walkOrder(row.training.steps).map((step) => ({
               id: step.id,
               title: step.title,
               position: step.position,

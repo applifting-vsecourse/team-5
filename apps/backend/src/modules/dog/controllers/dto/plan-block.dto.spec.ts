@@ -59,5 +59,14 @@ describe('plan block DTOs', () => {
         errorsFor(CreatePlanBlockDto, { title: 'a'.repeat(101) }),
       ).resolves.toEqual(['title']);
     });
+
+    it('accepts a parentId for a sub-step (#67)', async () => {
+      await expect(
+        errorsFor(CreatePlanBlockDto, {
+          title: 'Dílčí',
+          parentId: 'parent-step',
+        }),
+      ).resolves.toEqual([]);
+    });
   });
 });

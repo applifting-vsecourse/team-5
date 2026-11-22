@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+﻿import type { ReactNode } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -51,10 +51,11 @@ const goal = {
   principle: "Odměňuj u nohy.",
   status: "ACTIVE",
 } as DogGoal
-const aStep = (id: string, title: string) =>
+const aStep = (id: string, title: string, parentId: string | null = null) =>
   ({
     id,
     goalId: goal.id,
+    parentId,
     position: 0,
     title,
     instruction: null,
@@ -200,6 +201,44 @@ describe("training editor", () => {
     expect(screen.queryByRole("button", { name: "Zvládnuto, další krok" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Přeskočit" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Zpět o krok" })).not.toBeInTheDocument()
+  })
+  it("lets a root step split into indented sub-steps (#67)", async () => {
+    const user = userEvent.setup()
+    const withSteps: TrainingSession = {
+      ...session,
+      steps: [aStep("s1", "Sedni – zůstaň"), aStep("s1a", "Sedni 5 s", "s1")],
+    }
+    mount(false, { session: withSteps })
+    expect(screen.getByText("Sedni 5 s").closest("li")).toHaveClass("ml-6")
+    await user.click(screen.getByRole("button", { name: "Upravit krok Sedni – zůstaň" }))
+    expect(screen.getByRole("button", { name: "Rozdělit na dílčí kroky" })).toBeEnabled()
+    await user.click(screen.getByRole("button", { name: "Rozdělit na dílčí kroky" }))
+    expect(screen.getByRole("region", { name: "Dílčí krok" })).toBeInTheDocument()
+    await user.type(screen.getByLabelText("Název kroku"), "Sedni 10 s")
+    await user.click(screen.getByRole("button", { name: "Přidat krok" }))
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("goal-trainings/session-2/steps", {
+        json: {
+          title: "Sedni 10 s",
+          instruction: "",
+          criterion: "",
+          durationMinutes: 5,
+          parentId: "s1",
+        },
+      }),
+    )
+  })
+  it("does not offer split on a sub-step", async () => {
+    const user = userEvent.setup()
+    const withSteps: TrainingSession = {
+      ...session,
+      steps: [aStep("s1", "Sedni"), aStep("s1a", "Sedni 5 s", "s1")],
+    }
+    mount(false, { session: withSteps })
+    await user.click(screen.getByRole("button", { name: "Upravit krok Sedni 5 s" }))
+    expect(
+      screen.queryByRole("button", { name: "Rozdělit na dílčí kroky" }),
+    ).not.toBeInTheDocument()
   })
   it("opens scheduling when a request arrives without remounting the editor", async () => {
     const user = userEvent.setup()

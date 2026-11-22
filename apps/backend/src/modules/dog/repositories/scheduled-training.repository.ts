@@ -14,6 +14,7 @@ import {
   ScheduledTrainingDetail,
   WeekTraining,
 } from '@/modules/dog/domain/scheduled-training';
+import { walkOrder } from '@/modules/dog/domain/step-order';
 import { Injectable } from '@nestjs/common';
 import { planOrder, resolveTraining } from './hierarchy.repository';
 import { recordMessageReply } from './training-reply.repository';
@@ -55,7 +56,13 @@ export class ScheduledTrainingRepository {
             id: true,
             title: true,
             steps: {
-              select: { id: true, title: true, durationMinutes: true },
+              select: {
+                id: true,
+                parentId: true,
+                position: true,
+                title: true,
+                durationMinutes: true,
+              },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },
           },
@@ -75,7 +82,14 @@ export class ScheduledTrainingRepository {
         ),
         total: row.goal.sessions.length,
       },
-      goal: { ...row.goal, blocks: row.training.steps },
+      goal: {
+        ...row.goal,
+        blocks: walkOrder(row.training.steps).map((step) => ({
+          id: step.id,
+          title: step.title,
+          durationMinutes: step.durationMinutes,
+        })),
+      },
     }));
   }
 
@@ -109,6 +123,7 @@ export class ScheduledTrainingRepository {
             steps: {
               select: {
                 id: true,
+                parentId: true,
                 position: true,
                 title: true,
                 instruction: true,
@@ -126,7 +141,8 @@ export class ScheduledTrainingRepository {
       ...row,
       goal: {
         ...row.goal,
-        blocks: row.training.steps,
+        // Practice order is parts-then-whole (#67).
+        blocks: walkOrder(row.training.steps),
       },
     };
   }
@@ -309,7 +325,12 @@ export class ScheduledTrainingRepository {
             id: true,
             title: true,
             steps: {
-              select: { id: true, title: true },
+              select: {
+                id: true,
+                parentId: true,
+                position: true,
+                title: true,
+              },
               orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
             },
           },
@@ -319,7 +340,13 @@ export class ScheduledTrainingRepository {
     });
     return rows.map((row) => ({
       ...row,
-      goal: { ...row.goal, blocks: row.training.steps },
+      goal: {
+        ...row.goal,
+        blocks: walkOrder(row.training.steps).map((step) => ({
+          id: step.id,
+          title: step.title,
+        })),
+      },
     }));
   }
 
