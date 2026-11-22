@@ -27,6 +27,47 @@ type WeekPickerDialogProps = {
   onSelectWeek: (weekStart: CalendarDate) => void
 }
 
+function WeekPickerBody({
+  selectedWeek,
+  onSelect,
+}: {
+  selectedWeek: CalendarDate
+  onSelect: (weekStart: CalendarDate) => void
+}) {
+  const thisWeekStart = startOfWeekOf(todayCalendarDate())
+  const [month, setMonth] = useState<Date>(() => fromCalendarDate(selectedWeek))
+
+  return (
+    <>
+      <Calendar
+        locale={cs}
+        weekStartsOn={1}
+        month={month}
+        onMonthChange={setMonth}
+        onDayClick={(day) => onSelect(startOfWeekOf(toCalendarDate(day)))}
+        modifiers={{ selectedWeek: daysOfWeek(selectedWeek).map(fromCalendarDate) }}
+        modifiersClassNames={{
+          selectedWeek: "rounded-md bg-secondary text-secondary-foreground",
+        }}
+        // 44 px cells on 390 px+ phones; shrinks cleanly without horizontal overflow on narrower screens.
+        className="mx-auto w-full max-w-[308px] p-0 [--cell-size:--spacing(11)]"
+      />
+
+      <DialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          className="min-h-11"
+          disabled={selectedWeek === thisWeekStart}
+          onClick={() => onSelect(thisWeekStart)}
+        >
+          Tento týden
+        </Button>
+      </DialogFooter>
+    </>
+  )
+}
+
 // A real month calendar behind the week range (standup feedback): any day
 // picks its whole Monday-to-Sunday week.
 export function WeekPickerDialog({
@@ -35,9 +76,6 @@ export function WeekPickerDialog({
   selectedWeek,
   onSelectWeek,
 }: WeekPickerDialogProps) {
-  const thisWeekStart = startOfWeekOf(todayCalendarDate())
-  const [month, setMonth] = useState<Date>(() => fromCalendarDate(selectedWeek))
-
   const handleSelect = (weekStart: CalendarDate) => {
     onSelectWeek(weekStart)
     onOpenChange(false)
@@ -54,31 +92,12 @@ export function WeekPickerDialog({
           <DialogDescription>Klepnutím na den vyberete celý jeho týden.</DialogDescription>
         </DialogHeader>
 
-        <Calendar
-          locale={cs}
-          weekStartsOn={1}
-          month={month}
-          onMonthChange={setMonth}
-          onDayClick={(day) => handleSelect(startOfWeekOf(toCalendarDate(day)))}
-          modifiers={{ selectedWeek: daysOfWeek(selectedWeek).map(fromCalendarDate) }}
-          modifiersClassNames={{
-            selectedWeek: "rounded-md bg-secondary text-secondary-foreground",
-          }}
-          // 44 px cells: a touch target on a phone (DESIGN.md).
-          className="mx-auto p-0 [--cell-size:--spacing(11)]"
-        />
-
-        <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            className="min-h-11"
-            disabled={selectedWeek === thisWeekStart}
-            onClick={() => handleSelect(thisWeekStart)}
-          >
-            Tento týden
-          </Button>
-        </DialogFooter>
+        {isOpen && (
+          <WeekPickerBody
+            selectedWeek={selectedWeek}
+            onSelect={handleSelect}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )

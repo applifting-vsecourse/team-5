@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { todayCalendarDate } from "@/lib/calendarDate"
 import { validateDogPhoto } from "@/lib/dogPhoto"
 import { cn } from "@/lib/utils"
 
@@ -349,12 +350,13 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
           />
           {errors.breed && <p className="text-xs text-destructive">{errors.breed}</p>}
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3">
+          <div className="min-w-0 space-y-2">
             <Label htmlFor="dog-birth-date">Datum narození</Label>
             <Input
               id="dog-birth-date"
               type="date"
+              max={todayCalendarDate()}
               disabled={isBusy}
               value={birthDate}
               onChange={(event) => setBirthDate(event.target.value)}
@@ -370,7 +372,7 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
               </p>
             )}
           </div>
-          <div className="space-y-2">
+          <div className="min-w-0 space-y-2">
             <Label htmlFor="dog-weight">Váha (kg)</Label>
             <Input
               id="dog-weight"
@@ -621,7 +623,7 @@ export function EditDogDialog({ dog, isOpen, onOpenChange, onSuccess }: EditDogD
       open={isOpen}
       onOpenChange={onOpenChange}
     >
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
         {isOpen && (
           <EditDogForm
             dog={dog}
