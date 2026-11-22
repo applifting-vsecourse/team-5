@@ -132,7 +132,7 @@ function RecordSummary({ detail }: { detail: ConversationDetail }) {
           )}
         </dl>
       )}
-      {detail.videoUrl?.startsWith("https://") && (
+      {detail.videoUrl && /^https?:\/\//i.test(detail.videoUrl) && (
         <a
           href={detail.videoUrl}
           target="_blank"

@@ -93,6 +93,23 @@ function renderWalkthrough(training: TrainingDetail = aTraining()) {
 }
 
 describe("TrainingWalkthrough", () => {
+  it("keeps the clicker available across local steps and hides it in read-only views", async () => {
+    const user = userEvent.setup()
+    const { unmount } = renderWalkthrough()
+    await user.click(screen.getByRole("button", { name: /Klikr/i }))
+    expect(screen.getByRole("status", { name: "Počet kliknutí: 1" })).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Hotovo, další krok" }))
+    expect(screen.getByRole("heading", { name: "Krok vpřed" })).toBeInTheDocument()
+    expect(screen.getByRole("status", { name: "Počet kliknutí: 1" })).toBeInTheDocument()
+    unmount()
+
+    const completed = renderWalkthrough(aTraining({ status: "COMPLETED" }))
+    expect(screen.queryByRole("button", { name: /Klikr/i })).not.toBeInTheDocument()
+    completed.unmount()
+    renderWalkthrough(aTraining({ canTrain: false }))
+    expect(screen.queryByRole("button", { name: /Klikr/i })).not.toBeInTheDocument()
+  })
+
   beforeEach(() => {
     navigate.mockReset()
   })

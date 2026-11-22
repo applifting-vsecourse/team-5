@@ -9,6 +9,7 @@ import { dogTextClass } from "@/components/DogPlayerCard"
 import { EndCollaborationButton } from "@/components/EndCollaborationButton"
 import { PesAvatar } from "@/components/PesAvatar"
 import { QueryState } from "@/components/QueryState"
+import { TrainerNotesSection } from "@/components/TrainerNotesSection"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -460,6 +461,12 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
             </span>
             <DesignIcon name="profile-ChevR" />
           </Link>
+        )}
+        {!isOwner && (
+          <TrainerNotesSection
+            clientId={dog.ownerId}
+            lockedDog={{ id: dog.id, name: dog.name, color: dog.color }}
+          />
         )}
         {isOwner && Boolean(dog.trainers?.length) && (
           <section

@@ -229,6 +229,8 @@ describe("DogDetailView", () => {
     // Private notes stay with the owner (#70)
     expect(screen.queryByRole("heading", { name: "Deník" })).not.toBeInTheDocument()
     expect(screen.queryByRole("link", { name: /Poznámky/ })).not.toBeInTheDocument()
+    // Trainer sees their own private notes section (#236)
+    expect(screen.getByRole("heading", { name: "Moje poznámky" })).toBeInTheDocument()
 
     // Back button links to client detail
     const backLink = screen.getByRole("link", { name: /zpět na detail klienta/i })

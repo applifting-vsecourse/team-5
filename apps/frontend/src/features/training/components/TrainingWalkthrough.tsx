@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { WalkthroughClickerBar } from "@/components/WalkthroughClickerBar"
 
 import type { TrainingDetail } from "@/features/training/api/trainingSchemas"
 
@@ -136,6 +137,7 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
       actions={
         isPlanned ? (
           <>
+            <WalkthroughClickerBar />
             <Button
               type="button"
               size="lg"
