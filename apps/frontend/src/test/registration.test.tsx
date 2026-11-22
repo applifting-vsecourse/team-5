@@ -306,7 +306,7 @@ describe("owner registration", () => {
 describe("trainer registration", () => {
   const trainer = { ...user, role: "trainer" }
 
-  it("defaults to an owner account and lets a trainer register into Clients", async () => {
+  it("defaults to an owner account and lets a trainer register into Přehled", async () => {
     const { interaction, router, queryClient } = await openPage()
     const trainerCheckbox = await screen.findByRole("radio", { name: "Trenér" })
     expect(trainerCheckbox).not.toBeChecked()
@@ -321,9 +321,7 @@ describe("trainer registration", () => {
       return Promise.resolve({ data: { user: trainer }, error: null })
     })
     await interaction.click(screen.getByRole("button", { name: "Vytvořit účet" }))
-    expect(await screen.findByRole("heading", { name: "Klienti" })).toBeInTheDocument()
-    expect(screen.getByText("Pozvěte prvního klienta")).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe("/clients")
+    await waitFor(() => expect(router.state.location.pathname).toBe("/dashboard"))
     expect(queryClient.getQueryData(authKeys.session())).toMatchObject({ user: trainer })
     expect(auth.signUp).toHaveBeenCalledExactlyOnceWith({
       name: "Jana Nováková",
@@ -332,7 +330,7 @@ describe("trainer registration", () => {
       fetchOptions: { body: { privacyConsent: true, isTrainer: true } },
     })
     const nav = screen.getByRole("navigation", { name: "Spodní navigace" })
-    expect(within(nav).getByRole("link", { name: "Klienti" })).toHaveAttribute(
+    expect(within(nav).getByRole("link", { name: "Přehled" })).toHaveAttribute(
       "aria-current",
       "page",
     )
@@ -384,8 +382,12 @@ describe("trainer registration", () => {
   it("uses the stored session role when returning to registration", async () => {
     auth.getSession.mockResolvedValue({ data: { user: trainer }, error: null })
     const { router } = await openPage()
-    expect(await screen.findByText("Pozvěte prvního klienta")).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe("/clients")
+    await waitFor(() => expect(router.state.location.pathname).toBe("/dashboard"))
+    expect(
+      within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("link", {
+        name: "Přehled",
+      }),
+    ).toHaveAttribute("aria-current", "page")
   })
 
   it("does not let owners open Clients by URL", async () => {

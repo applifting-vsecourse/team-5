@@ -1,13 +1,13 @@
 import { createFileRoute, isRedirect, redirect } from "@tanstack/react-router"
 
 import { LandingPage } from "@/app/LandingPage"
-import { ROUTES } from "@/app/routes"
 
 import { authSessionQueryOptions, type Session } from "@/features/auth/api/authSessionQueryOptions"
+import { loginHome } from "@/features/auth/lib/account-home"
 
 export function getLandingRedirect(session: Session): string | null {
   if (!session?.user) return null
-  return session.user.role === "trainer" ? ROUTES.clients : ROUTES.dashboard
+  return loginHome(session.user)
 }
 
 export const Route = createFileRoute("/")({

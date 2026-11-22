@@ -125,7 +125,7 @@ describe("LandingPage", () => {
       expect(getLandingRedirect(ownerSession)).toBe("/dashboard")
     })
 
-    it("redirects trainers to the Clients tab", () => {
+    it("redirects trainers to Přehled", () => {
       const trainerSession = {
         user: {
           id: "t1",
@@ -135,7 +135,7 @@ describe("LandingPage", () => {
           role: "trainer",
         },
       }
-      expect(getLandingRedirect(trainerSession)).toBe("/clients")
+      expect(getLandingRedirect(trainerSession)).toBe("/dashboard")
     })
   })
 
@@ -156,7 +156,7 @@ describe("LandingPage", () => {
         }),
       ).rejects.toMatchObject({
         options: {
-          to: "/clients",
+          to: "/dashboard",
         },
       })
     })
