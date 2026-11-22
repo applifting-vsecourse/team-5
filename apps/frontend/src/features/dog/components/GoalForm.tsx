@@ -83,7 +83,7 @@ export function GoalForm({
   })
 
   const handleAddDiscipline = async () => {
-    if (!onAddDiscipline || isSavingDiscipline) return
+    if (!onAddDiscipline || isPending || isSavingDiscipline) return
     const trimmed = newDiscipline.trim()
     if (!trimmed) {
       setDisciplineError("Zadej název disciplíny.")
@@ -120,7 +120,13 @@ export function GoalForm({
     <Form {...form}>
       <form
         noValidate
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={(event) => {
+          if (isPending || isSavingDiscipline) {
+            event.preventDefault()
+            return
+          }
+          void form.handleSubmit(onSubmit)(event)
+        }}
         className="flex flex-col gap-4"
       >
         <FormField
@@ -180,7 +186,7 @@ export function GoalForm({
                           placeholder="např. Agility"
                           value={newDiscipline}
                           maxLength={40}
-                          disabled={isSavingDiscipline}
+                          disabled={isPending || isSavingDiscipline}
                           className="min-h-field rounded-field"
                           onChange={(e) => {
                             setNewDiscipline(e.target.value)
@@ -197,7 +203,7 @@ export function GoalForm({
                           type="button"
                           variant="secondary"
                           className="min-h-field shrink-0 rounded-field"
-                          disabled={isSavingDiscipline}
+                          disabled={isPending || isSavingDiscipline}
                           onClick={() => void handleAddDiscipline()}
                         >
                           {isSavingDiscipline ? (
@@ -210,7 +216,7 @@ export function GoalForm({
                           type="button"
                           variant="ghost"
                           className="min-h-field shrink-0 rounded-field"
-                          disabled={isSavingDiscipline}
+                          disabled={isPending || isSavingDiscipline}
                           onClick={() => {
                             setIsAddingDiscipline(false)
                             setNewDiscipline("")
@@ -230,7 +236,7 @@ export function GoalForm({
                       variant="outline"
                       size="sm"
                       className="min-h-touch w-fit rounded-field"
-                      disabled={isPending}
+                      disabled={isPending || isSavingDiscipline}
                       onClick={() => setIsAddingDiscipline(true)}
                     >
                       <Plus className="size-4" />
@@ -308,7 +314,7 @@ export function GoalForm({
               size="lg"
               variant="outline"
               className="min-h-11"
-              disabled={isPending}
+              disabled={isPending || isSavingDiscipline}
             >
               Uložit
             </Button>
@@ -316,8 +322,11 @@ export function GoalForm({
               type="button"
               size="lg"
               className="min-h-11"
-              disabled={isPending}
-              onClick={form.handleSubmit(onSubmitAndSchedule)}
+              disabled={isPending || isSavingDiscipline}
+              onClick={(event) => {
+                if (isPending || isSavingDiscipline) return
+                void form.handleSubmit(onSubmitAndSchedule)(event)
+              }}
             >
               {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
               Uložit a naplánovat
@@ -328,7 +337,7 @@ export function GoalForm({
             type="submit"
             size="lg"
             className="min-h-11 w-full"
-            disabled={isPending}
+            disabled={isPending || isSavingDiscipline}
           >
             {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
             {submitLabel}

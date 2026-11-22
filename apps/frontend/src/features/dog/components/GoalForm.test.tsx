@@ -1,10 +1,95 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
 import { GoalForm } from "./GoalForm"
 
 describe("GoalForm", () => {
+  it.each(["save", "save with schedule available", "schedule"])(
+    "blocks %s until the new discipline has been selected",
+    async (mode) => {
+      const user = userEvent.setup()
+      let resolveAdd!: () => void
+      const adding = new Promise<void>((resolve) => {
+        resolveAdd = resolve
+      })
+      const onSubmit = vi.fn()
+      const onSchedule = vi.fn()
+      render(
+        <GoalForm
+          disciplines={["Poslušnost"]}
+          defaultValues={{ title: "Slalom" }}
+          isPending={false}
+          onAddDiscipline={() => adding}
+          onSubmit={onSubmit}
+          onSubmitAndSchedule={mode === "save" ? undefined : onSchedule}
+        />,
+      )
+      await user.click(screen.getByRole("button", { name: "Nová disciplína" }))
+      await user.type(screen.getByLabelText("Nová disciplína"), "Agility")
+      await user.click(screen.getByRole("button", { name: "Přidat" }))
+
+      const save = screen.getByRole("button", { name: "Uložit" })
+      expect(save).toBeDisabled()
+      if (mode !== "save") {
+        expect(screen.getByRole("button", { name: "Uložit a naplánovat" })).toBeDisabled()
+      }
+      // Direct form submission must also be guarded, not just button clicks.
+      fireEvent.submit(save.closest("form")!)
+      await user.type(screen.getByLabelText("Název cíle"), "{Enter}")
+      expect(onSubmit).not.toHaveBeenCalled()
+      expect(onSchedule).not.toHaveBeenCalled()
+
+      await act(async () => {
+        resolveAdd()
+        await adding
+      })
+      expect(screen.getByRole("combobox")).toHaveTextContent("Agility")
+      await user.click(
+        mode === "schedule" ? screen.getByRole("button", { name: "Uložit a naplánovat" }) : save,
+      )
+      await waitFor(() =>
+        expect(mode === "schedule" ? onSchedule : onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ discipline: "Agility" }),
+          expect.anything(),
+        ),
+      )
+    },
+  )
+
+  it("unlocks saving after discipline creation fails without changing the selection", async () => {
+    const user = userEvent.setup()
+    let rejectAdd!: (error: Error) => void
+    const adding = new Promise<void>((_, reject) => {
+      rejectAdd = reject
+    })
+    const onSubmit = vi.fn()
+    render(
+      <GoalForm
+        disciplines={["Poslušnost"]}
+        defaultValues={{ title: "Slalom" }}
+        isPending={false}
+        onAddDiscipline={() => adding}
+        onSubmit={onSubmit}
+      />,
+    )
+    await user.click(screen.getByRole("button", { name: "Nová disciplína" }))
+    await user.type(screen.getByLabelText("Nová disciplína"), "Agility")
+    await user.click(screen.getByRole("button", { name: "Přidat" }))
+    await act(async () => {
+      rejectAdd(new Error("Network failure"))
+      await adding.catch(() => undefined)
+    })
+    expect(screen.getByText("Disciplínu se nepodařilo přidat. Zkus to znovu.")).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Uložit" }))
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ discipline: "Poslušnost" }),
+        expect.anything(),
+      ),
+    )
+  })
+
   it("submits title, the dog's discipline and the principle", async () => {
     const user = userEvent.setup()
     const onSubmit = vi.fn()
