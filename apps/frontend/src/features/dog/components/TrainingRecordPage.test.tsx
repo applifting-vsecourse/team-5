@@ -69,8 +69,8 @@ const detail = {
   goal: {
     title: "Přivolání",
     blocks: [
-      { id: "b1", title: "Na vodítku", outcome: "MASTERED" as const, position: 0 },
-      { id: "b2", title: "Volně", outcome: null, position: 1 },
+      { id: "b1", title: "Na vodítku", position: 0 },
+      { id: "b2", title: "Volně", position: 1 },
     ],
   },
   messages: [
@@ -269,5 +269,32 @@ describe("TrainingRecordPage", () => {
     await screen.findByRole("heading", { name: "Přivolání v parku" })
     expect(screen.queryByText("Spánek")).not.toBeInTheDocument()
     expect(screen.queryByText("Prostředí")).not.toBeInTheDocument()
+  })
+
+  it("renders http:// and https:// video links as clickable new-tab links (#78)", async () => {
+    vi.mocked(api.get).mockImplementation(
+      () =>
+        ({
+          json: () =>
+            Promise.resolve({
+              ...detail,
+              videoUrl: "http://example.com/trainloop-video",
+            }),
+        }) as ReturnType<typeof api.get>,
+    )
+
+    render(
+      <TrainingRecordPage
+        dogId="dog-1"
+        activityId="act-1"
+        currentUserId="t1"
+      />,
+      { wrapper: createWrapper() },
+    )
+
+    const link = await screen.findByRole("link", { name: "example.com/trainloop-video" })
+    expect(link).toHaveAttribute("href", "http://example.com/trainloop-video")
+    expect(link).toHaveAttribute("target", "_blank")
+    expect(link).toHaveAttribute("rel", "noopener noreferrer")
   })
 })

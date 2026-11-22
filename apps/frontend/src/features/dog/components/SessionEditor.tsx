@@ -65,14 +65,12 @@ function StepRow({
   index,
   isReadOnly,
   isBusy,
-  isCurrent,
   onEdit,
 }: {
   step: PlanBlock
   index: number
   isReadOnly: boolean
   isBusy: boolean
-  isCurrent: boolean
   onEdit: () => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -87,10 +85,8 @@ function StepRow({
     <li
       ref={setNodeRef}
       style={style}
-      aria-current={isCurrent ? "step" : undefined}
       className={cn(
         "flex flex-col gap-3 rounded-card border border-border bg-card px-3 py-3",
-        isCurrent && "border-primary ring-2 ring-primary/30",
         isDragging && "z-10 opacity-60",
       )}
     >
@@ -109,10 +105,8 @@ function StepRow({
         )}
         <span
           className={cn(
-            "mt-1 flex size-7 shrink-0 items-center justify-center rounded-md text-sm font-extrabold",
-            isCurrent
-              ? "bg-primary text-primary-foreground"
-              : cn("text-dog-foreground", dogColorClass((index % 6) + 1)),
+            "mt-1 flex size-7 shrink-0 items-center justify-center rounded-md text-sm font-extrabold text-dog-foreground",
+            dogColorClass((index % 6) + 1),
           )}
         >
           {index + 1}
@@ -125,9 +119,6 @@ function StepRow({
         >
           <span className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-bold break-words">{step.title}</span>
-            {isCurrent ? <StatusChip tone="accent">Aktuální</StatusChip> : null}
-            {step.outcome === "MASTERED" ? <StatusChip tone="success">Zvládnuto</StatusChip> : null}
-            {step.outcome === "SKIPPED" ? <StatusChip tone="muted">Přeskočeno</StatusChip> : null}
             <span className="ml-auto flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs">
               <EditorIcon name="Clock" />
               {step.durationMinutes ?? 0} min
@@ -269,7 +260,6 @@ export function SessionEditor({
   goal,
   isReadOnly,
   canSchedule = !isReadOnly,
-  currentStepId = null,
   onBack,
   isScheduleRequested,
   onScheduleRequestHandled,
@@ -283,7 +273,6 @@ export function SessionEditor({
   goal: DogGoal
   isReadOnly: boolean
   canSchedule?: boolean
-  currentStepId?: string | null
   onBack: () => void
   isScheduleRequested?: boolean
   onScheduleRequestHandled?: () => void
@@ -292,8 +281,6 @@ export function SessionEditor({
   onReturnToRecord?: () => void
 }) {
   const client = useQueryClient()
-  const goalStepIds = sessions.flatMap((s) => s.steps.map((block) => block.id))
-  const effectiveCurrentStepId = currentStepId ?? goalStepIds[0] ?? null
   const [step, setStep] = useState<PlanBlock | "new" | null>(null)
   const [deleting, setDeleting] = useState<PlanBlock | null>(null)
   const [isLibraryOpen, setLibrary] = useState(false)
@@ -459,12 +446,6 @@ export function SessionEditor({
           onReturn={onReturnToRecord}
         />
       )}
-      <section className="space-y-2 rounded-card bg-accent p-4">
-        <h2 className="text-label font-bold text-muted-foreground">Princip tréninku</h2>
-        <p className="leading-relaxed whitespace-pre-wrap">
-          {goal.principle?.trim() ? goal.principle : "Princip zatím není doplněný."}
-        </p>
-      </section>
       {isReadOnly && <StatusChip tone="muted">Pouze ke čtení</StatusChip>}
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -491,7 +472,6 @@ export function SessionEditor({
                     index={i}
                     isReadOnly={isReadOnly}
                     isBusy={isBusy}
-                    isCurrent={b.id === effectiveCurrentStepId}
                     onEdit={() => setStep(b)}
                   />
                 ))}

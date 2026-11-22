@@ -14,6 +14,7 @@ const auth = vi.hoisted(() => ({
   signUp: vi.fn(),
   getSession: vi.fn(),
   signIn: vi.fn(),
+  signInSocial: vi.fn(),
   signOut: vi.fn(),
 }))
 const dogApi = vi.hoisted(() => ({
@@ -25,7 +26,7 @@ vi.mock("@/features/auth/lib/auth-client", () => ({
   authClient: {
     signUp: { email: auth.signUp },
     getSession: auth.getSession,
-    signIn: { email: auth.signIn },
+    signIn: { email: auth.signIn, social: auth.signInSocial },
     signOut: auth.signOut,
   },
 }))
@@ -320,18 +321,21 @@ describe("login and logout", () => {
     },
   )
 
-  it.each(["/dogs?view=all#notes", "/clients", "/week", "/account"])(
-    "returns to the original protected destination %s after login",
-    async (destination) => {
-      const { interaction, router } = await openPage(destination)
-      await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
-      expect(router.state.location.pathname).toBe("/login")
-      acceptLogin(destination === "/clients" ? "trainer" : "user")
-      await fillForm(interaction)
-      await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-      await waitFor(() => expect(router.state.location.href).toBe(destination))
-    },
-  )
+  it.each([
+    "/dogs?view=all#notes",
+    "/dogs/dog-1/activities/log-1",
+    "/clients",
+    "/week",
+    "/account",
+  ])("returns to the original protected destination %s after login", async (destination) => {
+    const { interaction, router } = await openPage(destination)
+    await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
+    expect(router.state.location.pathname).toBe("/login")
+    acceptLogin(destination === "/clients" ? "trainer" : "user")
+    await fillForm(interaction)
+    await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
+    await waitFor(() => expect(router.state.location.href).toBe(destination))
+  })
 
   it("uses a remembered session after loading the app with an empty query cache", async () => {
     auth.getSession.mockResolvedValue({ data: { user }, error: null })
@@ -463,5 +467,38 @@ describe("login and logout", () => {
       expect(router.state.location.pathname).toBe("/invite")
     })
     expect(router.state.location.search).toMatchObject({ code: "EXIST1" })
+  })
+
+  it("starts Google OAuth from the login page preserving redirect parameters", async () => {
+    auth.signInSocial.mockResolvedValue({
+      data: { redirect: true, url: "https://accounts.google.com/o/oauth2/v2/auth" },
+      error: null,
+    })
+    const { interaction } = await openPage("/login?code=EXIST1")
+    await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
+    await interaction.click(screen.getByRole("button", { name: "Pokračovat přes Google" }))
+
+    await waitFor(() => expect(auth.signInSocial).toHaveBeenCalledTimes(1))
+    expect(auth.signInSocial).toHaveBeenCalledWith({
+      provider: "google",
+      callbackURL: `${window.location.origin}/login?code=EXIST1`,
+      errorCallbackURL: `${window.location.origin}/login?code=EXIST1`,
+    })
+  })
+
+  it("shows a readable message on login when Google OAuth is cancelled or fails", async () => {
+    const { interaction } = await openPage("/login?error=access_denied")
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Přihlášení přes Google bylo zrušeno.",
+    )
+
+    auth.signInSocial.mockResolvedValue({
+      data: null,
+      error: { code: "PROVIDER_NOT_FOUND" },
+    })
+    await interaction.click(screen.getByRole("button", { name: "Pokračovat přes Google" }))
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Přihlášení přes Google momentálně není dostupné.",
+    )
   })
 })

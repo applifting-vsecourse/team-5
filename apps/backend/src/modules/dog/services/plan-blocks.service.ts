@@ -57,16 +57,19 @@ export class PlanBlocksService {
     data: CreatePlanBlockData,
   ): Promise<PlanBlock> {
     await this.goalsService.getGoal(user, goalId);
-    return this.planBlockRepository.createBlock({
-      goalId,
-      title: data.title.trim(),
-      instruction: optionalText(data.instruction) ?? null,
-      ...(data.durationMinutes !== undefined && {
-        durationMinutes: data.durationMinutes,
-      }),
-      criterion: optionalText(data.criterion) ?? null,
-      insertAt: data.insertAt,
-    });
+    return this.planBlockRepository.createBlock(
+      {
+        goalId,
+        title: data.title.trim(),
+        instruction: optionalText(data.instruction) ?? null,
+        ...(data.durationMinutes !== undefined && {
+          durationMinutes: data.durationMinutes,
+        }),
+        criterion: optionalText(data.criterion) ?? null,
+        insertAt: data.insertAt,
+      },
+      user.id,
+    );
   }
 
   async updateBlock(
@@ -75,19 +78,23 @@ export class PlanBlocksService {
     data: UpdatePlanBlockData,
   ): Promise<PlanBlock> {
     await this.getAccessibleBlock(user, blockId);
-    return this.planBlockRepository.updateBlock(blockId, {
-      title: data.title?.trim(),
-      instruction: optionalText(data.instruction),
-      ...(data.durationMinutes !== undefined && {
-        durationMinutes: data.durationMinutes,
-      }),
-      criterion: optionalText(data.criterion),
-    });
+    return this.planBlockRepository.updateBlock(
+      blockId,
+      {
+        title: data.title?.trim(),
+        instruction: optionalText(data.instruction),
+        ...(data.durationMinutes !== undefined && {
+          durationMinutes: data.durationMinutes,
+        }),
+        criterion: optionalText(data.criterion),
+      },
+      user.id,
+    );
   }
 
   async deleteBlock(user: Identity, blockId: string): Promise<void> {
     const block = await this.getAccessibleBlock(user, blockId);
-    await this.planBlockRepository.deleteBlock(blockId, block.goalId);
+    await this.planBlockRepository.deleteBlock(blockId, block.goalId, user.id);
   }
 
   // The new order must list every block of the plan exactly once, so a stale
@@ -109,6 +116,6 @@ export class PlanBlocksService {
         'The new order must contain every block of the plan exactly once',
       );
     }
-    return this.planBlockRepository.reorderBlocks(goalId, blockIds);
+    return this.planBlockRepository.reorderBlocks(goalId, blockIds, user.id);
   }
 }

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { RecordUnreadBadge, UnreadReplyList } from "@/components/UnreadReplies"
 import { dogColorClass } from "@/lib/dogColors"
 import { accessibleDogsQueryOptions, historyQueryOptions, type HistoryItem } from "@/lib/history"
 import {
@@ -87,6 +88,7 @@ function HistoryRecord({ record }: { record: HistoryItem }) {
                   : `${record.successRate} %`}
             </span>
           </span>
+          <RecordUnreadBadge activityId={record.id} />
           <span className="text-xs font-normal text-muted-foreground">
             {record.dog.name} · {formatHistoryTime(record.completedAt)}
             {record.status === "SKIPPED"
@@ -182,6 +184,7 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
           <DesignIcon name="history-Filter" />
         </Button>
       </header>
+      <UnreadReplyList dogIds={dogId ? [dogId] : undefined} />
       <QueryState
         isLoading={dogs.isLoading}
         error={dogs.error}

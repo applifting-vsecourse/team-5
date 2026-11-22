@@ -72,6 +72,7 @@ model Verification {
 }
 
 model User {
+  unreadReplies TrainingReply[]
   id                 String              @id
   name               String
   email              String
@@ -85,12 +86,17 @@ model User {
   createdGoals       TrainingGoal[]      @relation("GoalCreator")
   workoutLogs        WorkoutLog[]        @relation("LogAuthor")
   scheduledTrainings ScheduledTraining[] @relation("TrainingScheduler")
-  trainerConnections ClientConnection[]  @relation("TrainerClients")
-  clientConnections  ClientConnection[]  @relation("ClientTrainers")
-  sharedDogs         DogShare[]          @relation("TrainerSharedDogs")
-  invitations        Invitation[]        @relation("TrainerInvitations")
-  messages           TrainingMessage[]
-  role               UserRole            @default(user)
+  trainerConnections              ClientConnection[]               @relation("TrainerClients")
+  clientConnections               ClientConnection[]               @relation("ClientTrainers")
+  sharedDogs                      DogShare[]                       @relation("TrainerSharedDogs")
+  invitations                     Invitation[]                     @relation("TrainerInvitations")
+  authoredTrainerNotes            TrainerNote[]                    @relation("TrainerAuthoredNotes")
+  clientTrainerNotes              TrainerNote[]                    @relation("ClientTrainerNotes")
+  messages                        TrainingMessage[]
+  trainingEmailNotifications      TrainingEmailNotification[]      @relation("NotificationRecipient")
+  trainingEmailNotificationEvents TrainingEmailNotificationEvent[] @relation("NotificationActor")
+  role                            UserRole                         @default(user)
+  emailNotificationsEnabled       Boolean                          @default(true)
 
   username        String? @db.VarChar(50)
   displayUsername String? @db.VarChar(50)
@@ -118,6 +124,7 @@ model Dog {
   workoutLogs        WorkoutLog[]
   shares             DogShare[]
   notes              DogNote[]
+  trainerNotes       TrainerNote[]
   trainings          ScheduledTraining[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @default(now()) @updatedAt
@@ -191,8 +198,6 @@ model TrainingGoal {
   order            Int                 @default(0)
   workoutLogs      WorkoutLog[]
   blocks           PlanBlock[]
-  currentStepId    String?
-  currentStep      PlanBlock?          @relation("GoalCurrentStep", fields: [currentStepId], references: [id], onDelete: SetNull)
   trainings        ScheduledTraining[]
   createdAt        DateTime            @default(now())
   updatedAt        DateTime            @default(now()) @updatedAt
@@ -205,32 +210,22 @@ model TrainingGoal {
 // One step of a goal's plan, shown top to bottom by position (#63).
 // Sequences (#64) and sub-steps (#67) will build on this model.
 model PlanBlock {
-  id              String         @id @default(cuid())
+  id              String       @id @default(cuid())
   goalId          String
-  goal            TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  trainingId      String         @default(dbgenerated())
-  training        GoalTraining   @relation(fields: [trainingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  goal            TrainingGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  trainingId      String       @default(dbgenerated())
+  training        GoalTraining @relation(fields: [trainingId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   position        Int
-  title           String         @db.VarChar(100)
-  durationMinutes Int            @default(0)
-  instruction     String?        @db.Text
-  criterion       String?        @db.Text
-  outcome         StepOutcome?
-  currentOf       TrainingGoal[] @relation("GoalCurrentStep")
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @default(now()) @updatedAt
+  title           String       @db.VarChar(100)
+  durationMinutes Int          @default(0)
+  instruction     String?      @db.Text
+  criterion       String?      @db.Text
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @default(now()) @updatedAt
 
   @@index([goalId, position])
   @@index([trainingId, position])
   @@map("plan_block")
-}
-
-// How a step was left behind by the current-step pointer (#66).
-enum StepOutcome {
-  MASTERED
-  SKIPPED
-
-  @@map("step_outcome")
 }
 
 enum TrainingStatus {
@@ -246,6 +241,7 @@ enum TrainingStatus {
 // A goal has many independent dated sessions. ScheduledTrainingRepository
 // locks the goal row to prevent duplicate PLANNED sessions on the same day.
 model ScheduledTraining {
+  unreadReplies TrainingReply[]
   id          String         @id @default(cuid())
   goalId      String
   goal        TrainingGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
@@ -268,6 +264,7 @@ model ScheduledTraining {
 }
 
 model WorkoutLog {
+  unreadReplies TrainingReply[]
   mistakeDetails String[] @default([])
   id                  String             @id @default(cuid())
   dogId               String
@@ -289,8 +286,9 @@ model WorkoutLog {
   sleepQuality        SleepQuality?
   environment         TrainingEnvironment?
   note                String?            @db.Text
-  videoUrl            String?            @db.VarChar(500)
+  videoUrl            String?                     @db.VarChar(500)
   messages            TrainingMessage[]
+  emailNotifications  TrainingEmailNotification[]
   // The planned training this record closes (#75): undoing a skip removes
   // exactly this record. Null for records written without a plan.
   scheduledTrainingId String?            @unique
@@ -401,6 +399,31 @@ model DogNote {
   @@map("dog_note")
 }
 
+// Private notes authored by a trainer about a client or one of their shared
+// dogs (#236). Only the authoring trainer reads and writes them while an active
+// collaboration exists; clients and other trainers never see them.
+model TrainerNote {
+  id        String   @id @default(cuid())
+  trainerId String
+  trainer   User     @relation("TrainerAuthoredNotes", fields: [trainerId], references: [id], onDelete: Cascade)
+  clientId  String
+  client    User     @relation("ClientTrainerNotes", fields: [clientId], references: [id], onDelete: Cascade)
+  dogId     String?
+  dog       Dog?     @relation(fields: [dogId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  title     String   @db.VarChar(100)
+  text      String   @db.Text
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([trainerId, clientId, isPinned(sort: Desc), date(sort: Desc)])
+  @@index([trainerId, dogId, isPinned(sort: Desc), date(sort: Desc)])
+  @@index([clientId])
+  @@index([dogId])
+  @@map("trainer_note")
+}
+
 // The workout log is the thread (#88, F-21). Deleting the owner removes the
 // entire thread; deleting a trainer only removes the link to its author.
 // Do not copy author names/emails into messages: resolve deleted authors via
@@ -417,4 +440,62 @@ model TrainingMessage {
   @@index([workoutLogId, createdAt])
   @@index([authorId])
   @@map("training_message")
+}
+
+enum TrainingNotificationKind {
+  NEW_RECORD
+  CLIENT_MESSAGE
+  TRAINER_REPLY
+
+  @@map("training_notification_kind")
+}
+
+// Per-thread, per-recipient email throttle & digest state (#97).
+// At most one email per hour per thread; events arriving within the cooldown
+// window are queued and sent together in a single summary email.
+model TrainingEmailNotification {
+  id            String                           @id @default(cuid())
+  workoutLogId  String
+  workoutLog    WorkoutLog                       @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  recipientId   String
+  recipient     User                             @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  lastSentAt    DateTime?
+  nextDigestAt  DateTime?
+  pendingEvents TrainingEmailNotificationEvent[]
+  createdAt     DateTime                         @default(now())
+  updatedAt     DateTime                         @default(now()) @updatedAt
+
+  @@unique([workoutLogId, recipientId])
+  @@index([nextDigestAt])
+  @@map("training_email_notification")
+}
+
+model TrainingEmailNotificationEvent {
+  id             String                    @id @default(cuid())
+  notificationId String
+  notification   TrainingEmailNotification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  kind           TrainingNotificationKind
+  actorId        String?
+  actor          User?                     @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  text           String?                   @db.Text
+  createdAt      DateTime                  @default(now())
+
+  @@index([notificationId, createdAt])
+  @@map("training_email_notification_event")
+}
+
+// One receipt per recipient and event; deleting only displayed IDs preserves late replies.
+model TrainingReply {
+  id                  String             @id @default(cuid())
+  recipientId         String
+  recipient           User               @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  workoutLogId        String?
+  workoutLog          WorkoutLog?        @relation(fields: [workoutLogId], references: [id], onDelete: Cascade)
+  scheduledTrainingId String?
+  scheduledTraining   ScheduledTraining? @relation(fields: [scheduledTrainingId], references: [id], onDelete: Cascade)
+  kind                String
+  createdAt           DateTime           @default(now())
+
+  @@index([recipientId])
+  @@map("training_reply")
 }

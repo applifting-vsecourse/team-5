@@ -8,6 +8,7 @@ import { EditorIcon } from "@/components/EditorIcon"
 import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { ReadReplyReceipt } from "@/components/UnreadReplies"
 import { api } from "@/lib/api-client"
 import {
   ANSWER_LABELS,
@@ -139,7 +140,7 @@ function RecordSummary({
           )}
         </dl>
       )}
-      {detail.videoUrl?.startsWith("https://") && (
+      {detail.videoUrl && /^https?:\/\//i.test(detail.videoUrl) && (
         <a
           href={detail.videoUrl}
           target="_blank"
@@ -190,6 +191,7 @@ function ThreadComposer({
       await Promise.all([
         client.invalidateQueries({ queryKey: ["training-conversation", activityId] }),
         client.invalidateQueries({ queryKey: ["training-updates"] }),
+        client.invalidateQueries({ queryKey: ["unread-training-replies"] }),
         client.invalidateQueries({ queryKey: dogKeys.all }),
       ])
     },
@@ -360,6 +362,7 @@ export function TrainingRecordPage({
       >
         {detail.data && !hasDogMismatch && (
           <>
+            <ReadReplyReceipt ids={detail.data.unreadReplyIds} />
             <RecordSummary
               detail={detail.data}
               canEditPlan={canEditPlan}

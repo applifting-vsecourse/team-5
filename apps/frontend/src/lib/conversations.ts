@@ -27,7 +27,6 @@ const message = z.object({
 const block = z.object({
   id: z.string(),
   title: z.string(),
-  outcome: z.enum(["MASTERED", "SKIPPED"]).nullable(),
   position: z.number(),
 })
 const conversationDetail = z.object({
@@ -52,6 +51,7 @@ const conversationDetail = z.object({
     })
     .nullable()
     .optional(),
+  unreadReplyIds: z.array(z.string()).default([]),
   messages: z.array(message),
 })
 export type ConversationDetail = z.infer<typeof conversationDetail>

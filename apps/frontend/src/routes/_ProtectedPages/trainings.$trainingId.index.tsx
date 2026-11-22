@@ -6,6 +6,7 @@ import { Seo } from "@/components/Seo"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ReadReplyReceipt } from "@/components/UnreadReplies"
 
 import { trainingDetailQueryOptions } from "@/features/training/api/trainingsQueryOptions"
 import { TrainingWalkthrough } from "@/features/training/components/TrainingWalkthrough"
@@ -86,6 +87,7 @@ function TrainingWalkthroughPage() {
   return (
     <>
       <Seo title={`Trénink · ${training.dog.name}`} />
+      <ReadReplyReceipt ids={training.unreadReplyIds} />
       <TrainingWalkthrough training={training} />
     </>
   )
