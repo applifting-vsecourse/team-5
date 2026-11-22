@@ -110,7 +110,8 @@ describe('training conversations', () => {
     repo.record.mockResolvedValue({
       id: 'record',
       dogId: 'shared-dog',
-      dog: { id: 'shared-dog', name: 'Rex', color: 1 },
+      goalId: 'goal-1',
+      dog: { id: 'shared-dog', name: 'Rex', color: 1, ownerId: 'owner-1' },
       title: 'Park',
       completedAt: new Date('2026-11-01'),
       successRate: 80,
@@ -139,6 +140,8 @@ describe('training conversations', () => {
       'trainer',
     );
     await expect(service.detail(user, 'record')).resolves.toMatchObject({
+      goalId: 'goal-1',
+      dog: { id: 'shared-dog', name: 'Rex', color: 1, ownerId: 'owner-1' },
       sleepQuality: 'POOR',
       environment: 'TRAINING_GROUND',
       goal: {
@@ -148,6 +151,39 @@ describe('training conversations', () => {
           { id: 's2', title: 'Sedni', position: 1 },
         ],
       },
+    });
+  });
+
+  it('returns null goalId for an unplanned training record', async () => {
+    const repo = mock<ConversationRepository>();
+    const access = mock<DogAccessService>();
+    repo.record.mockResolvedValue({
+      id: 'record',
+      dogId: 'shared-dog',
+      goalId: null,
+      dog: { id: 'shared-dog', name: 'Rex', color: 1, ownerId: 'owner-1' },
+      title: 'Volný trénink',
+      completedAt: new Date('2026-11-01'),
+      successRate: null,
+      note: null,
+      videoUrl: null,
+      mistakeDetails: [],
+      focus: null,
+      repeatedMistakes: null,
+      status: 'COMPLETED',
+      training: null,
+      messages: [],
+    } as never);
+    const service = new ConversationService(repo, access);
+    const user = new Identity(
+      'trainer',
+      'trainer@example.test',
+      'Trainer',
+      'trainer',
+    );
+    await expect(service.detail(user, 'record')).resolves.toMatchObject({
+      goalId: null,
+      goal: null,
     });
   });
 });

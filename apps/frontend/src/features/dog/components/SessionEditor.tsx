@@ -55,6 +55,7 @@ import { deletePlanBlock, updatePlanBlock } from "@/features/dog/api/savePlanBlo
 import { stepTemplates, type TrainingSession } from "@/features/dog/api/trainingEditor"
 
 import { EditorSheet } from "./EditorSheet"
+import { ReturnToRecordBanner } from "./ReturnToRecordBanner"
 import { SessionScheduleSheet } from "./SessionScheduleSheet"
 import { StepLibraryScreen } from "./StepLibraryScreen"
 import { TrainingPreview } from "./TrainingPreview"
@@ -262,6 +263,9 @@ export function SessionEditor({
   onBack,
   isScheduleRequested,
   onScheduleRequestHandled,
+  hasSavedPlanChanges = false,
+  onPlanSaved,
+  onReturnToRecord,
 }: {
   session: TrainingSession
   sessions: TrainingSession[]
@@ -272,6 +276,9 @@ export function SessionEditor({
   onBack: () => void
   isScheduleRequested?: boolean
   onScheduleRequestHandled?: () => void
+  hasSavedPlanChanges?: boolean
+  onPlanSaved?: () => void
+  onReturnToRecord?: () => void
 }) {
   const client = useQueryClient()
   const [step, setStep] = useState<PlanBlock | "new" | null>(null)
@@ -299,13 +306,17 @@ export function SessionEditor({
     onSuccess: async () => {
       await refresh()
       setStep(null)
+      onPlanSaved?.()
     },
     onError: () => toast.error("Krok se nepodařilo uložit. Změny zůstaly ve formuláři."),
   })
   const reorder = useMutation({
     mutationFn: (ids: string[]) =>
       api.put(`goal-trainings/${session.id}/steps/order`, { json: { ids } }),
-    onSuccess: refresh,
+    onSuccess: async () => {
+      await refresh()
+      onPlanSaved?.()
+    },
     onError: () => toast.error("Pořadí se nepodařilo uložit."),
   })
   const remove = useMutation({
@@ -313,6 +324,7 @@ export function SessionEditor({
     onSuccess: async () => {
       await refresh()
       setDeleting(null)
+      onPlanSaved?.()
     },
     onError: () => toast.error("Krok se nepodařilo odebrat."),
   })
@@ -321,6 +333,7 @@ export function SessionEditor({
     onSuccess: async () => {
       await refresh()
       setRenaming(false)
+      onPlanSaved?.()
     },
     onError: () => toast.error("Název se nepodařilo uložit."),
   })
@@ -334,7 +347,10 @@ export function SessionEditor({
           durationMinutes: 2,
         },
       }),
-    onSuccess: refresh,
+    onSuccess: async () => {
+      await refresh()
+      onPlanSaved?.()
+    },
     onError: () => toast.error("Pauzu se nepodařilo přidat."),
   })
   const sensors = useSensors(
@@ -383,6 +399,7 @@ export function SessionEditor({
     } finally {
       setSelected((current) => current.filter((id) => !inserted.has(id)))
       await refresh()
+      if (inserted.size > 0) onPlanSaved?.()
       setLibraryBusy(false)
       libraryLock.current = false
     }
@@ -423,6 +440,12 @@ export function SessionEditor({
           </p>
         </div>
       </header>
+      {onReturnToRecord && (
+        <ReturnToRecordBanner
+          hasSavedChanges={hasSavedPlanChanges}
+          onReturn={onReturnToRecord}
+        />
+      )}
       {isReadOnly && <StatusChip tone="muted">Pouze ke čtení</StatusChip>}
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -656,6 +679,7 @@ export function SessionEditor({
           setSchedule(isOpen)
           if (!isOpen) onScheduleRequestHandled?.()
         }}
+        onScheduled={() => onPlanSaved?.()}
       />
     </div>
   )

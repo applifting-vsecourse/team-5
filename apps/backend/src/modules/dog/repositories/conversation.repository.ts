@@ -58,7 +58,7 @@ export class ConversationRepository {
           },
         },
         author: { select: { id: true, name: true } },
-        dog: { select: { id: true, name: true, color: true } },
+        dog: { select: { id: true, name: true, color: true, ownerId: true } },
         training: {
           select: {
             title: true,

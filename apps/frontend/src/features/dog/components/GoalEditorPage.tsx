@@ -24,15 +24,18 @@ import { useUpdateGoal } from "@/features/dog/hooks/useUpdateGoal"
 
 import { EditorSheet } from "./EditorSheet"
 import { GoalForm } from "./GoalForm"
+import { ReturnToRecordBanner } from "./ReturnToRecordBanner"
 import { SessionEditor } from "./SessionEditor"
 
 function GoalShell({
   dogId,
+  returnToActivityId,
   title,
   subtitle,
   children,
 }: {
   dogId: string
+  returnToActivityId?: string
   title: string
   subtitle?: string
   children: ReactNode
@@ -46,13 +49,23 @@ function GoalShell({
           size="icon"
           className="shrink-0 rounded-field"
         >
-          <Link
-            to="/dogs/$dogId/goals"
-            params={{ dogId }}
-            aria-label="Zpět na cíle psa"
-          >
-            <EditorIcon name="ChevL" />
-          </Link>
+          {returnToActivityId ? (
+            <Link
+              to="/dogs/$dogId/activities/$activityId"
+              params={{ dogId, activityId: returnToActivityId }}
+              aria-label="Zpět na záznam tréninku"
+            >
+              <EditorIcon name="ChevL" />
+            </Link>
+          ) : (
+            <Link
+              to="/dogs/$dogId/goals"
+              params={{ dogId }}
+              aria-label="Zpět na cíle psa"
+            >
+              <EditorIcon name="ChevL" />
+            </Link>
+          )}
         </Button>
         <div className="min-w-0">
           <h1 className="text-page font-extrabold tracking-tight break-words">{title}</h1>
@@ -131,6 +144,7 @@ export function NewGoalPage({
 export function EditGoalPage({
   dogId,
   goalId,
+  returnToActivityId,
   currentUserId,
   isNewTrainingRequested,
   onNewTrainingRequestHandled,
@@ -141,6 +155,7 @@ export function EditGoalPage({
 }: {
   dogId: string
   goalId: string
+  returnToActivityId?: string
   currentUserId?: string | null
   isNewTrainingRequested?: boolean
   onNewTrainingRequestHandled?: () => void
@@ -165,6 +180,7 @@ export function EditGoalPage({
   }
   const [isEditing, setEditing] = useState(false)
   const [isNewTrainingOpen, setNewTraining] = useState(false)
+  const [hasSavedChanges, setHasSavedChanges] = useState(false)
   const [title, setTitle] = useState("")
   const [titleError, setTitleError] = useState("")
   const [localSessionId, setLocalSessionId] = useState<string | null>(null)
@@ -179,10 +195,28 @@ export function EditGoalPage({
   const isReadOnly =
     goal?.status === "ARCHIVED" || goal?.status === "COMPLETED" || membership?.isArchived === true
   const refresh = () => client.invalidateQueries({ queryKey: dogKeys.all })
+  const returnToRecord = () => {
+    if (!returnToActivityId) return
+    void navigate({
+      to: "/dogs/$dogId/activities/$activityId",
+      params: { dogId, activityId: returnToActivityId },
+    })
+  }
+  const markPlanSaved = (shouldShowToast = false) => {
+    setHasSavedChanges(true)
+    if (!returnToActivityId) return
+    void client.invalidateQueries({ queryKey: ["training-conversation", returnToActivityId] })
+    if (shouldShowToast) {
+      toast.success("Změny v plánu jsou uložené", {
+        action: { label: "Zpět na záznam", onClick: returnToRecord },
+      })
+    }
+  }
   const create = useMutation({
     mutationFn: () => createSession(goalId, title.trim()),
     onSuccess: async (session) => {
       await refresh()
+      markPlanSaved(true)
       setNewTraining(false)
       onNewTrainingRequestHandled?.()
       setTitle("")
@@ -192,7 +226,10 @@ export function EditGoalPage({
   })
   const reorder = useMutation({
     mutationFn: (ids: string[]) => api.put(`goals/${goalId}/sessions/order`, { json: { ids } }),
-    onSuccess: refresh,
+    onSuccess: async () => {
+      await refresh()
+      markPlanSaved(true)
+    },
     onError: () => toast.error("Pořadí se nepodařilo uložit."),
   })
   const status = useMutation({
@@ -200,6 +237,7 @@ export function EditGoalPage({
     onSuccess: async () => {
       await refresh()
       await client.invalidateQueries({ queryKey: weekKeys.all })
+      markPlanSaved(true)
     },
     onError: () => toast.error("Stav cíle se nepodařilo změnit."),
   })
@@ -209,12 +247,17 @@ export function EditGoalPage({
     try {
       await updateGoal.mutateAsync(values)
       await refresh()
+      markPlanSaved(false)
       setEditing(false)
       if (shouldSchedule && schedulableSession) {
         await navigate({
           to: "/dogs/$dogId/goals/$goalId",
           params: { dogId, goalId },
-          search: { session: schedulableSession.id, naplanovat: true },
+          search: {
+            session: schedulableSession.id,
+            naplanovat: true,
+            ...(returnToActivityId ? { zaznam: returnToActivityId } : {}),
+          },
         })
       }
     } catch {
@@ -247,12 +290,16 @@ export function EditGoalPage({
         onBack={() => setSessionId(null)}
         isScheduleRequested={isScheduleRequested}
         onScheduleRequestHandled={onScheduleRequestHandled}
+        hasSavedPlanChanges={hasSavedChanges}
+        onPlanSaved={() => markPlanSaved(true)}
+        onReturnToRecord={returnToActivityId ? returnToRecord : undefined}
       />
     )
   }
   return (
     <GoalShell
       dogId={dogId}
+      returnToActivityId={returnToActivityId}
       title={goal?.title ?? "Cíl"}
       subtitle={goal ? `${dogQuery.data?.name ?? ""} · ${goal.discipline ?? "Obecné"}` : undefined}
     >
@@ -269,6 +316,12 @@ export function EditGoalPage({
       >
         {goal && (
           <>
+            {returnToActivityId && (
+              <ReturnToRecordBanner
+                hasSavedChanges={hasSavedChanges}
+                onReturn={returnToRecord}
+              />
+            )}
             <div className="flex flex-wrap items-center justify-between gap-2">
               <StatusChip tone={isReadOnly ? "muted" : "accent"}>
                 {goal.status === "COMPLETED"

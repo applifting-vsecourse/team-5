@@ -198,6 +198,8 @@ describe("training editor", () => {
     expect(screen.queryByText("Princip tréninku")).not.toBeInTheDocument()
     expect(screen.queryByText("Aktuální")).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Zvládnuto, další krok" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Přeskočit" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Zpět o krok" })).not.toBeInTheDocument()
   })
   it("opens scheduling when a request arrives without remounting the editor", async () => {
     const user = userEvent.setup()
@@ -224,5 +226,32 @@ describe("training editor", () => {
     expect(handled).toHaveBeenCalledOnce()
     rerender(view(false))
     expect(screen.queryByRole("button", { name: "Zavřít plánování" })).not.toBeInTheDocument()
+  })
+  it("notifies plan save and offers return to the training record", async () => {
+    const user = userEvent.setup()
+    const client = new QueryClient()
+    const onPlanSaved = vi.fn()
+    const onReturnToRecord = vi.fn()
+    const view = (hasSaved: boolean) => (
+      <QueryClientProvider client={client}>
+        <SessionEditor
+          session={session}
+          sessions={[session]}
+          dog={dog}
+          goal={goal}
+          isReadOnly={false}
+          onBack={vi.fn()}
+          hasSavedPlanChanges={hasSaved}
+          onPlanSaved={onPlanSaved}
+          onReturnToRecord={onReturnToRecord}
+        />
+      </QueryClientProvider>
+    )
+    const { rerender } = render(view(false))
+    await user.click(screen.getByRole("button", { name: "Pauza" }))
+    await waitFor(() => expect(onPlanSaved).toHaveBeenCalledOnce())
+    rerender(view(true))
+    await user.click(screen.getByRole("button", { name: "Hotovo, zpět na záznam" }))
+    expect(onReturnToRecord).toHaveBeenCalledOnce()
   })
 })
