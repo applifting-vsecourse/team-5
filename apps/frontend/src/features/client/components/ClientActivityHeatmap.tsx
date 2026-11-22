@@ -139,7 +139,10 @@ export function ClientActivityHeatmap({
                       <span
                         role="img"
                         aria-label={label}
-                        className={cn("mx-auto block size-[26px] rounded-sm", cellSquareClass(cell))}
+                        className={cn(
+                          "mx-auto block size-[26px] rounded-sm",
+                          cellSquareClass(cell),
+                        )}
                         title={`${cell.date}: ${cellLabel(cell)}`}
                       />
                     )

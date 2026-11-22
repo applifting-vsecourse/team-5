@@ -376,8 +376,7 @@ export function TrainerOverview({ userName }: { userName?: string }) {
   const data = query.data
   const metrics = data?.metrics
   const matrix = data?.activityMatrix
-  const selectedRow =
-    matrix?.rows.find((row) => row.clientId === selectedClientId) ?? null
+  const selectedRow = matrix?.rows.find((row) => row.clientId === selectedClientId) ?? null
   const panelDog =
     selectedRow?.dogs.find((dog) => dog.id === selectedDogId) ?? selectedRow?.dogs[0] ?? null
   const unreadNotes = metrics?.unreadNotes ?? 0
