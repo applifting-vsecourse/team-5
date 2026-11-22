@@ -240,13 +240,8 @@ export function TodayView({ userName }: TodayViewProps) {
             />
           )}
 
-          <div className="hidden items-center justify-end gap-2 xl:col-start-2 xl:row-start-1 xl:flex">
-            {updates.bell}
-            <LogFreeTrainingDialog dogs={dogs} />
-          </div>
-
           <QueryState
-            className="xl:col-start-2 xl:row-start-2"
+            className="xl:col-start-2 xl:row-start-1"
             isLoading={ownerMetrics.isLoading}
             error={ownerMetrics.error}
             onRetry={() => void ownerMetrics.refetch()}
@@ -320,7 +315,7 @@ export function TodayView({ userName }: TodayViewProps) {
           {dogs.length > 0 ? (
             <section
               aria-labelledby="today-dogs-heading"
-              className="flex flex-col gap-3 xl:col-start-2 xl:row-start-3"
+              className="flex flex-col gap-3 xl:col-start-2 xl:row-start-2"
             >
               <div className="flex items-center justify-between gap-3">
                 <h2
@@ -361,7 +356,7 @@ export function TodayView({ userName }: TodayViewProps) {
               </ul>
             </section>
           ) : null}
-          <div className="xl:col-start-2 xl:row-start-4">{updates.message}</div>
+          <div className="xl:col-start-2 xl:row-start-3">{updates.message}</div>
         </div>
       </QueryState>
     </div>

@@ -152,7 +152,7 @@ export function TodayWeekPreview({
       <Link
         to="/week"
         search={{ tyden: shownWeek }}
-        className="inline-flex min-h-touch items-center text-sm font-bold text-primary xl:hidden"
+        className="inline-flex min-h-touch items-center text-sm font-bold text-primary"
       >
         Otevřít celý týden →
       </Link>

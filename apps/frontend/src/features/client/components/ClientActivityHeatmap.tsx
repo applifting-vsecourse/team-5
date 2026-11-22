@@ -19,8 +19,17 @@ function dayLabel(date: string): string {
 }
 
 function cellLabel(cell: Cell): string {
-  if (cell.successRate === null) return "bez tréninku"
+  if (cell.successRate === null) {
+    return cell.activityId ? "bez hodnocení" : "bez tréninku"
+  }
   return `${Math.round(cell.successRate)} %`
+}
+
+function cellSquareClass(cell: Cell): string {
+  if (cell.activityId && cell.successRate === null) {
+    return "bg-muted ring-1 ring-inset ring-muted-foreground/40"
+  }
+  return performanceBandClass(performanceBandForRate(cell.successRate))
 }
 
 type ClientActivityHeatmapProps = {
@@ -125,13 +134,12 @@ export function ClientActivityHeatmap({
                     </button>
                   </th>
                   {row.cells.map((cell) => {
-                    const band = performanceBandForRate(cell.successRate)
+                    const label = `${row.clientName}, ${cell.date}: ${cellLabel(cell)}`
                     const square = (
                       <span
-                        className={cn(
-                          "mx-auto block size-[26px] rounded-sm",
-                          performanceBandClass(band),
-                        )}
+                        role="img"
+                        aria-label={label}
+                        className={cn("mx-auto block size-[26px] rounded-sm", cellSquareClass(cell))}
                         title={`${cell.date}: ${cellLabel(cell)}`}
                       />
                     )
@@ -147,18 +155,13 @@ export function ClientActivityHeatmap({
                               dogId: cell.dogId,
                               activityId: cell.activityId,
                             }}
-                            aria-label={`${row.clientName}, ${cell.date}: ${cellLabel(cell)}`}
+                            aria-label={label}
                             className="inline-flex rounded-sm outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
                           >
                             {square}
                           </Link>
                         ) : (
-                          <span
-                            aria-label={`${row.clientName}, ${cell.date}: ${cellLabel(cell)}`}
-                            className="inline-flex"
-                          >
-                            {square}
-                          </span>
+                          <span className="inline-flex">{square}</span>
                         )}
                       </td>
                     )

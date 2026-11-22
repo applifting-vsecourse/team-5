@@ -366,7 +366,7 @@ function OverviewShortcuts() {
 
 export function TrainerOverview({ userName }: { userName?: string }) {
   const [isInviteOpen, setIsInviteOpen] = useState(false)
-  const [selectedRow, setSelectedRow] = useState<MatrixRow | null>(null)
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
   const [selectedDogId, setSelectedDogId] = useState<string | null>(null)
   const navigate = useNavigate()
   const query = useQuery(trainerOverviewQueryOptions())
@@ -376,12 +376,14 @@ export function TrainerOverview({ userName }: { userName?: string }) {
   const data = query.data
   const metrics = data?.metrics
   const matrix = data?.activityMatrix
+  const selectedRow =
+    matrix?.rows.find((row) => row.clientId === selectedClientId) ?? null
   const panelDog =
     selectedRow?.dogs.find((dog) => dog.id === selectedDogId) ?? selectedRow?.dogs[0] ?? null
   const unreadNotes = metrics?.unreadNotes ?? 0
 
   function selectMatrixRow(row: MatrixRow, dogId?: string | null) {
-    setSelectedRow(row)
+    setSelectedClientId(row.clientId)
     setSelectedDogId(dogId ?? row.dogs[0]?.id ?? null)
   }
 
@@ -462,7 +464,7 @@ export function TrainerOverview({ userName }: { userName?: string }) {
                   )
                 }
               />
-              <div className="hidden min-w-0 flex-1 md:block">
+              <div className="hidden min-w-0 flex-1 md:flex">
                 <Kpi
                   value={String(unreadNotes)}
                   label="čeká na odpověď"
@@ -585,7 +587,7 @@ export function TrainerOverview({ userName }: { userName?: string }) {
                     dogs={selectedRow.dogs}
                     clientName={selectedRow.clientName}
                     onClose={() => {
-                      setSelectedRow(null)
+                      setSelectedClientId(null)
                       setSelectedDogId(null)
                     }}
                     onSelectDog={setSelectedDogId}

@@ -165,6 +165,7 @@ export class TrainerOverviewService {
                 .filter(
                   (log) =>
                     log.status === 'COMPLETED' &&
+                    log.completedAt <= now &&
                     todayInAppZone(log.completedAt) === day,
                 )
                 .map((log) => ({

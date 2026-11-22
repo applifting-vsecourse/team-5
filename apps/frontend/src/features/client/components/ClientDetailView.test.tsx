@@ -236,24 +236,8 @@ describe("ClientDetailView", () => {
 
   it("renders empty state when client shares no dogs", () => {
     respond({
-<<<<<<< HEAD
-      "overview/trainer": () =>
-        Promise.resolve({
-          metrics: {
-            activeClients: 0,
-            newClientsThisMonth: 0,
-            completedThisWeek: 0,
-            weeklySessionChange: 0,
-            successRate: null,
-            weeklyRateChange: null,
-          },
-          clients: [],
-          attention: [],
-        }),
-      "clients/c-123/notes": () => Promise.resolve([]),
-=======
       "overview/trainer": () => Promise.resolve(emptyOverview),
->>>>>>> 8f2d345 (fix(desktop): align ClientDetailView overview mock with schema (Refs #174))
+      "clients/c-123/notes": () => Promise.resolve([]),
       history: () => Promise.resolve(emptyHistory),
     })
     const clientWithoutDogs: Client = {

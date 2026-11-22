@@ -486,7 +486,7 @@ export function SessionEditor({
               : "lg:grid-cols-[minmax(0,18.75rem)_minmax(0,1fr)_minmax(0,18.75rem)]",
           )}
         >
-          {!isReadOnly && !isLibraryOpen && (
+          {!isReadOnly && (
             <aside className="hidden min-h-[32rem] lg:block">
               <StepLibraryScreen
                 variant="panel"
