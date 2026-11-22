@@ -63,9 +63,11 @@ export class ConversationRepository {
           select: {
             title: true,
             steps: {
-              orderBy: { position: 'asc' },
+              // parentId + position feed walkOrder in ConversationService.detail (#67).
+              orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
               select: {
                 id: true,
+                parentId: true,
                 title: true,
                 position: true,
               },

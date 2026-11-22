@@ -135,10 +135,12 @@ export function ClientActivityHeatmap({
                   </th>
                   {row.cells.map((cell) => {
                     const label = `${row.clientName}, ${cell.date}: ${cellLabel(cell)}`
+                    const isLinked = Boolean(cell.activityId && cell.dogId)
                     const square = (
                       <span
                         role="img"
-                        aria-label={label}
+                        aria-label={isLinked ? undefined : label}
+                        aria-hidden={isLinked || undefined}
                         className={cn(
                           "mx-auto block size-[26px] rounded-sm",
                           cellSquareClass(cell),
