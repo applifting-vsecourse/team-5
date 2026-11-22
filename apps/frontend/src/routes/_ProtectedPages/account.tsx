@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { authAccountsQueryOptions } from "@/features/auth/api/authAccountsQueryOptions"
 import { DeleteAccountDialog } from "@/features/auth/components/DeleteAccountDialog"
 import { EditAccountDialog } from "@/features/auth/components/EditAccountDialog"
+import { EmailNotificationsToggle } from "@/features/auth/components/EmailNotificationsToggle"
 import { useSession } from "@/features/auth/hooks/useSession"
 import { useSignOut } from "@/features/auth/hooks/useSignOut"
 import { ConnectTrainerDialog } from "@/features/client/components/ConnectTrainerDialog"
@@ -133,6 +134,11 @@ export function AccountPage() {
                 />
               </section>
             )}
+
+            <EmailNotificationsToggle
+              isEnabled={user.emailNotificationsEnabled ?? true}
+              isTrainer={isTrainer}
+            />
 
             <section className="space-y-2 rounded-card border border-border bg-card p-4">
               <h2 className="text-sm font-bold text-muted-foreground">Přihlášení</h2>

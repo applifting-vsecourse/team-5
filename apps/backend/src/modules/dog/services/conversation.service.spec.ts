@@ -1,5 +1,6 @@
 import { ConversationRepository } from '@/modules/dog/repositories/conversation.repository';
 import { DogAccessService } from '@/modules/dog/services/dog-access.service';
+import { TrainingNotificationService } from '@/modules/dog/services/training-notification.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import { NotFoundException } from '@nestjs/common';
 import { mock } from 'jest-mock-extended';
@@ -73,6 +74,7 @@ describe('training conversations', () => {
   it('uses the authenticated author and trims a permitted reply', async () => {
     const repo = mock<ConversationRepository>();
     const access = mock<DogAccessService>();
+    const notifications = mock<TrainingNotificationService>();
     repo.record.mockResolvedValue({
       id: 'record',
       dogId: 'shared-dog',
@@ -85,7 +87,7 @@ describe('training conversations', () => {
       createdAt: new Date(),
       author: { id: 'trainer', name: 'Trainer' },
     });
-    const service = new ConversationService(repo, access);
+    const service = new ConversationService(repo, access, notifications);
     const user = new Identity(
       'trainer',
       'trainer@example.test',
@@ -95,6 +97,11 @@ describe('training conversations', () => {
     await service.reply(user, 'record', '  Reply  ');
     expect(access.getAccessibleDog).toHaveBeenCalledWith(user, 'shared-dog');
     expect(repo.reply).toHaveBeenCalledWith('record', 'trainer', 'Reply');
+    expect(notifications.notifyMessage).toHaveBeenCalledWith(
+      'record',
+      'trainer',
+      'Reply',
+    );
   });
 
   it('returns plan blocks when the record is tied to a training', async () => {
