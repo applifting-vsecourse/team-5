@@ -303,7 +303,7 @@ describe("login and logout", () => {
 
   it.each([
     ["user", /Ahoj Jana|Dnes/, "/dashboard"],
-    ["trainer", /Klienti|Přehled/, "/clients"],
+    ["trainer", /Jana/, "/dashboard"],
   ])(
     "logs in a %s with a persistent session and the correct destination",
     async (role, heading, path) => {
@@ -312,7 +312,7 @@ describe("login and logout", () => {
       await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
       await fillForm(interaction, " space password ")
       await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
-      expect(await screen.findByRole("heading", { name: heading })).toBeInTheDocument()
+      expect(await screen.findByRole("heading", { level: 1, name: heading })).toBeInTheDocument()
       expect(router.state.location.pathname).toBe(path)
       expect(queryClient.getQueryData(authKeys.session())).toMatchObject({ user: { role } })
       expect(auth.signIn).toHaveBeenCalledExactlyOnceWith({
@@ -327,14 +327,14 @@ describe("login and logout", () => {
   it.each([
     "/dogs?view=all#notes",
     "/dogs/dog-1/activities/log-1",
-    "/clients",
+    "/dashboard",
     "/week",
     "/account",
   ])("returns to the original protected destination %s after login", async (destination) => {
     const { interaction, router } = await openPage(destination)
     await screen.findByRole("heading", { name: "Vítej zpátky 👋" })
     expect(router.state.location.pathname).toBe("/login")
-    acceptLogin(destination === "/clients" ? "trainer" : "user")
+    acceptLogin()
     await fillForm(interaction)
     await interaction.click(screen.getByRole("button", { name: "Přihlásit se" }))
     await waitFor(() => expect(router.state.location.href).toBe(destination))
@@ -363,14 +363,18 @@ describe("login and logout", () => {
     expect(screen.queryByText(user.email)).not.toBeInTheDocument()
   })
 
-  it("redirects an already signed-in trainer from login to Clients", async () => {
+  it("redirects an already signed-in trainer from login to Přehled", async () => {
     auth.getSession.mockResolvedValue({ data: { user: { ...user, role: "trainer" } }, error: null })
     const { router } = await openPage()
-    expect(await screen.findByRole("heading", { name: "Klienti" })).toBeInTheDocument()
-    expect(router.state.location.pathname).toBe("/clients")
+    await waitFor(() => expect(router.state.location.pathname).toBe("/dashboard"))
+    expect(
+      within(screen.getByRole("navigation", { name: "Spodní navigace" })).getByRole("link", {
+        name: "Přehled",
+      }),
+    ).toHaveAttribute("aria-current", "page")
   })
 
-  it("ignores an external return URL and uses the role-specific destination", async () => {
+  it("ignores an external return URL and uses the default destination", async () => {
     const { interaction, router } = await openPage(
       "/login?from=https%3A%2F%2Fexample.com%2Fclients",
     )
