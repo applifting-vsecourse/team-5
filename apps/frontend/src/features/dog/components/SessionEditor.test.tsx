@@ -140,10 +140,10 @@ describe("training editor", () => {
       .mockResolvedValue({} as never)
     const user = userEvent.setup()
     mount()
-    await user.click(screen.getByRole("button", { name: "Z knihovny" }))
-    await user.click(screen.getByRole("button", { name: /Přivolání na píšťalku/ }))
-    await user.click(screen.getByRole("button", { name: /Přivolání od jiného psa/ }))
-    await user.click(screen.getByRole("button", { name: "+ Přidat do tréninku" }))
+    // Desktop library is always mounted (jsdom ignores Tailwind `hidden`); pick the first match.
+    await user.click(screen.getAllByRole("button", { name: /Přivolání na píšťalku/ })[0]!)
+    await user.click(screen.getAllByRole("button", { name: /Přivolání od jiného psa/ })[0]!)
+    await user.click(screen.getAllByRole("button", { name: "+ Přidat do tréninku" })[0]!)
     await screen.findByRole("alert")
     expect(api.post).toHaveBeenCalledTimes(2)
     expect(api.post).toHaveBeenNthCalledWith(1, "goal-trainings/session-2/steps", {
@@ -154,7 +154,7 @@ describe("training editor", () => {
         durationMinutes: 8,
       },
     })
-    await user.click(screen.getByRole("button", { name: "+ Přidat do tréninku" }))
+    await user.click(screen.getAllByRole("button", { name: "+ Přidat do tréninku" })[0]!)
     await waitFor(() => expect(api.post).toHaveBeenCalledTimes(3))
     expect(api.post).toHaveBeenLastCalledWith("goal-trainings/session-2/steps", {
       json: {
@@ -211,9 +211,10 @@ describe("training editor", () => {
       steps: [aStep("s1", "Kontakt"), aStep("s2", "Volně")],
     }
     mount(false, { session: withSteps })
-    expect(screen.getByText("Kontakt")).toBeInTheDocument()
-    expect(screen.getByText("Volně")).toBeInTheDocument()
-    expect(screen.queryByText("Princip tréninku")).not.toBeInTheDocument()
+    // Step titles also appear in the desktop owner preview.
+    expect(screen.getAllByText("Kontakt").length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText("Volně").length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText("Princip tréninku")).toHaveLength(1)
     expect(screen.queryByText("Aktuální")).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Zvládnuto, další krok" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Přeskočit" })).not.toBeInTheDocument()
@@ -247,7 +248,11 @@ describe("training editor", () => {
   })
   it("notifies plan save and offers return to the training record", async () => {
     const user = userEvent.setup()
-    const client = new QueryClient()
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    })
+    // Keep this test focused on the save callback rather than network refresh.
+    vi.spyOn(client, "invalidateQueries").mockResolvedValue()
     const onPlanSaved = vi.fn()
     const onReturnToRecord = vi.fn()
     const view = (hasSaved: boolean) => (
