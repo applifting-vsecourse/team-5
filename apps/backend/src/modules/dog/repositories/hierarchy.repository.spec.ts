@@ -36,9 +36,9 @@ describe('training content editability (#68)', () => {
   it('rejects edits when the training is missing', async () => {
     const tx = mockDeep<Prisma.TransactionClient>();
     tx.goalTraining.findUnique.mockResolvedValue(null);
-    await expect(
-      assertTrainingContentEditable(tx, 'missing'),
-    ).rejects.toThrow(NotFoundException);
+    await expect(assertTrainingContentEditable(tx, 'missing')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 });
 

@@ -100,7 +100,9 @@ export const seedDatabase = async (
         where: { email: 'trener@trainloop.cz' },
       });
       if (!taken) {
-        console.log('Renaming caffeinatedduck@example.com → trener@trainloop.cz');
+        console.log(
+          'Renaming caffeinatedduck@example.com → trener@trainloop.cz',
+        );
         existingTrainer = await prisma.user.update({
           where: { id: existingTrainer.id },
           data: {
