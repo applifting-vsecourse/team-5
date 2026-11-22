@@ -43,7 +43,7 @@ export function InviteCodeDialog({ trigger }: { trigger: ReactNode }) {
           onSubmit={(event) => {
             event.preventDefault()
             const normalized = code.replace(/[-\s]/g, "").toUpperCase()
-            if (!/^[A-Z0-9]{6}$/.test(normalized)) {
+            if (!/^[A-Z0-9]{6,8}$/.test(normalized)) {
               setError("Zadej šestimístný kód pozvánky.")
               return
             }

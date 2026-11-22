@@ -589,7 +589,11 @@ export function SessionEditor({
                 <h2 className="text-section font-extrabold">
                   Kroky tréninku · {blocks.length} · {totalMinutes} min
                 </h2>
-                {!isReadOnly && <p className="text-xs text-muted-foreground">Podrž a přetáhni</p>}
+                {!isReadOnly && (
+                  <p className="text-xs text-muted-foreground">
+                    Podrž a přetáhni, nebo na úchytu mezerník a šipky
+                  </p>
+                )}
               </div>
               {blocks.length ? (
                 <DndContext

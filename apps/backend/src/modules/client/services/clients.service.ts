@@ -18,8 +18,9 @@ import {
 
 function generateInvitationCode(): string {
   const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  // 8 chars (~1e12) slows brute force vs the previous 6-char codes.
   let result = '';
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 8; i++) {
     result += chars.charAt(randomInt(0, chars.length));
   }
   return result;

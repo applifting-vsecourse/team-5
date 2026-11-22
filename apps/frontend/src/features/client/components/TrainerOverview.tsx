@@ -512,7 +512,7 @@ export function TrainerOverview({ userName }: { userName?: string }) {
                 </section>
 
                 {matrix && matrix.rows.length > 0 ? (
-                  <div className="hidden lg:block">
+                  <div className="overflow-x-auto">
                     <ClientActivityHeatmap
                       matrix={matrix}
                       today={today}
@@ -524,7 +524,7 @@ export function TrainerOverview({ userName }: { userName?: string }) {
 
                 <section
                   aria-labelledby="overview-clients-heading"
-                  className={cn("flex flex-col gap-2.5", matrix?.rows.length ? "lg:hidden" : null)}
+                  className="flex flex-col gap-2.5"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <h2
@@ -580,7 +580,7 @@ export function TrainerOverview({ userName }: { userName?: string }) {
               </div>
 
               {panelDog && selectedRow ? (
-                <div className="hidden lg:block">
+                <div className="min-w-0 lg:block">
                   <TrainerDogPanel
                     dog={panelDog}
                     dogs={selectedRow.dogs}

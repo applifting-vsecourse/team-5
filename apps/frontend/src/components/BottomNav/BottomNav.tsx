@@ -63,7 +63,7 @@ export function BottomNav({ isTrainer = false }: BottomNavProps) {
               key={item.label}
               to={item.to}
               className={cn(
-                "flex min-h-touch min-w-touch flex-1 flex-col items-center justify-center gap-1 rounded-md py-1 text-xs transition-colors",
+                "flex min-h-touch min-w-touch flex-1 flex-col items-center justify-center gap-1 rounded-md py-1 text-xs transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 isActive
                   ? "font-extrabold text-primary"
                   : "font-semibold text-muted-foreground hover:text-foreground",

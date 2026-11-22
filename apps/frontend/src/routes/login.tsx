@@ -15,6 +15,7 @@ import { SignInForm } from "@/features/auth/components/SignInForm"
 import { GoogleSignInError, useGoogleSignIn } from "@/features/auth/hooks/useGoogleSignIn"
 import { useSignIn } from "@/features/auth/hooks/useSignIn"
 import { loginHome } from "@/features/auth/lib/account-home"
+import { isGoogleOAuthEnabled } from "@/features/auth/lib/google-oauth-enabled"
 import {
   buildAuthCallbackUrl,
   OAUTH_FAILED_MESSAGE,
@@ -120,17 +121,21 @@ function LoginPage() {
           errorMessage={displayedError}
           onSubmit={handleSubmit}
         />
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" />
-          nebo
-          <span className="h-px flex-1 bg-border" />
-        </div>
+        {isGoogleOAuthEnabled() ? (
+          <>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              nebo
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <GoogleSignInButton
+              isLoading={googleSignIn.isPending}
+              isDisabled={signIn.isPending}
+              onClick={handleGoogleSignIn}
+            />
+          </>
+        ) : null}
         <div className="space-y-3">
-          <GoogleSignInButton
-            isLoading={googleSignIn.isPending}
-            isDisabled={signIn.isPending}
-            onClick={handleGoogleSignIn}
-          />
           <InviteCodeDialog
             trigger={
               <Button

@@ -140,7 +140,7 @@ describe('ClientsService', () => {
 
     expect(result.id).toBe('inv-new');
     expect(result.email).toBe('klient@example.com');
-    expect(result.code).toHaveLength(6);
+    expect(result.code).toHaveLength(8);
     expect(repository.createInvitation).toHaveBeenCalled();
     expect(emailService.sendEmail).toHaveBeenCalledWith(
       'klient@example.com',
@@ -177,7 +177,7 @@ describe('ClientsService', () => {
 
     expect(result.id).toBe('inv-code-only');
     expect(result.email).toBeUndefined();
-    expect(result.code).toHaveLength(6);
+    expect(result.code).toHaveLength(8);
     expect(repository.createInvitation).toHaveBeenCalled();
     expect(emailService.sendEmail).not.toHaveBeenCalled();
   });

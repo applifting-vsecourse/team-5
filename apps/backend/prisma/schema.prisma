@@ -375,7 +375,7 @@ model DogShare {
 
 model Invitation {
   id        String    @id @default(cuid())
-  code      String    @unique @db.VarChar(6)
+  code      String    @unique @db.VarChar(8)
   email     String?   @db.VarChar(255)
   trainerId String
   trainer   User      @relation("TrainerInvitations", fields: [trainerId], references: [id], onDelete: Cascade)
@@ -500,6 +500,8 @@ model TrainingReply {
   kind                String
   createdAt           DateTime           @default(now())
 
-  @@index([recipientId])
+  @@index([recipientId, createdAt(sort: Desc)])
+  @@index([workoutLogId])
+  @@index([scheduledTrainingId])
   @@map("training_reply")
 }

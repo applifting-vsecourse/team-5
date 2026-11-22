@@ -22,24 +22,32 @@ export function RecordUnreadBadge({
   activityId,
   scheduledId,
   dogIds,
+  hasUnread,
 }: {
   activityId?: string
   scheduledId?: string
   dogIds?: string[]
+  /** When provided by a parent that already loaded unread replies, skips a per-card query. */
+  hasUnread?: boolean
 }) {
-  const { data = [] } = useQuery(unreadRepliesOptions())
-  return data.some(
+  const query = useQuery({
+    ...unreadRepliesOptions(),
+    enabled: hasUnread === undefined,
+  })
+  if (hasUnread !== undefined) return hasUnread ? <UnreadBadge /> : null
+  if (query.isError) return null
+  const shouldShow = (query.data ?? []).some(
     (reply) =>
       (activityId !== undefined && replyRecordId(reply) === activityId) ||
       (scheduledId !== undefined && reply.scheduledTraining?.id === scheduledId) ||
       (dogIds?.includes(replyDog(reply)?.id ?? "") ?? false),
-  ) ? (
-    <UnreadBadge />
-  ) : null
+  )
+  return shouldShow ? <UnreadBadge /> : null
 }
 export function UnreadNavDot() {
-  const { data = [] } = useQuery(unreadRepliesOptions())
-  return data.length ? (
+  const { data = [], isError } = useQuery(unreadRepliesOptions())
+  if (isError || data.length === 0) return null
+  return (
     <span className="inline-flex items-center">
       <span
         aria-hidden
@@ -47,7 +55,7 @@ export function UnreadNavDot() {
       />
       <span className="sr-only">Nové odpovědi</span>
     </span>
-  ) : null
+  )
 }
 
 // The IDs come from the loaded content snapshot, never a later global query.

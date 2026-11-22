@@ -22,17 +22,19 @@ import { recordPlanReply } from './training-reply.repository';
 
 export const planOrder = [{ position: 'asc' }, { id: 'asc' }] as const;
 
-// A dated completion preserves this definition's steps for historical reads.
-// Reusing the definition on another date remains allowed; editing needs a new training.
+// Plan edits stay open after a dated completion so trainers can adjust the next
+// steps from a record (#68). Workout logs keep history; the live plan moves forward.
 export async function assertTrainingContentEditable(
   tx: Prisma.TransactionClient,
   trainingId: string,
 ): Promise<void> {
-  const completed = await tx.scheduledTraining.count({
-    where: { trainingId, status: 'COMPLETED' },
+  const training = await tx.goalTraining.findUnique({
+    where: { id: trainingId },
+    select: { isArchived: true },
   });
-  if (completed > 0) {
-    throw new ConflictException('Completed training content is read-only');
+  if (!training) throw new NotFoundException('Training not found');
+  if (training.isArchived) {
+    throw new ConflictException('Training is archived');
   }
 }
 
