@@ -20,6 +20,10 @@ function rootsThenChildren<T extends OrderedStep>(
   return roots.flatMap((root) => emit(root, childrenOf(root.id)))
 }
 
+export function walkOrder<T extends OrderedStep>(steps: T[]): T[] {
+  return rootsThenChildren(steps, (root, children) => [...children, root])
+}
+
 export function walkOrderIds(steps: OrderedStep[]): string[] {
-  return rootsThenChildren(steps, (root, children) => [...children, root]).map((step) => step.id)
+  return walkOrder(steps).map((step) => step.id)
 }

@@ -68,4 +68,24 @@ describe('legacy plan reads', () => {
       expect.objectContaining({ where: { trainingId: 'one' } }),
     );
   });
+
+  it('deletes a root and lets the DB cascade its children (#67)', async () => {
+    const { repository, tx } = setup([training('one')]);
+    const goal = mockDeep<EditableGoal>();
+    goal.status = 'ACTIVE';
+    goal.dog.isArchived = false;
+    goal.disciplineEntity.isArchived = false;
+    tx.trainingGoal.findUnique.mockResolvedValue(goal);
+    tx.goalTraining.findFirst.mockResolvedValue(training('one'));
+    tx.scheduledTraining.count.mockResolvedValue(0);
+    tx.planBlock.findUniqueOrThrow.mockResolvedValue({
+      id: 'root',
+      goalId: 'goal',
+      trainingId: 'one',
+      parentId: null,
+    } as never);
+    tx.planBlock.findMany.mockResolvedValue([]);
+    await repository.deleteBlock('root', 'goal');
+    expect(tx.planBlock.delete).toHaveBeenCalledWith({ where: { id: 'root' } });
+  });
 });

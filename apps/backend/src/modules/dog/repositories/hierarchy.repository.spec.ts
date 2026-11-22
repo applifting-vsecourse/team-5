@@ -77,6 +77,72 @@ function setup(stepIds: string[]): {
   return { repository: new HierarchyRepository(prisma), tx };
 }
 
+describe('createStep with sub-steps (#67)', () => {
+  it('creates a child under a root parent', async () => {
+    const { repository, tx } = setup([]);
+    tx.goalTraining.findFirst.mockResolvedValue({
+      id: 'session-2',
+      goalId: 'g1',
+      isArchived: false,
+    } as never);
+    tx.scheduledTraining.count.mockResolvedValue(0);
+    tx.planBlock.findFirst.mockResolvedValue({
+      id: 'root',
+      parentId: null,
+    } as never);
+    tx.planBlock.findMany.mockResolvedValue([]);
+    tx.planBlock.create.mockResolvedValue({
+      id: 'child',
+      parentId: 'root',
+      position: 0,
+      title: 'Dílčí',
+    } as never);
+
+    await repository.createStep('g1', 'session-2', {
+      title: 'Dílčí',
+      parentId: 'root',
+    });
+
+    expect(tx.planBlock.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ parentId: 'root', title: 'Dílčí' }),
+      }),
+    );
+  });
+
+  it('reorders only the requested sibling group', async () => {
+    const { repository, tx } = setup([]);
+    tx.goalTraining.findFirst.mockResolvedValue({
+      id: 'session-2',
+      goalId: 'g1',
+      isArchived: false,
+    } as never);
+    tx.scheduledTraining.count.mockResolvedValue(0);
+    tx.planBlock.findMany
+      .mockResolvedValueOnce([
+        { id: 'root', parentId: null, position: 0 },
+        { id: 'c1', parentId: 'root', position: 0 },
+        { id: 'c2', parentId: 'root', position: 1 },
+      ] as never)
+      .mockResolvedValueOnce([
+        { id: 'root', parentId: null, position: 0 },
+        { id: 'c2', parentId: 'root', position: 0 },
+        { id: 'c1', parentId: 'root', position: 1 },
+      ] as never);
+
+    await repository.reorderSteps('g1', 'session-2', ['c2', 'c1']);
+
+    expect(tx.planBlock.update).toHaveBeenCalledWith({
+      where: { id: 'c2' },
+      data: { position: 0 },
+    });
+    expect(tx.planBlock.update).toHaveBeenCalledWith({
+      where: { id: 'c1' },
+      data: { position: 1 },
+    });
+  });
+});
+
 describe('resolveSubStepParent (#67)', () => {
   it('returns null when no parent is requested', async () => {
     const tx = mockDeep<Prisma.TransactionClient>();

@@ -6,11 +6,7 @@ import {
 import { PlanBlockRepository } from '@/modules/dog/repositories/plan-block.repository';
 import { GoalsService } from '@/modules/dog/services/goals.service';
 import { Identity } from '@/shared/auth/domain/identity';
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 // An empty optional text means "none" and is stored as null.
 const optionalText = (value: string | undefined): string | null | undefined =>
@@ -98,25 +94,14 @@ export class PlanBlocksService {
     await this.planBlockRepository.deleteBlock(blockId, block.goalId, user.id);
   }
 
-  // The new order must list every block of the plan exactly once, so a stale
-  // screen cannot drop or duplicate a block.
+  // Sibling-group order is validated in the repository (#67), same as
+  // HierarchyService.reorderSteps — the client may send only one parent group.
   async reorderBlocks(
     user: Identity,
     goalId: string,
     blockIds: string[],
   ): Promise<PlanBlock[]> {
     await this.goalsService.getGoal(user, goalId);
-    const current = await this.planBlockRepository.getBlocksByGoalId(goalId);
-    const currentIds = new Set(current.map((block) => block.id));
-    const isSamePlan =
-      blockIds.length === currentIds.size &&
-      new Set(blockIds).size === blockIds.length &&
-      blockIds.every((id) => currentIds.has(id));
-    if (!isSamePlan) {
-      throw new BadRequestException(
-        'The new order must contain every block of the plan exactly once',
-      );
-    }
     return this.planBlockRepository.reorderBlocks(goalId, blockIds, user.id);
   }
 }

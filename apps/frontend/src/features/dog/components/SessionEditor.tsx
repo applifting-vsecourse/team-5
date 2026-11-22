@@ -358,11 +358,8 @@ export function SessionEditor({
     onSuccess: async () => {
       await refresh()
       setStep(null)
-<<<<<<< HEAD
-      onPlanSaved?.()
-=======
       setParentForNew(null)
->>>>>>> e7e70c5 (feat(plan): nested sub-steps with parts-then-whole walk (Refs #67))
+      onPlanSaved?.()
     },
     onError: () => toast.error("Krok se nepodařilo uložit. Změny zůstaly ve formuláři."),
   })
@@ -508,21 +505,12 @@ export function SessionEditor({
           </p>
         </div>
       </header>
-<<<<<<< HEAD
       {onReturnToRecord && (
         <ReturnToRecordBanner
           hasSavedChanges={hasSavedPlanChanges}
           onReturn={onReturnToRecord}
         />
       )}
-=======
-      <section className="space-y-2 rounded-card bg-accent p-4">
-        <h2 className="text-label font-bold text-muted-foreground">Princip tréninku</h2>
-        <p className="leading-relaxed whitespace-pre-wrap">
-          {goal.principle?.trim() ? goal.principle : "Princip zatím není doplněný."}
-        </p>
-      </section>
->>>>>>> e7e70c5 (feat(plan): nested sub-steps with parts-then-whole walk (Refs #67))
       {isReadOnly && <StatusChip tone="muted">Pouze ke čtení</StatusChip>}
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
