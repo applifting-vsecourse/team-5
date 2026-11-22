@@ -34,15 +34,14 @@ export function RecordUnreadBadge({
     ...unreadRepliesOptions(),
     enabled: hasUnread === undefined,
   })
+  if (hasUnread !== undefined) return hasUnread ? <UnreadBadge /> : null
   if (query.isError) return null
-  const shouldShow =
-    hasUnread ??
-    (query.data ?? []).some(
-      (reply) =>
-        (activityId !== undefined && replyRecordId(reply) === activityId) ||
-        (scheduledId !== undefined && reply.scheduledTraining?.id === scheduledId) ||
-        (dogIds?.includes(replyDog(reply)?.id ?? "") ?? false),
-    )
+  const shouldShow = (query.data ?? []).some(
+    (reply) =>
+      (activityId !== undefined && replyRecordId(reply) === activityId) ||
+      (scheduledId !== undefined && reply.scheduledTraining?.id === scheduledId) ||
+      (dogIds?.includes(replyDog(reply)?.id ?? "") ?? false),
+  )
   return shouldShow ? <UnreadBadge /> : null
 }
 export function UnreadNavDot() {

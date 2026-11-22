@@ -60,6 +60,7 @@ describe('legacy plan reads', () => {
     goal.dog.isArchived = false;
     goal.disciplineEntity.isArchived = false;
     tx.trainingGoal.findUnique.mockResolvedValue(goal);
+    tx.goalTraining.findUnique.mockResolvedValue({ isArchived: false } as never);
     tx.planBlock.findMany.mockResolvedValue([
       { id: 'a', parentId: null, position: 0 },
     ] as never);
@@ -77,7 +78,7 @@ describe('legacy plan reads', () => {
     goal.disciplineEntity.isArchived = false;
     tx.trainingGoal.findUnique.mockResolvedValue(goal);
     tx.goalTraining.findFirst.mockResolvedValue(training('one'));
-    tx.scheduledTraining.count.mockResolvedValue(0);
+    tx.goalTraining.findUnique.mockResolvedValue({ isArchived: false } as never);
     tx.planBlock.findUniqueOrThrow.mockResolvedValue({
       id: 'root',
       goalId: 'goal',

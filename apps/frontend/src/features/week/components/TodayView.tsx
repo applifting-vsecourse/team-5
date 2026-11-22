@@ -112,7 +112,7 @@ function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
         <Link
           to="/trainings/$trainingId"
           params={{ trainingId: training.id }}
-          aria-label={`Začít trénink: ${training.dog.name}, ${training.title}`}
+          aria-label={`Začít trénink: ${training.dog.name}, ${training.training?.title ?? training.goal.title}`}
         >
           <DesignIcon name="today-Play" />
           Začít trénink

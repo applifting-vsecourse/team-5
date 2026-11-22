@@ -11,11 +11,11 @@ import {
 export class AcceptInvitationDto {
   @ApiProperty({
     example: 'K7M2PQ',
-    description: '6místný kód pozvánky',
+    description: '6–8místný kód pozvánky',
   })
   @IsNotEmpty({ message: 'Kód pozvánky je povinný.' })
   @IsString()
-  @Length(6, 6, { message: 'Kód pozvánky musí mít přesně 6 znaků.' })
+  @Length(6, 8, { message: 'Kód pozvánky musí mít 6 až 8 znaků.' })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim().toUpperCase() : value,
   )

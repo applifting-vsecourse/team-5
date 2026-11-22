@@ -20,9 +20,14 @@ const SEED_PASSWORDS: { email: string; password: string }[] = [
 ];
 
 async function ensureSeedPasswords(prisma: PrismaService): Promise<void> {
+  // Never reset known weak passwords on staging/production deploys.
+  if (process.env.NODE_ENV === 'production') return;
   for (const entry of SEED_PASSWORDS) {
     const user = await prisma.user.findFirst({ where: { email: entry.email } });
-    if (!user) continue;
+    if (!user) {
+      console.warn(`ensureSeedPasswords: no user for ${entry.email}`);
+      continue;
+    }
     const password = await hashPassword(entry.password);
     const account = await prisma.account.findFirst({
       where: { userId: user.id, providerId: 'credential' },
@@ -33,6 +38,7 @@ async function ensureSeedPasswords(prisma: PrismaService): Promise<void> {
         data: { password },
       });
     } else {
+      const now = new Date();
       await prisma.account.create({
         data: {
           id: `seed-account-${user.id}`,
@@ -41,6 +47,8 @@ async function ensureSeedPasswords(prisma: PrismaService): Promise<void> {
           userId: user.id,
           password,
           issuer: 'local:credential',
+          createdAt: now,
+          updatedAt: now,
         },
       });
     }
