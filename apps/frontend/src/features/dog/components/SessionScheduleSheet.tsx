@@ -28,6 +28,7 @@ export function SessionScheduleSheet({
   isOpen,
   onOpenChange,
   onBack,
+  onScheduled,
 }: {
   sessionId: string
   goalId: string
@@ -36,6 +37,7 @@ export function SessionScheduleSheet({
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
   onBack?: () => void
+  onScheduled?: () => void
 }) {
   const client = useQueryClient()
   const planned = useQuery(goalTrainingsQueryOptions(goalId))
@@ -64,6 +66,7 @@ export function SessionScheduleSheet({
       }
       setDays([])
       onOpenChange(false)
+      onScheduled?.()
     } catch {
       setDays((current) => current.filter((day) => !saved.has(localDay(day))))
       setError(

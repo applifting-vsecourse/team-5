@@ -38,9 +38,17 @@ import { useDesktop } from "@/hooks/useDesktop"
 
 import { DeleteAccountError, useDeleteAccount } from "@/features/auth/hooks/useDeleteAccount"
 
-const schema = z.object({ password: z.string().min(1, "Pro smazání účtu zadejte heslo.") })
+type DeleteAccountDialogProps = {
+  isTrainer: boolean
+  hasPassword?: boolean
+  email?: string
+}
 
-export function DeleteAccountDialog({ isTrainer }: { isTrainer: boolean }) {
+export function DeleteAccountDialog({
+  isTrainer,
+  hasPassword = true,
+  email = "",
+}: DeleteAccountDialogProps) {
   const isDesktop = useDesktop()
   const Root = isDesktop ? Dialog : Drawer
   const Content = isDesktop ? DialogContent : DrawerContent
@@ -52,14 +60,26 @@ export function DeleteAccountDialog({ isTrainer }: { isTrainer: boolean }) {
   const [isOpen, setIsOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const deletion = useDeleteAccount()
+  const schema = z.object({
+    password: hasPassword ? z.string().min(1, "Pro smazání účtu zadejte heslo.") : z.string(),
+    confirmEmail: hasPassword
+      ? z.string()
+      : z
+          .string()
+          .trim()
+          .refine(
+            (value) => value.toLowerCase() === email.trim().toLowerCase(),
+            "Pro smazání účtu zadejte e-mail svého účtu.",
+          ),
+  })
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { password: "" },
+    defaultValues: { password: "", confirmEmail: "" },
   })
 
   function changeOpen(isNextOpen: boolean) {
     if (deletion.isPending) return
-    form.reset()
+    form.reset({ password: "", confirmEmail: "" })
     deletion.reset()
     setError(null)
     setIsOpen(isNextOpen)
@@ -68,11 +88,11 @@ export function DeleteAccountDialog({ isTrainer }: { isTrainer: boolean }) {
   async function submit({ password }: z.infer<typeof schema>) {
     setError(null)
     try {
-      await deletion.mutateAsync(password)
-      form.reset()
+      await deletion.mutateAsync(hasPassword ? password : undefined)
+      form.reset({ password: "", confirmEmail: "" })
       setIsOpen(false)
     } catch (cause) {
-      if (cause instanceof DeleteAccountError && cause.field) {
+      if (cause instanceof DeleteAccountError && cause.field && hasPassword) {
         form.setError(cause.field, { message: cause.message }, { shouldFocus: true })
       } else {
         setError(
@@ -155,7 +175,9 @@ export function DeleteAccountDialog({ isTrainer }: { isTrainer: boolean }) {
           <p className="border-t border-border pt-3 text-sm text-muted-foreground">
             {isTrainer
               ? "Zprávy a zadání u klientů zůstanou pod jménem „smazaný uživatel“."
-              : "Účet nelze obnovit. Smazání potvrď svým heslem."}
+              : hasPassword
+                ? "Účet nelze obnovit. Smazání potvrď svým heslem."
+                : "Účet nelze obnovit. Smazání potvrď zadáním svého e-mailu."}
           </p>
         </div>
         <Form {...form}>
@@ -170,26 +192,50 @@ export function DeleteAccountDialog({ isTrainer }: { isTrainer: boolean }) {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Heslo</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      type="password"
-                      className="min-h-action w-full"
-                      autoComplete="current-password"
-                      required
-                      disabled={deletion.isPending}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {hasPassword ? (
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Heslo</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        className="min-h-action w-full"
+                        autoComplete="current-password"
+                        required
+                        disabled={deletion.isPending}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : (
+              <FormField
+                control={form.control}
+                name="confirmEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Potvrď e-mail</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="email"
+                        placeholder={email}
+                        className="min-h-action w-full"
+                        autoComplete="email"
+                        required
+                        disabled={deletion.isPending}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <Footer className="flex-col-reverse p-0 sm:flex-col-reverse">
               <Button
                 type="button"

@@ -326,7 +326,6 @@ async function seedDogHistory(
           instruction:
             'Připravte odměnu. Proveďte 5 opakování, pak krátká pauza.\nPři ztrátě soustředění snižte obtížnost.',
           criterion: 'Čtyři úspěšné pokusy z pěti bez dalšího povelu.',
-          outcome: s === 0 ? 'MASTERED' : null,
         } as const;
         await tx.planBlock.upsert({
           where: { id: `${trainingId}-step-${s}` },
@@ -335,10 +334,6 @@ async function seedDogHistory(
         });
       }
     }
-    await tx.trainingGoal.update({
-      where: { id: goalId },
-      data: { currentStepId: `${goalId}-training-0-step-1` },
-    });
     // Eight weeks of history plus the following two weeks. Stable IDs move with today.
     for (let offset = -56; offset <= 14; offset++) {
       if (

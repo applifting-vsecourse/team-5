@@ -114,7 +114,7 @@ export class CreateActivityDto {
     example: 'https://youtube.com/watch?v=123',
   })
   @IsOptional()
-  @IsUrl({ protocols: ['https'], require_protocol: true })
+  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
   videoUrl?: string;
 
   @ApiPropertyOptional({

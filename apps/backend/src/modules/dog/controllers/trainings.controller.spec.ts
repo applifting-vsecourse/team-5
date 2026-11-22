@@ -5,6 +5,7 @@ import {
   WorkoutStatus,
 } from '@/generated/prisma/client';
 import { CompleteTrainingDto } from '@/modules/dog/controllers/dto/training.dto';
+import { TrainingReplyRepository } from '@/modules/dog/repositories/training-reply.repository';
 import { TrainingsService } from '@/modules/dog/services/trainings.service';
 import { Identity } from '@/shared/auth/domain/identity';
 import { HttpStatus } from '@nestjs/common';
@@ -22,7 +23,10 @@ describe('TrainingsController', () => {
   describe('completeTraining', () => {
     it('calls service and serializes created workout log into ActivityResponseDto', async () => {
       const service = mock<TrainingsService>();
-      const controller = new TrainingsController(service);
+      const controller = new TrainingsController(
+        service,
+        mock<TrainingReplyRepository>(),
+      );
 
       const fakeLog: WorkoutLog = {
         mistakeDetails: [],
@@ -103,7 +107,10 @@ describe('TrainingsController', () => {
 
     it('skips through the service and answers 200 with the training', async () => {
       const service = mock<TrainingsService>();
-      const controller = new TrainingsController(service);
+      const controller = new TrainingsController(
+        service,
+        mock<TrainingReplyRepository>(),
+      );
       const skipped = aTraining(TrainingStatus.SKIPPED);
       service.skipTraining.mockResolvedValue(skipped);
 
@@ -130,7 +137,10 @@ describe('TrainingsController', () => {
 
     it('undoes the skip through the service and returns the planned training', async () => {
       const service = mock<TrainingsService>();
-      const controller = new TrainingsController(service);
+      const controller = new TrainingsController(
+        service,
+        mock<TrainingReplyRepository>(),
+      );
       service.undoSkip.mockResolvedValue(aTraining(TrainingStatus.PLANNED));
 
       const result = await controller.undoSkip(user, 't1');

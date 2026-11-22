@@ -171,13 +171,6 @@ export class GoalResponseDto {
   @ApiProperty()
   disciplineId!: string;
 
-  @ApiProperty({
-    type: String,
-    nullable: true,
-    description: 'Current step of the plan; null means the first step',
-  })
-  currentStepId!: string | null;
-
   @ApiPropertyOptional({ nullable: true })
   criterion!: string | null;
   @ApiPropertyOptional({ nullable: true })
@@ -215,7 +208,6 @@ export class GoalResponseDto {
   static fromDomain(goal: Goal): GoalResponseDto {
     return {
       disciplineId: goal.disciplineId,
-      currentStepId: goal.currentStepId,
       criterion: goal.criterion,
       deadline: goal.deadline,
       id: goal.id,

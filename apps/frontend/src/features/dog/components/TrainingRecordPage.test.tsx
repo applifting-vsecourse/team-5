@@ -15,17 +15,21 @@ vi.mock("@tanstack/react-router", async () => {
     Link: ({
       to,
       params,
+      search,
       children,
       ...props
     }: {
       to?: string
-      params?: { dogId?: string; activityId?: string }
+      params?: { dogId?: string; activityId?: string; goalId?: string }
+      search?: Record<string, string | undefined>
       children?: React.ReactNode
       [key: string]: unknown
     }) => {
       let href = typeof to === "string" ? to : "#"
       if (params?.dogId) href = href.replace("$dogId", params.dogId)
       if (params?.activityId) href = href.replace("$activityId", params.activityId)
+      if (params?.goalId) href = href.replace("$goalId", params.goalId)
+      if (search?.zaznam) href = `${href}?zaznam=${search.zaznam}`
       return (
         <a
           href={href}
@@ -52,7 +56,8 @@ vi.mock("sonner", () => ({
 const detail = {
   id: "act-1",
   title: "Přivolání v parku",
-  dog: { id: "dog-1", name: "Rex", color: 1 },
+  dog: { id: "dog-1", name: "Rex", color: 1, ownerId: "u1" },
+  goalId: "goal-1",
   completedAt: "2026-11-06T10:00:00Z",
   successRate: 80,
   note: "Dobrá nálada",
@@ -64,8 +69,8 @@ const detail = {
   goal: {
     title: "Přivolání",
     blocks: [
-      { id: "b1", title: "Na vodítku", outcome: "MASTERED" as const, position: 0 },
-      { id: "b2", title: "Volně", outcome: null, position: 1 },
+      { id: "b1", title: "Na vodítku", position: 0 },
+      { id: "b2", title: "Volně", position: 1 },
     ],
   },
   messages: [
@@ -178,6 +183,51 @@ describe("TrainingRecordPage", () => {
     expect(screen.getByLabelText("Napsat zprávu")).toHaveValue("👍 Díky!")
   })
 
+  it("shows Upravit plán link only for a trainer when the record belongs to a goal", async () => {
+    render(
+      <TrainingRecordPage
+        dogId="dog-1"
+        activityId="act-1"
+        currentUserId="t1"
+      />,
+      { wrapper: createWrapper() },
+    )
+
+    const editLink = await screen.findByRole("link", { name: "Upravit plán" })
+    expect(editLink).toHaveAttribute("href", "/dogs/dog-1/goals/goal-1?zaznam=act-1")
+  })
+
+  it("hides Upravit plán for the dog owner and for records without a goal", async () => {
+    const { rerender } = render(
+      <TrainingRecordPage
+        dogId="dog-1"
+        activityId="act-1"
+        currentUserId="u1"
+      />,
+      { wrapper: createWrapper() },
+    )
+
+    await screen.findByRole("heading", { name: "Přivolání v parku" })
+    expect(screen.queryByRole("link", { name: "Upravit plán" })).not.toBeInTheDocument()
+
+    vi.mocked(api.get).mockImplementation(
+      () =>
+        ({
+          json: () => Promise.resolve({ ...detail, goalId: null, goal: null }),
+        }) as ReturnType<typeof api.get>,
+    )
+    rerender(
+      <TrainingRecordPage
+        dogId="dog-1"
+        activityId="act-2"
+        currentUserId="t1"
+      />,
+    )
+
+    await screen.findByRole("heading", { name: "Přivolání v parku" })
+    expect(screen.queryByRole("link", { name: "Upravit plán" })).not.toBeInTheDocument()
+  })
+
   it("shows filled sleep quality and environment context above the thread (#96)", async () => {
     vi.mocked(api.get).mockImplementation(
       () =>
@@ -219,5 +269,32 @@ describe("TrainingRecordPage", () => {
     await screen.findByRole("heading", { name: "Přivolání v parku" })
     expect(screen.queryByText("Spánek")).not.toBeInTheDocument()
     expect(screen.queryByText("Prostředí")).not.toBeInTheDocument()
+  })
+
+  it("renders http:// and https:// video links as clickable new-tab links (#78)", async () => {
+    vi.mocked(api.get).mockImplementation(
+      () =>
+        ({
+          json: () =>
+            Promise.resolve({
+              ...detail,
+              videoUrl: "http://example.com/trainloop-video",
+            }),
+        }) as ReturnType<typeof api.get>,
+    )
+
+    render(
+      <TrainingRecordPage
+        dogId="dog-1"
+        activityId="act-1"
+        currentUserId="t1"
+      />,
+      { wrapper: createWrapper() },
+    )
+
+    const link = await screen.findByRole("link", { name: "example.com/trainloop-video" })
+    expect(link).toHaveAttribute("href", "http://example.com/trainloop-video")
+    expect(link).toHaveAttribute("target", "_blank")
+    expect(link).toHaveAttribute("rel", "noopener noreferrer")
   })
 })

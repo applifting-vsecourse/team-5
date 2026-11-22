@@ -42,15 +42,21 @@ describe('CompleteTrainingDto', () => {
     ]);
   });
 
-  it('accepts an optional https video URL up to 500 characters', async () => {
+  it('accepts an optional http(s) video URL up to 500 characters', async () => {
     await expect(
       errorsFor({ videoUrl: 'https://youtube.com/watch?v=123' }),
     ).resolves.toEqual([]);
-  });
-
-  it('rejects a non-https video URL', async () => {
     await expect(
       errorsFor({ videoUrl: 'http://youtube.com/watch?v=123' }),
+    ).resolves.toEqual([]);
+  });
+
+  it('rejects a non-http(s) video URL', async () => {
+    await expect(
+      errorsFor({ videoUrl: 'ftp://youtube.com/watch?v=123' }),
+    ).resolves.toEqual(['videoUrl']);
+    await expect(
+      errorsFor({ videoUrl: 'javascript:alert(1)' }),
     ).resolves.toEqual(['videoUrl']);
   });
 
