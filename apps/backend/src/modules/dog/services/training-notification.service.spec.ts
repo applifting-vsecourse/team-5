@@ -257,4 +257,24 @@ describe('TrainingNotificationService', () => {
     expect(emailService.sendEmail).not.toHaveBeenCalled();
     expect(repository.clearEvents).toHaveBeenCalledWith('notif-1', ['evt-1']);
   });
+
+  it('enqueues a digest when the immediate email send fails', async () => {
+    const { service, repository, emailService } = createService();
+    const now = new Date('2026-11-19T12:00:00Z');
+    repository.findThreadContext.mockResolvedValue(makeContext());
+    repository.findState.mockResolvedValue(null);
+    emailService.sendEmail.mockRejectedValue(new Error('SMTP down'));
+
+    await service.notifyMessage('log-1', 'trainer-1', 'Skvělá práce!', now);
+
+    expect(repository.recordImmediateSend).not.toHaveBeenCalled();
+    expect(repository.enqueuePendingEvent).toHaveBeenCalledWith({
+      workoutLogId: 'log-1',
+      recipientId: 'owner-1',
+      nextDigestAt: new Date(now.getTime() + NOTIFICATION_COOLDOWN_MS),
+      kind: TrainingNotificationKind.TRAINER_REPLY,
+      actorId: 'trainer-1',
+      text: 'Skvělá práce!',
+    });
+  });
 });

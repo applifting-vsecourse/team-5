@@ -60,7 +60,7 @@ export function EditorSheet({
         open={isOpen}
         onOpenChange={onOpenChange}
       >
-        <DialogContent className="max-h-[90dvh] overflow-y-auto rounded-sheet bg-background sm:max-w-lg">
+        <DialogContent className="max-h-[90dvh] rounded-sheet bg-background sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-2xl font-extrabold">{title}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>

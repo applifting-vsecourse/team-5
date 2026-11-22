@@ -6,6 +6,7 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
+// NotFoundException covers missing training in assertTrainingContentEditable (#68).
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import {
   assertTrainingContentEditable,
@@ -13,42 +14,31 @@ import {
   resolveSubStepParent,
 } from './hierarchy.repository';
 
-describe('completed training content', () => {
-  it.each(['create', 'reorder'] as const)(
-    'rejects %s of steps before writing a completed definition',
-    async (operation) => {
-      const { repository, tx } = setup([]);
-      tx.goalTraining.findFirst.mockResolvedValue({
-        id: 'session-2',
-        goalId: 'g1',
-        isArchived: false,
-      } as never);
-      tx.scheduledTraining.count.mockResolvedValue(1);
-      const result =
-        operation === 'create'
-          ? repository.createStep('g1', 'session-2', { title: 'New step' })
-          : repository.reorderSteps('g1', 'session-2', []);
-      await expect(result).rejects.toThrow(ConflictException);
-      expect(tx.planBlock.create).not.toHaveBeenCalled();
-      expect(tx.planBlock.update).not.toHaveBeenCalled();
-    },
-  );
-  it('rejects edits when any dated instance has been completed', async () => {
+describe('training content editability (#68)', () => {
+  it('allows editing after a dated completion so trainers can adjust the next plan', async () => {
     const tx = mockDeep<Prisma.TransactionClient>();
-    tx.scheduledTraining.count.mockResolvedValue(1);
-    await expect(
-      assertTrainingContentEditable(tx, 'session-2'),
-    ).rejects.toThrow(ConflictException);
-    expect(tx.scheduledTraining.count).toHaveBeenCalledWith({
-      where: { trainingId: 'session-2', status: 'COMPLETED' },
-    });
-  });
-  it('allows editing a training without a completion', async () => {
-    const tx = mockDeep<Prisma.TransactionClient>();
-    tx.scheduledTraining.count.mockResolvedValue(0);
+    tx.goalTraining.findUnique.mockResolvedValue({
+      isArchived: false,
+    } as never);
     await expect(
       assertTrainingContentEditable(tx, 'session-2'),
     ).resolves.toBeUndefined();
+  });
+  it('rejects edits when the training definition is archived', async () => {
+    const tx = mockDeep<Prisma.TransactionClient>();
+    tx.goalTraining.findUnique.mockResolvedValue({
+      isArchived: true,
+    } as never);
+    await expect(
+      assertTrainingContentEditable(tx, 'session-2'),
+    ).rejects.toThrow(ConflictException);
+  });
+  it('rejects edits when the training is missing', async () => {
+    const tx = mockDeep<Prisma.TransactionClient>();
+    tx.goalTraining.findUnique.mockResolvedValue(null);
+    await expect(
+      assertTrainingContentEditable(tx, 'missing'),
+    ).rejects.toThrow(NotFoundException);
   });
 });
 
@@ -85,7 +75,9 @@ describe('createStep with sub-steps (#67)', () => {
       goalId: 'g1',
       isArchived: false,
     } as never);
-    tx.scheduledTraining.count.mockResolvedValue(0);
+    tx.goalTraining.findUnique.mockResolvedValue({
+      isArchived: false,
+    } as never);
     tx.planBlock.findFirst.mockResolvedValue({
       id: 'root',
       parentId: null,
@@ -117,7 +109,9 @@ describe('createStep with sub-steps (#67)', () => {
       goalId: 'g1',
       isArchived: false,
     } as never);
-    tx.scheduledTraining.count.mockResolvedValue(0);
+    tx.goalTraining.findUnique.mockResolvedValue({
+      isArchived: false,
+    } as never);
     tx.planBlock.findMany
       .mockResolvedValueOnce([
         { id: 'root', parentId: null, position: 0 },

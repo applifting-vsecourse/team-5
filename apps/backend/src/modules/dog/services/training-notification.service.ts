@@ -208,20 +208,39 @@ export class TrainingNotificationService
           continue;
         }
 
-        await this.sendNotificationEmail({
-          recipientEmail: recipient.email,
-          recipientName: recipient.name,
-          dogId: context.dog.id,
-          dogName: context.dog.name,
-          workoutLogId: context.id,
-          trainingTitle: context.title,
-          items: [{ kind, actorName: actor.name, text }],
-        });
-        await this.repository.recordImmediateSend(
-          context.id,
-          recipient.id,
-          now,
-        );
+        try {
+          await this.sendNotificationEmail({
+            recipientEmail: recipient.email,
+            recipientName: recipient.name,
+            dogId: context.dog.id,
+            dogName: context.dog.name,
+            workoutLogId: context.id,
+            trainingTitle: context.title,
+            items: [{ kind, actorName: actor.name, text }],
+          });
+          await this.repository.recordImmediateSend(
+            context.id,
+            recipient.id,
+            now,
+          );
+        } catch (sendError) {
+          // Transient SMTP failures must not drop the event: queue a digest retry.
+          const nextDigestAt = new Date(
+            now.getTime() + NOTIFICATION_COOLDOWN_MS,
+          );
+          this.logger.error(
+            `Immediate notify failed for user ${recipient.id} about workoutLog ${context.id}; enqueueing digest`,
+            sendError instanceof Error ? sendError.stack : String(sendError),
+          );
+          await this.repository.enqueuePendingEvent({
+            workoutLogId: context.id,
+            recipientId: recipient.id,
+            nextDigestAt,
+            kind,
+            actorId: actor.id,
+            text,
+          });
+        }
       } catch (error) {
         this.logger.error(
           `Failed to notify user ${recipient.id} about workoutLog ${context.id}`,

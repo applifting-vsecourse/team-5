@@ -5,8 +5,47 @@ import {
 } from '@/modules/dog/domain/calendar-date';
 import { BetterAuth } from '@/shared/auth/providers/better-auth.provider';
 import { Config } from '@/shared/config/config.service';
+import { hashPassword } from 'better-auth/crypto';
 import { createUser } from './create-user';
 import { SeedTrainingCalendar } from './seed-training-calendar';
+
+/** Known README credentials — reset on every seed so local DBs stay usable. */
+const SEED_PASSWORDS: { email: string; password: string }[] = [
+  { email: 'trener@trainloop.cz', password: 'password1' },
+  { email: 'caffeinatedduck@example.com', password: 'password1' },
+  { email: 'jan.novak@seznam.cz', password: 'password1' },
+  { email: 'petra.svobodova@email.cz', password: 'password1' },
+  { email: 'tomas.dvorak@gmail.com', password: 'password1' },
+  { email: 'eva.novotna@email.cz', password: 'password2' },
+];
+
+async function ensureSeedPasswords(prisma: PrismaService): Promise<void> {
+  for (const entry of SEED_PASSWORDS) {
+    const user = await prisma.user.findFirst({ where: { email: entry.email } });
+    if (!user) continue;
+    const password = await hashPassword(entry.password);
+    const account = await prisma.account.findFirst({
+      where: { userId: user.id, providerId: 'credential' },
+    });
+    if (account) {
+      await prisma.account.update({
+        where: { id: account.id },
+        data: { password },
+      });
+    } else {
+      await prisma.account.create({
+        data: {
+          id: `seed-account-${user.id}`,
+          accountId: user.id,
+          providerId: 'credential',
+          userId: user.id,
+          password,
+          issuer: 'local:credential',
+        },
+      });
+    }
+  }
+}
 
 export const seedDatabase = async (
   prisma: PrismaService,
@@ -47,6 +86,39 @@ export const seedDatabase = async (
       });
     }
 
+    // Legacy quacker seed used caffeinatedduck@… — rename to the README login when free.
+    if (existingTrainer.email === 'caffeinatedduck@example.com') {
+      const taken = await prisma.user.findFirst({
+        where: { email: 'trener@trainloop.cz' },
+      });
+      if (!taken) {
+        console.log('Renaming caffeinatedduck@example.com → trener@trainloop.cz');
+        existingTrainer = await prisma.user.update({
+          where: { id: existingTrainer.id },
+          data: {
+            email: 'trener@trainloop.cz',
+            name: 'Marek Trenér',
+            username: 'trener',
+            role: 'trainer',
+          },
+        });
+      }
+    } else {
+      const documentedTrainer = await prisma.user.findFirst({
+        where: { email: 'trener@trainloop.cz' },
+      });
+      if (!documentedTrainer) {
+        console.log('Creating documented trainer trener@trainloop.cz');
+        await createUser(prisma, auth, {
+          email: 'trener@trainloop.cz',
+          password: 'password1',
+          name: 'Marek Trenér',
+          username: 'trener',
+          role: 'trainer',
+        });
+      }
+    }
+
     const existingUser = await prisma.user.findFirst({
       where: {
         email: {
@@ -66,6 +138,7 @@ export const seedDatabase = async (
     }
 
     await seedClientData(prisma, auth, existingTrainer.id, now);
+    await ensureSeedPasswords(prisma);
     return;
   }
 
@@ -101,6 +174,7 @@ export const seedDatabase = async (
   });
 
   await seedClientData(prisma, auth, trainer.id, now);
+  await ensureSeedPasswords(prisma);
 };
 
 export const seedDogData = async (

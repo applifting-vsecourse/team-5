@@ -24,6 +24,9 @@ vi.mock("@/features/auth/lib/auth-client", () => ({
     signOut: auth.signOut,
   },
 }))
+vi.mock("@/features/auth/lib/google-oauth-enabled", () => ({
+  isGoogleOAuthEnabled: () => true,
+}))
 
 const user = { id: "owner-1", name: "Jana Nováková", email: "jana@example.com", role: "user" }
 const clients: QueryClient[] = []

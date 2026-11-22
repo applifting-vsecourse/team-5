@@ -12,6 +12,7 @@ import { SignUpForm } from "@/features/auth/components/SignUpForm"
 import { GoogleSignInError, useGoogleSignIn } from "@/features/auth/hooks/useGoogleSignIn"
 import { useSignUp, type SignUpInput } from "@/features/auth/hooks/useSignUp"
 import { accountHome } from "@/features/auth/lib/account-home"
+import { isGoogleOAuthEnabled } from "@/features/auth/lib/google-oauth-enabled"
 import {
   buildAuthCallbackUrl,
   OAUTH_FAILED_MESSAGE,
@@ -120,7 +121,7 @@ function SignUpPage() {
           defaultEmail={email}
           isInvitation={Boolean(code)}
           onSubmit={handleSubmit}
-          onGoogleSignIn={handleGoogleSignIn}
+          onGoogleSignIn={isGoogleOAuthEnabled() ? handleGoogleSignIn : undefined}
         />
       </AuthLayout>
     </>

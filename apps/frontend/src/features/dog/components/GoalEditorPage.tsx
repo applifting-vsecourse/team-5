@@ -281,11 +281,7 @@ export function EditGoalPage({
         sessions={sessions}
         dog={dogQuery.data}
         goal={goal}
-        isReadOnly={
-          isReadOnly ||
-          selected.isArchived ||
-          Boolean(selected.scheduledTrainings?.some((t) => t.status === "COMPLETED"))
-        }
+        isReadOnly={isReadOnly || selected.isArchived}
         canSchedule={!isReadOnly && !selected.isArchived}
         onBack={() => setSessionId(null)}
         isScheduleRequested={isScheduleRequested}
