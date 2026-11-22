@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import type { WeekTraining } from "@/features/week/api/weekQueryOptions"
 
-import { pickNextTraining } from "./pickNextTraining"
+import { pickNextTraining, pickTodayHeroTraining } from "./pickNextTraining"
 
 const training = (overrides: Partial<WeekTraining>): WeekTraining => ({
   id: "t1",
@@ -63,6 +63,39 @@ describe("pickNextTraining", () => {
         ],
         "2026-11-05",
       ),
+    ).toBeNull()
+  })
+})
+
+describe("pickTodayHeroTraining", () => {
+  it("uses today's plan when present", () => {
+    expect(
+      pickTodayHeroTraining(
+        [
+          training({ id: "past", date: "2026-11-04" }),
+          training({ id: "later", date: "2026-11-07" }),
+          training({ id: "today", date: "2026-11-05" }),
+        ],
+        "2026-11-05",
+      )?.id,
+    ).toBe("today")
+  })
+
+  it("surfaces overdue when today is empty, even if a future plan exists", () => {
+    expect(
+      pickTodayHeroTraining(
+        [
+          training({ id: "past", date: "2026-11-03" }),
+          training({ id: "later", date: "2026-11-07" }),
+        ],
+        "2026-11-05",
+      )?.id,
+    ).toBe("past")
+  })
+
+  it("returns null for future-only plans so Dnes can show volno", () => {
+    expect(
+      pickTodayHeroTraining([training({ id: "later", date: "2026-11-07" })], "2026-11-05"),
     ).toBeNull()
   })
 })

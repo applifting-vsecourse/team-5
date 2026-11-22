@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_ProtectedPages/dashboard")({
 })
 
 export function DashboardPage() {
-  const { user } = useSession()
+  const { user, isPending } = useSession()
   const isTrainer = user?.role === "trainer" || user?.role === "admin"
 
   if (isTrainer) {
@@ -26,7 +26,11 @@ export function DashboardPage() {
   return (
     <>
       <Seo title="Dnes" />
-      <TodayView userName={user?.name} />
+      <TodayView
+        userName={user?.name}
+        userId={user?.id}
+        isSessionPending={isPending}
+      />
     </>
   )
 }

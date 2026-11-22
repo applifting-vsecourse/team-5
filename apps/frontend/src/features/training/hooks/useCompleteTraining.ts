@@ -8,10 +8,16 @@ import { weekKeys } from "@/lib/weekKeys"
 
 import { completeTraining } from "@/features/training/api/completeTraining"
 import type { CompleteTrainingInput } from "@/features/training/api/trainingSchemas"
+import {
+  toTrainingReturnSearch,
+  trainingHome,
+  type TrainingReturnTo,
+} from "@/features/training/lib/trainingReturn"
 
-export function useCompleteTraining(trainingId: string, dogId: string) {
+export function useCompleteTraining(trainingId: string, dogId: string, zpet?: TrainingReturnTo) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const returnSearch = toTrainingReturnSearch(zpet)
 
   return useMutation({
     mutationFn: (input: CompleteTrainingInput) => completeTraining(trainingId, input),
@@ -25,16 +31,17 @@ export function useCompleteTraining(trainingId: string, dogId: string) {
       void navigate({
         to: "/trainings/$trainingId/done",
         params: { trainingId },
+        search: returnSearch,
       })
     },
     onError: (error) => {
       const status = error instanceof HTTPError ? error.response.status : undefined
       // 409: already completed, e.g. the form was sent twice. "Try again"
-      // would mislead; the training is done, so back to the week.
+      // would mislead; the training is done, so back to the origin screen.
       if (status === 409) {
         void queryClient.invalidateQueries({ queryKey: weekKeys.all })
         toast.error("Trénink už je odcvičený")
-        void navigate({ to: "/week" })
+        void navigate({ to: trainingHome(zpet) })
         return
       }
       toast.error(

@@ -69,7 +69,10 @@ export function ReadReplyReceipt({ ids }: { ids: string[] }) {
         await api.post("training-replies/read", { json: { ids: snapshot.slice(i, i + 500) } })
       }
     },
-    onSuccess: () => client.invalidateQueries({ queryKey: ["unread-training-replies"] }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["unread-training-replies"] })
+      void client.invalidateQueries({ queryKey: ["training-updates"] })
+    },
   })
   useEffect(() => {
     if (key && attempted.current !== key) {
@@ -94,7 +97,13 @@ export function ReadReplyReceipt({ ids }: { ids: string[] }) {
   ) : null
 }
 
-export function UnreadReplyList({ dogIds }: { dogIds?: string[] }) {
+export function UnreadReplyList({
+  dogIds,
+  zpet,
+}: {
+  dogIds?: string[]
+  zpet?: "dnes" | "tyden" | "historie"
+}) {
   const query = useQuery(unreadRepliesOptions())
   const replies = (query.data ?? []).filter(
     (reply) => !dogIds || dogIds.includes(replyDog(reply)?.id ?? ""),
@@ -177,6 +186,7 @@ export function UnreadReplyList({ dogIds }: { dogIds?: string[] }) {
                   className="flex min-h-touch flex-wrap items-center gap-2 rounded-md py-3 text-sm"
                   to="/trainings/$trainingId"
                   params={{ trainingId: reply.scheduledTraining!.id }}
+                  search={zpet ? { zpet } : {}}
                 >
                   {text}
                 </Link>

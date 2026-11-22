@@ -81,13 +81,19 @@ const aTraining = (overrides: Partial<TrainingDetail> = {}): TrainingDetail => (
   ...overrides,
 })
 
-function renderWalkthrough(training: TrainingDetail = aTraining()) {
+function renderWalkthrough(
+  training: TrainingDetail = aTraining(),
+  options?: { zpet?: "dnes" | "tyden" },
+) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   return render(
     <QueryClientProvider client={queryClient}>
-      <TrainingWalkthrough training={training} />
+      <TrainingWalkthrough
+        training={training}
+        zpet={options?.zpet}
+      />
     </QueryClientProvider>,
   )
 }
@@ -114,13 +120,17 @@ describe("TrainingWalkthrough", () => {
     navigate.mockReset()
   })
 
-  it("renders header with back link to week and dog name", () => {
+  it("renders header with close control and dog name", () => {
     renderWalkthrough()
 
-    const backLink = screen.getByRole("link", { name: "Zpět na týden" })
-    expect(backLink).toBeInTheDocument()
-    expect(backLink).toHaveAttribute("href", "/week")
+    expect(screen.getByRole("button", { name: "Zavřít" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Přivolání v parku")
+  })
+
+  it("labels week return when started from týden", () => {
+    renderWalkthrough(aTraining(), { zpet: "tyden" })
+
+    expect(screen.getByRole("button", { name: "Zpět na týden" })).toBeInTheDocument()
   })
 
   it("shows initial exercise with progress, instructions and criteria", () => {
@@ -178,7 +188,16 @@ describe("TrainingWalkthrough", () => {
     expect(navigate).toHaveBeenCalledWith({
       to: "/trainings/$trainingId/finish",
       params: { trainingId: "t1" },
+      search: { zpet: undefined },
     })
+  })
+
+  it("returns to dnes when started from today", async () => {
+    const user = userEvent.setup()
+    renderWalkthrough(aTraining(), { zpet: "dnes" })
+
+    await user.click(screen.getByRole("button", { name: "Zpět na Dnes" }))
+    expect(navigate).toHaveBeenCalledWith({ to: "/dashboard" })
   })
 
   it("displays fallback text when instruction or criterion is missing", () => {
@@ -205,7 +224,7 @@ describe("TrainingWalkthrough", () => {
     renderWalkthrough(aTraining({ exercises: [] }))
 
     expect(screen.getByText("Tento trénink zatím nemá žádné cviky.")).toBeInTheDocument()
-    expect(screen.getAllByRole("link", { name: "Zpět na týden" })).toHaveLength(2)
+    expect(screen.getAllByRole("button", { name: "Zavřít" })).toHaveLength(2)
   })
 
   it("only browses completed training steps without writing progress", async () => {

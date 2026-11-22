@@ -123,6 +123,8 @@ describe("TodayView", () => {
     expect(screen.getByRole("heading", { name: "Ahoj Jan", level: 1 })).toBeInTheDocument()
     expect(screen.getByText("Dnešní trénink")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Přivolání v parku" })).toBeInTheDocument()
+    // Hero is the dog colour fill (fidelity), not the generic dark bg-hero.
+    expect(screen.getByRole("region", { name: "Dnešní trénink" })).toHaveClass("bg-dog-1")
     expect(screen.getByRole("link", { name: /Začít trénink/i })).toHaveAttribute(
       "href",
       "/trainings/t1",
@@ -154,10 +156,16 @@ describe("TodayView", () => {
         date: "2026-11-03",
         goal: { id: "g0", title: "Zmeškané áčko" },
       }),
+      aTraining({
+        id: "later",
+        date: "2026-11-07",
+        dog: { id: "d2", name: "Bára", color: 2 },
+        goal: { id: "g2", title: "Pozítří" },
+      }),
     ])
 
     expect(screen.queryByText("Dnes máte volno")).not.toBeInTheDocument()
-    expect(screen.getAllByText(/Další trénink/).length).toBeGreaterThan(0)
+    expect(screen.getByText("Zmeškaný trénink")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Zmeškané áčko" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Začít trénink/i })).toHaveAttribute(
       "href",
@@ -165,7 +173,7 @@ describe("TodayView", () => {
     )
   })
 
-  it("labels a future training as Další trénink and links dogs with plan subtitle", () => {
+  it("shows volno in the hero when only a future plan exists, and keeps it on the dog card", () => {
     renderToday([
       aTraining({
         id: "t2",
@@ -175,12 +183,8 @@ describe("TodayView", () => {
       }),
     ])
 
-    expect(screen.getAllByText(/Další trénink/).length).toBeGreaterThan(0)
-    expect(screen.getByText("sobota 7. 11.")).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: /Začít trénink/i })).toHaveAttribute(
-      "href",
-      "/trainings/t2",
-    )
+    expect(screen.getByText("Dnes máte volno")).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: /Začít trénink/i })).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: /detail psa bára/i })).toHaveAttribute(
       "href",
       "/dogs/d2",

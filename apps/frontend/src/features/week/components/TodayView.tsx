@@ -10,6 +10,7 @@ import { ProgressRing } from "@/components/ProgressRing"
 import { QueryState } from "@/components/QueryState"
 import { useTrainingUpdates } from "@/components/TrainingUpdates"
 import { Button } from "@/components/ui/button"
+import { UnreadReplyList } from "@/components/UnreadReplies"
 import {
   addCalendarDays,
   formatDayLong,
@@ -29,7 +30,7 @@ import {
 } from "@/features/week/api/weekQueryOptions"
 import { LogFreeTrainingDialog } from "@/features/week/components/LogFreeTrainingDialog"
 import { TodayWeekPreview } from "@/features/week/components/TodayWeekPreview"
-import { pickNextTraining } from "@/features/week/lib/pickNextTraining"
+import { pickNextTraining, pickTodayHeroTraining } from "@/features/week/lib/pickNextTraining"
 
 function firstName(fullName: string): string {
   const parts = fullName.trim().split(/\s+/).filter(Boolean)
@@ -48,25 +49,26 @@ type NextTrainingHeroProps = {
 
 function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
   const isToday = training.date === today
+  const isOverdue = training.date < today
+  const chip = isToday ? "Dnešní trénink" : isOverdue ? "Zmeškaný trénink" : "Další trénink"
 
   return (
     <section
-      className="grid gap-4 rounded-hero bg-hero p-5 text-hero-foreground xl:grid-cols-2 xl:gap-x-7 xl:rounded-sheet xl:p-7"
-      aria-label={isToday ? "Dnešní trénink" : "Další trénink"}
+      className={cn(
+        "grid gap-4 rounded-hero p-5 text-dog-foreground xl:grid-cols-2 xl:gap-x-7 xl:rounded-sheet xl:p-7",
+        dogColorClass(training.dog.color),
+      )}
+      aria-label={chip}
     >
       <div className="flex flex-wrap items-center gap-2 xl:col-start-1">
-        <span className="rounded-full bg-primary px-3 py-1.5 text-xs font-extrabold uppercase">
-          {isToday ? "Dnešní trénink" : "Další trénink"}
+        <span className="rounded-full bg-primary px-3 py-1.5 text-xs font-extrabold text-primary-foreground uppercase">
+          {chip}
         </span>
-        <span className="flex items-center gap-1.5 rounded-full bg-hero-accent px-3 py-1.5 text-xs font-semibold">
-          <span
-            aria-hidden
-            className={cn("size-2 rounded-full", dogColorClass(training.dog.color))}
-          />
+        <span className="rounded-full bg-dog-foreground/15 px-3 py-1.5 text-xs font-semibold">
           {training.dog.name}
         </span>
-        {!isToday && (
-          <span className="text-xs font-semibold text-hero-muted">
+        {isOverdue && (
+          <span className="text-xs font-semibold text-dog-foreground/80">
             {formatDayLong(training.date)}
           </span>
         )}
@@ -75,7 +77,7 @@ function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
         <h2 className="text-hero-title leading-tight font-extrabold tracking-tight break-words xl:text-title">
           {training.training?.title ?? training.goal.title}
         </h2>
-        <p className="text-sm font-medium text-hero-muted">
+        <p className="text-sm font-medium text-dog-foreground/80">
           {[
             training.goal.discipline,
             training.training?.title !== training.goal.title ? training.goal.title : null,
@@ -92,9 +94,9 @@ function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
           {training.exercises.map((exercise, index) => (
             <li
               key={exercise.id}
-              className="flex max-w-full items-start gap-2 rounded-full bg-hero-accent py-1.5 pr-3 pl-1.5 text-xs font-semibold"
+              className="flex max-w-full items-start gap-2 rounded-full bg-dog-foreground/15 py-1.5 pr-3 pl-1.5 text-xs font-semibold"
             >
-              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-hero-muted/30 text-xs font-extrabold">
+              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-dog-foreground/25 text-xs font-extrabold">
                 {index + 1}
               </span>
               <span className="min-w-0 break-words">{exercise.title}</span>
@@ -102,7 +104,7 @@ function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
           ))}
         </ol>
       ) : (
-        <p className="text-sm text-hero-muted">Plán zatím nemá žádný cvik.</p>
+        <p className="text-sm text-dog-foreground/80">Plán zatím nemá žádný cvik.</p>
       )}
       <Button
         asChild
@@ -112,6 +114,7 @@ function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
         <Link
           to="/trainings/$trainingId"
           params={{ trainingId: training.id }}
+          search={{ zpet: "dnes" }}
           aria-label={`Začít trénink: ${training.dog.name}, ${training.training?.title ?? training.goal.title}`}
         >
           <DesignIcon name="today-Play" />
@@ -124,10 +127,12 @@ function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
 
 type TodayViewProps = {
   userName?: string
+  userId?: string | null
+  isSessionPending?: boolean
 }
 
-export function TodayView({ userName }: TodayViewProps) {
-  const updates = useTrainingUpdates()
+export function TodayView({ userName, userId, isSessionPending }: TodayViewProps) {
+  const updates = useTrainingUpdates({ id: userId, isPending: isSessionPending })
   const today = todayCalendarDate()
   const weekStart = startOfWeekOf(today)
   const upcomingFrom = addCalendarDays(weekStart, -7)
@@ -139,7 +144,7 @@ export function TodayView({ userName }: TodayViewProps) {
 
   const weekTrainings = weekQuery.data ?? []
   const upcomingTrainings = upcomingQuery.data ?? weekTrainings
-  const nextTraining = pickNextTraining(upcomingTrainings, today)
+  const heroTraining = pickTodayHeroTraining(upcomingTrainings, today)
   const dogs = dogsQuery.data ?? []
   const metricsQueries = useQueries({
     queries: dogs.map((dog) => ({
@@ -178,6 +183,7 @@ export function TodayView({ userName }: TodayViewProps) {
         </span>
       </header>
       {updates.notifications}
+      <UnreadReplyList zpet="dnes" />
 
       <QueryState
         isLoading={isLoading}
@@ -187,7 +193,7 @@ export function TodayView({ userName }: TodayViewProps) {
           void upcomingQuery.refetch()
           void dogsQuery.refetch()
         }}
-        isEmpty={!nextTraining && weekTrainings.length === 0 && dogs.length === 0}
+        isEmpty={!heroTraining && weekTrainings.length === 0 && dogs.length === 0}
         errorTitle="Dnes se nepodařilo načíst"
         empty={
           <EmptyState
@@ -208,9 +214,9 @@ export function TodayView({ userName }: TodayViewProps) {
         }
       >
         <div className="flex flex-col gap-6 xl:grid xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start xl:gap-5">
-          {nextTraining ? (
+          {heroTraining ? (
             <NextTrainingHero
-              training={nextTraining}
+              training={heroTraining}
               today={today}
             />
           ) : (
