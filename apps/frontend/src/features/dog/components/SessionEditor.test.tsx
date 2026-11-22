@@ -230,7 +230,9 @@ describe("training editor", () => {
     mount(false, { session: withSteps })
     // Step titles also appear in the desktop owner preview.
     expect(
-      screen.getAllByText("Sedni 5 s").some((node) => node.closest("li")?.classList.contains("ml-6")),
+      screen
+        .getAllByText("Sedni 5 s")
+        .some((node) => node.closest("li")?.classList.contains("ml-6")),
     ).toBe(true)
     await user.click(screen.getByRole("button", { name: "Upravit krok Sedni – zůstaň" }))
     expect(screen.getByRole("button", { name: "Rozdělit na dílčí kroky" })).toBeEnabled()
