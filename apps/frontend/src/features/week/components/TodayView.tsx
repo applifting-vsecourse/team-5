@@ -172,17 +172,9 @@ export function TodayView({ userName, userId, isSessionPending }: TodayViewProps
             <span aria-hidden> 👋</span>
           </h1>
         </div>
-        {updates.bell}
         <ClickerToolDialog />
         <LogFreeTrainingDialog dogs={dogs} />
-        <span
-          aria-label={userName ?? "Psovod"}
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-extrabold text-primary-foreground xl:hidden"
-        >
-          {firstName(userName ?? "Psovod").charAt(0)}
-        </span>
       </header>
-      {updates.notifications}
       <UnreadReplyList zpet="dnes" />
 
       <QueryState

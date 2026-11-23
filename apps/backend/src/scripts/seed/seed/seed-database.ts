@@ -7,6 +7,7 @@ import { BetterAuth } from '@/shared/auth/providers/better-auth.provider';
 import { Config } from '@/shared/config/config.service';
 import { hashPassword } from 'better-auth/crypto';
 import { createUser } from './create-user';
+import { seedShowcase } from './seed-showcase';
 import { SeedTrainingCalendar } from './seed-training-calendar';
 
 /** Known README credentials — reset on every seed so local DBs stay usable. */
@@ -16,6 +17,7 @@ const SEED_PASSWORDS: { email: string; password: string }[] = [
   { email: 'jan.novak@seznam.cz', password: 'password1' },
   { email: 'petra.svobodova@email.cz', password: 'password1' },
   { email: 'tomas.dvorak@gmail.com', password: 'password1' },
+  { email: 'lenka.kralova@email.cz', password: 'password1' },
   { email: 'eva.novotna@email.cz', password: 'password2' },
 ];
 
@@ -489,8 +491,22 @@ export const seedClientData = async (
     });
   }
 
+  // 4. Client Lenka Králová: a spare client for demoing "end collaboration"
+  // (#61) without losing Jan's showcase data.
+  let lenka = await prisma.user.findFirst({
+    where: { email: 'lenka.kralova@email.cz' },
+  });
+  if (!lenka) {
+    lenka = await createUser(prisma, auth, {
+      email: 'lenka.kralova@email.cz',
+      password: 'password1',
+      name: 'Lenka Králová',
+      username: 'lenkakralova',
+    });
+  }
+
   // Connect clients to trainer
-  for (const client of [jan, petra, tomas]) {
+  for (const client of [jan, petra, tomas, lenka]) {
     await prisma.clientConnection.upsert({
       where: {
         trainerId_clientId: {
@@ -561,8 +577,21 @@ export const seedClientData = async (
     },
   });
 
+  const bady = await prisma.dog.upsert({
+    where: { id: 'dog-bady-1' },
+    update: {},
+    create: {
+      id: 'dog-bady-1',
+      name: 'Bady',
+      breed: 'Labradorský retrívr',
+      color: 2,
+      ownerId: lenka.id,
+      disciplines: ['Poslušnost'],
+    },
+  });
+
   // Share dogs with trainer
-  for (const dog of [rex, baryk, alik, lucky]) {
+  for (const dog of [rex, baryk, alik, lucky, bady]) {
     await prisma.dogShare.upsert({
       where: {
         dogId_trainerId: {
@@ -661,6 +690,12 @@ export const seedClientData = async (
         ],
       },
       {
+        id: bady.id,
+        ownerId: lenka.id,
+        discipline: 'Poslušnost',
+        titles: ['Chůze u nohy', 'Odložení v klidu'],
+      },
+      {
         id: lucky.id,
         ownerId: tomas.id,
         discipline: 'Canicross',
@@ -675,6 +710,11 @@ export const seedClientData = async (
   );
 
   await seedClientActivity(prisma, trainerId, { jan, petra, tomas }, now);
+  await seedShowcase(
+    prisma,
+    { trainerId, janId: jan.id, petraId: petra.id, tomasId: tomas.id },
+    now,
+  );
 
   // Unused invitation
   const inviteCode = 'K7M2PQ';

@@ -60,22 +60,24 @@ export function AppSidebar({ user, isTrainer }: { user: { name: string }; isTrai
           )
         })}
       </nav>
-      <div className="pt-2">
-        <ClickerToolDialog
-          trigger={
-            <button
-              type="button"
-              className="flex min-h-touch w-full cursor-pointer items-center gap-3 rounded-control px-3 text-sm font-semibold text-sidebar-muted transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-            >
-              <Volume2
-                className="size-5 shrink-0"
-                aria-hidden
-              />
-              Klikr
-            </button>
-          }
-        />
-      </div>
+      {!isTrainer && (
+        <div className="pt-2">
+          <ClickerToolDialog
+            trigger={
+              <button
+                type="button"
+                className="flex min-h-touch w-full cursor-pointer items-center gap-3 rounded-control px-3 text-sm font-semibold text-sidebar-muted transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+              >
+                <Volume2
+                  className="size-5 shrink-0"
+                  aria-hidden
+                />
+                Klikr
+              </button>
+            }
+          />
+        </div>
+      )}
       <Link
         to="/account"
         aria-current={isAccountActive ? "page" : undefined}
