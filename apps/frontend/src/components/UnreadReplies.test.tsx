@@ -90,7 +90,9 @@ describe("collapseUnreadReplies", () => {
         workoutLog: null,
       },
     })
-    expect(collapseUnreadReplies([plan("a", "template-a"), plan("b", "template-b")])).toHaveLength(2)
+    expect(collapseUnreadReplies([plan("a", "template-a"), plan("b", "template-b")])).toHaveLength(
+      2,
+    )
   })
   it("opens the training for a changed plan even when that day already has a record", () => {
     wrap(<UnreadReplyList />, [

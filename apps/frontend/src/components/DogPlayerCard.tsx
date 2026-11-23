@@ -107,7 +107,7 @@ export function DogPlayerCard({
       <Link
         to="/dogs/$dogId"
         params={{ dogId: dog.id }}
-        aria-label={`Detail psa ${dog.name}`}
+        aria-label={`Detail psa ${dog.name}. ${nextText}`}
         className={cn(
           "flex min-w-0 flex-col gap-3 rounded-card p-4 text-dog-foreground",
           dogColorClass(dog.color),
