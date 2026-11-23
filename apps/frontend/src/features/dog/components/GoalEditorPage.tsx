@@ -28,16 +28,12 @@ import { GoalForm } from "./GoalForm"
 import { ReturnToRecordBanner } from "./ReturnToRecordBanner"
 import { SessionEditor } from "./SessionEditor"
 
-/** Pop the plan entry — do not navigate to the record again (that stacks a duplicate). */
+/** Replace the editor with the record. history.back() lands on whatever was previous, not this record. */
 function leavePlanForRecord(
   navigate: ReturnType<typeof useNavigate>,
   dogId: string,
   activityId: string,
 ) {
-  if (typeof window !== "undefined" && window.history.length > 1) {
-    window.history.back()
-    return
-  }
   void navigate({
     to: "/dogs/$dogId/activities/$activityId",
     params: { dogId, activityId },
@@ -243,7 +239,7 @@ export function EditGoalPage({
       api.patch(`goal-trainings/${sessionId}`, { json: { isArchived: true } }),
     onSuccess: async () => {
       await refresh()
-      markPlanSaved(true)
+      markPlanSaved(false)
       toast.success("Trénink byl odstraněn z cíle")
     },
     onError: () => toast.error("Trénink se nepodařilo odstranit."),
@@ -274,6 +270,7 @@ export function EditGoalPage({
             naplanovat: true,
             ...(returnToActivityId ? { zaznam: returnToActivityId } : {}),
           },
+          replace: true,
         })
       }
     } catch {
@@ -463,6 +460,7 @@ export function EditGoalPage({
                                   size="sm"
                                   disabled={archiveSession.isPending}
                                   className="font-semibold"
+                                  aria-label={`Odstranit trénink ${s.title}`}
                                 >
                                   Odstranit
                                 </Button>

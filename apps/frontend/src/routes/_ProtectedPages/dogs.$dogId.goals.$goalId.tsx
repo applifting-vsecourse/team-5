@@ -59,14 +59,11 @@ function EditGoalRoute() {
           void navigate({
             // Omit `session` entirely when clearing — `session: undefined` can leave
             // the in-memory search stuck while the URL already dropped the param.
-            search: (previous) => {
-              const rest = Object.fromEntries(
-                Object.entries(previous).filter(
-                  ([key]) => key !== "session" && key !== "novyTrenink",
-                ),
-              ) as typeof previous
-              return session ? { ...rest, session } : rest
-            },
+            search: (previous) => ({
+              ...(previous.naplanovat ? { naplanovat: previous.naplanovat } : {}),
+              ...(previous.zaznam ? { zaznam: previous.zaznam } : {}),
+              ...(session ? { session } : {}),
+            }),
             replace: true,
           })
         }

@@ -184,6 +184,9 @@ describe("TodayView", () => {
     ])
 
     expect(screen.getByText("Dnes máte volno")).toBeInTheDocument()
+    expect(
+      screen.getByText("Dnes nemáte trénink. Další je na kartě psa nebo v týdnu."),
+    ).toBeInTheDocument()
     expect(screen.queryByRole("link", { name: /Začít trénink/i })).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: /detail psa bára/i })).toHaveAttribute(
       "href",

@@ -224,7 +224,11 @@ export function TodayView({ userName, userId, isSessionPending }: TodayViewProps
               icon={Calendar}
               chip="HOTOVO"
               title="Dnes máte volno"
-              description="Nemáte další naplánovaný trénink. Podívejte se na týden nebo na psy."
+              description={
+                upcomingTrainings.some((item) => item.status === "PLANNED" && item.date > today)
+                  ? "Dnes nemáte trénink. Další je na kartě psa nebo v týdnu."
+                  : "Nemáte další naplánovaný trénink. Podívejte se na týden nebo na psy."
+              }
               action={
                 <Button
                   asChild

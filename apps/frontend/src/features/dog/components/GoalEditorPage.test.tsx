@@ -98,6 +98,7 @@ describe("save and schedule goal", () => {
         to: "/dogs/$dogId/goals/$goalId",
         params: { dogId: "dog", goalId: "goal" },
         search: { session: "session", naplanovat: true },
+        replace: true,
       }),
     )
     expect(save).toHaveBeenCalledWith(expect.objectContaining({ title: "Přivolání" }))
@@ -114,19 +115,23 @@ describe("save and schedule goal", () => {
   })
   it("returns to the originating training record after saving changes", async () => {
     const user = userEvent.setup()
-    const back = vi.spyOn(window.history, "back").mockImplementation(() => undefined)
-    Object.defineProperty(window.history, "length", { configurable: true, value: 3 })
     mount("act-1")
     await user.click(screen.getByRole("button", { name: "Zpět na záznam" }))
-    expect(back).toHaveBeenCalledOnce()
-    expect(navigate).not.toHaveBeenCalled()
-    back.mockClear()
+    expect(navigate).toHaveBeenCalledWith({
+      to: "/dogs/$dogId/activities/$activityId",
+      params: { dogId: "dog", activityId: "act-1" },
+      replace: true,
+    })
+    navigate.mockClear()
     await user.click(screen.getByRole("button", { name: "Upravit cíl" }))
     await user.click(screen.getByRole("button", { name: "Uložit" }))
     const returnButton = await screen.findByRole("button", { name: "Hotovo, zpět na záznam" })
     await user.click(returnButton)
-    expect(back).toHaveBeenCalledOnce()
-    back.mockRestore()
+    expect(navigate).toHaveBeenCalledWith({
+      to: "/dogs/$dogId/activities/$activityId",
+      params: { dogId: "dog", activityId: "act-1" },
+      replace: true,
+    })
   })
 
   it("can archive a newly added training from the goal list", async () => {
@@ -169,8 +174,7 @@ describe("save and schedule goal", () => {
         />
       </QueryClientProvider>,
     )
-    const removeButtons = screen.getAllByRole("button", { name: "Odstranit" })
-    await user.click(removeButtons[1]!)
+    await user.click(screen.getByRole("button", { name: "Odstranit trénink Nový trénink" }))
     await user.click(screen.getByRole("button", { name: "Odstranit trénink" }))
     await waitFor(() =>
       expect(patch).toHaveBeenCalledWith("goal-trainings/s2", { json: { isArchived: true } }),
@@ -187,6 +191,7 @@ describe("save and schedule goal", () => {
         to: "/dogs/$dogId/goals/$goalId",
         params: { dogId: "dog", goalId: "goal" },
         search: { session: "session", naplanovat: true, zaznam: "act-1" },
+        replace: true,
       }),
     )
   })
