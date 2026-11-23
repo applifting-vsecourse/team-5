@@ -228,7 +228,7 @@ export function ClientDetailView({ client, onSchedule }: ClientDetailViewProps) 
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1">
                     {replyActivityIds.has(record.id) && (
-                      <span className="rounded-full bg-danger-surface px-2 py-0.5 text-xs font-extrabold text-danger-foreground">
+                      <span className="rounded-full bg-info px-2 py-0.5 text-xs font-extrabold text-info-foreground">
                         nový
                       </span>
                     )}

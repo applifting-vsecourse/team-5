@@ -48,6 +48,17 @@ Tailwind palette colours in feature code.
 | `info`, `info-foreground`                              | Informational feedback                                       |
 | `border`, `input`, `ring`                              | Hairline separators, field borders and keyboard focus        |
 
+Calm palette (#256, sprint 3 review “too colourful, red confirm button is a bad
+idea”): `primary` is cognac brown, not terracotta red. `destructive` and the
+danger tokens are reserved for irreversible actions (deleting, ending a
+collaboration, deleting the account) and errors. Reversible confirmations
+(archiving a dog, ending a discipline, removing a training to the archive) use
+`ConfirmDestructiveDialog` with `tone="reversible"`: neutral icon surface and
+the primary confirm button. Signing out and other everyday actions are never red.
+Dog colours and status surfaces are muted so they do not compete with actions;
+new colours follow the same low-saturation range. The palette values are to be
+confirmed with the product owner in the pull request.
+
 Pair each surface with its corresponding foreground. Use `text-success-foreground`,
 not `text-success`, for status text. Errors need text or an icon, not colour alone.
 Loading uses a neutral skeleton and accessible status. Pending actions show

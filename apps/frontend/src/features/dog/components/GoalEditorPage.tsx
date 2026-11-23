@@ -452,6 +452,7 @@ export function EditGoalPage({
                               title={`Odstranit trénink „${s.title}“?`}
                               description="Trénink se přesune do archivu u tohoto cíle. Naplánované dny a historie zůstanou, ale už ho nepůjde upravovat."
                               confirmLabel="Odstranit trénink"
+                              tone="reversible"
                               onConfirm={() => archiveSession.mutate(s.id)}
                               trigger={
                                 <Button
