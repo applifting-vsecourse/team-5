@@ -391,7 +391,7 @@ test(
             where: { id: { startsWith: 'seed-dog-' } },
           }),
         ]);
-      assert.deepEqual(await countFixtures(), [12, 48, 336]);
+      assert.deepEqual(await countFixtures(), [14, 56, 392]);
       const trainer = await prisma.user.findUniqueOrThrow({
         where: { email: 'trener@trainloop.cz' },
       });
@@ -401,7 +401,7 @@ test(
       );
       assert.equal(
         await prisma.dogShare.count({ where: { trainerId: trainer.id } }),
-        4,
+        5,
       );
       const jan = await prisma.user.findUniqueOrThrow({
         where: { email: 'jan.novak@seznam.cz' },
@@ -552,7 +552,7 @@ test(
         beforeDeploy,
         'another deployment is also a no-op',
       );
-      assert.deepEqual(await countFixtures(), [12, 48, 336]);
+      assert.deepEqual(await countFixtures(), [14, 56, 392]);
     } finally {
       await prisma.$disconnect();
     }
