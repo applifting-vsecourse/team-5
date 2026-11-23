@@ -788,7 +788,7 @@ export function SessionEditor({
                     openNew(parentId)
                   }}
                 >
-                  Rozdělit na dílčí kroky
+                  Přidat dílčí krok
                 </Button>
               )}
               <Button

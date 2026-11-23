@@ -229,10 +229,10 @@ export function DogGoalsSection({
                       trigger={
                         <Button
                           type="button"
-                          variant="ghost"
+                          variant="outline"
                           size="sm"
                           disabled={setDisciplineMutation.isPending}
-                          className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+                          className="h-7 px-2.5 text-xs font-semibold text-muted-foreground hover:border-destructive hover:text-destructive"
                         >
                           Ukončit
                         </Button>

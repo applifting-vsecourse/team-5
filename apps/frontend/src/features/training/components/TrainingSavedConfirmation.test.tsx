@@ -67,7 +67,7 @@ const metrics = {
   weeks: [],
 }
 
-function renderConfirmation(options?: { withMetrics?: boolean }) {
+function renderConfirmation(options?: { withMetrics?: boolean; zpet?: "dnes" | "tyden" }) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   })
@@ -79,7 +79,10 @@ function renderConfirmation(options?: { withMetrics?: boolean }) {
 
   const ui: ReactElement = (
     <QueryClientProvider client={queryClient}>
-      <TrainingSavedConfirmation trainingId="t1" />
+      <TrainingSavedConfirmation
+        trainingId="t1"
+        zpet={options?.zpet}
+      />
     </QueryClientProvider>
   )
   return render(ui)
@@ -93,9 +96,16 @@ describe("TrainingSavedConfirmation", () => {
     expect(screen.getByText("Trénink psa Rex je zaznamenaný.")).toBeInTheDocument()
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument()
     expect(screen.queryByText(/dny v řadě!/)).not.toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "Pokračovat" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Pokračovat" })).toHaveAttribute("href", "/week")
     expect(screen.getByRole("link", { name: "Na přehled" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Profil Rex" })).toBeInTheDocument()
+  })
+
+  it("sends Pokračovat back to dnes when started from today", () => {
+    renderConfirmation({ zpet: "dnes" })
+
+    expect(screen.getByRole("link", { name: "Pokračovat" })).toHaveAttribute("href", "/dashboard")
+    expect(screen.queryByRole("link", { name: "Na přehled" })).not.toBeInTheDocument()
   })
 
   it("shows streak and weekly target only when metrics exist", () => {

@@ -109,6 +109,9 @@ export function TodayWeekPreview({
                         key={training.id}
                         to={targetTo}
                         params={targetParams}
+                        search={
+                          isFinished && training.activityId ? undefined : { zpet: "dnes" as const }
+                        }
                         className={cn(
                           "block space-y-1 rounded-control p-2 text-xs",
                           training.status === "COMPLETED"

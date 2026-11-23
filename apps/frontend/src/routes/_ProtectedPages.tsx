@@ -76,7 +76,7 @@ function Layout() {
         user={{ name: user.name }}
         isTrainer={isTrainer}
       />
-      <main className="min-w-0 flex-1 pb-[calc(var(--spacing-tab-bar)+var(--spacing-safe-bottom)+1rem)] md:pb-8">
+      <main className="min-w-0 flex-1 pb-[calc(var(--spacing-tab-bar)+var(--spacing-safe-bottom)+4rem)] md:pb-8">
         <Outlet />
       </main>
       <BottomNav isTrainer={isTrainer} />

@@ -235,8 +235,8 @@ describe("training editor", () => {
         .some((node) => node.closest("li")?.classList.contains("ml-6")),
     ).toBe(true)
     await user.click(screen.getByRole("button", { name: "Upravit krok Sedni – zůstaň" }))
-    expect(screen.getByRole("button", { name: "Rozdělit na dílčí kroky" })).toBeEnabled()
-    await user.click(screen.getByRole("button", { name: "Rozdělit na dílčí kroky" }))
+    expect(screen.getByRole("button", { name: "Přidat dílčí krok" })).toBeEnabled()
+    await user.click(screen.getByRole("button", { name: "Přidat dílčí krok" }))
     expect(screen.getByRole("region", { name: "Dílčí krok" })).toBeInTheDocument()
     await user.type(screen.getByLabelText("Název kroku"), "Sedni 10 s")
     await user.click(screen.getByRole("button", { name: "Přidat krok" }))
@@ -260,9 +260,7 @@ describe("training editor", () => {
     }
     mount(false, { session: withSteps })
     await user.click(screen.getByRole("button", { name: "Upravit krok Sedni 5 s" }))
-    expect(
-      screen.queryByRole("button", { name: "Rozdělit na dílčí kroky" }),
-    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Přidat dílčí krok" })).not.toBeInTheDocument()
   })
   it("opens scheduling when a request arrives without remounting the editor", async () => {
     const user = userEvent.setup()

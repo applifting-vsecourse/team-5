@@ -15,13 +15,31 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { updatesQueryOptions } from "@/lib/conversations"
+import { replyRecordId, unreadRepliesOptions } from "@/lib/trainingReplies"
 
-export function useTrainingUpdates() {
+export function useTrainingUpdates(viewer?: { id?: string | null; isPending?: boolean }) {
   const query = useQuery(updatesQueryOptions())
+  const unread = useQuery(unreadRepliesOptions())
   const navigate = useNavigate()
   const [isOpen, setOpen] = useState(false)
-  const latest = query.data?.[0]
-  const time = latest ? formatDistanceToNow(latest.createdAt, { locale: cs, addSuffix: true }) : ""
+  const isSessionPending = Boolean(viewer?.isPending)
+  const viewerId = isSessionPending ? undefined : (viewer?.id ?? undefined)
+  const unreadRecordIds = new Set(
+    (unread.data ?? []).map(replyRecordId).filter((id): id is string => Boolean(id)),
+  )
+  // Only an unread message from someone else — a read or own reply must not stay on Dnes.
+  const latestTrainerMessage =
+    viewerId == null
+      ? undefined
+      : query.data?.find(
+          (message) =>
+            message.author.id != null &&
+            message.author.id !== viewerId &&
+            unreadRecordIds.has(message.workoutLogId),
+        )
+  const time = latestTrainerMessage
+    ? formatDistanceToNow(latestTrainerMessage.createdAt, { locale: cs, addSuffix: true })
+    : ""
   const openRecord = (dogId: string, activityId: string) => {
     setOpen(false)
     void navigate({
@@ -59,21 +77,25 @@ export function useTrainingUpdates() {
         >
           {query.data?.length ? (
             <ul className="space-y-2">
-              {query.data.map((message) => (
-                <li key={message.id}>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="h-auto w-full flex-col items-start gap-1 px-3 py-3 text-left whitespace-normal"
-                    onClick={() => openRecord(message.activity.dog.id, message.workoutLogId)}
-                  >
-                    <span className="font-bold">
-                      {message.author.name} · {message.activity.dog.name}
-                    </span>
-                    <span className="text-sm font-normal">{message.text}</span>
-                  </Button>
-                </li>
-              ))}
+              {query.data.map((message) => {
+                const isOwn = Boolean(viewerId && message.author.id === viewerId)
+                return (
+                  <li key={message.id}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-auto w-full flex-col items-start gap-1 px-3 py-3 text-left whitespace-normal"
+                      onClick={() => openRecord(message.activity.dog.id, message.workoutLogId)}
+                    >
+                      <span className="font-bold">
+                        {message.author.name}
+                        {viewerId && !isOwn ? " · trenér" : ""} · {message.activity.dog.name}
+                      </span>
+                      <span className="text-sm font-normal">{message.text}</span>
+                    </Button>
+                  </li>
+                )
+              })}
             </ul>
           ) : (
             <p className="text-sm text-muted-foreground">Zatím žádné zprávy.</p>
@@ -82,7 +104,7 @@ export function useTrainingUpdates() {
       </DialogContent>
     </Dialog>
   )
-  const message = (
+  const message = !latestTrainerMessage ? null : (
     <section
       className="space-y-3"
       aria-labelledby="trainer-message-heading"
@@ -93,48 +115,37 @@ export function useTrainingUpdates() {
       >
         Zpráva od trenéra
       </h2>
-      <QueryState
-        isLoading={query.isLoading}
-        error={query.error}
-        onRetry={() => void query.refetch()}
-        empty={null}
-      >
-        {latest ? (
-          <div className="flex items-start gap-3">
-            <span
-              aria-hidden
-              className="flex size-10 shrink-0 items-center justify-center rounded-full bg-hero font-extrabold text-hero-foreground"
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden
+          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-hero font-extrabold text-hero-foreground"
+        >
+          {latestTrainerMessage.author.name.trim().charAt(0)}
+        </span>
+        <div className="min-w-0 flex-1 space-y-1 rounded-card rounded-tl-none bg-accent p-4">
+          <p className="text-xs font-bold text-primary">
+            {latestTrainerMessage.author.name} · trenér · {time}
+          </p>
+          <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
+            {latestTrainerMessage.text}
+          </p>
+          <Button
+            asChild
+            variant="link"
+            className="min-h-touch px-0 font-bold"
+          >
+            <Link
+              to="/dogs/$dogId/activities/$activityId"
+              params={{
+                dogId: latestTrainerMessage.activity.dog.id,
+                activityId: latestTrainerMessage.workoutLogId,
+              }}
             >
-              {latest.author.name.trim().charAt(0)}
-            </span>
-            <div className="min-w-0 flex-1 space-y-1 rounded-card rounded-tl-none bg-accent p-4">
-              <p className="text-xs font-bold text-primary">
-                {latest.author.name} · trenér · {time}
-              </p>
-              <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
-                {latest.text}
-              </p>
-              <Button
-                asChild
-                variant="link"
-                className="min-h-touch px-0 font-bold"
-              >
-                <Link
-                  to="/dogs/$dogId/activities/$activityId"
-                  params={{
-                    dogId: latest.activity.dog.id,
-                    activityId: latest.workoutLogId,
-                  }}
-                >
-                  Odpovědět
-                </Link>
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Zatím žádná zpráva od trenéra.</p>
-        )}
-      </QueryState>
+              Odpovědět
+            </Link>
+          </Button>
+        </div>
+      </div>
     </section>
   )
   return { bell, notifications, message }

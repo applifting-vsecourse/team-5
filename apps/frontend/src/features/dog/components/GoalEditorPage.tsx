@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Link, useNavigate } from "@tanstack/react-router"
+import { useNavigate } from "@tanstack/react-router"
 import { ChevronDown, ChevronRight, ChevronUp, Target } from "lucide-react"
 import { toast } from "sonner"
 
+import { ConfirmDestructiveDialog } from "@/components/ConfirmDestructiveDialog"
 import { EditorIcon } from "@/components/EditorIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
@@ -27,45 +28,45 @@ import { GoalForm } from "./GoalForm"
 import { ReturnToRecordBanner } from "./ReturnToRecordBanner"
 import { SessionEditor } from "./SessionEditor"
 
+/** Replace the editor with the record. history.back() lands on whatever was previous, not this record. */
+function leavePlanForRecord(
+  navigate: ReturnType<typeof useNavigate>,
+  dogId: string,
+  activityId: string,
+) {
+  void navigate({
+    to: "/dogs/$dogId/activities/$activityId",
+    params: { dogId, activityId },
+    replace: true,
+  })
+}
+
 function GoalShell({
   dogId,
-  returnToActivityId,
   title,
   subtitle,
   children,
 }: {
   dogId: string
-  returnToActivityId?: string
   title: string
   subtitle?: string
   children: ReactNode
 }) {
+  const navigate = useNavigate()
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 px-gutter py-6">
       <header className="flex items-center gap-3">
         <Button
-          asChild
+          type="button"
           variant="outline"
           size="icon"
           className="shrink-0 rounded-field"
+          aria-label="Zpět na cíle psa"
+          onClick={() => {
+            void navigate({ to: "/dogs/$dogId/goals", params: { dogId } })
+          }}
         >
-          {returnToActivityId ? (
-            <Link
-              to="/dogs/$dogId/activities/$activityId"
-              params={{ dogId, activityId: returnToActivityId }}
-              aria-label="Zpět na záznam tréninku"
-            >
-              <EditorIcon name="ChevL" />
-            </Link>
-          ) : (
-            <Link
-              to="/dogs/$dogId/goals"
-              params={{ dogId }}
-              aria-label="Zpět na cíle psa"
-            >
-              <EditorIcon name="ChevL" />
-            </Link>
-          )}
+          <EditorIcon name="ChevL" />
         </Button>
         <div className="min-w-0">
           <h1 className="text-page font-extrabold tracking-tight break-words">{title}</h1>
@@ -184,9 +185,13 @@ export function EditGoalPage({
   const [title, setTitle] = useState("")
   const [titleError, setTitleError] = useState("")
   const [localSessionId, setLocalSessionId] = useState<string | null>(null)
-  const sessionId = selectedSessionId ?? localSessionId
-  const setSessionId = (id: string | null) =>
-    onSessionChange ? onSessionChange(id ?? undefined) : setLocalSessionId(id)
+  // URL-driven mode must not fall back to local state — otherwise "Zpět na cíl"
+  // clears `?session=` while the editor stays open on a stale local id.
+  const sessionId = onSessionChange ? selectedSessionId : (selectedSessionId ?? localSessionId)
+  const setSessionId = (id: string | null) => {
+    if (onSessionChange) onSessionChange(id ?? undefined)
+    else setLocalSessionId(id)
+  }
   const updateGoal = useUpdateGoal(dogId, goalId)
   const goal = goalQuery.data?.dogId === dogId ? goalQuery.data : undefined
   const membership = planQuery.data?.find((d) => d.goals.some((g) => g.id === goalId))
@@ -197,10 +202,7 @@ export function EditGoalPage({
   const refresh = () => client.invalidateQueries({ queryKey: dogKeys.all })
   const returnToRecord = () => {
     if (!returnToActivityId) return
-    void navigate({
-      to: "/dogs/$dogId/activities/$activityId",
-      params: { dogId, activityId: returnToActivityId },
-    })
+    leavePlanForRecord(navigate, dogId, returnToActivityId)
   }
   const markPlanSaved = (shouldShowToast = false) => {
     setHasSavedChanges(true)
@@ -232,6 +234,16 @@ export function EditGoalPage({
     },
     onError: () => toast.error("Pořadí se nepodařilo uložit."),
   })
+  const archiveSession = useMutation({
+    mutationFn: (sessionId: string) =>
+      api.patch(`goal-trainings/${sessionId}`, { json: { isArchived: true } }),
+    onSuccess: async () => {
+      await refresh()
+      markPlanSaved(false)
+      toast.success("Trénink byl odstraněn z cíle")
+    },
+    onError: () => toast.error("Trénink se nepodařilo odstranit."),
+  })
   const status = useMutation({
     mutationFn: (value: string) => api.patch(`goals/${goalId}`, { json: { status: value } }),
     onSuccess: async () => {
@@ -258,6 +270,7 @@ export function EditGoalPage({
             naplanovat: true,
             ...(returnToActivityId ? { zaznam: returnToActivityId } : {}),
           },
+          replace: true,
         })
       }
     } catch {
@@ -295,7 +308,6 @@ export function EditGoalPage({
   return (
     <GoalShell
       dogId={dogId}
-      returnToActivityId={returnToActivityId}
       title={goal?.title ?? "Cíl"}
       subtitle={goal ? `${dogQuery.data?.name ?? ""} · ${goal.discipline ?? "Obecné"}` : undefined}
     >
@@ -409,32 +421,51 @@ export function EditGoalPage({
                           </span>
                           <ChevronRight className="size-5 shrink-0" />
                         </button>
-                        {!isReadOnly && sessions.length > 1 && (
-                          <div className="flex justify-end gap-1">
-                            {([-1, 1] as const).map((direction) => (
-                              <Button
-                                key={direction}
-                                variant="ghost"
-                                size="icon"
-                                aria-label={`Posunout trénink ${s.title} ${direction === -1 ? "nahoru" : "dolů"}`}
-                                disabled={
-                                  reorder.isPending ||
-                                  index + direction < 0 ||
-                                  index + direction >= sessions.length
-                                }
-                                onClick={() => {
-                                  const ids = sessions.map((t) => t.id)
-                                  const target = ids[index + direction]
-                                  const source = ids[index]
-                                  if (!target || !source) return
-                                  ids[index] = target
-                                  ids[index + direction] = source
-                                  reorder.mutate(ids)
-                                }}
-                              >
-                                {direction === -1 ? <ChevronUp /> : <ChevronDown />}
-                              </Button>
-                            ))}
+                        {!isReadOnly && !s.isArchived && (
+                          <div className="mt-2 flex flex-wrap items-center justify-end gap-1">
+                            {sessions.filter((item) => !item.isArchived).length > 1 &&
+                              ([-1, 1] as const).map((direction) => (
+                                <Button
+                                  key={direction}
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label={`Posunout trénink ${s.title} ${direction === -1 ? "nahoru" : "dolů"}`}
+                                  disabled={
+                                    reorder.isPending ||
+                                    index + direction < 0 ||
+                                    index + direction >= sessions.length
+                                  }
+                                  onClick={() => {
+                                    const ids = sessions.map((t) => t.id)
+                                    const target = ids[index + direction]
+                                    const source = ids[index]
+                                    if (!target || !source) return
+                                    ids[index] = target
+                                    ids[index + direction] = source
+                                    reorder.mutate(ids)
+                                  }}
+                                >
+                                  {direction === -1 ? <ChevronUp /> : <ChevronDown />}
+                                </Button>
+                              ))}
+                            <ConfirmDestructiveDialog
+                              title={`Odstranit trénink „${s.title}“?`}
+                              description="Trénink se přesune do archivu u tohoto cíle. Naplánované dny a historie zůstanou, ale už ho nepůjde upravovat."
+                              confirmLabel="Odstranit trénink"
+                              onConfirm={() => archiveSession.mutate(s.id)}
+                              trigger={
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={archiveSession.isPending}
+                                  className="font-semibold"
+                                  aria-label={`Odstranit trénink ${s.title}`}
+                                >
+                                  Odstranit
+                                </Button>
+                              }
+                            />
                           </div>
                         )}
                       </li>
