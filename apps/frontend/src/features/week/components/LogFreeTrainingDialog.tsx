@@ -170,11 +170,12 @@ export function LogFreeTrainingDialog({ dogs }: { dogs: DogOption[] }) {
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          className="hidden rounded-field xl:inline-flex"
+          className="rounded-field bg-card font-bold"
           disabled={!dogs.length}
+          aria-label="Zapsat volný trénink"
         >
-          <Plus />
-          Zapsat volný trénink
+          <Plus aria-hidden />
+          <span className="hidden sm:inline">Zapsat volný trénink</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90dvh] overflow-y-auto bg-background">

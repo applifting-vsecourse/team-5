@@ -55,9 +55,12 @@ collaboration, deleting the account) and errors. Reversible confirmations
 (archiving a dog, ending a discipline, removing a training to the archive) use
 `ConfirmDestructiveDialog` with `tone="reversible"`: neutral icon surface and
 the primary confirm button. Signing out and other everyday actions are never red.
-Dog colours and status surfaces are muted so they do not compete with actions;
-new colours follow the same low-saturation range. The palette values are to be
-confirmed with the product owner in the pull request.
+Status surfaces are muted so they do not compete with actions. Dog colours are
+identity markers read at a glance (week dots, card stripes, dog cards), so they
+keep six clearly different hues at medium saturation: calmer than raw Tailwind
+600s, but never greyed out to the point where two dogs look alike. None of them
+sits near the cognac primary or the destructive red. The palette values are to
+be confirmed with the product owner in the pull request.
 
 Pair each surface with its corresponding foreground. Use `text-success-foreground`,
 not `text-success`, for status text. Errors need text or an icon, not colour alone.
