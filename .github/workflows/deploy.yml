@@ -95,6 +95,7 @@ jobs:
           build-args: |
             VITE_API_URL=${{ steps.slug.outputs.url }}/api
             VITE_BETTER_AUTH_URL=${{ steps.slug.outputs.url }}
+            VITE_GOOGLE_OAUTH_ENABLED=${{ secrets.GOOGLE_CLIENT_ID != '' && secrets.GOOGLE_CLIENT_SECRET != '' }}
           tags: ${{ env.REGISTRY }}/${{ steps.slug.outputs.slug }}-frontend:latest
       - name: Trigger Coolify deploy
         if: env.COOLIFY_WEBHOOK != ''
