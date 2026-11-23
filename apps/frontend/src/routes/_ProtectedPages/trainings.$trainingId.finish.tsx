@@ -35,7 +35,8 @@ function TrainingFinishPage() {
   const returnSearch = toTrainingReturnSearch(zpet)
   const goHome = () => leaveTraining((opts) => navigate(opts), zpet)
 
-  if (trainingQuery.isPending) {
+  // A paused fetch stays pending and would hide the failure message.
+  if (trainingQuery.isPending && !trainingQuery.isPaused) {
     return (
       <div className="mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-2xl flex-col bg-background">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">

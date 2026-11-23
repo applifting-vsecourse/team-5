@@ -157,7 +157,11 @@ export function UnreadReplyList({
       <ul className="divide-y divide-border">
         {unique.map((reply) => {
           const dog = replyDog(reply)!
-          const activityId = replyRecordId(reply)
+          // Opening the training marks every day of that plan read. A completed
+          // day would otherwise link to its record and leave the siblings unread.
+          const planTrainingId =
+            reply.kind === "PLAN_CHANGED" ? reply.scheduledTraining?.id : undefined
+          const activityId = planTrainingId ? undefined : replyRecordId(reply)
           const text = (
             <>
               <span className="min-w-0 flex-1">
@@ -186,7 +190,7 @@ export function UnreadReplyList({
                 <Link
                   className="flex min-h-touch flex-wrap items-center gap-2 rounded-md py-3 text-sm"
                   to="/trainings/$trainingId"
-                  params={{ trainingId: reply.scheduledTraining!.id }}
+                  params={{ trainingId: planTrainingId ?? reply.scheduledTraining!.id }}
                   search={zpet ? { zpet } : {}}
                 >
                   {text}

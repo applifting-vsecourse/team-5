@@ -7,7 +7,7 @@ import { EditorIcon } from "@/components/EditorIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
-import { toCalendarDate, todayCalendarDate } from "@/lib/calendarDate"
+import { apiCalendarDate, todayCalendarDate } from "@/lib/calendarDate"
 import { goalTrainingProgress } from "@/lib/goalTrainingProgress"
 import { cn } from "@/lib/utils"
 
@@ -25,7 +25,7 @@ export function GoalProgressCard({ goal, dogId }: { goal: PlanGoal; dogId: strin
         .map((training) => ({ session, training })),
     )
     .sort((a, b) => a.training.date.getTime() - b.training.date.getTime())
-  const upcoming = plannedItems.filter((item) => toCalendarDate(item.training.date) >= today)
+  const upcoming = plannedItems.filter((item) => apiCalendarDate(item.training.date) >= today)
   const chosen = upcoming[0] ?? plannedItems[0]
   const isOverdue = chosen != null && upcoming.length === 0
   const next = chosen?.session
@@ -103,7 +103,7 @@ export function GoalProgressCard({ goal, dogId }: { goal: PlanGoal; dogId: strin
             <span className="block text-xs text-muted-foreground">
               {isOverdue ? "ZMEŠKANÝ" : `DALŠÍ · TRÉNINK ${completed + 1}`}
               {planned
-                ? ` · ${planned.date.toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" })}`
+                ? ` · ${new Date(`${apiCalendarDate(planned.date)}T12:00:00`).toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" })}`
                 : ""}
             </span>
             <span className="block text-sm font-bold break-words">

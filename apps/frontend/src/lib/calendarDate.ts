@@ -19,6 +19,10 @@ export type CalendarDate = string
 
 export const toCalendarDate = (date: Date): CalendarDate => format(date, "yyyy-MM-dd")
 
+// A DATE from the API is midnight UTC of the planned day. Formatting it in
+// the local zone moves that day backward west of UTC.
+export const apiCalendarDate = (date: Date): CalendarDate => date.toISOString().slice(0, 10)
+
 export const fromCalendarDate = (calendarDate: CalendarDate): Date => parseISO(calendarDate)
 
 export const todayCalendarDate = (): CalendarDate => toCalendarDate(new Date())
