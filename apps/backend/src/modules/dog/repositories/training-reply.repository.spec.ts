@@ -43,20 +43,26 @@ describe('unread training receipts', () => {
     tx.goalTraining.findFirst.mockResolvedValue({
       goal: { dog: { ownerId: 'owner' } },
     } as never);
-    tx.scheduledTraining.findMany.mockResolvedValue([{ id: 'date1' }] as never);
+    const past = new Date();
+    past.setUTCDate(past.getUTCDate() - 10);
+    const future = new Date();
+    future.setUTCDate(future.getUTCDate() + 10);
+    tx.scheduledTraining.findMany.mockResolvedValue([
+      { id: 'past', date: past },
+      { id: 'next', date: future },
+    ] as never);
     await recordPlanReply(tx, 'training1', 'trainer');
     expect(tx.scheduledTraining.findMany).toHaveBeenCalledWith({
       where: { trainingId: 'training1', status: 'PLANNED' },
-      select: { id: true },
+      select: { id: true, date: true },
+      orderBy: { date: 'asc' },
     });
-    expect(tx.trainingReply.createMany).toHaveBeenCalledWith({
-      data: [
-        {
-          recipientId: 'owner',
-          scheduledTrainingId: 'date1',
-          kind: 'PLAN_CHANGED',
-        },
-      ],
+    expect(tx.trainingReply.create).toHaveBeenCalledWith({
+      data: {
+        recipientId: 'owner',
+        scheduledTrainingId: 'next',
+        kind: 'PLAN_CHANGED',
+      },
     });
   });
   it('does not notify an owner about their own plan edit', async () => {
@@ -65,7 +71,7 @@ describe('unread training receipts', () => {
       goal: { dog: { ownerId: 'owner' } },
     } as never);
     await recordPlanReply(tx, 'training1', 'owner');
-    expect(tx.trainingReply.createMany).not.toHaveBeenCalled();
+    expect(tx.trainingReply.create).not.toHaveBeenCalled();
   });
   it('acknowledges exact IDs for this recipient with current access checks', async () => {
     const prisma = mockDeep<PrismaService>();

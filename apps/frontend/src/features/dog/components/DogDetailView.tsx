@@ -495,6 +495,7 @@ export function DogDetailView({ dog, isOwner = true }: { dog: Dog; isOwner?: boo
             title="Archivovat psa?"
             description={`${dog.name} zmizí ze seznamu Psů i z Týdne. Historie cílů, tréninků a záznamů zůstane a psa půjde kdykoli vrátit.`}
             confirmLabel="Archivovat"
+            tone="reversible"
             onConfirm={() => archive.mutate()}
             trigger={
               <Button

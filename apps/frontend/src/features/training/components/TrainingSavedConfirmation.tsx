@@ -16,16 +16,27 @@ import {
   startOfWeekOf,
   todayCalendarDate,
 } from "@/lib/calendarDate"
-import { dogMetricsQueryOptions } from "@/lib/dogMetrics"
+import { ownerMetricsQueryOptions } from "@/lib/dogMetrics"
 import { cn } from "@/lib/utils"
 import { upcomingTrainingsQueryOptions } from "@/lib/weekTrainings"
 
 import { trainingDetailQueryOptions } from "@/features/training/api/trainingsQueryOptions"
+import { trainingHome, type TrainingReturnTo } from "@/features/training/lib/trainingReturn"
 
-export function TrainingSavedConfirmation({ trainingId }: { trainingId: string }) {
+export function TrainingSavedConfirmation({
+  trainingId,
+  zpet,
+}: {
+  trainingId: string
+  zpet?: TrainingReturnTo
+}) {
+  const continueTo = trainingHome(zpet)
   const trainingQuery = useQuery(trainingDetailQueryOptions(trainingId))
   const dog = trainingQuery.data?.dog
-  const metricsQuery = useQuery(dogMetricsQueryOptions(dog?.id ?? ""))
+  const metricsQuery = useQuery({
+    ...ownerMetricsQueryOptions(),
+    enabled: trainingQuery.isSuccess,
+  })
   const upcoming = useQuery({
     ...upcomingTrainingsQueryOptions(todayCalendarDate()),
     enabled: trainingQuery.isSuccess,
@@ -226,7 +237,7 @@ export function TrainingSavedConfirmation({ trainingId }: { trainingId: string }
             variant="secondary"
             className="w-full bg-card text-primary hover:bg-card/90"
           >
-            <Link to="/week">Pokračovat</Link>
+            <Link to={continueTo}>Pokračovat</Link>
           </Button>
           {dog?.hasTrainer && (
             <Button
@@ -241,12 +252,14 @@ export function TrainingSavedConfirmation({ trainingId }: { trainingId: string }
             </Button>
           )}
           <div className="flex flex-wrap justify-center gap-4 text-sm">
-            <Link
-              to="/dashboard"
-              className="inline-flex min-h-touch items-center underline"
-            >
-              Na přehled
-            </Link>
+            {continueTo !== "/dashboard" && (
+              <Link
+                to="/dashboard"
+                className="inline-flex min-h-touch items-center underline"
+              >
+                Na přehled
+              </Link>
+            )}
             {dog && (
               <Link
                 to="/dogs/$dogId"

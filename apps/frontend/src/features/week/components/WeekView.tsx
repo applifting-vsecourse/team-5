@@ -46,6 +46,7 @@ function WeekTrainingCard({
   const [isMoveOpen, setMoveOpen] = useState(false)
   const undo = useUndoSkip(training.id)
   const isPlanned = training.status === "PLANNED"
+  const isOverdue = isPlanned && training.date < today
   const isTodayOrOverdue = training.date <= today
   const canUndo =
     training.status === "SKIPPED" && startOfWeekOf(training.date) >= startOfWeekOf(today)
@@ -72,6 +73,11 @@ function WeekTrainingCard({
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-sm font-bold break-words">{title}</h3>
             <RecordUnreadBadge hasUnread={hasUnread} />
+            {isOverdue && (
+              <span className="inline-flex shrink-0 items-center rounded-full bg-warning px-2 py-0.5 text-xs font-semibold text-warning-foreground">
+                Zmeškaný
+              </span>
+            )}
             {!isPlanned && (
               <span
                 className={cn(
@@ -101,7 +107,8 @@ function WeekTrainingCard({
             <Link
               to="/trainings/$trainingId"
               params={{ trainingId: training.id }}
-              aria-label={`${isTodayOrOverdue ? "Začít trénink" : "Trénink"} ${heading}`}
+              search={{ zpet: "tyden" }}
+              aria-label={`${isOverdue ? "Začít zmeškaný trénink" : isTodayOrOverdue ? "Začít trénink" : "Trénink"} ${heading}`}
             >
               <DesignIcon name={isTodayOrOverdue ? "week-Play" : "week-Cal"} />
               {isTodayOrOverdue ? "Začít" : "Naplánováno"}
@@ -218,7 +225,7 @@ export function WeekView({
           <DesignIcon name="week-ChevR" />
         </Button>
       </header>
-      <UnreadReplyList />
+      <UnreadReplyList zpet="tyden" />
       <ToggleGroup
         type="single"
         spacing={1.5}
@@ -242,12 +249,18 @@ export function WeekView({
         {days.map((day) => {
           const dayTrainings = trainings.filter((training) => training.date === day)
           const colors = [...new Set(dayTrainings.map((training) => training.dog.color))]
+          const overdueCount = dayTrainings.filter(
+            (training) => training.status === "PLANNED" && training.date < today,
+          ).length
           return (
             <ToggleGroupItem
               key={day}
               value={day}
-              aria-label={`${formatDayLong(day)}${day === today ? ", dnes" : ""}${dayTrainings.length ? `, tréninků: ${dayTrainings.length}` : ""}`}
-              className="flex h-auto min-h-20 min-w-0 flex-col gap-1 rounded-control border border-border bg-card px-0 py-2 text-foreground data-[state=on]:bg-hero data-[state=on]:text-hero-foreground"
+              aria-label={`${formatDayLong(day)}${day === today ? ", dnes" : ""}${dayTrainings.length ? `, tréninků: ${dayTrainings.length}` : ""}${overdueCount ? `, zmeškané: ${overdueCount}` : ""}`}
+              className={cn(
+                "flex h-auto min-h-20 min-w-0 flex-col gap-1 rounded-control border bg-card px-0 py-2 text-foreground data-[state=on]:bg-hero data-[state=on]:text-hero-foreground",
+                overdueCount ? "border-warning-foreground/40" : "border-border",
+              )}
             >
               <span className="text-xs font-medium opacity-75">{formatWeekdayShort(day)}</span>
               <span className="text-lg font-extrabold">{formatDayOfMonth(day)}</span>
@@ -329,6 +342,9 @@ export function WeekView({
         <div className="flex flex-col gap-6">
           {days.map((day) => {
             const dayTrainings = trainings.filter((training) => training.date === day)
+            const hasOverdue = dayTrainings.some(
+              (training) => training.status === "PLANNED" && training.date < today,
+            )
             return (
               <section
                 key={day}
@@ -347,6 +363,11 @@ export function WeekView({
                   {day === today && (
                     <span className="ml-2 rounded-full bg-primary px-2 py-1 text-xs text-primary-foreground">
                       Dnes
+                    </span>
+                  )}
+                  {hasOverdue && (
+                    <span className="ml-2 rounded-full bg-warning px-2 py-1 text-xs text-warning-foreground">
+                      Zmeškané
                     </span>
                   )}
                 </h2>

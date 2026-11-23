@@ -1,4 +1,6 @@
 import { useRef, useState } from "react"
+import { Link } from "@tanstack/react-router"
+import { ChevronLeft } from "lucide-react"
 
 import { DesignIcon } from "@/components/DesignIcon"
 import { Button } from "@/components/ui/button"
@@ -17,6 +19,10 @@ import type {
   TrainingEnvironment,
 } from "@/features/training/api/trainingSchemas"
 import { useCompleteTraining } from "@/features/training/hooks/useCompleteTraining"
+import {
+  toTrainingReturnSearch,
+  type TrainingReturnTo,
+} from "@/features/training/lib/trainingReturn"
 
 export type FinishTrainingDog = { id: string; name: string; color?: number; hasTrainer?: boolean }
 export type FinishTrainingGoal = { id: string; title: string }
@@ -26,6 +32,7 @@ export type FinishTrainingFormProps = {
   goal: FinishTrainingGoal
   plannedDurationMinutes?: number
   stepCount?: number
+  zpet?: TrainingReturnTo
   onSubmit?: (data: CompleteTrainingInput) => void | Promise<void>
   isPending?: boolean
 }
@@ -39,10 +46,11 @@ export function FinishTrainingForm({
   goal,
   plannedDurationMinutes,
   stepCount,
+  zpet,
   onSubmit: customOnSubmit,
   isPending: isPendingProp,
 }: FinishTrainingFormProps) {
-  const complete = useCompleteTraining(trainingId, dog.id)
+  const complete = useCompleteTraining(trainingId, dog.id, zpet)
   const isPending = isPendingProp ?? complete.isPending
   const submissionLock = useRef(false)
   const [successRate, setRate] = useState<number | null>(null)
@@ -108,6 +116,15 @@ export function FinishTrainingForm({
   }
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6 px-gutter py-5">
+      <Link
+        to="/trainings/$trainingId"
+        params={{ trainingId }}
+        search={toTrainingReturnSearch(zpet)}
+        className="inline-flex min-h-touch items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ChevronLeft className="size-4" />
+        Zpět k průchodu
+      </Link>
       <header className="space-y-3 rounded-hero bg-success-foreground p-5 text-primary-foreground">
         <span className="flex size-12 items-center justify-center rounded-full bg-card">
           <DesignIcon name="finish-Check" />

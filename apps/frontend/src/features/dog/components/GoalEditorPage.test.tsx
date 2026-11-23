@@ -98,6 +98,7 @@ describe("save and schedule goal", () => {
         to: "/dogs/$dogId/goals/$goalId",
         params: { dogId: "dog", goalId: "goal" },
         search: { session: "session", naplanovat: true },
+        replace: true,
       }),
     )
     expect(save).toHaveBeenCalledWith(expect.objectContaining({ title: "Přivolání" }))
@@ -115,10 +116,13 @@ describe("save and schedule goal", () => {
   it("returns to the originating training record after saving changes", async () => {
     const user = userEvent.setup()
     mount("act-1")
-    expect(screen.getByRole("link", { name: "Zpět na záznam tréninku" })).toHaveAttribute(
-      "href",
-      "/dogs/dog/activities/act-1",
-    )
+    await user.click(screen.getByRole("button", { name: "Zpět na záznam" }))
+    expect(navigate).toHaveBeenCalledWith({
+      to: "/dogs/$dogId/activities/$activityId",
+      params: { dogId: "dog", activityId: "act-1" },
+      replace: true,
+    })
+    navigate.mockClear()
     await user.click(screen.getByRole("button", { name: "Upravit cíl" }))
     await user.click(screen.getByRole("button", { name: "Uložit" }))
     const returnButton = await screen.findByRole("button", { name: "Hotovo, zpět na záznam" })
@@ -126,7 +130,56 @@ describe("save and schedule goal", () => {
     expect(navigate).toHaveBeenCalledWith({
       to: "/dogs/$dogId/activities/$activityId",
       params: { dogId: "dog", activityId: "act-1" },
+      replace: true,
     })
+  })
+
+  it("can archive a newly added training from the goal list", async () => {
+    const user = userEvent.setup()
+    const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity } } })
+    const { api } = await import("@/lib/api-client")
+    const patch = vi.spyOn(api, "patch").mockResolvedValue({
+      json: () => Promise.resolve({}),
+    } as never)
+    client.setQueryData(dogKeys.detail("dog"), { id: "dog", name: "Rex", disciplines: [] })
+    client.setQueryData(dogKeys.goal("goal"), {
+      id: "goal",
+      dogId: "dog",
+      title: "Přivolání",
+      status: "ACTIVE",
+      updatedAt: new Date(),
+    })
+    client.setQueryData(
+      [...dogKeys.detail("dog"), "plan"],
+      [
+        {
+          isArchived: false,
+          goals: [
+            {
+              id: "goal",
+              sessions: [
+                { id: "s1", title: "V parku", isArchived: false, steps: [] },
+                { id: "s2", title: "Nový trénink", isArchived: false, steps: [] },
+              ],
+            },
+          ],
+        },
+      ],
+    )
+    render(
+      <QueryClientProvider client={client}>
+        <EditGoalPage
+          dogId="dog"
+          goalId="goal"
+        />
+      </QueryClientProvider>,
+    )
+    await user.click(screen.getByRole("button", { name: "Odstranit trénink Nový trénink" }))
+    await user.click(screen.getByRole("button", { name: "Odstranit trénink" }))
+    await waitFor(() =>
+      expect(patch).toHaveBeenCalledWith("goal-trainings/s2", { json: { isArchived: true } }),
+    )
+    patch.mockRestore()
   })
   it("preserves zaznam param when saving and scheduling", async () => {
     const user = userEvent.setup()
@@ -138,7 +191,60 @@ describe("save and schedule goal", () => {
         to: "/dogs/$dogId/goals/$goalId",
         params: { dogId: "dog", goalId: "goal" },
         search: { session: "session", naplanovat: true, zaznam: "act-1" },
+        replace: true,
       }),
     )
+  })
+  it("clears the URL session on Zpět na cíl instead of keeping the editor open", async () => {
+    const onSessionChange = vi.fn()
+    const user = userEvent.setup()
+    const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity } } })
+    client.setQueryData(dogKeys.detail("dog"), { id: "dog", name: "Rex", disciplines: [] })
+    client.setQueryData(dogKeys.goal("goal"), {
+      id: "goal",
+      dogId: "dog",
+      title: "Přivolání",
+      status: "ACTIVE",
+      updatedAt: new Date(),
+    })
+    client.setQueryData(
+      [...dogKeys.detail("dog"), "plan"],
+      [
+        {
+          isArchived: false,
+          goals: [
+            {
+              id: "goal",
+              sessions: [{ id: "session", title: "V parku", isArchived: false, steps: [] }],
+            },
+          ],
+        },
+      ],
+    )
+    const { rerender } = render(
+      <QueryClientProvider client={client}>
+        <EditGoalPage
+          dogId="dog"
+          goalId="goal"
+          selectedSessionId="session"
+          onSessionChange={onSessionChange}
+        />
+      </QueryClientProvider>,
+    )
+    expect(screen.getByRole("heading", { name: "Tvorba tréninku" })).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Zpět na cíl" }))
+    expect(onSessionChange).toHaveBeenCalledWith(undefined)
+    rerender(
+      <QueryClientProvider client={client}>
+        <EditGoalPage
+          dogId="dog"
+          goalId="goal"
+          selectedSessionId={undefined}
+          onSessionChange={onSessionChange}
+        />
+      </QueryClientProvider>,
+    )
+    expect(screen.getByRole("heading", { name: "Přivolání" })).toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "Tvorba tréninku" })).not.toBeInTheDocument()
   })
 })

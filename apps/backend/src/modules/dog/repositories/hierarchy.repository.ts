@@ -23,7 +23,8 @@ import { recordPlanReply } from './training-reply.repository';
 export const planOrder = [{ position: 'asc' }, { id: 'asc' }] as const;
 
 // Plan edits stay open after a dated completion so trainers can adjust the next
-// steps from a record (#68). Workout logs keep history; the live plan moves forward.
+// steps from a record (#68). A completed calendar instance is history, not a lock
+// on the template. Workout logs keep that history; the live plan moves forward.
 export async function assertTrainingContentEditable(
   tx: Prisma.TransactionClient,
   trainingId: string,

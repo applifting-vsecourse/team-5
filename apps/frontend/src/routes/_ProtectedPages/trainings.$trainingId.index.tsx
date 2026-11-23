@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { AlertCircle, ChevronLeft } from "lucide-react"
 
 import { Seo } from "@/components/Seo"
@@ -8,18 +8,34 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReadReplyReceipt } from "@/components/UnreadReplies"
 
-import { trainingDetailQueryOptions } from "@/features/training/api/trainingsQueryOptions"
+import {
+  isTrainingMissing,
+  trainingDetailQueryOptions,
+} from "@/features/training/api/trainingsQueryOptions"
 import { TrainingWalkthrough } from "@/features/training/components/TrainingWalkthrough"
+import {
+  leaveTraining,
+  parseTrainingReturnSearch,
+  trainingHomeLabel,
+  type TrainingReturnSearch,
+} from "@/features/training/lib/trainingReturn"
 
 export const Route = createFileRoute("/_ProtectedPages/trainings/$trainingId/")({
+  validateSearch: (search: Record<string, unknown>): TrainingReturnSearch =>
+    parseTrainingReturnSearch(search),
   component: TrainingWalkthroughPage,
 })
 
 function TrainingWalkthroughPage() {
   const { trainingId } = Route.useParams()
+  const { zpet } = Route.useSearch()
+  const navigate = useNavigate()
   const trainingQuery = useQuery(trainingDetailQueryOptions(trainingId))
+  const homeLabel = trainingHomeLabel(zpet)
+  const goHome = () => leaveTraining((opts) => navigate(opts), zpet)
 
-  if (trainingQuery.isLoading) {
+  // A paused fetch stays pending and would hide the failure message.
+  if (trainingQuery.isPending && !trainingQuery.isPaused) {
     return (
       <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col bg-background">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
@@ -56,18 +72,27 @@ function TrainingWalkthroughPage() {
   if (trainingQuery.error || !trainingQuery.data) {
     return (
       <div className="mx-auto w-full max-w-2xl space-y-4 px-4 py-8">
-        <Link
-          to="/week"
+        <button
+          type="button"
+          onClick={goHome}
           className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ChevronLeft className="size-4" />
-          <span>Zpět na týden</span>
-        </Link>
+          <span>{homeLabel}</span>
+        </button>
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
-          <AlertTitle>Trénink nebyl nalezen</AlertTitle>
+          <AlertTitle>
+            {isTrainingMissing(trainingQuery.error)
+              ? "Trénink nebyl nalezen"
+              : "Trénink se nepodařilo načíst"}
+          </AlertTitle>
           <AlertDescription className="space-y-3">
-            <p>Tento trénink neexistuje nebo k němu nemáte přístup.</p>
+            <p>
+              {isTrainingMissing(trainingQuery.error)
+                ? "Tento trénink neexistuje nebo k němu nemáte přístup."
+                : "Spojení na chvíli vypadlo. Zkus to znovu."}
+            </p>
             <Button
               type="button"
               variant="outline"
@@ -88,7 +113,10 @@ function TrainingWalkthroughPage() {
     <>
       <Seo title={`Trénink · ${training.dog.name}`} />
       <ReadReplyReceipt ids={training.unreadReplyIds} />
-      <TrainingWalkthrough training={training} />
+      <TrainingWalkthrough
+        training={training}
+        zpet={zpet}
+      />
     </>
   )
 }

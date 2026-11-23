@@ -5,7 +5,12 @@ import { MessageCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api-client"
-import { replyDog, replyRecordId, unreadRepliesOptions } from "@/lib/trainingReplies"
+import {
+  collapseUnreadReplies,
+  replyDog,
+  replyRecordId,
+  unreadRepliesOptions,
+} from "@/lib/trainingReplies"
 
 export function UnreadBadge() {
   return (
@@ -69,7 +74,10 @@ export function ReadReplyReceipt({ ids }: { ids: string[] }) {
         await api.post("training-replies/read", { json: { ids: snapshot.slice(i, i + 500) } })
       }
     },
-    onSuccess: () => client.invalidateQueries({ queryKey: ["unread-training-replies"] }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["unread-training-replies"] })
+      void client.invalidateQueries({ queryKey: ["training-updates"] })
+    },
   })
   useEffect(() => {
     if (key && attempted.current !== key) {
@@ -94,16 +102,18 @@ export function ReadReplyReceipt({ ids }: { ids: string[] }) {
   ) : null
 }
 
-export function UnreadReplyList({ dogIds }: { dogIds?: string[] }) {
+export function UnreadReplyList({
+  dogIds,
+  zpet,
+}: {
+  dogIds?: string[]
+  zpet?: "dnes" | "tyden" | "historie"
+}) {
   const query = useQuery(unreadRepliesOptions())
   const replies = (query.data ?? []).filter(
     (reply) => !dogIds || dogIds.includes(replyDog(reply)?.id ?? ""),
   )
-  const unique = [
-    ...new Map(
-      replies.map((reply) => [replyRecordId(reply) ?? reply.scheduledTraining?.id, reply]),
-    ).values(),
-  ]
+  const unique = collapseUnreadReplies(replies)
   if (query.isLoading) {
     return (
       <p
@@ -147,7 +157,11 @@ export function UnreadReplyList({ dogIds }: { dogIds?: string[] }) {
       <ul className="divide-y divide-border">
         {unique.map((reply) => {
           const dog = replyDog(reply)!
-          const activityId = replyRecordId(reply)
+          // Opening the training marks every day of that plan read. A completed
+          // day would otherwise link to its record and leave the siblings unread.
+          const planTrainingId =
+            reply.kind === "PLAN_CHANGED" ? reply.scheduledTraining?.id : undefined
+          const activityId = planTrainingId ? undefined : replyRecordId(reply)
           const text = (
             <>
               <span className="min-w-0 flex-1">
@@ -176,7 +190,8 @@ export function UnreadReplyList({ dogIds }: { dogIds?: string[] }) {
                 <Link
                   className="flex min-h-touch flex-wrap items-center gap-2 rounded-md py-3 text-sm"
                   to="/trainings/$trainingId"
-                  params={{ trainingId: reply.scheduledTraining!.id }}
+                  params={{ trainingId: planTrainingId ?? reply.scheduledTraining!.id }}
+                  search={zpet ? { zpet } : {}}
                 >
                   {text}
                 </Link>

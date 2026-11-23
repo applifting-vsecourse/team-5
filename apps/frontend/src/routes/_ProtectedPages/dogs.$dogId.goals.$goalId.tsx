@@ -57,7 +57,14 @@ function EditGoalRoute() {
         selectedSessionId={search.session}
         onSessionChange={(session) =>
           void navigate({
-            search: (previous) => ({ ...previous, session, novyTrenink: undefined }),
+            // Omit `session` entirely when clearing — `session: undefined` can leave
+            // the in-memory search stuck while the URL already dropped the param.
+            search: (previous) => ({
+              ...(previous.naplanovat ? { naplanovat: previous.naplanovat } : {}),
+              ...(previous.zaznam ? { zaznam: previous.zaznam } : {}),
+              ...(session ? { session } : {}),
+            }),
+            replace: true,
           })
         }
         isScheduleRequested={search.naplanovat === true}

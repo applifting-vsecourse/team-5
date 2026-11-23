@@ -14,17 +14,27 @@ import {
 import { WalkthroughClickerBar } from "@/components/WalkthroughClickerBar"
 
 import type { TrainingDetail } from "@/features/training/api/trainingSchemas"
+import {
+  leaveTraining,
+  toTrainingReturnSearch,
+  trainingHomeLabel,
+  type TrainingReturnTo,
+} from "@/features/training/lib/trainingReturn"
 
 type TrainingWalkthroughProps = {
   training: TrainingDetail
+  zpet?: TrainingReturnTo
 }
 
 type LocalStepOutcome = "MASTERED" | "SKIPPED"
 
-export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
+export function TrainingWalkthrough({ training, zpet }: TrainingWalkthroughProps) {
   const navigate = useNavigate()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [outcomes, setOutcomes] = useState<Record<string, LocalStepOutcome>>({})
+  const homeLabel = trainingHomeLabel(zpet)
+  const returnSearch = toTrainingReturnSearch(zpet)
+  const goHome = () => leaveTraining((opts) => navigate(opts), zpet)
 
   const exercises = training.exercises
   const totalExercises = exercises.length
@@ -42,7 +52,11 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
     if (!isPlanned || !currentExercise) return
     setOutcomes((prev) => ({ ...prev, [currentExercise.id]: outcome }))
     if (isLastLocal) {
-      void navigate({ to: "/trainings/$trainingId/finish", params: { trainingId: training.id } })
+      void navigate({
+        to: "/trainings/$trainingId/finish",
+        params: { trainingId: training.id },
+        search: returnSearch,
+      })
       return
     }
     setCurrentIndex((prev) => Math.min(totalExercises - 1, prev + 1))
@@ -71,17 +85,14 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
       shouldAutoStartTimer={isPlanned}
       closeControl={
         <Button
-          asChild
+          type="button"
           variant="outline"
           size="icon"
           className="shrink-0 rounded-field bg-card"
+          aria-label={homeLabel}
+          onClick={goHome}
         >
-          <Link
-            to="/week"
-            aria-label="Zpět na týden"
-          >
-            <EditorIcon name="X" />
-          </Link>
+          <EditorIcon name="X" />
         </Button>
       }
       trailingControl={
@@ -103,14 +114,13 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
                 <Link
                   to="/trainings/$trainingId/finish"
                   params={{ trainingId: training.id }}
+                  search={returnSearch}
                 >
                   Dokončit trénink
                 </Link>
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem asChild>
-              <Link to="/week">Zpět na týden</Link>
-            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={goHome}>{homeLabel}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       }
@@ -118,10 +128,11 @@ export function TrainingWalkthrough({ training }: TrainingWalkthroughProps) {
         <div className="my-auto space-y-4 text-center">
           <p className="text-muted-foreground">Tento trénink zatím nemá žádné cviky.</p>
           <Button
-            asChild
+            type="button"
             variant="outline"
+            onClick={goHome}
           >
-            <Link to="/week">Zpět na týden</Link>
+            {homeLabel}
           </Button>
         </div>
       }

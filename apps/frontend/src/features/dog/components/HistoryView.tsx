@@ -184,7 +184,10 @@ export function HistoryView({ initialDogId }: { initialDogId?: string }) {
           <DesignIcon name="history-Filter" />
         </Button>
       </header>
-      <UnreadReplyList dogIds={dogId ? [dogId] : undefined} />
+      <UnreadReplyList
+        dogIds={dogId ? [dogId] : undefined}
+        zpet="historie"
+      />
       <QueryState
         isLoading={dogs.isLoading}
         error={dogs.error}

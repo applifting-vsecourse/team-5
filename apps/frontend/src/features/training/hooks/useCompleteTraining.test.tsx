@@ -31,10 +31,10 @@ const httpError = (status: number) =>
     {} as NormalizedOptions,
   )
 
-const renderCompleteTraining = () => {
+const renderCompleteTraining = (zpet?: "dnes" | "tyden") => {
   const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } })
   const invalidate = vi.spyOn(queryClient, "invalidateQueries")
-  const { result } = renderHook(() => useCompleteTraining("t1", "d1"), {
+  const { result } = renderHook(() => useCompleteTraining("t1", "d1", zpet), {
     wrapper: ({ children }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     ),
@@ -71,6 +71,30 @@ describe("useCompleteTraining", () => {
     expect(mockNavigate).toHaveBeenCalledWith({
       to: "/trainings/$trainingId/done",
       params: { trainingId: "t1" },
+      search: { zpet: undefined },
+    })
+  })
+
+  it("preserves return-to-dnes on confirmation navigate", async () => {
+    vi.mocked(completeTraining).mockResolvedValue({
+      id: "log1",
+      dogId: "d1",
+      title: "Chůze u nohy",
+      status: "completed",
+    })
+    const { result } = renderCompleteTraining("dnes")
+
+    await act(() =>
+      result.current.mutateAsync({
+        successRate: 80,
+        focus: "YES",
+      }),
+    )
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: "/trainings/$trainingId/done",
+      params: { trainingId: "t1" },
+      search: { zpet: "dnes" },
     })
   })
 
@@ -83,6 +107,15 @@ describe("useCompleteTraining", () => {
     expect(toast.error).toHaveBeenCalledWith("Trénink už je odcvičený")
     expect(invalidate).toHaveBeenCalledWith({ queryKey: weekKeys.all })
     expect(mockNavigate).toHaveBeenCalledWith({ to: "/week" })
+  })
+
+  it("on 409 with zpet=dnes goes back to dashboard", async () => {
+    vi.mocked(completeTraining).mockRejectedValue(httpError(409))
+    const { result } = renderCompleteTraining("dnes")
+
+    await act(() => result.current.mutateAsync({}).catch(() => undefined))
+
+    expect(mockNavigate).toHaveBeenCalledWith({ to: "/dashboard" })
   })
 
   it("on 403 says the handler sends the record and stays on the form", async () => {

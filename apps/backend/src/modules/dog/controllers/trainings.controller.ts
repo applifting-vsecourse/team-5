@@ -86,10 +86,16 @@ export class TrainingsController {
   ): Promise<TrainingDetailResponseDto & { unreadReplyIds: string[] }> {
     const unread = await this.replies.unread(user.id);
     const training = await this.trainingsService.getTraining(user, trainingId);
+    const templateId = training.training.id;
     return {
       ...TrainingDetailResponseDto.fromDomain(training, user.id),
       unreadReplyIds: unread
-        .filter((reply) => reply.scheduledTrainingId === trainingId)
+        .filter(
+          (reply) =>
+            reply.scheduledTrainingId === trainingId ||
+            (reply.kind === 'PLAN_CHANGED' &&
+              reply.scheduledTraining?.training.id === templateId),
+        )
         .map((reply) => reply.id),
     };
   }

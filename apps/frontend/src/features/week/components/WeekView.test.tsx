@@ -132,6 +132,28 @@ describe("WeekView", () => {
     expect(screen.getByRole("radio", { name: "čtvrtek 22. 10." })).toBeInTheDocument()
   })
 
+  it("marks overdue planned trainings so past days do not look like volno", () => {
+    renderWeek([
+      aTraining({
+        id: "overdue",
+        date: "2026-10-20",
+        status: "PLANNED",
+        goal: { id: "g0", title: "Zmeškané áčko" },
+      }),
+    ])
+
+    expect(
+      screen.getByRole("radio", { name: /úterý 20\. 10\., tréninků: 1, zmeškané: 1/ }),
+    ).toBeInTheDocument()
+    const day = screen.getByRole("heading", { name: /úterý 20\. 10\./i })
+    expect(within(day).getByText("Zmeškané")).toBeInTheDocument()
+    const card = screen.getByRole("listitem")
+    expect(within(card).getByText("Zmeškaný")).toBeInTheDocument()
+    expect(
+      within(card).getByRole("link", { name: "Začít zmeškaný trénink Rex · Zmeškané áčko" }),
+    ).toHaveAttribute("href", "/trainings/overdue")
+  })
+
   it("switches to another day", async () => {
     const user = userEvent.setup()
     renderWeek([aTraining()])

@@ -79,7 +79,7 @@ export function TodayWeekPreview({
               <div
                 key={day}
                 className={cn(
-                  "flex max-h-56 min-h-28 min-w-0 flex-col gap-2 overflow-y-auto rounded-field border border-transparent p-2",
+                  "flex min-h-28 min-w-0 flex-col gap-1.5 rounded-field border border-transparent p-1",
                   day === today && "border-primary bg-accent",
                 )}
               >
@@ -109,8 +109,11 @@ export function TodayWeekPreview({
                         key={training.id}
                         to={targetTo}
                         params={targetParams}
+                        search={
+                          isFinished && training.activityId ? undefined : { zpet: "dnes" as const }
+                        }
                         className={cn(
-                          "block space-y-1 rounded-control p-2 text-xs",
+                          "block space-y-1 rounded-control p-1.5 text-xs",
                           training.status === "COMPLETED"
                             ? "bg-success text-success-foreground"
                             : training.status === "SKIPPED"
@@ -130,7 +133,7 @@ export function TodayWeekPreview({
                           />
                           {training.dog.name}
                         </span>
-                        <span className="block break-words">
+                        <span className="block break-words hyphens-auto">
                           {training.training?.title ?? training.goal.title}
                         </span>
                         <span className="block text-xs">

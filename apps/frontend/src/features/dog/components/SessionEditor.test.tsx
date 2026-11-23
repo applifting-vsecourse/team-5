@@ -1,6 +1,6 @@
 ﻿import type { ReactNode } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -181,16 +181,25 @@ describe("training editor", () => {
       }),
     )
   })
-  it("shows the desktop library panel and owner preview for the current steps", () => {
+  it("shows the desktop library panel and owner preview for the current steps", async () => {
+    const user = userEvent.setup()
     const withSteps: TrainingSession = {
       ...session,
-      steps: [aStep("s1", "Kontakt"), aStep("s2", "Volně")],
+      steps: [aStep("s1", "Kontakt"), aStep("s2", "Volně"), aStep("c1", "Kousek", "s1")],
     }
     mount(false, { session: withSteps })
     expect(screen.getByRole("heading", { name: "Knihovna kroků" })).toBeInTheDocument()
-    expect(screen.getByRole("complementary", { name: "Náhled pro psovoda" })).toBeInTheDocument()
-    expect(screen.getByText(/2 kroky/)).toBeInTheDocument()
+    const preview = screen.getByRole("complementary", { name: "Náhled pro psovoda" })
+    // Same order as the walkthrough on Dnes: sub-steps before their parent (#174, #162).
+    expect(
+      within(preview)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual(["1Kousek", "2Kontakt", "3Volně"])
     expect(screen.queryByText("Uloženo automaticky")).not.toBeInTheDocument()
+
+    await user.click(within(preview).getByRole("button", { name: "Začít trénink" }))
+    expect(screen.getByRole("dialog", { name: "Náhled psovoda" })).toBeInTheDocument()
   })
   it("offers preview but no editing or scheduling for read-only history", () => {
     mount(true)
@@ -235,8 +244,8 @@ describe("training editor", () => {
         .some((node) => node.closest("li")?.classList.contains("ml-6")),
     ).toBe(true)
     await user.click(screen.getByRole("button", { name: "Upravit krok Sedni – zůstaň" }))
-    expect(screen.getByRole("button", { name: "Rozdělit na dílčí kroky" })).toBeEnabled()
-    await user.click(screen.getByRole("button", { name: "Rozdělit na dílčí kroky" }))
+    expect(screen.getByRole("button", { name: "Přidat dílčí krok" })).toBeEnabled()
+    await user.click(screen.getByRole("button", { name: "Přidat dílčí krok" }))
     expect(screen.getByRole("region", { name: "Dílčí krok" })).toBeInTheDocument()
     await user.type(screen.getByLabelText("Název kroku"), "Sedni 10 s")
     await user.click(screen.getByRole("button", { name: "Přidat krok" }))
@@ -260,9 +269,7 @@ describe("training editor", () => {
     }
     mount(false, { session: withSteps })
     await user.click(screen.getByRole("button", { name: "Upravit krok Sedni 5 s" }))
-    expect(
-      screen.queryByRole("button", { name: "Rozdělit na dílčí kroky" }),
-    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Přidat dílčí krok" })).not.toBeInTheDocument()
   })
   it("opens scheduling when a request arrives without remounting the editor", async () => {
     const user = userEvent.setup()

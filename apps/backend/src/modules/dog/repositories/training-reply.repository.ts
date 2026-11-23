@@ -1,5 +1,9 @@
 import { PrismaService } from '@/core/prisma/prisma.service';
 import { Prisma } from '@/generated/prisma/client';
+import {
+  toCalendarDate,
+  todayInAppZone,
+} from '@/modules/dog/domain/calendar-date';
 import { Injectable } from '@nestjs/common';
 
 export const replyDogAccess = (userId: string) => ({
@@ -22,14 +26,20 @@ export async function recordPlanReply(
   if (!training || training.goal.dog.ownerId === actorId) return;
   const sessions = await tx.scheduledTraining.findMany({
     where: { trainingId, status: 'PLANNED' },
-    select: { id: true },
+    select: { id: true, date: true },
+    orderBy: { date: 'asc' },
   });
-  await tx.trainingReply.createMany({
-    data: sessions.map(({ id }) => ({
+  const today = todayInAppZone();
+  const next =
+    sessions.find((session) => toCalendarDate(session.date) >= today) ??
+    sessions[0];
+  if (!next) return;
+  await tx.trainingReply.create({
+    data: {
       recipientId: training.goal.dog.ownerId,
-      scheduledTrainingId: id,
+      scheduledTrainingId: next.id,
       kind: 'PLAN_CHANGED',
-    })),
+    },
   });
 }
 
@@ -71,7 +81,7 @@ export class TrainingReplyRepository {
           select: {
             id: true,
             date: true,
-            training: { select: { title: true } },
+            training: { select: { id: true, title: true } },
             dog: { select: dogSummary },
             workoutLog: { select: { id: true } },
           },
