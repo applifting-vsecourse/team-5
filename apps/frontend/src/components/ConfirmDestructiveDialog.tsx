@@ -1,5 +1,5 @@
 import { useSyncExternalStore, type ReactNode } from "react"
-import { Trash2 } from "lucide-react"
+import { Archive, Trash2 } from "lucide-react"
 
 import {
   AlertDialog,
@@ -24,6 +24,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
+import { cn } from "@/lib/utils"
 
 type ConfirmDestructiveDialogProps = {
   title: string
@@ -34,6 +35,12 @@ type ConfirmDestructiveDialogProps = {
   trigger: ReactNode
   isOpen?: boolean
   onOpenChange?: (open: boolean) => void
+  /**
+   * `destructive` (default) for irreversible actions such as deleting.
+   * `reversible` for actions the user can undo later (archiving): neutral
+   * colours, an archive icon and a primary confirm button (#256).
+   */
+  tone?: "destructive" | "reversible"
 }
 
 const MD_UP = "(min-width: 48rem)"
@@ -53,8 +60,8 @@ function useIsMdUp() {
 }
 
 /**
- * Irreversible-action confirmation (Figma Smazat psa — bottom sheet on mobile,
- * centred dialog from md up).
+ * Confirmation of a consequential action (Figma Smazat psa — bottom sheet on
+ * mobile, centred dialog from md up). Red is reserved for irreversible actions.
  */
 export function ConfirmDestructiveDialog({
   title,
@@ -65,8 +72,15 @@ export function ConfirmDestructiveDialog({
   trigger,
   isOpen,
   onOpenChange,
+  tone = "destructive",
 }: ConfirmDestructiveDialogProps) {
   const isDesktop = useIsMdUp()
+  const isReversible = tone === "reversible"
+  const Icon = isReversible ? Archive : Trash2
+  const mediaTone = isReversible
+    ? "bg-secondary text-secondary-foreground"
+    : "bg-danger-surface text-danger-foreground"
+  const confirmVariant = isReversible ? "default" : "destructive"
 
   if (isDesktop) {
     return (
@@ -77,8 +91,8 @@ export function ConfirmDestructiveDialog({
         <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
         <AlertDialogContent className="rounded-sheet shadow-none">
           <AlertDialogHeader>
-            <AlertDialogMedia className="bg-danger-surface text-danger-foreground">
-              <Trash2 aria-hidden />
+            <AlertDialogMedia className={mediaTone}>
+              <Icon aria-hidden />
             </AlertDialogMedia>
             <AlertDialogTitle>{title}</AlertDialogTitle>
             <AlertDialogDescription>{description}</AlertDialogDescription>
@@ -86,7 +100,7 @@ export function ConfirmDestructiveDialog({
           <AlertDialogFooter>
             <AlertDialogCancel>{cancelLabel}</AlertDialogCancel>
             <AlertDialogAction
-              variant="destructive"
+              variant={confirmVariant}
               onClick={onConfirm}
             >
               {confirmLabel}
@@ -105,8 +119,13 @@ export function ConfirmDestructiveDialog({
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
       <DrawerContent>
         <DrawerHeader className="items-center text-center">
-          <div className="mb-2 inline-flex size-16 items-center justify-center rounded-md bg-danger-surface text-danger-foreground *:[svg:not([class*='size-'])]:size-8">
-            <Trash2 aria-hidden />
+          <div
+            className={cn(
+              "mb-2 inline-flex size-16 items-center justify-center rounded-md *:[svg:not([class*='size-'])]:size-8",
+              mediaTone,
+            )}
+          >
+            <Icon aria-hidden />
           </div>
           <DrawerTitle>{title}</DrawerTitle>
           <DrawerDescription>{description}</DrawerDescription>
@@ -117,7 +136,7 @@ export function ConfirmDestructiveDialog({
           </DrawerClose>
           <DrawerClose asChild>
             <Button
-              variant="destructive"
+              variant={confirmVariant}
               onClick={onConfirm}
             >
               {confirmLabel}

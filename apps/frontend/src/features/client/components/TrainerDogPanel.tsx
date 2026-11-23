@@ -3,12 +3,14 @@ import { Link } from "@tanstack/react-router"
 import { X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
 import { dogColorClass } from "@/lib/dogColors"
 import { dogMetricsQueryOptions } from "@/lib/dogMetrics"
 import { dogHistoryFirstPageQueryOptions } from "@/lib/history"
 import { cn } from "@/lib/utils"
 
 import { clientDogGoalsQueryOptions } from "@/features/client/api/clientDogGoals"
+import { clientDogPlanProgressQueryOptions } from "@/features/client/api/clientDogPlanProgress"
 
 type DogRef = { id: string; name: string; color: number }
 
@@ -33,6 +35,8 @@ export function TrainerDogPanel({
   const metrics = useQuery(dogMetricsQueryOptions(dog.id))
   const history = useQuery(dogHistoryFirstPageQueryOptions(dog.id))
   const goals = useQuery(clientDogGoalsQueryOptions(dog.id))
+  // Progress bars as on the dog profile (Figma 128:1560).
+  const progressByGoal = useQuery(clientDogPlanProgressQueryOptions(dog.id)).data
   const activeGoals = (goals.data ?? []).filter((goal) => goal.status === "ACTIVE").slice(0, 2)
   const lastRecord = (history.data?.items ?? []).find((item) => item.status === "COMPLETED")
   const weeks = (metrics.data?.weeks ?? []).slice(-8)
@@ -184,20 +188,43 @@ export function TrainerDogPanel({
               <p className="text-sm text-muted-foreground">Žádný aktivní cíl.</p>
             ) : (
               <ul className="space-y-2">
-                {activeGoals.map((goal) => (
-                  <li key={goal.id}>
-                    <Link
-                      to="/dogs/$dogId/goals/$goalId"
-                      params={{ dogId: dog.id, goalId: goal.id }}
-                      className="block rounded-field border border-border px-3 py-2 outline-hidden hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <p className="text-sm font-bold">{goal.title}</p>
-                      {goal.discipline && (
-                        <p className="text-xs text-muted-foreground">{goal.discipline}</p>
-                      )}
-                    </Link>
-                  </li>
-                ))}
+                {activeGoals.map((goal) => {
+                  const progress = progressByGoal?.get(goal.id)
+                  return (
+                    <li key={goal.id}>
+                      <Link
+                        to="/dogs/$dogId/goals/$goalId"
+                        params={{ dogId: dog.id, goalId: goal.id }}
+                        className="block space-y-1.5 rounded-field border border-border px-3 py-2 outline-hidden hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <span className="flex items-start justify-between gap-2">
+                          <span className="min-w-0">
+                            <span className="block text-sm font-bold break-words">
+                              {goal.title}
+                            </span>
+                            {goal.discipline && (
+                              <span className="block text-xs text-muted-foreground">
+                                {goal.discipline}
+                              </span>
+                            )}
+                          </span>
+                          {progress && (
+                            <span className="shrink-0 text-sm font-extrabold tabular-nums">
+                              {progress.percent} %
+                            </span>
+                          )}
+                        </span>
+                        {progress && (
+                          <Progress
+                            value={progress.percent}
+                            aria-label={`${goal.title}: ${progress.completed} z ${progress.total} tréninků odcvičeno`}
+                            className="h-1.5"
+                          />
+                        )}
+                      </Link>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </section>

@@ -162,7 +162,7 @@ export function AccountPage() {
                 )}
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-destructive hover:text-destructive"
+                  className="w-full justify-start"
                   disabled={signOut.isPending}
                   onClick={() =>
                     signOut.mutate(undefined, {

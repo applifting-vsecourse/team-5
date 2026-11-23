@@ -86,4 +86,47 @@ describe("ConfirmDestructiveDialog", () => {
     await user.click(screen.getByRole("button", { name: "Smazat" }))
     expect(onConfirm).toHaveBeenCalledOnce()
   })
+
+  it("keeps red for irreversible actions only", async () => {
+    mockViewport(false)
+    const user = userEvent.setup()
+
+    render(
+      <ConfirmDestructiveDialog
+        title="Archivovat psa?"
+        description="Psa půjde kdykoli vrátit."
+        confirmLabel="Archivovat"
+        tone="reversible"
+        onConfirm={vi.fn()}
+        trigger={<button type="button">Archiv</button>}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Archiv" }))
+    expect(screen.getByRole("button", { name: "Archivovat" })).toHaveAttribute(
+      "data-variant",
+      "default",
+    )
+  })
+
+  it("uses the destructive button by default", async () => {
+    mockViewport(true)
+    const user = userEvent.setup()
+
+    render(
+      <ConfirmDestructiveDialog
+        title="Smazat psa"
+        description="Tuto akci nelze vrátit."
+        confirmLabel="Smazat"
+        onConfirm={vi.fn()}
+        trigger={<button type="button">Otevřít</button>}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "Otevřít" }))
+    expect(screen.getByRole("button", { name: "Smazat" })).toHaveAttribute(
+      "data-variant",
+      "destructive",
+    )
+  })
 })

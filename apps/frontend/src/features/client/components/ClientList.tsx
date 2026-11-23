@@ -60,7 +60,7 @@ function InviteRow({ invitation }: { invitation: Invitation }) {
       <Button
         variant="ghost"
         size="sm"
-        className="shrink-0 font-bold text-destructive"
+        className="shrink-0 font-bold text-muted-foreground hover:text-destructive"
         onClick={() => cancelMutation.mutate(invitation.id)}
         disabled={cancelMutation.isPending}
         aria-label={`Zrušit pozvánku ${invitation.code}`}

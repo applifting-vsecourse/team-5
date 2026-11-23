@@ -220,6 +220,7 @@ export function DogGoalsSection({
                       title={`Ukončit disciplínu ${group.discipline.name}?`}
                       description="Disciplína se přesune do archivu. Všechny její cíle, tréninky a historie zůstanou zachovány a můžete ji kdykoliv znovu obnovit."
                       confirmLabel="Ukončit disciplínu"
+                      tone="reversible"
                       onConfirm={() =>
                         setDisciplineMutation.mutate({
                           name: group.discipline.name,
@@ -232,7 +233,7 @@ export function DogGoalsSection({
                           variant="outline"
                           size="sm"
                           disabled={setDisciplineMutation.isPending}
-                          className="h-7 px-2.5 text-xs font-semibold text-muted-foreground hover:border-destructive hover:text-destructive"
+                          className="h-7 px-2.5 text-xs font-semibold text-muted-foreground"
                         >
                           Ukončit
                         </Button>

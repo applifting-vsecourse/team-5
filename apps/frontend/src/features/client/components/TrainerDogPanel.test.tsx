@@ -112,4 +112,56 @@ describe("TrainerDogPanel", () => {
     await user.click(screen.getByRole("button", { name: "Zkusit znovu" }))
     expect(api.get).toHaveBeenCalledWith("dogs/d-1/goals")
   })
+
+  it("shows goal progress from the plan like the dog profile", async () => {
+    respond({
+      "dogs/d-1/metrics": () => Promise.reject(new Error("down")),
+      history: () => Promise.reject(new Error("down")),
+      "dogs/d-1/goals": () =>
+        Promise.resolve([
+          { id: "g-1", title: "Přivolání", status: "ACTIVE", discipline: "Poslušnost" },
+        ]),
+      "dogs/d-1/plan": () =>
+        Promise.resolve([
+          {
+            id: "disc-1",
+            isArchived: false,
+            discipline: { id: "disc-1", name: "Poslušnost" },
+            goals: [
+              {
+                id: "g-1",
+                title: "Přivolání",
+                criterion: null,
+                principle: null,
+                status: "ACTIVE",
+                sessions: [
+                  {
+                    id: "s-1",
+                    goalId: "g-1",
+                    title: "Trénink 1",
+                    position: 0,
+                    isArchived: false,
+                    steps: [],
+                    scheduledTrainings: [
+                      { id: "t-1", date: "2026-11-02", status: "COMPLETED" },
+                      { id: "t-2", date: "2026-11-04", status: "COMPLETED" },
+                      { id: "t-3", date: "2026-11-06", status: "COMPLETED" },
+                      { id: "t-4", date: "2026-11-30", status: "PLANNED" },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ]),
+    })
+
+    mount()
+    expect(
+      await screen.findByRole("progressbar", {
+        name: "Přivolání: 3 z 4 tréninků odcvičeno",
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByText("75 %")).toBeInTheDocument()
+  })
 })

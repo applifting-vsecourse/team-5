@@ -472,6 +472,10 @@ export function SessionEditor({
     }
   }
   const totalMinutes = blocks.reduce((n, b) => n + (b.durationMinutes ?? 0), 0)
+  // One order for the live preview and the walkthrough preview, as on Dnes (#162).
+  const walkSteps = walkOrder(
+    blocks.map((block) => ({ ...block, parentId: block.parentId ?? null })),
+  )
   const sessionIndex = Math.max(1, sessions.findIndex((s) => s.id === session.id) + 1)
   return (
     <>
@@ -707,11 +711,12 @@ export function SessionEditor({
           <div className="hidden lg:block">
             <SessionOwnerPreview
               dog={dog}
+              goal={goal}
               session={session}
               sessionIndex={sessionIndex}
               sessionsTotal={sessions.length}
-              steps={blocks}
-              totalMinutes={totalMinutes}
+              steps={walkSteps}
+              onStart={() => setPreview(true)}
             />
           </div>
         </div>
@@ -826,12 +831,7 @@ export function SessionEditor({
           <TrainingPreview
             dog={dog}
             title={session.title}
-            steps={walkOrder(
-              blocks.map((block) => ({
-                ...block,
-                parentId: block.parentId ?? null,
-              })),
-            )}
+            steps={walkSteps}
             isOpen
             onOpenChange={setPreview}
           />

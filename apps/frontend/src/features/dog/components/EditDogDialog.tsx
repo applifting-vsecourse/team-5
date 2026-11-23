@@ -483,9 +483,9 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
           {disciplineToArchive && (
             <div
               role="alert"
-              className="space-y-2 rounded-card border border-destructive/30 bg-destructive/5 p-3 text-xs"
+              className="space-y-2 rounded-card bg-secondary p-3 text-xs"
             >
-              <p className="font-semibold text-destructive">
+              <p className="font-semibold text-secondary-foreground">
                 Ukončit disciplínu <strong>{disciplineToArchive}</strong>?
               </p>
               <p className="text-muted-foreground">
@@ -495,7 +495,6 @@ function EditDogForm({ dog, onClose, onSuccess }: EditDogFormProps) {
               <div className="flex items-center gap-2 pt-1">
                 <Button
                   type="button"
-                  variant="destructive"
                   size="sm"
                   disabled={setDisciplineMutation.isPending}
                   onClick={() => void handleConfirmArchive(disciplineToArchive)}
