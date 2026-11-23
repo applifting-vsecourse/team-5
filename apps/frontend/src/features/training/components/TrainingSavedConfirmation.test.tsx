@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
 import { todayCalendarDate } from "@/lib/calendarDate"
-import { dogKeys } from "@/lib/dogKeys"
+import { ownerMetricsQueryOptions } from "@/lib/dogMetrics"
 import { upcomingTrainingsQueryOptions } from "@/lib/weekTrainings"
 
 import type { TrainingDetail } from "@/features/training/api/trainingSchemas"
@@ -74,7 +74,7 @@ function renderConfirmation(options?: { withMetrics?: boolean; zpet?: "dnes" | "
   queryClient.setQueryData(trainingKeys.detail("t1"), aTraining())
   queryClient.setQueryData(upcomingTrainingsQueryOptions(todayCalendarDate()).queryKey, [])
   if (options?.withMetrics) {
-    queryClient.setQueryData(dogKeys.metrics("d1"), metrics)
+    queryClient.setQueryData(ownerMetricsQueryOptions().queryKey, metrics)
   }
 
   const ui: ReactElement = (

@@ -166,6 +166,7 @@ describe("TodayView", () => {
 
     expect(screen.queryByText("Dnes máte volno")).not.toBeInTheDocument()
     expect(screen.getByText("Zmeškaný trénink")).toBeInTheDocument()
+    expect(screen.getByText(/Zmeškaný úterý 3\. 11\./)).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Zmeškané áčko" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /Začít trénink/i })).toHaveAttribute(
       "href",

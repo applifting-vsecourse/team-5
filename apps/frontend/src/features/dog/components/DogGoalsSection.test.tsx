@@ -11,6 +11,10 @@ vi.mock("@tanstack/react-router", () => ({
     <a href={search?.session ?? "goal"}>{children}</a>
   ),
 }))
+vi.mock("@/lib/calendarDate", async () => {
+  const actual = await vi.importActual("@/lib/calendarDate")
+  return { ...(actual as Record<string, unknown>), todayCalendarDate: () => "2026-11-23" }
+})
 const goal: PlanGoal = {
   id: "goal",
   title: "Přivolání",
@@ -30,7 +34,7 @@ const goal: PlanGoal = {
       scheduledTrainings: [
         { id: "a1", date: new Date("2026-11-01"), status: "COMPLETED" },
         { id: "a2", date: new Date("2026-11-02"), status: "COMPLETED" },
-        { id: "a3", date: new Date("2026-11-10"), status: "PLANNED" },
+        { id: "a3", date: new Date("2026-12-01T00:00:00.000Z"), status: "PLANNED" },
         { id: "a4", date: new Date("2026-11-03"), status: "SKIPPED" },
       ],
     },
@@ -58,6 +62,28 @@ describe("GoalProgressCard", () => {
     expect(screen.getByText(/Cíl nastavil Marek/)).toBeInTheDocument()
     expect(screen.getByText(/Hotovo, když: Přiběhne na první povel/)).toBeInTheDocument()
     expect(screen.getByRole("link", { name: /V parku/ })).toHaveAttribute("href", "a")
+    expect(screen.getByText(/DALŠÍ · TRÉNINK 3/)).toBeInTheDocument()
+    expect(screen.queryByText(/ZMEŠKANÝ/)).not.toBeInTheDocument()
+  })
+  it("calls a planned day that already passed zmeškaný", () => {
+    render(
+      <GoalProgressCard
+        goal={{
+          ...goal,
+          sessions: [
+            {
+              ...goal.sessions[0]!,
+              scheduledTrainings: [
+                { id: "late", date: new Date("2026-11-10T00:00:00.000Z"), status: "PLANNED" },
+              ],
+            },
+          ],
+        }}
+        dogId="rex"
+      />,
+    )
+    expect(screen.getByText(/ZMEŠKANÝ/)).toBeInTheDocument()
+    expect(screen.queryByText(/DALŠÍ/)).not.toBeInTheDocument()
   })
   it("does not invent a next training when nothing is scheduled", () => {
     render(

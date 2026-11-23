@@ -348,11 +348,13 @@ export function TodayView({ userName, userId, isSessionPending }: TodayViewProps
                     upcomingTrainings.filter((training) => training.dog.id === dog.id),
                     today,
                   )
-                  const nextLabel = nextForDog
-                    ? nextForDog.date === today
+                  const nextLabel = !nextForDog
+                    ? null
+                    : nextForDog.date === today
                       ? "Trénink dnes"
-                      : `Další trénink ${formatDayLong(nextForDog.date)}`
-                    : null
+                      : nextForDog.date < today
+                        ? `Zmeškaný ${formatDayLong(nextForDog.date)}`
+                        : `Další trénink ${formatDayLong(nextForDog.date)}`
                   return (
                     <li key={dog.id}>
                       <DogPlayerCard

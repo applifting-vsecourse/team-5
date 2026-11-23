@@ -8,7 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReadReplyReceipt } from "@/components/UnreadReplies"
 
-import { trainingDetailQueryOptions } from "@/features/training/api/trainingsQueryOptions"
+import {
+  isTrainingMissing,
+  trainingDetailQueryOptions,
+} from "@/features/training/api/trainingsQueryOptions"
 import { TrainingWalkthrough } from "@/features/training/components/TrainingWalkthrough"
 import {
   leaveTraining,
@@ -31,7 +34,8 @@ function TrainingWalkthroughPage() {
   const homeLabel = trainingHomeLabel(zpet)
   const goHome = () => leaveTraining((opts) => navigate(opts), zpet)
 
-  if (trainingQuery.isLoading) {
+  // A paused fetch stays pending and would hide the failure message.
+  if (trainingQuery.isPending && !trainingQuery.isPaused) {
     return (
       <div className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col bg-background">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
@@ -78,9 +82,17 @@ function TrainingWalkthroughPage() {
         </button>
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
-          <AlertTitle>Trénink nebyl nalezen</AlertTitle>
+          <AlertTitle>
+            {isTrainingMissing(trainingQuery.error)
+              ? "Trénink nebyl nalezen"
+              : "Trénink se nepodařilo načíst"}
+          </AlertTitle>
           <AlertDescription className="space-y-3">
-            <p>Tento trénink neexistuje nebo k němu nemáte přístup.</p>
+            <p>
+              {isTrainingMissing(trainingQuery.error)
+                ? "Tento trénink neexistuje nebo k němu nemáte přístup."
+                : "Spojení na chvíli vypadlo. Zkus to znovu."}
+            </p>
             <Button
               type="button"
               variant="outline"

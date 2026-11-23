@@ -91,4 +91,17 @@ describe("DogPlayerCard", () => {
     ).toBeInTheDocument()
     expect(screen.getByText(/Dnes · Přivolání v parku/)).toBeInTheDocument()
   })
+
+  it("includes the missed session in the compact card name", () => {
+    render(
+      <DogPlayerCard
+        variant="compact"
+        dog={{ id: "dog-bara", name: "Bára", color: 3 }}
+        nextLabel="Zmeškaný neděle 25. 10."
+      />,
+    )
+    expect(
+      screen.getByRole("link", { name: "Detail psa Bára. Zmeškaný neděle 25. 10." }),
+    ).toBeInTheDocument()
+  })
 })
