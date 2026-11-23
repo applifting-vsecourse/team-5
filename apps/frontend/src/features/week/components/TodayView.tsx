@@ -61,7 +61,7 @@ function NextTrainingHero({ training, today }: NextTrainingHeroProps) {
       aria-label={chip}
     >
       <div className="flex flex-wrap items-center gap-2 xl:col-start-1">
-        <span className="rounded-full bg-primary px-3 py-1.5 text-xs font-extrabold text-primary-foreground uppercase">
+        <span className="rounded-full bg-dog-foreground px-3 py-1.5 text-xs font-extrabold text-foreground uppercase">
           {chip}
         </span>
         <span className="rounded-full bg-dog-foreground/15 px-3 py-1.5 text-xs font-semibold">

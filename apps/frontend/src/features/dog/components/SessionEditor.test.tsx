@@ -191,11 +191,11 @@ describe("training editor", () => {
     expect(screen.getByRole("heading", { name: "Knihovna kroků" })).toBeInTheDocument()
     const preview = screen.getByRole("complementary", { name: "Náhled pro psovoda" })
     // Same order as the walkthrough on Dnes: sub-steps before their parent (#174, #162).
-    expect(within(preview).getAllByRole("listitem").map((item) => item.textContent)).toEqual([
-      "1Kousek",
-      "2Kontakt",
-      "3Volně",
-    ])
+    expect(
+      within(preview)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual(["1Kousek", "2Kontakt", "3Volně"])
     expect(screen.queryByText("Uloženo automaticky")).not.toBeInTheDocument()
 
     await user.click(within(preview).getByRole("button", { name: "Začít trénink" }))

@@ -55,7 +55,7 @@ export function SessionOwnerPreview({
           )}
         >
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-primary px-2.5 py-1 text-xs font-extrabold text-primary-foreground uppercase">
+            <span className="rounded-full bg-dog-foreground px-2.5 py-1 text-xs font-extrabold text-foreground uppercase">
               Dnešní trénink
             </span>
             <span className="rounded-full bg-dog-foreground/15 px-2.5 py-1 text-xs font-semibold">

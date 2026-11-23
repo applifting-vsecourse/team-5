@@ -133,7 +133,7 @@ export function TodayWeekPreview({
                           />
                           {training.dog.name}
                         </span>
-                        <span className="block hyphens-auto">
+                        <span className="block break-words hyphens-auto">
                           {training.training?.title ?? training.goal.title}
                         </span>
                         <span className="block text-xs">
