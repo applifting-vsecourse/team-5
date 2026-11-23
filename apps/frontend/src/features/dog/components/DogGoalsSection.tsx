@@ -7,6 +7,7 @@ import { EditorIcon } from "@/components/EditorIcon"
 import { EmptyState } from "@/components/EmptyState"
 import { QueryState } from "@/components/QueryState"
 import { Button } from "@/components/ui/button"
+import { toCalendarDate, todayCalendarDate } from "@/lib/calendarDate"
 import { goalTrainingProgress } from "@/lib/goalTrainingProgress"
 import { cn } from "@/lib/utils"
 
@@ -15,16 +16,20 @@ import { useSetDogDiscipline } from "@/features/dog/hooks/useSetDogDiscipline"
 
 export function GoalProgressCard({ goal, dogId }: { goal: PlanGoal; dogId: string }) {
   const { trainings, completed, total: count, percent } = goalTrainingProgress(goal)
-  const upcoming = goal.sessions
+  const today = todayCalendarDate()
+  const plannedItems = goal.sessions
     .filter((session) => !session.isArchived)
     .flatMap((session) =>
       (session.scheduledTrainings ?? [])
         .filter((training) => training.status === "PLANNED")
         .map((training) => ({ session, training })),
     )
-    .sort((a, b) => a.training.date.getTime() - b.training.date.getTime())[0]
-  const next = upcoming?.session
-  const planned = upcoming?.training
+    .sort((a, b) => a.training.date.getTime() - b.training.date.getTime())
+  const upcoming = plannedItems.filter((item) => toCalendarDate(item.training.date) >= today)
+  const chosen = upcoming[0] ?? plannedItems[0]
+  const isOverdue = chosen != null && upcoming.length === 0
+  const next = chosen?.session
+  const planned = chosen?.training
   return (
     <article className="space-y-3 rounded-card border border-border bg-card p-4">
       <Link
@@ -96,7 +101,7 @@ export function GoalProgressCard({ goal, dogId }: { goal: PlanGoal; dogId: strin
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-xs text-muted-foreground">
-              DALŠÍ · TRÉNINK {completed + 1}
+              {isOverdue ? "ZMEŠKANÝ" : `DALŠÍ · TRÉNINK ${completed + 1}`}
               {planned
                 ? ` · ${planned.date.toLocaleDateString("cs-CZ", { day: "numeric", month: "numeric" })}`
                 : ""}

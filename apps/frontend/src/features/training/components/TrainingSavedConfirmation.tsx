@@ -16,7 +16,7 @@ import {
   startOfWeekOf,
   todayCalendarDate,
 } from "@/lib/calendarDate"
-import { dogMetricsQueryOptions } from "@/lib/dogMetrics"
+import { ownerMetricsQueryOptions } from "@/lib/dogMetrics"
 import { cn } from "@/lib/utils"
 import { upcomingTrainingsQueryOptions } from "@/lib/weekTrainings"
 
@@ -33,7 +33,10 @@ export function TrainingSavedConfirmation({
   const continueTo = trainingHome(zpet)
   const trainingQuery = useQuery(trainingDetailQueryOptions(trainingId))
   const dog = trainingQuery.data?.dog
-  const metricsQuery = useQuery(dogMetricsQueryOptions(dog?.id ?? ""))
+  const metricsQuery = useQuery({
+    ...ownerMetricsQueryOptions(),
+    enabled: trainingQuery.isSuccess,
+  })
   const upcoming = useQuery({
     ...upcomingTrainingsQueryOptions(todayCalendarDate()),
     enabled: trainingQuery.isSuccess,

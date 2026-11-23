@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest"
 
 import type { Dog } from "@/features/dog/api/dogSchemas"
 
-import { DogCard } from "./DogCard"
+import { DogCard, nextTrainingLabel } from "./DogCard"
 import { DogList } from "./DogList"
 import { PesAvatar } from "./PesAvatar"
 
@@ -111,6 +111,25 @@ describe("PesAvatar", () => {
   })
 })
 
+describe("nextTrainingLabel", () => {
+  it("names a past plan zmeškaný and keeps a later day as the next one", () => {
+    const missed = nextTrainingLabel(
+      [{ id: "old", date: "2026-10-25", status: "PLANNED" } as never],
+      "2026-11-23",
+    )
+    expect(missed?.isOverdue).toBe(true)
+    expect(missed?.label).toMatch(/25\. 10\./)
+    expect(
+      nextTrainingLabel(
+        [
+          { id: "old", date: "2026-10-25", status: "PLANNED" },
+          { id: "next", date: "2026-11-25", status: "PLANNED" },
+        ] as never,
+        "2026-11-23",
+      )?.isOverdue,
+    ).toBe(false)
+  })
+})
 describe("DogCard", () => {
   it("renders dog name, breed and link", () => {
     const dog = aDog({ name: "Rex", breed: "Německý ovčák", color: 3 })

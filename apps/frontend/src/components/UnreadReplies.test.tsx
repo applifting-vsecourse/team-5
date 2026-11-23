@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { api } from "@/lib/api-client"
-import { type UnreadReply } from "@/lib/trainingReplies"
+import { collapseUnreadReplies, type UnreadReply } from "@/lib/trainingReplies"
 
 import { ReadReplyReceipt, RecordUnreadBadge, UnreadNavDot } from "./UnreadReplies"
 
@@ -27,6 +27,30 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(api.get).mockReturnValue({ json: () => Promise.resolve([]) } as never)
   vi.mocked(api.post).mockResolvedValue({} as never)
+})
+describe("collapseUnreadReplies", () => {
+  it("keeps one row for the same plan changed on several days", () => {
+    const dog = { id: "dog-1", name: "Rex", color: 1 }
+    const plan = (id: string, day: string): UnreadReply => ({
+      id,
+      kind: "PLAN_CHANGED",
+      createdAt: new Date(day),
+      workoutLog: null,
+      scheduledTraining: {
+        id,
+        date: new Date(day),
+        training: { id: "template", title: "Start na povel" },
+        dog,
+        workoutLog: null,
+      },
+    })
+    const rows = collapseUnreadReplies([
+      plan("later", "2026-11-25"),
+      plan("sooner", "2026-11-12"),
+      reply,
+    ])
+    expect(rows.map((row) => row.id)).toEqual(["sooner", reply.id])
+  })
 })
 describe("unread training replies", () => {
   it("shows a text badge only on the matching record and a navigation indicator", () => {

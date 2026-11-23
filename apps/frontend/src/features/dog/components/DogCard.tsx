@@ -18,6 +18,7 @@ export type DogCardExtras = {
   completedGoalCount?: number | null
   goalCount?: number | null
   nextLabel?: string | null
+  isOverdue?: boolean
 }
 
 type DogCardProps = {
@@ -27,12 +28,21 @@ type DogCardProps = {
   extras?: DogCardExtras
 }
 
-function nextTrainingLabel(items: PlannedTraining[], today: string): string | null {
+export function nextTrainingLabel(
+  items: PlannedTraining[],
+  today: string,
+): { label: string; isOverdue: boolean } | null {
   const upcoming = [...items].sort((left, right) => left.date.localeCompare(right.date))
-  const next = upcoming.find((item) => item.date >= today) ?? upcoming[0]
-  if (!next) return null
-  const when = next.date === today ? "Dnes" : formatDayLong(next.date)
-  return when
+  const future = upcoming.find((item) => item.date >= today)
+  if (future) {
+    return {
+      label: future.date === today ? "Dnes" : formatDayLong(future.date),
+      isOverdue: false,
+    }
+  }
+  const missed = upcoming[0]
+  if (!missed) return null
+  return { label: formatDayLong(missed.date), isOverdue: true }
 }
 
 export function DogCard({ dog, className, extras }: DogCardProps) {
@@ -51,13 +61,14 @@ export function DogCard({ dog, className, extras }: DogCardProps) {
       ? goalsQuery.data.filter((goal) => goal.status === "COMPLETED").length
       : null
   const goalCount = extras ? extras.goalCount : goalsQuery.isSuccess ? goalsQuery.data.length : null
-  const nextLabel = extras
-    ? extras.nextLabel
+  const next = extras
+    ? { label: extras.nextLabel ?? null, isOverdue: extras.isOverdue ?? false }
     : plannedQuery.isSuccess
       ? nextTrainingLabel(plannedQuery.data, todayCalendarDate())
       : plannedQuery.isError
-        ? "Termín nedostupný"
+        ? { label: "Termín nedostupný", isOverdue: false }
         : undefined
+  const nextLabel = next === undefined ? undefined : (next?.label ?? null)
 
   return (
     <div className={cn(className)}>
@@ -67,6 +78,7 @@ export function DogCard({ dog, className, extras }: DogCardProps) {
         completedGoalCount={completedGoalCount}
         goalCount={goalCount}
         nextLabel={nextLabel}
+        isOverdue={next?.isOverdue}
       />
       {!extras && (metricsQuery.isError || goalsQuery.isError || plannedQuery.isError) && (
         <div

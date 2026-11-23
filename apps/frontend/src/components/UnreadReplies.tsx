@@ -5,7 +5,12 @@ import { MessageCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { api } from "@/lib/api-client"
-import { replyDog, replyRecordId, unreadRepliesOptions } from "@/lib/trainingReplies"
+import {
+  collapseUnreadReplies,
+  replyDog,
+  replyRecordId,
+  unreadRepliesOptions,
+} from "@/lib/trainingReplies"
 
 export function UnreadBadge() {
   return (
@@ -108,11 +113,7 @@ export function UnreadReplyList({
   const replies = (query.data ?? []).filter(
     (reply) => !dogIds || dogIds.includes(replyDog(reply)?.id ?? ""),
   )
-  const unique = [
-    ...new Map(
-      replies.map((reply) => [replyRecordId(reply) ?? reply.scheduledTraining?.id, reply]),
-    ).values(),
-  ]
+  const unique = collapseUnreadReplies(replies)
   if (query.isLoading) {
     return (
       <p

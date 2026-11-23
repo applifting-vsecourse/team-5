@@ -22,6 +22,7 @@ export type DogPlayerCardProps = {
   completedGoalCount?: number | null
   goalCount?: number | null
   nextLabel?: string | null
+  isOverdue?: boolean
   variant?: "full" | "compact"
 }
 
@@ -63,6 +64,7 @@ export function DogPlayerCard({
   completedGoalCount,
   goalCount,
   nextLabel,
+  isOverdue = false,
   variant = "full",
 }: DogPlayerCardProps) {
   const isCompact = variant === "compact"
@@ -158,7 +160,7 @@ export function DogPlayerCard({
               "—"
             )}
           </dd>
-          <dt className="text-xs font-medium">Série</dt>
+          <dt className="text-xs font-medium">Série psa</dt>
         </div>
         <div className="flex flex-col rounded-field bg-dog-foreground/15 px-3 py-2">
           <dd className="order-first text-lg font-extrabold tabular-nums">
@@ -175,7 +177,9 @@ export function DogPlayerCard({
           {trend}
         </div>
         <p className="max-w-32 shrink-0 text-sm font-bold">
-          <span className="block text-xs font-extrabold uppercase">Další trénink</span>
+          <span className="block text-xs font-extrabold uppercase">
+            {isOverdue ? "Zmeškaný trénink" : "Další trénink"}
+          </span>
           {nextText}
         </p>
       </div>
